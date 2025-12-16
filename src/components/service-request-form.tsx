@@ -65,7 +65,7 @@ export function ServiceRequestForm({
             ) : (
               forklifts.map(forklift => (
                 <SelectItem key={forklift.id} value={forklift.id}>
-                  {forklift.model} ({forklift.serialNumber})
+                  {forklift.make} {forklift.model} ({forklift.serialNumber})
                 </SelectItem>
               ))
             )}
