@@ -8,10 +8,10 @@ const db = getFirestore(firebaseApp);
 
 // Sample Data
 const forklifts = [
-    { serialNumber: 'F12345', make: 'Toyota', model: '8FGCU25', year: 2021, capacity: '5000 lbs' },
-    { serialNumber: 'H67890', make: 'Hyster', model: 'H50FT', year: 2020, capacity: '5000 lbs' },
-    { serialNumber: 'C13579', make: 'Clark', model: 'C25', year: 2022, capacity: '5000 lbs' },
-    { serialNumber: 'Y24680', make: 'Yale', model: 'GLC050VX', year: 2019, capacity: '5000 lbs' },
+    { serialNumber: 'F12345', make: 'Toyota', model: '8FGCU25', year: 2021, capacity: '5000 lbs', equipmentType: 'Counterbalance' },
+    { serialNumber: 'H67890', make: 'Hyster', model: 'H50FT', year: 2020, capacity: '5000 lbs', equipmentType: 'Counterbalance' },
+    { serialNumber: 'C13579', make: 'Clark', model: 'C25', year: 2022, capacity: '5000 lbs', equipmentType: 'Reach Truck' },
+    { serialNumber: 'Y24680', make: 'Yale', model: 'GLC050VX', year: 2019, capacity: '5000 lbs', equipmentType: 'Pallet Jack' },
 ];
 
 const technicians = [

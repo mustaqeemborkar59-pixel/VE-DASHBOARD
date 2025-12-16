@@ -50,6 +50,7 @@ export default function ForkliftsPage() {
               <TableHead>Serial Number</TableHead>
               <TableHead>Make</TableHead>
               <TableHead>Model</TableHead>
+              <TableHead>Equipment Type</TableHead>
               <TableHead>Year</TableHead>
               <TableHead>Capacity</TableHead>
             </TableRow>
@@ -57,7 +58,7 @@ export default function ForkliftsPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={6} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : (
               forklifts?.map((forklift) => (
@@ -65,6 +66,7 @@ export default function ForkliftsPage() {
                   <TableCell className="font-medium">{forklift.serialNumber}</TableCell>
                   <TableCell>{forklift.make}</TableCell>
                   <TableCell>{forklift.model}</TableCell>
+                  <TableCell>{forklift.equipmentType}</TableCell>
                   <TableCell>{forklift.year}</TableCell>
                   <TableCell>{forklift.capacity}</TableCell>
                 </TableRow>

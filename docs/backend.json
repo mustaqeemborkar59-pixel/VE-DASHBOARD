@@ -58,6 +58,10 @@
         "capacity": {
           "type": "string",
           "description": "Lifting capacity of the forklift (e.g., '5000 lbs')."
+        },
+        "equipmentType": {
+          "type": "string",
+          "description": "The type of equipment (e.g., Reach Truck, Pallet Jack)."
         }
       },
       "required": [

@@ -13,6 +13,7 @@ export type Forklift = {
   model: string;
   year: number;
   capacity?: string;
+  equipmentType?: string;
 };
 
 export type ServiceRequest = {

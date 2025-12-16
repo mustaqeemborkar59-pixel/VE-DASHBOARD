@@ -29,6 +29,7 @@ export default function NewForkliftPage() {
   const [model, setModel] = useState('');
   const [year, setYear] = useState('');
   const [capacity, setCapacity] = useState('');
+  const [equipmentType, setEquipmentType] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,6 +52,7 @@ export default function NewForkliftPage() {
         model,
         year: parseInt(year, 10),
         capacity,
+        equipmentType,
       });
 
       toast({
@@ -103,6 +105,10 @@ export default function NewForkliftPage() {
                     <Label htmlFor="model">Model</Label>
                     <Input id="model" value={model} onChange={(e) => setModel(e.target.value)} placeholder="e.g., 8FGCU25" required />
                 </div>
+              </div>
+               <div className="grid gap-2">
+                <Label htmlFor="equipmentType">Equipment Type</Label>
+                <Input id="equipmentType" value={equipmentType} onChange={(e) => setEquipmentType(e.target.value)} placeholder="e.g., Reach Truck" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
