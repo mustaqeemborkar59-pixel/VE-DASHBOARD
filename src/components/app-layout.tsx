@@ -23,7 +23,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { ForkliftIcon } from './icons/forklift-icon';
 import { useFirebase } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -36,19 +36,17 @@ const navItems = [
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { auth, user, isUserLoading } = useFirebase();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     if (auth && !user && !isUserLoading) {
       initiateAnonymousSignIn(auth);
     }
   }, [auth, user, isUserLoading]);
-
-  const handleLogin = () => {
-    if (auth) {
-      // For this app, we will just use anonymous sign in
-      initiateAnonymousSignIn(auth);
-    }
-  };
 
   const handleLogout = () => {
     if (auth) {
@@ -58,9 +56,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const userEmail = user?.isAnonymous ? 'Anonymous User' : (user?.email || 'Not logged in');
   const userInitial = user?.isAnonymous ? 'A' : (user?.email?.[0]?.toUpperCase() || '?');
-
-  // Wait for user to be loaded/authenticated before rendering children
-  if (isUserLoading || !user) {
+  
+  if (!isClient || isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -132,7 +129,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               {user ? (
                 <DropdownMenuItem onClick={handleLogout}><LogOut className="mr-2 h-4 w-4"/>Log out</DropdownMenuItem>
               ) : (
-                <DropdownMenuItem onClick={handleLogin}><LogOut className="mr-2 h-4 w-4"/>Log in</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => auth && initiateAnonymousSignIn(auth)}><LogOut className="mr-2 h-4 w-4"/>Log in</DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
