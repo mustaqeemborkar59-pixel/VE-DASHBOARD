@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Bot, ClipboardList, LayoutDashboard, Wrench, Warehouse, LogOut, Settings, User } from 'lucide-react';
+import { BarChart, ClipboardList, LayoutDashboard, Wrench, Warehouse, LogOut, Settings, User } from 'lucide-react';
 
 import {
   SidebarProvider,
@@ -27,7 +27,6 @@ const navItems = [
   { href: '/service-requests', label: 'Service Requests', icon: Wrench },
   { href: '/job-cards', label: 'Job Cards', icon: ClipboardList },
   { href: '/inventory', label: 'Inventory', icon: Warehouse },
-  { href: '/diagnostics', label: 'AI Diagnostics', icon: Bot },
   { href: '/reports', label: 'Reports', icon: BarChart },
 ];
 
