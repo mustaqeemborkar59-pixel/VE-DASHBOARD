@@ -88,6 +88,10 @@
           "type": "string",
           "description": "Contact number of the employee."
         },
+        "workLocation": {
+          "type": "string",
+          "description": "Current work location of the employee (e.g., Workshop, On-Site)."
+        },
         "availability": {
           "type": "boolean",
           "description": "Indicates if the employee is currently available for assignment."

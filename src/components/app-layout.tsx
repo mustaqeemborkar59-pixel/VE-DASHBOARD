@@ -30,7 +30,7 @@ const navItems = [
   { href: '/service-requests', label: 'Service Requests', icon: Wrench },
   { href: '/job-cards', label: 'Job Cards', icon: ClipboardList },
   { href: '/forklifts', label: 'Forklifts', icon: ForkliftIcon },
-  { href: '/technicians', label: 'Employees', icon: User },
+  { href: '/employees', label: 'Employees', icon: User },
   { href: '/inventory', label: 'Inventory', icon: Warehouse },
   { href: '/reports', label: 'Reports', icon: BarChart },
 ];

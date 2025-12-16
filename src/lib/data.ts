@@ -3,6 +3,7 @@ export type Employee = {
   fullName: string;
   specialization: string;
   contactNumber: string;
+  workLocation: string;
   availability: boolean;
 };
 
