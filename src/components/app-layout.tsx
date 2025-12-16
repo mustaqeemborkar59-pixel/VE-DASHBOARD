@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BarChart, ClipboardList, LayoutDashboard, Wrench, Warehouse, LogOut, Settings, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import {
   SidebarProvider,
@@ -22,7 +23,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { ForkliftIcon } from './icons/forklift-icon';
 import { useFirebase } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
-import { useEffect, useState } from 'react';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -34,20 +34,19 @@ const navItems = [
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { auth, user, isUserLoading } = useFirebase();
-  const [isClient, setIsClient] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
   
   useEffect(() => {
-    // This effect runs only on the client, after the initial render.
-    setIsClient(true);
+    setIsMounted(true);
   }, []);
 
   useEffect(() => {
     // Initiate sign-in only on the client and if needed
-    if (isClient && auth && !user && !isUserLoading) {
+    if (isMounted && auth && !user && !isUserLoading) {
       initiateAnonymousSignIn(auth);
     }
-  }, [isClient, auth, user, isUserLoading]);
+  }, [isMounted, auth, user, isUserLoading]);
 
   const handleLogout = () => {
     if (auth) {
@@ -58,7 +57,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const userEmail = user?.isAnonymous ? 'Anonymous User' : (user?.email || 'Not logged in');
   const userInitial = user?.isAnonymous ? 'A' : (user?.email?.[0]?.toUpperCase() || '?');
   
-  if (!isClient || isUserLoading || !user) {
+  if (!isMounted || isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center gap-4">
