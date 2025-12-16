@@ -29,12 +29,25 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { MoreHorizontal, PlusCircle } from "lucide-react";
-import { useCollection, useFirebase, updateDocumentNonBlocking, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, useMemoFirebase } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { ServiceRequestForm, ServiceRequestFormData } from "@/components/service-request-form";
+
 
 export default function ServiceRequestsPage() {
   const { firestore } = useFirebase();
+  const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const serviceRequestsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'serviceRequests') : null, [firestore]);
   const techniciansQuery = useMemoFirebase(() => firestore ? collection(firestore, 'technicians') : null, [firestore]);
@@ -63,6 +76,24 @@ export default function ServiceRequestsPage() {
     updateDocumentNonBlocking(requestRef, { assignedTechnicianId: technicianId, status: 'Assigned' });
   }
 
+  const handleFormSubmit = (formData: ServiceRequestFormData) => {
+    if (!firestore) return;
+
+    addDocumentNonBlocking(collection(firestore, 'serviceRequests'), {
+      ...formData,
+      status: 'Pending',
+      requestDate: new Date().toISOString(),
+    });
+
+    toast({
+      title: "Success",
+      description: "Service request submitted successfully.",
+    });
+
+    setIsDialogOpen(false);
+  };
+
+
   const getStatusBadge = (status: 'Pending' | 'Assigned' | 'In Progress' | 'Completed') => {
     switch (status) {
       case 'Pending':
@@ -81,6 +112,7 @@ export default function ServiceRequestsPage() {
   const isLoading = isLoadingRequests || isLoadingTechs || isLoadingForklifts;
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -88,11 +120,9 @@ export default function ServiceRequestsPage() {
             <CardTitle>Service Requests</CardTitle>
             <CardDescription>Manage and assign forklift service requests.</CardDescription>
           </div>
-          <Button asChild size="sm">
-            <Link href="/service-requests/new">
+          <Button onClick={() => setIsDialogOpen(true)} size="sm">
               <PlusCircle className="mr-2 h-4 w-4" />
               New Request
-            </Link>
           </Button>
         </div>
       </CardHeader>
@@ -164,5 +194,23 @@ export default function ServiceRequestsPage() {
         </Table>
       </CardContent>
     </Card>
+
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Service Request</DialogTitle>
+            <DialogDescription>
+              Fill out the form to request maintenance for a forklift.
+            </DialogDescription>
+          </DialogHeader>
+          <ServiceRequestForm
+            forklifts={forklifts || []}
+            isLoadingForklifts={isLoadingForklifts}
+            onSubmit={handleFormSubmit}
+            onCancel={() => setIsDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
