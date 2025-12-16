@@ -123,7 +123,6 @@ export default function EmployeesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Full Name</TableHead>
-                <TableHead>Email</TableHead>
                 <TableHead>Role/Specialization</TableHead>
                 <TableHead>Contact Number</TableHead>
                 <TableHead>Work Location</TableHead>
@@ -134,13 +133,12 @@ export default function EmployeesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center">Loading...</TableCell>
+                  <TableCell colSpan={6} className="text-center">Loading...</TableCell>
                 </TableRow>
               ) : (
                 employees?.map((employee) => (
                   <TableRow key={employee.id}>
                     <TableCell className="font-medium">{employee.fullName}</TableCell>
-                    <TableCell>{employee.email}</TableCell>
                     <TableCell>{employee.specialization}</TableCell>
                     <TableCell>{employee.contactNumber}</TableCell>
                     <TableCell>{employee.workLocation}</TableCell>
