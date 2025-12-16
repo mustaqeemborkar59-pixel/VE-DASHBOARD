@@ -42,36 +42,36 @@
   }
 
   .dark {
-    --background: 216 30% 8%; /* Dark navy background */
+    --background: 222 47% 3%; /* Near-black background */
     --foreground: 210 40% 98%; /* White text */
-    --card: 216 30% 12%; /* Slightly lighter card background */
+    --card: 222 47% 6%; /* Slightly lighter card background */
     --card-foreground: 210 40% 98%;
-    --popover: 216 30% 8%;
+    --popover: 222 47% 3%;
     --popover-foreground: 210 40% 98%;
     --primary: 210 90% 60%; /* Brighter, glowing blue */
     --primary-foreground: 210 40% 98%;
-    --secondary: 217 33% 17%;
+    --secondary: 217 33% 10%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
+    --muted: 217 33% 10%;
     --muted-foreground: 215 28% 65%;
-    --accent: 217 33% 17%;
+    --accent: 217 33% 10%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-    --border: 216 30% 18%; /* Subtle border color */
-    --input: 216 30% 18%;
+    --border: 217 33% 12%; /* Subtle border color */
+    --input: 217 33% 12%;
     --ring: 210 90% 60%;
     --chart-1: 210 90% 55%;
     --chart-2: 180 80% 50%;
 
     /* Dark Theme Sidebar */
-    --sidebar-background: 216 30% 12%;
+    --sidebar-background: 222 47% 6%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 210 90% 60%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 216 30% 18%;
+    --sidebar-accent: 217 33% 12%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 216 30% 18%;
+    --sidebar-border: 217 33% 12%;
     --sidebar-ring: 210 90% 60%;
   }
 }
