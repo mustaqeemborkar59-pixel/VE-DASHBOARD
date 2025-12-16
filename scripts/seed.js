@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, writeBatch } from 'firebase/firestore';
+import { getFirestore, collection, writeBatch, doc } from 'firebase/firestore'; // Import 'doc'
 import { firebaseConfig } from '../src/firebase/config.js';
 
 // Initialize Firebase
@@ -8,10 +8,10 @@ const db = getFirestore(firebaseApp);
 
 // Sample Data
 const forklifts = [
-    { serialNumber: 'F12345', make: 'Toyota', model: '8FGCU25', year: 2021, location: 'Warehouse A' },
-    { serialNumber: 'H67890', make: 'Hyster', model: 'H50FT', year: 2020, location: 'Warehouse B' },
-    { serialNumber: 'C13579', make: 'Clark', model: 'C25', year: 2022, location: 'Loading Dock' },
-    { serialNumber: 'Y24680', make: 'Yale', model: 'GLC050VX', year: 2019, location: 'Warehouse A' },
+    { serialNumber: 'F12345', make: 'Toyota', model: '8FGCU25', year: 2021, capacity: '5000 lbs' },
+    { serialNumber: 'H67890', make: 'Hyster', model: 'H50FT', year: 2020, capacity: '5000 lbs' },
+    { serialNumber: 'C13579', make: 'Clark', model: 'C25', year: 2022, capacity: '5000 lbs' },
+    { serialNumber: 'Y24680', make: 'Yale', model: 'GLC050VX', year: 2019, capacity: '5000 lbs' },
 ];
 
 const technicians = [
@@ -27,7 +27,7 @@ const seedCollection = async (collectionName, data) => {
         console.log(`Seeding ${collectionName}...`);
         
         data.forEach((item) => {
-            const docRef = collectionRef.doc();
+            const docRef = doc(collectionRef); // Use doc(collectionRef) to get a new document reference
             batch.set(docRef, item);
         });
         

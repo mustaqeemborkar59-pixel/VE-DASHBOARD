@@ -51,7 +51,7 @@ export default function ForkliftsPage() {
               <TableHead>Make</TableHead>
               <TableHead>Model</TableHead>
               <TableHead>Year</TableHead>
-              <TableHead>Location</TableHead>
+              <TableHead>Capacity</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -66,7 +66,7 @@ export default function ForkliftsPage() {
                   <TableCell>{forklift.make}</TableCell>
                   <TableCell>{forklift.model}</TableCell>
                   <TableCell>{forklift.year}</TableCell>
-                  <TableCell>{forklift.location}</TableCell>
+                  <TableCell>{forklift.capacity}</TableCell>
                 </TableRow>
               ))
             )}

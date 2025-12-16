@@ -55,9 +55,9 @@
           "type": "number",
           "description": "Manufacturing year of the forklift."
         },
-        "location": {
+        "capacity": {
           "type": "string",
-          "description": "Current location of the forklift."
+          "description": "Lifting capacity of the forklift (e.g., '5000 lbs')."
         }
       },
       "required": [

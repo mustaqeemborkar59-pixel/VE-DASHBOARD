@@ -28,7 +28,7 @@ export default function NewForkliftPage() {
   const [make, setMake] = useState('');
   const [model, setModel] = useState('');
   const [year, setYear] = useState('');
-  const [location, setLocation] = useState('');
+  const [capacity, setCapacity] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,7 +50,7 @@ export default function NewForkliftPage() {
         make,
         model,
         year: parseInt(year, 10),
-        location,
+        capacity,
       });
 
       toast({
@@ -110,8 +110,8 @@ export default function NewForkliftPage() {
                     <Input id="year" type="number" value={year} onChange={(e) => setYear(e.target.value)} placeholder="e.g., 2021" required />
                 </div>
                 <div className="grid gap-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g., Warehouse A" />
+                    <Label htmlFor="capacity">Capacity</Label>
+                    <Input id="capacity" value={capacity} onChange={(e) => setCapacity(e.target.value)} placeholder="e.g., 5000 lbs" />
                 </div>
               </div>
             </div>
