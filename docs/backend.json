@@ -80,6 +80,11 @@
           "type": "string",
           "description": "Full name of the employee."
         },
+        "email": {
+          "type": "string",
+          "description": "Email address of the employee.",
+          "format": "email"
+        },
         "specialization": {
           "type": "string",
           "description": "Area of specialization or role for the employee (e.g., Electrical, Mechanical, Worker)."
