@@ -48,14 +48,14 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ForkliftForm, ForkliftFormData } from "@/components/forklift-form";
 
+type DialogMode = 'add' | 'edit' | 'delete' | null;
+
 export default function ForkliftsPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
   
-  const [dialogState, setDialogState] = useState<{open: boolean; mode: 'add' | 'edit'; data?: Forklift}>({ open: false, mode: 'add' });
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [selectedForklift, setSelectedForklift] = useState<Forklift | null>(null);
-
 
   const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
   const { data: forklifts, isLoading } = useCollection<Forklift>(forkliftsQuery);
@@ -71,35 +71,31 @@ export default function ForkliftsPage() {
       description: `Forklift ${selectedForklift.serialNumber} has been removed.`,
     });
 
-    setIsDeleteDialogOpen(false);
+    closeDialog();
+  };
+
+  const openDialog = (mode: DialogMode, data?: Forklift) => {
+    setDialogMode(mode);
+    setSelectedForklift(data || null);
+  };
+
+  const closeDialog = () => {
+    setDialogMode(null);
     setSelectedForklift(null);
-  };
-
-  const openDeleteDialog = (forklift: Forklift) => {
-    setSelectedForklift(forklift);
-    setIsDeleteDialogOpen(true);
-  }
-
-  const handleOpenDialog = (mode: 'add' | 'edit', data?: Forklift) => {
-    setDialogState({ open: true, mode, data });
-  };
-
-  const handleCloseDialog = () => {
-    setDialogState({ open: false, mode: 'add' });
   };
   
   const handleFormSubmit = (formData: ForkliftFormData) => {
     if (!firestore) return;
     
-    if (dialogState.mode === 'add') {
+    if (dialogMode === 'add') {
       const forkliftsCollection = collection(firestore, 'forklifts');
       addDocumentNonBlocking(forkliftsCollection, {
         ...formData,
         year: parseInt(formData.year, 10),
       });
       toast({ title: "Success", description: "Forklift added successfully." });
-    } else if (dialogState.mode === 'edit' && dialogState.data) {
-      const forkliftDocRef = doc(firestore, 'forklifts', dialogState.data.id);
+    } else if (dialogMode === 'edit' && selectedForklift) {
+      const forkliftDocRef = doc(firestore, 'forklifts', selectedForklift.id);
       updateDocumentNonBlocking(forkliftDocRef, {
         ...formData,
         year: parseInt(formData.year, 10),
@@ -107,8 +103,10 @@ export default function ForkliftsPage() {
       toast({ title: "Success", description: "Forklift updated successfully." });
     }
 
-    handleCloseDialog();
+    closeDialog();
   };
+
+  const isAddOrEdit = dialogMode === 'add' || dialogMode === 'edit';
 
   return (
     <>
@@ -119,7 +117,7 @@ export default function ForkliftsPage() {
               <CardTitle>Forklifts</CardTitle>
               <CardDescription>Manage your fleet of forklifts.</CardDescription>
             </div>
-            <Button onClick={() => handleOpenDialog('add')} size="sm">
+            <Button onClick={() => openDialog('add')} size="sm">
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Forklift
             </Button>
@@ -162,11 +160,11 @@ export default function ForkliftsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleOpenDialog('edit', forklift)}>
+                          <DropdownMenuItem onClick={() => openDialog('edit', forklift)}>
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => openDeleteDialog(forklift)} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem onClick={() => openDialog('delete', forklift)} className="text-destructive focus:text-destructive">
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -181,25 +179,25 @@ export default function ForkliftsPage() {
       </Card>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={dialogState.open} onOpenChange={(isOpen) => setDialogState(prev => ({...prev, open: isOpen}))}>
+      <Dialog open={isAddOrEdit} onOpenChange={(isOpen) => !isOpen && closeDialog()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{dialogState.mode === 'add' ? 'Add New Forklift' : 'Edit Forklift'}</DialogTitle>
+            <DialogTitle>{dialogMode === 'add' ? 'Add New Forklift' : 'Edit Forklift'}</DialogTitle>
             <DialogDescription>
-              {dialogState.mode === 'add' ? 'Fill out the form to add a new forklift.' : 'Update the details of your forklift.'}
+              {dialogMode === 'add' ? 'Fill out the form to add a new forklift.' : 'Update the details of your forklift.'}
             </DialogDescription>
           </DialogHeader>
           <ForkliftForm
             onSubmit={handleFormSubmit}
-            onCancel={handleCloseDialog}
-            initialData={dialogState.data}
-            mode={dialogState.mode}
+            onCancel={closeDialog}
+            initialData={selectedForklift || undefined}
+            mode={dialogMode || 'add'}
           />
         </DialogContent>
       </Dialog>
       
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog open={dialogMode === 'delete'} onOpenChange={(isOpen) => !isOpen && closeDialog()}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to delete this forklift?</AlertDialogTitle>
@@ -208,7 +206,7 @@ export default function ForkliftsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={closeDialog}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
