@@ -160,11 +160,11 @@ export default function ForkliftsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => openDialog('edit', forklift)}>
+                          <DropdownMenuItem onSelect={() => openDialog('edit', forklift)}>
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => openDialog('delete', forklift)} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem onSelect={() => openDialog('delete', forklift)} className="text-destructive focus:text-destructive">
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
