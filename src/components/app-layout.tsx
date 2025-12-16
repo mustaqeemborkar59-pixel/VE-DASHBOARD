@@ -43,10 +43,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (auth && !user && !isUserLoading) {
+    // Initiate sign-in only on the client and if needed
+    if (isClient && auth && !user && !isUserLoading) {
       initiateAnonymousSignIn(auth);
     }
-  }, [auth, user, isUserLoading]);
+  }, [isClient, auth, user, isUserLoading]);
 
   const handleLogout = () => {
     if (auth) {
@@ -57,7 +58,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const userEmail = user?.isAnonymous ? 'Anonymous User' : (user?.email || 'Not logged in');
   const userInitial = user?.isAnonymous ? 'A' : (user?.email?.[0]?.toUpperCase() || '?');
   
-  if (!isClient || isUserLoading || !user) {
+  const showLoadingScreen = !isClient || isUserLoading || !user;
+
+  if (showLoadingScreen) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center gap-4">
