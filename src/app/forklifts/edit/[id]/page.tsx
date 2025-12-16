@@ -52,7 +52,7 @@ export default function EditForkliftPage() {
     }
   }, [forklift]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore || !serialNumber || !make || !model || !year) {
       toast({
@@ -64,33 +64,31 @@ export default function EditForkliftPage() {
     }
     setIsSubmitting(true);
 
-    try {
-      if (!forkliftDocRef) throw new Error("Forklift reference not found");
-
-      await updateDocumentNonBlocking(forkliftDocRef, {
-        serialNumber,
-        make,
-        model,
-        year: parseInt(year, 10),
-        capacity,
-        equipmentType,
-      });
-
-      toast({
-        title: "Success",
-        description: "Forklift updated successfully.",
-      });
-
-      router.push('/forklifts');
-    } catch (error) {
-      console.error("Error updating forklift:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update forklift. Please try again.",
-      });
-      setIsSubmitting(false);
+    if (!forkliftDocRef) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Forklift reference not found.",
+        });
+        setIsSubmitting(false);
+        return;
     }
+
+    updateDocumentNonBlocking(forkliftDocRef, {
+      serialNumber,
+      make,
+      model,
+      year: parseInt(year, 10),
+      capacity,
+      equipmentType,
+    });
+
+    toast({
+      title: "Success",
+      description: "Forklift updated successfully.",
+    });
+
+    router.push('/forklifts');
   };
 
   if (isLoadingForklift) {
