@@ -1,0 +1,161 @@
+/**
+ * Core Philosophy: This ruleset implements a Role-Based Access Control (RBAC) model
+ * for a forklift workshop management application. The primary role is that of a
+ * 'Technician'. A user is granted this role if a corresponding document exists for
+ * them in the /technicians collection. This role is required for managing shared
+ * workshop data like forklifts, parts, and job cards. Additionally, a strict
+ * user-ownership model is enforced for data private to a technician, such as their
+ * assigned service requests.
+ *
+ * Data Structure: The data is organized into several top-level collections for
+ * shared workshop entities (`forklifts`, `parts`, `jobCards`, `maintenanceLogs`).
+ * Technician profiles are stored in the top-level `/technicians` collection, which
+ * also serves as the basis for our role system. Data specific to a technician,
+ * `serviceRequests`, is nested in a subcollection under their document,
+ * e.g., `/technicians/{technicianId}/serviceRequests/{serviceRequestId}`.
+ *
+ * Key Security Decisions:
+ * - Technician Role: All create, update, and delete operations on shared workshop
+ *   data are restricted to authenticated users who are also registered technicians.
+ * - Ownership: Service requests are strictly owned by the technician under whose
+ *   path they are created, ensuring technicians can only access their own assignments.
+ * - Self-Service Profile: A user can create their own technician profile, but they
+ *   cannot edit or delete another technician's profile.
+ * - Default Deny: Access is denied by default. Rules explicitly grant permissions
+ *   only to authenticated and authorized users. Anonymous users have no access.
+ *
+ * Denormalization for Authorization: The rules rely on the existence of a document
+ * at `/technicians/{userId}` to grant technician privileges. This avoids complex
+ * lookups for a separate roles collection. For service requests, the path-based
+ * ownership rule `/technicians/{technicianId}/...` is validated against the
+ * denormalized `assignedTechnicianId` field within the service request document
+ * itself to ensure data consistency and prevent mis-assignment.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions to abstract and simplify rule logic.
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the foundation of our ownership-based security.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if a document exists. Used to secure update/delete operations.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * Role-based check: Verifies if the authenticated user is a registered technician.
+     * A user is considered a technician if a document with their UID exists in the
+     * /technicians collection. This is a secure and efficient way to manage roles.
+     */
+    function isTechnician() {
+      return isSignedIn() && exists(/databases/$(database)/documents/technicians/$(request.auth.uid));
+    }
+
+    /**
+     * @description Rules for the 'forklifts' collection, containing details for each forklift.
+     * @path /forklifts/{forkliftId}
+     * @allow (create) A registered technician can add a new forklift to the system.
+     * @deny (update) An authenticated user who is not a technician cannot modify a forklift's details.
+     * @principle Enforces Role-Based Access Control (RBAC). Only users with the 'Technician' role can read or write shared workshop data.
+     */
+    match /forklifts/{forkliftId} {
+      allow get: if isTechnician();
+      allow list: if isTechnician();
+      allow create: if isTechnician();
+      allow update: if isTechnician() && isExistingDoc();
+      allow delete: if isTechnician() && isExistingDoc();
+    }
+
+    /**
+     * @description Rules for the 'technicians' collection, which holds user profiles for technicians.
+     * @path /technicians/{technicianId}
+     * @allow (create) An authenticated user can create their own technician profile document, effectively registering themselves.
+     * @deny (update) A technician cannot update another technician's profile information.
+     * @principle Users can create their own profile document (Self-Creation). Updates and deletes are restricted to the document owner. Reading profiles is allowed for any other technician.
+     */
+    match /technicians/{technicianId} {
+      allow get: if isTechnician();
+      allow list: if isTechnician();
+      allow create: if isOwner(technicianId) && request.resource.data.id == technicianId;
+      allow update: if isOwner(technicianId) && isExistingDoc() && request.resource.data.id == resource.data.id;
+      allow delete: if isOwner(technicianId) && isExistingDoc();
+    }
+
+    /**
+     * @description Rules for 'serviceRequests' subcollection, nested under each technician.
+     * @path /technicians/{technicianId}/serviceRequests/{serviceRequestId}
+     * @allow (create) A technician can create a service request under their own document path.
+     * @deny (get) A technician cannot read a service request assigned to another technician.
+     * @principle Enforces strict document ownership based on the collection path. A technician can only access the data tree beneath their own user ID.
+     */
+    match /technicians/{technicianId}/serviceRequests/{serviceRequestId} {
+      allow get: if isOwner(technicianId);
+      allow list: if isOwner(technicianId);
+      allow create: if isOwner(technicianId) && request.resource.data.assignedTechnicianId == technicianId;
+      allow update: if isOwner(technicianId) && isExistingDoc() && request.resource.data.assignedTechnicianId == resource.data.assignedTechnicianId;
+      allow delete: if isOwner(technicianId) && isExistingDoc();
+    }
+
+    /**
+     * @description Rules for the 'jobCards' collection, which contains work orders.
+     * @path /jobCards/{jobCardId}
+     * @allow (create) A registered technician can create a new job card.
+     * @deny (list) An anonymous user cannot list any job cards.
+     * @principle Enforces Role-Based Access Control (RBAC). Only users with the 'Technician' role can read or write shared workshop data.
+     */
+    match /jobCards/{jobCardId} {
+      allow get: if isTechnician();
+      allow list: if isTechnician();
+      allow create: if isTechnician();
+      allow update: if isTechnician() && isExistingDoc();
+      allow delete: if isTechnician() && isExistingDoc();
+    }
+
+    /**
+     * @description Rules for the 'parts' collection, which tracks inventory.
+     * @path /parts/{partId}
+     * @allow (update) A registered technician can update the quantity of a part in inventory.
+     * @deny (create) An authenticated user who is not a technician cannot add a new part.
+     * @principle Enforces Role-Based Access Control (RBAC). Only users with the 'Technician' role can read or write shared workshop data.
+     */
+    match /parts/{partId} {
+      allow get: if isTechnician();
+      allow list: if isTechnician();
+      allow create: if isTechnician();
+      allow update: if isTechnician() && isExistingDoc();
+      allow delete: if isTechnician() && isExistingDoc();
+    }
+
+    /**
+     * @description Rules for the 'maintenanceLogs' collection, containing service histories.
+     * @path /maintenanceLogs/{maintenanceLogId}
+     * @allow (get) A registered technician can read a specific maintenance log.
+     * @deny (delete) An authenticated user who is not a technician cannot delete a log entry.
+     * @principle Enforces Role-Based Access Control (RBAC). Only users with the 'Technician' role can read or write shared workshop data.
+     */
+    match /maintenanceLogs/{maintenanceLogId} {
+      allow get: if isTechnician();
+      allow list: if isTechnician();
+      allow create: if isTechnician();
+      allow update: if isTechnician() && isExistingDoc();
+      allow delete: if isTechnician() && isExistingDoc();
+    }
+  }
+}
