@@ -9,8 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Employee } from "@/lib/data";
 
 export type EmployeeFormData = {
-  firstName: string;
-  lastName: string;
+  fullName: string;
   specialization: string;
   availability: boolean;
 };
@@ -25,8 +24,7 @@ interface EmployeeFormProps {
 export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: EmployeeFormProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState<EmployeeFormData>({
-    firstName: '',
-    lastName: '',
+    fullName: '',
     specialization: '',
     availability: true,
   });
@@ -35,15 +33,13 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
   useEffect(() => {
     if (mode === 'edit' && initialData) {
       setFormData({
-        firstName: initialData.firstName,
-        lastName: initialData.lastName,
+        fullName: initialData.fullName,
         specialization: initialData.specialization || '',
         availability: initialData.availability,
       });
     } else {
         setFormData({
-            firstName: '',
-            lastName: '',
+            fullName: '',
             specialization: '',
             availability: true,
         });
@@ -61,11 +57,11 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.firstName || !formData.lastName) {
+    if (!formData.fullName) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please fill out first and last name.",
+        description: "Please fill out the full name.",
       });
       return;
     }
@@ -76,15 +72,9 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-6 py-4">
-        <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" value={formData.firstName} onChange={handleInputChange} placeholder="e.g., John" required />
-            </div>
-            <div className="grid gap-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" value={formData.lastName} onChange={handleInputChange} placeholder="e.g., Doe" required />
-            </div>
+        <div className="grid gap-2">
+            <Label htmlFor="fullName">Full Name</Label>
+            <Input id="fullName" value={formData.fullName} onChange={handleInputChange} placeholder="e.g., John Doe" required />
         </div>
         <div className="grid gap-2">
             <Label htmlFor="specialization">Role / Specialization</Label>

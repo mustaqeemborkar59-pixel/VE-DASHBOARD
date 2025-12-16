@@ -76,13 +76,9 @@
       "type": "object",
       "description": "Represents an employee in the workshop.",
       "properties": {
-        "firstName": {
+        "fullName": {
           "type": "string",
-          "description": "First name of the employee."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "Last name of the employee."
+          "description": "Full name of the employee."
         },
         "specialization": {
           "type": "string",
@@ -94,8 +90,7 @@
         }
       },
       "required": [
-        "firstName",
-        "lastName",
+        "fullName",
         "availability"
       ]
     },

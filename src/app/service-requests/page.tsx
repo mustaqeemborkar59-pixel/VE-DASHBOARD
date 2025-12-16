@@ -68,7 +68,7 @@ export default function ServiceRequestsPage() {
   const getEmployeeName = (id?: string) => {
     if (!id) return 'Unassigned';
     const tech = employees?.find(t => t.id === id);
-    return tech ? `${tech.firstName} ${tech.lastName}` : 'Unassigned';
+    return tech ? tech.fullName : 'Unassigned';
   }
 
   const handleUpdateStatus = (requestId: string, status: ServiceRequest['status']) => {
@@ -186,7 +186,7 @@ export default function ServiceRequestsPage() {
                           <DropdownMenuSubContent>
                             {employees?.map(tech => (
                               <DropdownMenuItem key={tech.id} onClick={() => handleAssignTechnician(request.id, tech.id)}>
-                                {tech.firstName} {tech.lastName}
+                                {tech.fullName}
                               </DropdownMenuItem>
                             ))}
                           </DropdownMenuSubContent>

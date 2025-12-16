@@ -15,10 +15,10 @@ const forklifts = [
 ];
 
 const employees = [
-    { firstName: 'John', lastName: 'Doe', specialization: 'Electrical Technician', availability: true },
-    { firstName: 'Jane', lastName: 'Smith', specialization: 'Mechanical Technician', availability: false },
-    { firstName: 'Mike', lastName: 'Johnson', specialization: 'Hydraulics Technician', availability: true },
-    { firstName: 'Sam', lastName: 'Wilson', specialization: 'General Worker', availability: true },
+    { fullName: 'John Doe', specialization: 'Electrical Technician', availability: true },
+    { fullName: 'Jane Smith', specialization: 'Mechanical Technician', availability: false },
+    { fullName: 'Mike Johnson', specialization: 'Hydraulics Technician', availability: true },
+    { fullName: 'Sam Wilson', specialization: 'General Worker', availability: true },
 ];
 
 const seedCollection = async (collectionName, data) => {

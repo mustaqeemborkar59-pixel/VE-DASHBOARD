@@ -1,7 +1,6 @@
 export type Employee = {
   id: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   specialization: string;
   availability: boolean;
 };

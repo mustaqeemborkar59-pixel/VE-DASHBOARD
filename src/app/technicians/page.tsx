@@ -69,7 +69,7 @@ export default function EmployeesPage() {
 
     toast({
       title: "Employee Deleted",
-      description: `Employee ${selectedEmployee.firstName} ${selectedEmployee.lastName} has been removed.`,
+      description: `Employee ${selectedEmployee.fullName} has been removed.`,
     });
 
     closeDialog();
@@ -122,8 +122,7 @@ export default function EmployeesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>First Name</TableHead>
-                <TableHead>Last Name</TableHead>
+                <TableHead>Full Name</TableHead>
                 <TableHead>Role/Specialization</TableHead>
                 <TableHead>Availability</TableHead>
                 <TableHead><span className="sr-only">Actions</span></TableHead>
@@ -132,13 +131,12 @@ export default function EmployeesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">Loading...</TableCell>
+                  <TableCell colSpan={4} className="text-center">Loading...</TableCell>
                 </TableRow>
               ) : (
                 employees?.map((employee) => (
                   <TableRow key={employee.id}>
-                    <TableCell className="font-medium">{employee.firstName}</TableCell>
-                    <TableCell>{employee.lastName}</TableCell>
+                    <TableCell className="font-medium">{employee.fullName}</TableCell>
                     <TableCell>{employee.specialization}</TableCell>
                     <TableCell>
                       <Badge variant={employee.availability ? 'outline' : 'secondary'} className={employee.availability ? 'border-green-600/40 text-green-700' : ''}>
@@ -197,7 +195,7 @@ export default function EmployeesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to delete this employee?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete <span className="font-medium">{selectedEmployee?.firstName} {selectedEmployee?.lastName}</span>. This action cannot be undone.
+              This will permanently delete <span className="font-medium">{selectedEmployee?.fullName}</span>. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

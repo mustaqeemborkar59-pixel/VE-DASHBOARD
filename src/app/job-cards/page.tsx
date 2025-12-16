@@ -28,7 +28,7 @@ export default function JobCardsPage() {
   const getEmployeeName = (id?: string) => {
     if (!id) return 'N/A';
     const tech = employees?.find(t => t.id === id);
-    return tech ? `${tech.firstName} ${tech.lastName}` : 'N/A';
+    return tech ? tech.fullName : 'N/A';
   }
 
   const getStatusBadge = (status: 'Pending' | 'Assigned' | 'In Progress' | 'Completed') => {
