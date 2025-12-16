@@ -25,6 +25,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -34,16 +41,18 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Forklift } from "@/lib/data";
-import Link from 'next/link';
 import { MoreHorizontal, PlusCircle } from "lucide-react";
-import { useCollection, useFirebase, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
+import { useCollection, useFirebase, useMemoFirebase, deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { ForkliftForm, ForkliftFormData } from "@/components/forklift-form";
 
 export default function ForkliftsPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
+  
+  const [dialogState, setDialogState] = useState<{open: boolean; mode: 'add' | 'edit'; data?: Forklift}>({ open: false, mode: 'add' });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedForklift, setSelectedForklift] = useState<Forklift | null>(null);
 
@@ -71,6 +80,36 @@ export default function ForkliftsPage() {
     setIsDeleteDialogOpen(true);
   }
 
+  const handleOpenDialog = (mode: 'add' | 'edit', data?: Forklift) => {
+    setDialogState({ open: true, mode, data });
+  };
+
+  const handleCloseDialog = () => {
+    setDialogState({ open: false, mode: 'add' });
+  };
+  
+  const handleFormSubmit = (formData: ForkliftFormData) => {
+    if (!firestore) return;
+    
+    if (dialogState.mode === 'add') {
+      const forkliftsCollection = collection(firestore, 'forklifts');
+      addDocumentNonBlocking(forkliftsCollection, {
+        ...formData,
+        year: parseInt(formData.year, 10),
+      });
+      toast({ title: "Success", description: "Forklift added successfully." });
+    } else if (dialogState.mode === 'edit' && dialogState.data) {
+      const forkliftDocRef = doc(firestore, 'forklifts', dialogState.data.id);
+      updateDocumentNonBlocking(forkliftDocRef, {
+        ...formData,
+        year: parseInt(formData.year, 10),
+      });
+      toast({ title: "Success", description: "Forklift updated successfully." });
+    }
+
+    handleCloseDialog();
+  };
+
   return (
     <>
       <Card>
@@ -80,11 +119,9 @@ export default function ForkliftsPage() {
               <CardTitle>Forklifts</CardTitle>
               <CardDescription>Manage your fleet of forklifts.</CardDescription>
             </div>
-            <Button asChild size="sm">
-              <Link href="/forklifts/new">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Forklift
-              </Link>
+            <Button onClick={() => handleOpenDialog('add')} size="sm">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Forklift
             </Button>
           </div>
         </CardHeader>
@@ -125,8 +162,8 @@ export default function ForkliftsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/forklifts/edit/${forklift.id}`}>Edit</Link>
+                          <DropdownMenuItem onClick={() => handleOpenDialog('edit', forklift)}>
+                            Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => openDeleteDialog(forklift)} className="text-destructive focus:text-destructive">
@@ -142,6 +179,26 @@ export default function ForkliftsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={dialogState.open} onOpenChange={(open) => !open && handleCloseDialog()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{dialogState.mode === 'add' ? 'Add New Forklift' : 'Edit Forklift'}</DialogTitle>
+            <DialogDescription>
+              {dialogState.mode === 'add' ? 'Fill out the form to add a new forklift.' : 'Update the details of your forklift.'}
+            </DialogDescription>
+          </DialogHeader>
+          <ForkliftForm
+            onSubmit={handleFormSubmit}
+            onCancel={handleCloseDialog}
+            initialData={dialogState.data}
+            mode={dialogState.mode}
+          />
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
