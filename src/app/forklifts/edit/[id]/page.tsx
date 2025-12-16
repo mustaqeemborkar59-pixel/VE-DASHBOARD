@@ -20,6 +20,15 @@ import { useRouter, useParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Forklift } from "@/lib/data";
 
+type ForkliftFormData = {
+    serialNumber: string;
+    make: string;
+    model: string;
+    year: string;
+    capacity: string;
+    equipmentType: string;
+}
+
 export default function EditForkliftPage() {
   const { firestore } = useFirebase();
   const router = useRouter();
@@ -33,28 +42,37 @@ export default function EditForkliftPage() {
   );
   const { data: forklift, isLoading: isLoadingForklift } = useDoc<Forklift>(forkliftDocRef);
 
-  const [serialNumber, setSerialNumber] = useState('');
-  const [make, setMake] = useState('');
-  const [model, setModel] = useState('');
-  const [year, setYear] = useState('');
-  const [capacity, setCapacity] = useState('');
-  const [equipmentType, setEquipmentType] = useState('');
+  const [formData, setFormData] = useState<ForkliftFormData>({
+    serialNumber: '',
+    make: '',
+    model: '',
+    year: '',
+    capacity: '',
+    equipmentType: '',
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (forklift) {
-      setSerialNumber(forklift.serialNumber);
-      setMake(forklift.make);
-      setModel(forklift.model);
-      setYear(forklift.year.toString());
-      setCapacity(forklift.capacity || '');
-      setEquipmentType(forklift.equipmentType || '');
+      setFormData({
+        serialNumber: forklift.serialNumber,
+        make: forklift.make,
+        model: forklift.model,
+        year: forklift.year.toString(),
+        capacity: forklift.capacity || '',
+        equipmentType: forklift.equipmentType || '',
+      });
     }
   }, [forklift]);
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !serialNumber || !make || !model || !year) {
+    if (!firestore || !formData.serialNumber || !formData.make || !formData.model || !formData.year) {
       toast({
         variant: "destructive",
         title: "Missing Information",
@@ -62,25 +80,21 @@ export default function EditForkliftPage() {
       });
       return;
     }
-    setIsSubmitting(true);
-
+    
     if (!forkliftDocRef) {
         toast({
             variant: "destructive",
             title: "Error",
             description: "Forklift reference not found.",
         });
-        setIsSubmitting(false);
         return;
     }
+    
+    setIsSubmitting(true);
 
     updateDocumentNonBlocking(forkliftDocRef, {
-      serialNumber,
-      make,
-      model,
-      year: parseInt(year, 10),
-      capacity,
-      equipmentType,
+      ...formData,
+      year: parseInt(formData.year, 10),
     });
 
     toast({
@@ -121,30 +135,30 @@ export default function EditForkliftPage() {
             <div className="grid gap-6">
               <div className="grid gap-2">
                 <Label htmlFor="serialNumber">Serial Number</Label>
-                <Input id="serialNumber" value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)} placeholder="e.g., F12345" required />
+                <Input id="serialNumber" value={formData.serialNumber} onChange={handleInputChange} placeholder="e.g., F12345" required />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                     <Label htmlFor="make">Make</Label>
-                    <Input id="make" value={make} onChange={(e) => setMake(e.target.value)} placeholder="e.g., Toyota" required />
+                    <Input id="make" value={formData.make} onChange={handleInputChange} placeholder="e.g., Toyota" required />
                 </div>
                 <div className="grid gap-2">
                     <Label htmlFor="model">Model</Label>
-                    <Input id="model" value={model} onChange={(e) => setModel(e.target.value)} placeholder="e.g., 8FGCU25" required />
+                    <Input id="model" value={formData.model} onChange={handleInputChange} placeholder="e.g., 8FGCU25" required />
                 </div>
               </div>
                <div className="grid gap-2">
                 <Label htmlFor="equipmentType">Equipment Type</Label>
-                <Input id="equipmentType" value={equipmentType} onChange={(e) => setEquipmentType(e.target.value)} placeholder="e.g., Reach Truck" />
+                <Input id="equipmentType" value={formData.equipmentType} onChange={handleInputChange} placeholder="e.g., Reach Truck" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                     <Label htmlFor="year">Year</Label>
-                    <Input id="year" type="number" value={year} onChange={(e) => setYear(e.target.value)} placeholder="e.g., 2021" required />
+                    <Input id="year" type="number" value={formData.year} onChange={handleInputChange} placeholder="e.g., 2021" required />
                 </div>
                 <div className="grid gap-2">
                     <Label htmlFor="capacity">Capacity</Label>
-                    <Input id="capacity" value={capacity} onChange={(e) => setCapacity(e.target.value)} placeholder="e.g., 5000 lbs" />
+                    <Input id="capacity" value={formData.capacity} onChange={handleInputChange} placeholder="e.g., 5000 lbs" />
                 </div>
               </div>
             </div>
