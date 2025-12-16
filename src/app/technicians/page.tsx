@@ -40,7 +40,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
-import { Technician as Employee } from "@/lib/data";
+import { Employee } from "@/lib/data";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase, deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
@@ -124,6 +124,7 @@ export default function EmployeesPage() {
               <TableRow>
                 <TableHead>Full Name</TableHead>
                 <TableHead>Role/Specialization</TableHead>
+                <TableHead>Contact Number</TableHead>
                 <TableHead>Availability</TableHead>
                 <TableHead><span className="sr-only">Actions</span></TableHead>
               </TableRow>
@@ -131,13 +132,14 @@ export default function EmployeesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">Loading...</TableCell>
+                  <TableCell colSpan={5} className="text-center">Loading...</TableCell>
                 </TableRow>
               ) : (
                 employees?.map((employee) => (
                   <TableRow key={employee.id}>
                     <TableCell className="font-medium">{employee.fullName}</TableCell>
                     <TableCell>{employee.specialization}</TableCell>
+                    <TableCell>{employee.contactNumber}</TableCell>
                     <TableCell>
                       <Badge variant={employee.availability ? 'outline' : 'secondary'} className={employee.availability ? 'border-green-600/40 text-green-700' : ''}>
                         {employee.availability ? 'Available' : 'Unavailable'}

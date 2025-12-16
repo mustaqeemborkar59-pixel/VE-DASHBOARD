@@ -84,6 +84,10 @@
           "type": "string",
           "description": "Area of specialization or role for the employee (e.g., Electrical, Mechanical, Worker)."
         },
+        "contactNumber": {
+          "type": "string",
+          "description": "Contact number of the employee."
+        },
         "availability": {
           "type": "boolean",
           "description": "Indicates if the employee is currently available for assignment."

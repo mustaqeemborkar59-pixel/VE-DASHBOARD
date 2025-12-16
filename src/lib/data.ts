@@ -2,6 +2,7 @@ export type Employee = {
   id: string;
   fullName: string;
   specialization: string;
+  contactNumber: string;
   availability: boolean;
 };
 

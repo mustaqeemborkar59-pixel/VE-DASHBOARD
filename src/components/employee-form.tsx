@@ -11,6 +11,7 @@ import type { Employee } from "@/lib/data";
 export type EmployeeFormData = {
   fullName: string;
   specialization: string;
+  contactNumber: string;
   availability: boolean;
 };
 
@@ -26,6 +27,7 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
   const [formData, setFormData] = useState<EmployeeFormData>({
     fullName: '',
     specialization: '',
+    contactNumber: '',
     availability: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,12 +37,14 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
       setFormData({
         fullName: initialData.fullName,
         specialization: initialData.specialization || '',
+        contactNumber: initialData.contactNumber || '',
         availability: initialData.availability,
       });
     } else {
         setFormData({
             fullName: '',
             specialization: '',
+            contactNumber: '',
             availability: true,
         });
     }
@@ -79,6 +83,10 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
         <div className="grid gap-2">
             <Label htmlFor="specialization">Role / Specialization</Label>
             <Input id="specialization" value={formData.specialization} onChange={handleInputChange} placeholder="e.g., Technician, Worker" />
+        </div>
+        <div className="grid gap-2">
+            <Label htmlFor="contactNumber">Contact Number</Label>
+            <Input id="contactNumber" value={formData.contactNumber} onChange={handleInputChange} placeholder="e.g., +1 234 567 890" />
         </div>
         <div className="flex items-center space-x-2">
             <Switch id="availability" checked={formData.availability} onCheckedChange={handleAvailabilityChange} />
