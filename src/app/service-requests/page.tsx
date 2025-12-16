@@ -17,7 +17,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ServiceRequest, Technician, Forklift } from "@/lib/data";
-import Link from 'next/link';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,8 +34,9 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Eye } from "lucide-react";
 import { useCollection, useFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, useMemoFirebase } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useState } from "react";
@@ -47,7 +47,9 @@ import { ServiceRequestForm, ServiceRequestFormData } from "@/components/service
 export default function ServiceRequestsPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
 
   const serviceRequestsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'serviceRequests') : null, [firestore]);
   const techniciansQuery = useMemoFirebase(() => firestore ? collection(firestore, 'technicians') : null, [firestore]);
@@ -57,7 +59,12 @@ export default function ServiceRequestsPage() {
   const { data: technicians, isLoading: isLoadingTechs } = useCollection<Technician>(techniciansQuery);
   const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
 
-  const getForkliftModel = (id: string) => forklifts?.find(f => f.id === id)?.model || 'Unknown';
+  const getForkliftInfo = (id: string) => {
+    const forklift = forklifts?.find(f => f.id === id);
+    if (!forklift) return 'Unknown Forklift';
+    return `${forklift.make} ${forklift.model}`;
+  };
+
   const getTechnicianName = (id?: string) => {
     if (!id) return 'Unassigned';
     const tech = technicians?.find(t => t.id === id);
@@ -90,11 +97,15 @@ export default function ServiceRequestsPage() {
       description: "Service request submitted successfully.",
     });
 
-    setIsDialogOpen(false);
+    setIsFormDialogOpen(false);
   };
+  
+  const handleViewDetails = (request: ServiceRequest) => {
+    setSelectedRequest(request);
+    setIsDetailDialogOpen(true);
+  }
 
-
-  const getStatusBadge = (status: 'Pending' | 'Assigned' | 'In Progress' | 'Completed') => {
+  const getStatusBadge = (status: ServiceRequest['status']) => {
     switch (status) {
       case 'Pending':
         return <Badge variant="secondary">Pending</Badge>;
@@ -120,7 +131,7 @@ export default function ServiceRequestsPage() {
             <CardTitle>Service Requests</CardTitle>
             <CardDescription>Manage and assign forklift service requests.</CardDescription>
           </div>
-          <Button onClick={() => setIsDialogOpen(true)} size="sm">
+          <Button onClick={() => setIsFormDialogOpen(true)} size="sm">
               <PlusCircle className="mr-2 h-4 w-4" />
               New Request
           </Button>
@@ -135,25 +146,32 @@ export default function ServiceRequestsPage() {
               <TableHead>Status</TableHead>
               <TableHead>Assigned To</TableHead>
               <TableHead>Date</TableHead>
+              <TableHead>Details</TableHead>
               <TableHead><span className="sr-only">Actions</span></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={7} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : (
               serviceRequests?.map((request) => (
                 <TableRow key={request.id}>
                   <TableCell>
-                    <div className="font-medium">{request.forkliftId}</div>
-                    <div className="text-sm text-muted-foreground">{getForkliftModel(request.forkliftId)}</div>
+                    <div className="font-medium">{getForkliftInfo(request.forkliftId)}</div>
+                    <div className="text-sm text-muted-foreground">{forklifts?.find(f => f.id === request.forkliftId)?.serialNumber}</div>
                   </TableCell>
-                  <TableCell className="max-w-sm truncate">{request.issueDescription}</TableCell>
+                  <TableCell className="max-w-xs truncate">{request.issueDescription}</TableCell>
                   <TableCell>{getStatusBadge(request.status)}</TableCell>
                   <TableCell>{getTechnicianName(request.assignedTechnicianId)}</TableCell>
                   <TableCell>{new Date(request.requestDate).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                      <Button variant="ghost" size="icon" onClick={() => handleViewDetails(request)}>
+                          <Eye className="h-4 w-4" />
+                          <span className="sr-only">View Details</span>
+                      </Button>
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -164,7 +182,6 @@ export default function ServiceRequestsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuSub>
                           <DropdownMenuSubTrigger>Assign Technician</DropdownMenuSubTrigger>
@@ -195,7 +212,8 @@ export default function ServiceRequestsPage() {
       </CardContent>
     </Card>
 
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    {/* New Service Request Dialog */}
+    <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>New Service Request</DialogTitle>
@@ -207,10 +225,49 @@ export default function ServiceRequestsPage() {
             forklifts={forklifts || []}
             isLoadingForklifts={isLoadingForklifts}
             onSubmit={handleFormSubmit}
-            onCancel={() => setIsDialogOpen(false)}
+            onCancel={() => setIsFormDialogOpen(false)}
           />
         </DialogContent>
       </Dialog>
+      
+    {/* View Details Dialog */}
+    <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Service Request Details</DialogTitle>
+          <DialogDescription>
+            Complete information for request ID: <span className="font-medium">{selectedRequest?.id}</span>
+          </DialogDescription>
+        </DialogHeader>
+        {selectedRequest && (
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+              <span className="text-sm font-medium text-muted-foreground">Status</span>
+              <div>{getStatusBadge(selectedRequest.status)}</div>
+            </div>
+            <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+              <span className="text-sm font-medium text-muted-foreground">Request Date</span>
+              <span className="text-sm">{new Date(selectedRequest.requestDate).toLocaleString()}</span>
+            </div>
+            <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+              <span className="text-sm font-medium text-muted-foreground">Forklift</span>
+              <span className="text-sm">{getForkliftInfo(selectedRequest.forkliftId)} ({forklifts?.find(f=>f.id === selectedRequest.forkliftId)?.serialNumber})</span>
+            </div>
+             <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+              <span className="text-sm font-medium text-muted-foreground">Assigned To</span>
+              <span className="text-sm">{getTechnicianName(selectedRequest.assignedTechnicianId)}</span>
+            </div>
+            <div className="grid grid-cols-1 items-start gap-2">
+              <span className="text-sm font-medium text-muted-foreground">Reported Issue</span>
+              <p className="text-sm p-3 bg-muted/50 rounded-md border">{selectedRequest.issueDescription}</p>
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsDetailDialogOpen(false)}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
