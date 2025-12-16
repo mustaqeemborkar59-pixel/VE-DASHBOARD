@@ -59,6 +59,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const userEmail = user?.isAnonymous ? 'Anonymous User' : (user?.email || 'Not logged in');
   const userInitial = user?.isAnonymous ? 'A' : (user?.email?.[0]?.toUpperCase() || '?');
 
+  // Wait for user to be loaded/authenticated before rendering children
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <ForkliftIcon className="h-12 w-12 text-primary" />
+          <p className="text-muted-foreground">Connecting to the workshop...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>
