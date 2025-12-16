@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import type { Employee } from "@/lib/data";
 
@@ -30,7 +29,7 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
     fullName: '',
     specialization: '',
     contactNumber: '',
-    workLocation: 'Workshop',
+    workLocation: '',
     availability: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,7 +40,7 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
         fullName: initialData.fullName,
         specialization: initialData.specialization || '',
         contactNumber: initialData.contactNumber || '',
-        workLocation: initialData.workLocation || 'Workshop',
+        workLocation: initialData.workLocation || '',
         availability: initialData.availability,
       });
     } else {
@@ -49,7 +48,7 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
             fullName: '',
             specialization: '',
             contactNumber: '',
-            workLocation: 'Workshop',
+            workLocation: '',
             availability: true,
         });
     }
@@ -57,10 +56,6 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
-    setFormData(prev => ({ ...prev, [id]: value }));
-  };
-  
-  const handleSelectChange = (id: keyof EmployeeFormData, value: string) => {
     setFormData(prev => ({ ...prev, [id]: value }));
   };
 
@@ -101,16 +96,7 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
         </div>
         <div className="grid gap-2">
             <Label htmlFor="workLocation">Work Location</Label>
-             <Select value={formData.workLocation} onValueChange={(value) => handleSelectChange('workLocation', value)}>
-                <SelectTrigger>
-                    <SelectValue placeholder="Select location" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="Workshop">Workshop</SelectItem>
-                    <SelectItem value="On-Site">On-Site</SelectItem>
-                    <SelectItem value="Remote">Remote</SelectItem>
-                </SelectContent>
-            </Select>
+            <Input id="workLocation" value={formData.workLocation} onChange={handleInputChange} placeholder="e.g., Workshop, On-Site" />
         </div>
         <div className="flex items-center space-x-2">
             <Switch id="availability" checked={formData.availability} onCheckedChange={handleAvailabilityChange} />
