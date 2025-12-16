@@ -43,10 +43,11 @@ import { Button } from "@/components/ui/button";
 import { Forklift } from "@/lib/data";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase, deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
-import { collection, doc } from "firebase/firestore";
-import { useState } from "react";
+import { collection } from "firebase/firestore";
+import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ForkliftForm, ForkliftFormData } from "@/components/forklift-form";
+import { Input } from "@/components/ui/input";
 
 type DialogMode = 'add' | 'edit' | 'delete' | null;
 
@@ -57,8 +58,20 @@ export default function ForkliftsPage() {
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [selectedForklift, setSelectedForklift] = useState<Forklift | null>(null);
 
+  const [equipmentTypeFilter, setEquipmentTypeFilter] = useState('');
+  const [capacityFilter, setCapacityFilter] = useState('');
+
   const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
   const { data: forklifts, isLoading } = useCollection<Forklift>(forkliftsQuery);
+
+  const filteredForklifts = useMemo(() => {
+    return forklifts?.filter(forklift => {
+      const typeMatch = equipmentTypeFilter ? forklift.equipmentType?.toLowerCase().includes(equipmentTypeFilter.toLowerCase()) : true;
+      const capacityMatch = capacityFilter ? forklift.capacity?.toLowerCase().includes(capacityFilter.toLowerCase()) : true;
+      return typeMatch && capacityMatch;
+    });
+  }, [forklifts, equipmentTypeFilter, capacityFilter]);
+
 
   const handleDelete = () => {
     if (!firestore || !selectedForklift) return;
@@ -122,6 +135,20 @@ export default function ForkliftsPage() {
               Add Forklift
             </Button>
           </div>
+          <div className="mt-4 flex items-center gap-4">
+              <Input
+                placeholder="Filter by Equipment Type..."
+                value={equipmentTypeFilter}
+                onChange={(e) => setEquipmentTypeFilter(e.target.value)}
+                className="max-w-sm"
+              />
+              <Input
+                placeholder="Filter by Capacity..."
+                value={capacityFilter}
+                onChange={(e) => setCapacityFilter(e.target.value)}
+                className="max-w-sm"
+              />
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -142,7 +169,7 @@ export default function ForkliftsPage() {
                   <TableCell colSpan={7} className="text-center">Loading...</TableCell>
                 </TableRow>
               ) : (
-                forklifts?.map((forklift) => (
+                filteredForklifts?.map((forklift) => (
                   <TableRow key={forklift.id}>
                     <TableCell className="font-medium">{forklift.serialNumber}</TableCell>
                     <TableCell>{forklift.make}</TableCell>
