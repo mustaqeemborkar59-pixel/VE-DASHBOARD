@@ -40,62 +40,62 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
-import { Technician } from "@/lib/data";
+import { Technician as Employee } from "@/lib/data";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase, deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { TechnicianForm, TechnicianFormData } from "@/components/technician-form";
+import { EmployeeForm, EmployeeFormData } from "@/components/employee-form";
 import { Badge } from "@/components/ui/badge";
 
 type DialogMode = 'add' | 'edit' | 'delete' | null;
 
-export default function TechniciansPage() {
+export default function EmployeesPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
   
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
-  const [selectedTechnician, setSelectedTechnician] = useState<Technician | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-  const techniciansQuery = useMemoFirebase(() => firestore ? collection(firestore, 'technicians') : null, [firestore]);
-  const { data: technicians, isLoading } = useCollection<Technician>(techniciansQuery);
+  const employeesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'employees') : null, [firestore]);
+  const { data: employees, isLoading } = useCollection<Employee>(employeesQuery);
 
   const handleDelete = () => {
-    if (!firestore || !selectedTechnician) return;
+    if (!firestore || !selectedEmployee) return;
     
-    const technicianDocRef = doc(firestore, 'technicians', selectedTechnician.id);
-    deleteDocumentNonBlocking(technicianDocRef);
+    const employeeDocRef = doc(firestore, 'employees', selectedEmployee.id);
+    deleteDocumentNonBlocking(employeeDocRef);
 
     toast({
-      title: "Technician Deleted",
-      description: `Technician ${selectedTechnician.firstName} ${selectedTechnician.lastName} has been removed.`,
+      title: "Employee Deleted",
+      description: `Employee ${selectedEmployee.firstName} ${selectedEmployee.lastName} has been removed.`,
     });
 
     closeDialog();
   };
 
-  const openDialog = (mode: DialogMode, data?: Technician) => {
+  const openDialog = (mode: DialogMode, data?: Employee) => {
     setDialogMode(mode);
-    setSelectedTechnician(data || null);
+    setSelectedEmployee(data || null);
   };
 
   const closeDialog = () => {
     setDialogMode(null);
-    setSelectedTechnician(null);
+    setSelectedEmployee(null);
   };
   
-  const handleFormSubmit = (formData: TechnicianFormData) => {
+  const handleFormSubmit = (formData: EmployeeFormData) => {
     if (!firestore) return;
     
     if (dialogMode === 'add') {
-      const techniciansCollection = collection(firestore, 'technicians');
-      addDocumentNonBlocking(techniciansCollection, formData);
-      toast({ title: "Success", description: "Technician added successfully." });
-    } else if (dialogMode === 'edit' && selectedTechnician) {
-      const technicianDocRef = doc(firestore, 'technicians', selectedTechnician.id);
-      updateDocumentNonBlocking(technicianDocRef, formData);
-      toast({ title: "Success", description: "Technician updated successfully." });
+      const employeesCollection = collection(firestore, 'employees');
+      addDocumentNonBlocking(employeesCollection, formData);
+      toast({ title: "Success", description: "Employee added successfully." });
+    } else if (dialogMode === 'edit' && selectedEmployee) {
+      const employeeDocRef = doc(firestore, 'employees', selectedEmployee.id);
+      updateDocumentNonBlocking(employeeDocRef, formData);
+      toast({ title: "Success", description: "Employee updated successfully." });
     }
 
     closeDialog();
@@ -109,12 +109,12 @@ export default function TechniciansPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Technicians</CardTitle>
-              <CardDescription>Manage your workshop technicians.</CardDescription>
+              <CardTitle>Employees</CardTitle>
+              <CardDescription>Manage your workshop employees.</CardDescription>
             </div>
             <Button onClick={() => openDialog('add')} size="sm">
               <PlusCircle className="mr-2 h-4 w-4" />
-              Add Technician
+              Add Employee
             </Button>
           </div>
         </CardHeader>
@@ -124,7 +124,7 @@ export default function TechniciansPage() {
               <TableRow>
                 <TableHead>First Name</TableHead>
                 <TableHead>Last Name</TableHead>
-                <TableHead>Specialization</TableHead>
+                <TableHead>Role/Specialization</TableHead>
                 <TableHead>Availability</TableHead>
                 <TableHead><span className="sr-only">Actions</span></TableHead>
               </TableRow>
@@ -135,14 +135,14 @@ export default function TechniciansPage() {
                   <TableCell colSpan={5} className="text-center">Loading...</TableCell>
                 </TableRow>
               ) : (
-                technicians?.map((technician) => (
-                  <TableRow key={technician.id}>
-                    <TableCell className="font-medium">{technician.firstName}</TableCell>
-                    <TableCell>{technician.lastName}</TableCell>
-                    <TableCell>{technician.specialization}</TableCell>
+                employees?.map((employee) => (
+                  <TableRow key={employee.id}>
+                    <TableCell className="font-medium">{employee.firstName}</TableCell>
+                    <TableCell>{employee.lastName}</TableCell>
+                    <TableCell>{employee.specialization}</TableCell>
                     <TableCell>
-                      <Badge variant={technician.availability ? 'outline' : 'secondary'} className={technician.availability ? 'border-green-600/40 text-green-700' : ''}>
-                        {technician.availability ? 'Available' : 'Unavailable'}
+                      <Badge variant={employee.availability ? 'outline' : 'secondary'} className={employee.availability ? 'border-green-600/40 text-green-700' : ''}>
+                        {employee.availability ? 'Available' : 'Unavailable'}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -155,11 +155,11 @@ export default function TechniciansPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onSelect={() => openDialog('edit', technician)}>
+                          <DropdownMenuItem onSelect={() => openDialog('edit', employee)}>
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onSelect={() => openDialog('delete', technician)} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem onSelect={() => openDialog('delete', employee)} className="text-destructive focus:text-destructive">
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -177,15 +177,15 @@ export default function TechniciansPage() {
       <Dialog open={isAddOrEdit} onOpenChange={(isOpen) => !isOpen && closeDialog()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{dialogMode === 'add' ? 'Add New Technician' : 'Edit Technician'}</DialogTitle>
+            <DialogTitle>{dialogMode === 'add' ? 'Add New Employee' : 'Edit Employee'}</DialogTitle>
             <DialogDescription>
-              {dialogMode === 'add' ? 'Fill out the form to add a new technician.' : 'Update the details of the technician.'}
+              {dialogMode === 'add' ? 'Fill out the form to add a new employee.' : 'Update the details of the employee.'}
             </DialogDescription>
           </DialogHeader>
-          <TechnicianForm
+          <EmployeeForm
             onSubmit={handleFormSubmit}
             onCancel={closeDialog}
-            initialData={selectedTechnician || undefined}
+            initialData={selectedEmployee || undefined}
             mode={dialogMode || 'add'}
           />
         </DialogContent>
@@ -195,9 +195,9 @@ export default function TechniciansPage() {
       <AlertDialog open={dialogMode === 'delete'} onOpenChange={(isOpen) => !isOpen && closeDialog()}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to delete this technician?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure you want to delete this employee?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete <span className="font-medium">{selectedTechnician?.firstName} {selectedTechnician?.lastName}</span>. This action cannot be undone.
+              This will permanently delete <span className="font-medium">{selectedEmployee?.firstName} {selectedEmployee?.lastName}</span>. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

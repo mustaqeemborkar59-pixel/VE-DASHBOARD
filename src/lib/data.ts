@@ -1,10 +1,12 @@
-export type Technician = {
+export type Employee = {
   id: string;
   firstName: string;
   lastName: string;
   specialization: string;
   availability: boolean;
 };
+
+export type Technician = Employee;
 
 export type Forklift = {
   id: string;

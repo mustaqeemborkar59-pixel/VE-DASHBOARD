@@ -14,10 +14,11 @@ const forklifts = [
     { serialNumber: 'Y24680', make: 'Yale', model: 'GLC050VX', year: 2019, capacity: '5000 lbs', equipmentType: 'Pallet Jack' },
 ];
 
-const technicians = [
-    { firstName: 'John', lastName: 'Doe', specialization: 'Electrical', availability: true },
-    { firstName: 'Jane', lastName: 'Smith', specialization: 'Mechanical', availability: false },
-    { firstName: 'Mike', lastName: 'Johnson', specialization: 'Hydraulics', availability: true },
+const employees = [
+    { firstName: 'John', lastName: 'Doe', specialization: 'Electrical Technician', availability: true },
+    { firstName: 'Jane', lastName: 'Smith', specialization: 'Mechanical Technician', availability: false },
+    { firstName: 'Mike', lastName: 'Johnson', specialization: 'Hydraulics Technician', availability: true },
+    { firstName: 'Sam', lastName: 'Wilson', specialization: 'General Worker', availability: true },
 ];
 
 const seedCollection = async (collectionName, data) => {
@@ -41,7 +42,7 @@ const seedCollection = async (collectionName, data) => {
 const seedDatabase = async () => {
     console.log('Starting database seed...');
     await seedCollection('forklifts', forklifts);
-    await seedCollection('technicians', technicians);
+    await seedCollection('employees', employees);
     console.log('Database seeding finished.');
     // The script will hang, so we need to exit explicitly.
     process.exit(0);

@@ -24,7 +24,7 @@
         },
         "assignedTechnicianId": {
           "type": "string",
-          "description": "Reference to the Technician assigned to the request."
+          "description": "Reference to the Employee assigned to the request."
         }
       },
       "required": [
@@ -71,26 +71,26 @@
         "year"
       ]
     },
-    "Technician": {
-      "title": "Technician",
+    "Employee": {
+      "title": "Employee",
       "type": "object",
-      "description": "Represents a technician in the workshop.",
+      "description": "Represents an employee in the workshop.",
       "properties": {
         "firstName": {
           "type": "string",
-          "description": "First name of the technician."
+          "description": "First name of the employee."
         },
         "lastName": {
           "type": "string",
-          "description": "Last name of the technician."
+          "description": "Last name of the employee."
         },
         "specialization": {
           "type": "string",
-          "description": "Area of specialization for the technician (e.g., Electrical, Mechanical)."
+          "description": "Area of specialization or role for the employee (e.g., Electrical, Mechanical, Worker)."
         },
         "availability": {
           "type": "boolean",
-          "description": "Indicates if the technician is currently available for assignment."
+          "description": "Indicates if the employee is currently available for assignment."
         }
       },
       "required": [
@@ -119,7 +119,7 @@
         },
         "technicianNotes": {
           "type": "string",
-          "description": "Notes added by the assigned technician."
+          "description": "Notes added by the assigned employee."
         },
         "completionDate": {
           "type": "string",
@@ -212,11 +212,11 @@
       },
       "description": "Stores details for each forklift."
     },
-    "/technicians/{technicianId}": {
+    "/employees/{employeeId}": {
       "schema": {
-        "$ref": "#/entities/Technician"
+        "$ref": "#/entities/Employee"
       },
-      "description": "Stores profiles for each technician."
+      "description": "Stores profiles for each employee."
     },
     "/serviceRequests/{serviceRequestId}": {
       "schema": {

@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ServiceRequest, Technician, Forklift } from "@/lib/data";
+import { ServiceRequest, Employee, Forklift } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
@@ -17,17 +17,17 @@ export default function JobCardsPage() {
   const { firestore } = useFirebase();
 
   const jobCardsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'serviceRequests'), where('status', '!=', 'Pending')) : null, [firestore]);
-  const techniciansQuery = useMemoFirebase(() => firestore ? collection(firestore, 'technicians') : null, [firestore]);
+  const employeesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'employees') : null, [firestore]);
   const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
 
   const { data: jobCards, isLoading: isLoadingJobs } = useCollection<ServiceRequest>(jobCardsQuery);
-  const { data: technicians, isLoading: isLoadingTechs } = useCollection<Technician>(techniciansQuery);
+  const { data: employees, isLoading: isLoadingTechs } = useCollection<Employee>(employeesQuery);
   const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
 
   const getForkliftModel = (id: string) => forklifts?.find(f => f.id === id)?.model || 'Unknown';
-  const getTechnicianName = (id?: string) => {
+  const getEmployeeName = (id?: string) => {
     if (!id) return 'N/A';
-    const tech = technicians?.find(t => t.id === id);
+    const tech = employees?.find(t => t.id === id);
     return tech ? `${tech.firstName} ${tech.lastName}` : 'N/A';
   }
 
@@ -77,8 +77,8 @@ export default function JobCardsPage() {
                     <p className="text-sm text-muted-foreground">{job.issueDescription}</p>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-sm">Assigned Technician</h3>
-                    <p className="text-sm text-muted-foreground">{getTechnicianName(job.assignedTechnicianId)}</p>
+                    <h3 className="font-semibold text-sm">Assigned Employee</h3>
+                    <p className="text-sm text-muted-foreground">{getEmployeeName(job.assignedTechnicianId)}</p>
                   </div>
                 </CardContent>
                 <CardFooter>

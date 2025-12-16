@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ServiceRequest, Technician, Forklift } from "@/lib/data";
+import { ServiceRequest, Employee, Forklift } from "@/lib/data";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,11 +52,11 @@ export default function ServiceRequestsPage() {
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
 
   const serviceRequestsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'serviceRequests') : null, [firestore]);
-  const techniciansQuery = useMemoFirebase(() => firestore ? collection(firestore, 'technicians') : null, [firestore]);
+  const employeesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'employees') : null, [firestore]);
   const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
 
   const { data: serviceRequests, isLoading: isLoadingRequests } = useCollection<ServiceRequest>(serviceRequestsQuery);
-  const { data: technicians, isLoading: isLoadingTechs } = useCollection<Technician>(techniciansQuery);
+  const { data: employees, isLoading: isLoadingTechs } = useCollection<Employee>(employeesQuery);
   const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
 
   const getForkliftInfo = (id: string) => {
@@ -65,9 +65,9 @@ export default function ServiceRequestsPage() {
     return `${forklift.make} ${forklift.model}`;
   };
 
-  const getTechnicianName = (id?: string) => {
+  const getEmployeeName = (id?: string) => {
     if (!id) return 'Unassigned';
-    const tech = technicians?.find(t => t.id === id);
+    const tech = employees?.find(t => t.id === id);
     return tech ? `${tech.firstName} ${tech.lastName}` : 'Unassigned';
   }
 
@@ -162,7 +162,7 @@ export default function ServiceRequestsPage() {
                     <div className="text-sm text-muted-foreground">{forklifts?.find(f => f.id === request.forkliftId)?.serialNumber}</div>
                   </TableCell>
                   <TableCell>{getStatusBadge(request.status)}</TableCell>
-                  <TableCell>{getTechnicianName(request.assignedTechnicianId)}</TableCell>
+                  <TableCell>{getEmployeeName(request.assignedTechnicianId)}</TableCell>
                   <TableCell>{new Date(request.requestDate).toLocaleDateString()}</TableCell>
                   <TableCell>
                       <Button variant="ghost" size="icon" onClick={() => handleViewDetails(request)}>
@@ -182,9 +182,9 @@ export default function ServiceRequestsPage() {
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>Assign Technician</DropdownMenuSubTrigger>
+                          <DropdownMenuSubTrigger>Assign Employee</DropdownMenuSubTrigger>
                           <DropdownMenuSubContent>
-                            {technicians?.map(tech => (
+                            {employees?.map(tech => (
                               <DropdownMenuItem key={tech.id} onClick={() => handleAssignTechnician(request.id, tech.id)}>
                                 {tech.firstName} {tech.lastName}
                               </DropdownMenuItem>
@@ -253,7 +253,7 @@ export default function ServiceRequestsPage() {
             </div>
              <div className="grid grid-cols-[120px_1fr] items-center gap-4">
               <span className="text-sm font-medium text-muted-foreground">Assigned To</span>
-              <span className="text-sm">{getTechnicianName(selectedRequest.assignedTechnicianId)}</span>
+              <span className="text-sm">{getEmployeeName(selectedRequest.assignedTechnicianId)}</span>
             </div>
             <div className="grid grid-cols-1 items-start gap-2">
               <span className="text-sm font-medium text-muted-foreground">Reported Issue</span>
