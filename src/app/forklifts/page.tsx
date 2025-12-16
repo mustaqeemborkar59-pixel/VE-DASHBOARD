@@ -181,7 +181,7 @@ export default function ForkliftsPage() {
       </Card>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={dialogState.open} onOpenChange={(open) => !open && handleCloseDialog()}>
+      <Dialog open={dialogState.open} onOpenChange={(isOpen) => setDialogState(prev => ({...prev, open: isOpen}))}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{dialogState.mode === 'add' ? 'Add New Forklift' : 'Edit Forklift'}</DialogTitle>
