@@ -10,7 +10,6 @@ import type { Employee } from "@/lib/data";
 
 export type EmployeeFormData = {
   fullName: string;
-  email: string;
   specialization: string;
   contactNumber: string;
   workLocation: string;
@@ -28,7 +27,6 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
   const { toast } = useToast();
   const [formData, setFormData] = useState<EmployeeFormData>({
     fullName: '',
-    email: '',
     specialization: '',
     contactNumber: '',
     workLocation: '',
@@ -40,7 +38,6 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
     if (mode === 'edit' && initialData) {
       setFormData({
         fullName: initialData.fullName,
-        email: initialData.email || '',
         specialization: initialData.specialization || '',
         contactNumber: initialData.contactNumber || '',
         workLocation: initialData.workLocation || '',
@@ -49,7 +46,6 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
     } else {
         setFormData({
             fullName: '',
-            email: '',
             specialization: '',
             contactNumber: '',
             workLocation: '',
@@ -87,10 +83,6 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
         <div className="grid gap-2">
             <Label htmlFor="fullName">Full Name</Label>
             <Input id="fullName" value={formData.fullName} onChange={handleInputChange} placeholder="e.g., John Doe" required />
-        </div>
-        <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="e.g., employee@example.com" />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="grid gap-2">
