@@ -58,10 +58,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const userEmail = user?.isAnonymous ? 'Anonymous User' : (user?.email || 'Not logged in');
   const userInitial = user?.isAnonymous ? 'A' : (user?.email?.[0]?.toUpperCase() || '?');
   
-  // This is the crucial part of the fix.
-  // On the server, and on the very first client render, isClient will be false,
-  // so we will *always* render the loading screen. This guarantees no mismatch.
-  // The full layout will only render on the client after the useEffect has run and set isClient to true.
   if (!isClient || isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
