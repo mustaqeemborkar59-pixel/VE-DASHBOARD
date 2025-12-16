@@ -142,7 +142,6 @@ export default function ServiceRequestsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Forklift</TableHead>
-              <TableHead>Issue</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Assigned To</TableHead>
               <TableHead>Date</TableHead>
@@ -153,7 +152,7 @@ export default function ServiceRequestsPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={6} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : (
               serviceRequests?.map((request) => (
@@ -162,7 +161,6 @@ export default function ServiceRequestsPage() {
                     <div className="font-medium">{getForkliftInfo(request.forkliftId)}</div>
                     <div className="text-sm text-muted-foreground">{forklifts?.find(f => f.id === request.forkliftId)?.serialNumber}</div>
                   </TableCell>
-                  <TableCell className="max-w-xs truncate">{request.issueDescription}</TableCell>
                   <TableCell>{getStatusBadge(request.status)}</TableCell>
                   <TableCell>{getTechnicianName(request.assignedTechnicianId)}</TableCell>
                   <TableCell>{new Date(request.requestDate).toLocaleDateString()}</TableCell>
