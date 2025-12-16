@@ -21,6 +21,9 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ForkliftIcon } from './icons/forklift-icon';
+import { useFirebase } from '@/firebase';
+import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { useEffect } from 'react';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -32,6 +35,29 @@ const navItems = [
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { auth, user, isUserLoading } = useFirebase();
+
+  useEffect(() => {
+    if (auth && !user && !isUserLoading) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [auth, user, isUserLoading]);
+
+  const handleLogin = () => {
+    if (auth) {
+      // For this app, we will just use anonymous sign in
+      initiateAnonymousSignIn(auth);
+    }
+  };
+
+  const handleLogout = () => {
+    if (auth) {
+      auth.signOut();
+    }
+  };
+
+  const userEmail = user?.isAnonymous ? 'Anonymous User' : (user?.email || 'Not logged in');
+  const userInitial = user?.isAnonymous ? 'A' : (user?.email?.[0]?.toUpperCase() || '?');
 
   return (
     <SidebarProvider>
@@ -69,29 +95,33 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <DropdownMenuTrigger asChild>
                 <button className='flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2'>
                     <Avatar className="h-8 w-8">
-                        <AvatarImage src="https://picsum.photos/seed/admin/40/40" data-ai-hint="person face" />
-                        <AvatarFallback>AU</AvatarFallback>
+                        {user && !user.isAnonymous && user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || ''} />}
+                        <AvatarFallback>{userInitial}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col items-start overflow-hidden">
-                        <span className="truncate font-medium">Admin User</span>
-                        <span className="truncate text-xs text-muted-foreground">admin@forklift.co</span>
+                        <span className="truncate font-medium">{user?.displayName || userEmail}</span>
+                        <span className="truncate text-xs text-muted-foreground">{user?.isAnonymous ? 'Logged in anonymously' : user?.email}</span>
                     </div>
                 </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">Admin User</p>
+                  <p className="text-sm font-medium leading-none">{user?.displayName || userEmail}</p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    admin@forklift.co
+                    {user?.isAnonymous ? 'Anonymous' : user?.email}
                   </p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem><User className="mr-2 h-4 w-4"/>Profile</DropdownMenuItem>
-              <DropdownMenuItem><Settings className="mr-2 h-4 w-4"/>Settings</DropdownMenuItem>
+              <DropdownMenuItem disabled><User className="mr-2 h-4 w-4"/>Profile</DropdownMenuItem>
+              <DropdownMenuItem disabled><Settings className="mr-2 h-4 w-4"/>Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem><LogOut className="mr-2 h-4 w-4"/>Log out</DropdownMenuItem>
+              {user ? (
+                <DropdownMenuItem onClick={handleLogout}><LogOut className="mr-2 h-4 w-4"/>Log out</DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={handleLogin}><LogOut className="mr-2 h-4 w-4"/>Log in</DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarFooter>

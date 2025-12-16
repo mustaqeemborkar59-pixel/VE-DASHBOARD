@@ -1,3 +1,4 @@
+'use client';
 import {
   Card,
   CardContent,
@@ -14,10 +15,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { parts } from "@/lib/data";
+import { Part } from "@/lib/data";
 import { PlusCircle } from "lucide-react";
+import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
+import { collection } from "firebase/firestore";
 
 export default function InventoryPage() {
+  const { firestore } = useFirebase();
+
+  const partsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
+  const { data: parts, isLoading } = useCollection<Part>(partsQuery);
+
   return (
     <Card>
       <CardHeader>
@@ -43,14 +51,20 @@ export default function InventoryPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {parts.map((part) => (
-              <TableRow key={part.id}>
-                <TableCell className="font-medium">{part.sku}</TableCell>
-                <TableCell>{part.name}</TableCell>
-                <TableCell className="text-right">{part.quantity}</TableCell>
-                <TableCell className="text-right">${part.price.toFixed(2)}</TableCell>
-              </TableRow>
-            ))}
+            {isLoading ? (
+                <TableRow>
+                    <TableCell colSpan={4} className="text-center">Loading...</TableCell>
+                </TableRow>
+            ) : (
+                parts?.map((part) => (
+                <TableRow key={part.id}>
+                    <TableCell className="font-medium">{part.id}</TableCell>
+                    <TableCell>{part.name}</TableCell>
+                    <TableCell className="text-right">{part.quantity}</TableCell>
+                    <TableCell className="text-right">${part.unitPrice.toFixed(2)}</TableCell>
+                </TableRow>
+                ))
+            )}
           </TableBody>
         </Table>
       </CardContent>

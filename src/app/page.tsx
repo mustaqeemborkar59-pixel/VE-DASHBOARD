@@ -1,3 +1,4 @@
+'use client';
 import {
   Card,
   CardContent,
@@ -14,20 +15,31 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { serviceRequests, forklifts } from "@/lib/data";
+import { ServiceRequest, Forklift } from "@/lib/data";
 import { Activity, Wrench, CheckCircle, Clock } from "lucide-react";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
+import { collection, query, orderBy, limit } from "firebase/firestore";
 
 export default function Dashboard() {
-  const totalRequests = serviceRequests.length;
-  const pendingRequests = serviceRequests.filter(r => r.status === 'Pending').length;
-  const completedRequests = serviceRequests.filter(r => r.status === 'Completed').length;
-  const inProgressRequests = serviceRequests.filter(r => r.status === 'In Progress' || r.status === 'Assigned').length;
-  const recentRequests = [...serviceRequests].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+  const { firestore } = useFirebase();
 
-  const getForkliftModel = (id: string) => forklifts.find(f => f.id === id)?.model || 'Unknown';
+  const serviceRequestsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'serviceRequests'), orderBy('requestDate', 'desc')) : null, [firestore]);
+  const recentRequestsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'serviceRequests'), orderBy('requestDate', 'desc'), limit(5)) : null, [firestore]);
+  const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
   
+  const { data: serviceRequests, isLoading: isLoadingRequests } = useCollection<ServiceRequest>(serviceRequestsQuery);
+  const { data: recentRequests, isLoading: isLoadingRecent } = useCollection<ServiceRequest>(recentRequestsQuery);
+  const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
+
+  const totalRequests = serviceRequests?.length || 0;
+  const pendingRequests = serviceRequests?.filter(r => r.status === 'Pending').length || 0;
+  const completedRequests = serviceRequests?.filter(r => r.status === 'Completed').length || 0;
+  const inProgressRequests = serviceRequests?.filter(r => r.status === 'In Progress' || r.status === 'Assigned').length || 0;
+
+  const getForkliftModel = (id: string) => forklifts?.find(f => f.id === id)?.model || 'Unknown';
+
   const getStatusBadge = (status: 'Pending' | 'Assigned' | 'In Progress' | 'Completed') => {
     switch (status) {
       case 'Pending':
@@ -52,7 +64,7 @@ export default function Dashboard() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalRequests}</div>
+            <div className="text-2xl font-bold">{isLoadingRequests ? '...' : totalRequests}</div>
             <p className="text-xs text-muted-foreground">All time service requests</p>
           </CardContent>
         </Card>
@@ -62,7 +74,7 @@ export default function Dashboard() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pendingRequests}</div>
+            <div className="text-2xl font-bold">{isLoadingRequests ? '...' : pendingRequests}</div>
             <p className="text-xs text-muted-foreground">Requests awaiting assignment</p>
           </CardContent>
         </Card>
@@ -72,18 +84,18 @@ export default function Dashboard() {
             <Wrench className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{inProgressRequests}</div>
+            <div className="text-2xl font-bold">{isLoadingRequests ? '...' : inProgressRequests}</div>
             <p className="text-xs text-muted-foreground">Jobs currently being worked on</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed This Month</CardTitle>
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{completedRequests}</div>
-            <p className="text-xs text-muted-foreground">Based on mock data</p>
+            <div className="text-2xl font-bold">{isLoadingRequests ? '...' : completedRequests}</div>
+            <p className="text-xs text-muted-foreground">Completed service requests</p>
           </CardContent>
         </Card>
       </div>
@@ -113,17 +125,23 @@ export default function Dashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentRequests.map((request) => (
-                <TableRow key={request.id}>
-                  <TableCell>
-                    <div className="font-medium">{request.forkliftId}</div>
-                    <div className="text-sm text-muted-foreground">{getForkliftModel(request.forkliftId)}</div>
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate">{request.issue}</TableCell>
-                  <TableCell>{getStatusBadge(request.status)}</TableCell>
-                  <TableCell>{new Date(request.date).toLocaleDateString()}</TableCell>
+              {isLoadingRecent || isLoadingForklifts ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center">Loading...</TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                recentRequests?.map((request) => (
+                  <TableRow key={request.id}>
+                    <TableCell>
+                      <div className="font-medium">{request.forkliftId}</div>
+                      <div className="text-sm text-muted-foreground">{getForkliftModel(request.forkliftId)}</div>
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate">{request.issueDescription}</TableCell>
+                    <TableCell>{getStatusBadge(request.status)}</TableCell>
+                    <TableCell>{new Date(request.requestDate).toLocaleDateString()}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

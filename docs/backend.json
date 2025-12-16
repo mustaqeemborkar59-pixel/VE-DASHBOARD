@@ -1,18 +1,13 @@
 {
   "entities": {
     "ServiceRequest": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "ServiceRequest",
       "type": "object",
       "description": "Represents a service request for forklift maintenance.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the service request."
-        },
         "forkliftId": {
           "type": "string",
-          "description": "Reference to the Forklift. (Relationship: Forklift 1:N ServiceRequest)"
+          "description": "Reference to the Forklift."
         },
         "requestDate": {
           "type": "string",
@@ -29,11 +24,10 @@
         },
         "assignedTechnicianId": {
           "type": "string",
-          "description": "Reference to the Technician assigned to the request. (Relationship: Technician 1:N ServiceRequest)"
+          "description": "Reference to the Technician assigned to the request."
         }
       },
       "required": [
-        "id",
         "forkliftId",
         "requestDate",
         "issueDescription",
@@ -41,15 +35,10 @@
       ]
     },
     "Forklift": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Forklift",
       "type": "object",
       "description": "Represents a forklift in the workshop.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the forklift."
-        },
         "serialNumber": {
           "type": "string",
           "description": "Serial number of the forklift."
@@ -72,7 +61,6 @@
         }
       },
       "required": [
-        "id",
         "serialNumber",
         "make",
         "model",
@@ -80,15 +68,10 @@
       ]
     },
     "Technician": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Technician",
       "type": "object",
       "description": "Represents a technician in the workshop.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the technician."
-        },
         "firstName": {
           "type": "string",
           "description": "First name of the technician."
@@ -107,25 +90,19 @@
         }
       },
       "required": [
-        "id",
         "firstName",
         "lastName",
         "availability"
       ]
     },
     "JobCard": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "JobCard",
       "type": "object",
       "description": "Represents a job card for a service request.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the job card."
-        },
         "serviceRequestId": {
           "type": "string",
-          "description": "Reference to the ServiceRequest. (Relationship: ServiceRequest 1:1 JobCard)"
+          "description": "Reference to the ServiceRequest."
         },
         "creationDate": {
           "type": "string",
@@ -147,22 +124,16 @@
         }
       },
       "required": [
-        "id",
         "serviceRequestId",
         "creationDate",
         "description"
       ]
     },
     "Part": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Part",
       "type": "object",
       "description": "Represents a part in the inventory.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the part."
-        },
         "name": {
           "type": "string",
           "description": "Name of the part."
@@ -181,29 +152,23 @@
         }
       },
       "required": [
-        "id",
         "name",
         "quantity",
         "unitPrice"
       ]
     },
     "MaintenanceLog": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "MaintenanceLog",
       "type": "object",
       "description": "Represents a log of maintenance activities performed on a forklift.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the maintenance log entry."
-        },
         "forkliftId": {
           "type": "string",
-          "description": "Reference to the Forklift. (Relationship: Forklift 1:N MaintenanceLog)"
+          "description": "Reference to the Forklift."
         },
         "jobCardId": {
           "type": "string",
-          "description": "Reference to the JobCard. (Relationship: JobCard 1:N MaintenanceLog)"
+          "description": "Reference to the JobCard."
         },
         "date": {
           "type": "string",
@@ -216,14 +181,13 @@
         },
         "partsUsed": {
           "type": "array",
-          "description": "References to Parts used during the maintenance. (Relationship: Part N:N MaintenanceLog)",
+          "description": "References to Parts used during the maintenance.",
           "items": {
             "type": "string"
           }
         }
       },
       "required": [
-        "id",
         "forkliftId",
         "jobCardId",
         "date",
@@ -238,108 +202,41 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/forklifts/{forkliftId}",
-        "definition": {
-          "entityName": "Forklift",
-          "schema": {
-            "$ref": "#/backend/entities/Forklift"
-          },
-          "description": "Stores forklift details.  `forkliftId` is the unique identifier.",
-          "params": [
-            {
-              "name": "forkliftId",
-              "description": "Unique identifier for the forklift."
-            }
-          ]
-        }
+    "/forklifts/{forkliftId}": {
+      "schema": {
+        "$ref": "#/entities/Forklift"
       },
-      {
-        "path": "/technicians/{technicianId}",
-        "definition": {
-          "entityName": "Technician",
-          "schema": {
-            "$ref": "#/backend/entities/Technician"
-          },
-          "description": "Stores technician profiles. `technicianId` is the unique identifier.",
-          "params": [
-            {
-              "name": "technicianId",
-              "description": "Unique identifier for the technician."
-            }
-          ]
-        }
+      "description": "Stores details for each forklift."
+    },
+    "/technicians/{technicianId}": {
+      "schema": {
+        "$ref": "#/entities/Technician"
       },
-      {
-        "path": "/technicians/{technicianId}/serviceRequests/{serviceRequestId}",
-        "definition": {
-          "entityName": "ServiceRequest",
-          "schema": {
-            "$ref": "#/backend/entities/ServiceRequest"
-          },
-          "description": "Stores service requests assigned to a specific technician. `technicianId` identifies the technician, and `serviceRequestId` is the unique identifier for the service request.",
-          "params": [
-            {
-              "name": "technicianId",
-              "description": "Unique identifier for the technician."
-            },
-            {
-              "name": "serviceRequestId",
-              "description": "Unique identifier for the service request."
-            }
-          ]
-        }
+      "description": "Stores profiles for each technician."
+    },
+    "/serviceRequests/{serviceRequestId}": {
+      "schema": {
+        "$ref": "#/entities/ServiceRequest"
       },
-      {
-        "path": "/jobCards/{jobCardId}",
-        "definition": {
-          "entityName": "JobCard",
-          "schema": {
-            "$ref": "#/backend/entities/JobCard"
-          },
-          "description": "Stores job cards. `jobCardId` is the unique identifier.",
-          "params": [
-            {
-              "name": "jobCardId",
-              "description": "Unique identifier for the job card."
-            }
-          ]
-        }
+      "description": "Stores all service requests for the workshop."
+    },
+    "/jobCards/{jobCardId}": {
+      "schema": {
+        "$ref": "#/entities/JobCard"
       },
-      {
-        "path": "/parts/{partId}",
-        "definition": {
-          "entityName": "Part",
-          "schema": {
-            "$ref": "#/backend/entities/Part"
-          },
-          "description": "Stores parts inventory. `partId` is the unique identifier.",
-          "params": [
-            {
-              "name": "partId",
-              "description": "Unique identifier for the part."
-            }
-          ]
-        }
+      "description": "Stores job cards for service requests."
+    },
+    "/parts/{partId}": {
+      "schema": {
+        "$ref": "#/entities/Part"
       },
-      {
-        "path": "/maintenanceLogs/{maintenanceLogId}",
-        "definition": {
-          "entityName": "MaintenanceLog",
-          "schema": {
-            "$ref": "#/backend/entities/MaintenanceLog"
-          },
-          "description": "Stores maintenance logs. `maintenanceLogId` is the unique identifier.",
-          "params": [
-            {
-              "name": "maintenanceLogId",
-              "description": "Unique identifier for the maintenance log entry."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore data structure is designed to manage forklift workshop operations efficiently. It focuses on clear ownership, authorization independence, and scalable data access for entities like Service Requests, Forklifts, Technicians, Job Cards, Parts, and Maintenance Logs. The design prioritizes path-based ownership for user-related data and denormalization for authorization independence.\n\n*   **Authorization Independence:** To avoid hierarchical authorization dependencies, the design leverages path-based ownership where appropriate. For collaborative data, authorization context such as technician assignment is denormalized into the ServiceRequest documents, preventing the need for `get()` calls to parent documents during authorization checks.\n\n*   **Structural Segregation:** Each collection stores homogeneous data with consistent security needs. This simplifies security rules and ensures clarity.\n\n*   **Access Modeling:** Path-based ownership (`/technicians/{technicianId}/serviceRequests/{serviceRequestId}`) is used to manage ownership of service requests by technicians, simplifying security rules and enhancing scalability. The `technicians` collection uses document existence for global roles.\n\n*   **QAPs Support:** The design supports secure `list` operations by ensuring all documents in a collection share the same security requirements and using path-based ownership for filtering data. The `/technicians/{technicianId}/serviceRequests` subcollection makes it easy and secure to list service requests assigned to a specific technician."
+      "description": "Stores inventory of parts."
+    },
+    "/maintenanceLogs/{maintenanceLogId}": {
+      "schema": {
+        "$ref": "#/entities/MaintenanceLog"
+      },
+      "description": "Stores maintenance logs for forklifts."
+    }
   }
 }

@@ -1,3 +1,4 @@
+'use client';
 import {
   Card,
   CardContent,
@@ -15,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { serviceRequests, technicians, forklifts } from "@/lib/data";
+import { ServiceRequest, Technician, Forklift } from "@/lib/data";
 import Link from 'next/link';
 import {
   DropdownMenu,
@@ -29,10 +30,38 @@ import {
   DropdownMenuSubContent
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { useCollection, useFirebase, updateDocumentNonBlocking, useMemoFirebase } from "@/firebase";
+import { collection, doc } from "firebase/firestore";
 
 export default function ServiceRequestsPage() {
-  const getForkliftModel = (id: string) => forklifts.find(f => f.id === id)?.model || 'Unknown';
-  const getTechnicianName = (id?: string) => technicians.find(t => t.id === id)?.name || 'Unassigned';
+  const { firestore } = useFirebase();
+
+  const serviceRequestsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'serviceRequests') : null, [firestore]);
+  const techniciansQuery = useMemoFirebase(() => firestore ? collection(firestore, 'technicians') : null, [firestore]);
+  const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
+
+  const { data: serviceRequests, isLoading: isLoadingRequests } = useCollection<ServiceRequest>(serviceRequestsQuery);
+  const { data: technicians, isLoading: isLoadingTechs } = useCollection<Technician>(techniciansQuery);
+  const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
+
+  const getForkliftModel = (id: string) => forklifts?.find(f => f.id === id)?.model || 'Unknown';
+  const getTechnicianName = (id?: string) => {
+    if (!id) return 'Unassigned';
+    const tech = technicians?.find(t => t.id === id);
+    return tech ? `${tech.firstName} ${tech.lastName}` : 'Unassigned';
+  }
+
+  const handleUpdateStatus = (requestId: string, status: ServiceRequest['status']) => {
+    if (!firestore) return;
+    const requestRef = doc(firestore, 'serviceRequests', requestId);
+    updateDocumentNonBlocking(requestRef, { status });
+  }
+
+  const handleAssignTechnician = (requestId: string, technicianId: string) => {
+    if (!firestore) return;
+    const requestRef = doc(firestore, 'serviceRequests', requestId);
+    updateDocumentNonBlocking(requestRef, { assignedTechnicianId: technicianId, status: 'Assigned' });
+  }
 
   const getStatusBadge = (status: 'Pending' | 'Assigned' | 'In Progress' | 'Completed') => {
     switch (status) {
@@ -48,6 +77,8 @@ export default function ServiceRequestsPage() {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  const isLoading = isLoadingRequests || isLoadingTechs || isLoadingForklifts;
 
   return (
     <Card>
@@ -78,51 +109,57 @@ export default function ServiceRequestsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {serviceRequests.map((request) => (
-              <TableRow key={request.id}>
-                <TableCell>
-                  <div className="font-medium">{request.forkliftId}</div>
-                  <div className="text-sm text-muted-foreground">{getForkliftModel(request.forkliftId)}</div>
-                </TableCell>
-                <TableCell className="max-w-sm truncate">{request.issue}</TableCell>
-                <TableCell>{getStatusBadge(request.status)}</TableCell>
-                <TableCell>{getTechnicianName(request.technicianId)}</TableCell>
-                <TableCell>{new Date(request.date).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>View Details</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuSub>
-                        <DropdownMenuSubTrigger>Assign Technician</DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent>
-                          {technicians.map(tech => (
-                            <DropdownMenuItem key={tech.id}>
-                              {tech.name}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuSubContent>
-                      </DropdownMenuSub>
-                      <DropdownMenuSub>
-                        <DropdownMenuSubTrigger>Update Status</DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent>
-                            <DropdownMenuItem>Pending</DropdownMenuItem>
-                            <DropdownMenuItem>In Progress</DropdownMenuItem>
-                            <DropdownMenuItem>Completed</DropdownMenuItem>
-                        </DropdownMenuSubContent>
-                      </DropdownMenuSub>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center">Loading...</TableCell>
               </TableRow>
-            ))}
+            ) : (
+              serviceRequests?.map((request) => (
+                <TableRow key={request.id}>
+                  <TableCell>
+                    <div className="font-medium">{request.forkliftId}</div>
+                    <div className="text-sm text-muted-foreground">{getForkliftModel(request.forkliftId)}</div>
+                  </TableCell>
+                  <TableCell className="max-w-sm truncate">{request.issueDescription}</TableCell>
+                  <TableCell>{getStatusBadge(request.status)}</TableCell>
+                  <TableCell>{getTechnicianName(request.assignedTechnicianId)}</TableCell>
+                  <TableCell>{new Date(request.requestDate).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem>View Details</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>Assign Technician</DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            {technicians?.map(tech => (
+                              <DropdownMenuItem key={tech.id} onClick={() => handleAssignTechnician(request.id, tech.id)}>
+                                {tech.firstName} {tech.lastName}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>Update Status</DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                              <DropdownMenuItem onClick={() => handleUpdateStatus(request.id, 'Pending')}>Pending</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateStatus(request.id, 'In Progress')}>In Progress</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateStatus(request.id, 'Completed')}>Completed</DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </CardContent>
