@@ -34,14 +34,14 @@ const navItems = [
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
   const { auth, user, isUserLoading } = useFirebase();
   const [isClient, setIsClient] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
-
+  
   useEffect(() => {
     // Initiate sign-in only on the client and if needed
     if (isClient && auth && !user && !isUserLoading) {
@@ -118,6 +118,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{user?.displayName || userEmail}</p>
+
                   <p className="text-xs leading-none text-muted-foreground">
                     {user?.isAnonymous ? 'Anonymous' : user?.email}
                   </p>
