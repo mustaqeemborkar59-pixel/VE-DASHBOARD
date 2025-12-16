@@ -28,6 +28,7 @@ const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/service-requests', label: 'Service Requests', icon: Wrench },
   { href: '/job-cards', label: 'Job Cards', icon: ClipboardList },
+  { href: '/forklifts', label: 'Forklifts', icon: ForkliftIcon },
   { href: '/inventory', label: 'Inventory', icon: Warehouse },
   { href: '/reports', label: 'Reports', icon: BarChart },
 ];
@@ -57,7 +58,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const userEmail = user?.isAnonymous ? 'Anonymous User' : (user?.email || 'Not logged in');
   const userInitial = user?.isAnonymous ? 'A' : (user?.email?.[0]?.toUpperCase() || '?');
   
-  if (!isMounted || isUserLoading || !user) {
+  if (!isMounted) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -67,6 +68,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </div>
     );
   }
+
 
   return (
     <SidebarProvider>
