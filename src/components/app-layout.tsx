@@ -28,7 +28,7 @@ import { ThemeToggle } from './theme-toggle';
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/service-requests', label: 'Service Requests', icon: Wrench },
-  { href: '/technicians', label: 'Technicians', icon: User },
+  { href: '/employees', label: 'Employees', icon: User },
   { href: '/forklifts', label: 'Forklifts', icon: ForkliftIcon },
   { href: '/inventory', label: 'Inventory', icon: Warehouse },
   { href: '/reports', label: 'Reports', icon: BarChart },
