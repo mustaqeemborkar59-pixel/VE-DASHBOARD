@@ -5,6 +5,7 @@ export type Employee = {
   contactNumber: string;
   workLocation: string;
   availability: boolean;
+  createdAt?: string;
 };
 
 export type Technician = Employee;

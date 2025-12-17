@@ -95,6 +95,11 @@
         "availability": {
           "type": "boolean",
           "description": "Indicates if the employee is currently available for assignment."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the employee was added."
         }
       },
       "required": [

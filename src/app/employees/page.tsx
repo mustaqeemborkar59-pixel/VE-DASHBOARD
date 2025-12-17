@@ -43,7 +43,7 @@ import { Button } from "@/components/ui/button";
 import { Employee } from "@/lib/data";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase, deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
-import { collection, doc } from "firebase/firestore";
+import { collection, doc, query, orderBy } from "firebase/firestore";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { EmployeeForm, EmployeeFormData } from "@/components/employee-form";
@@ -58,7 +58,7 @@ export default function EmployeesPage() {
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-  const employeesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'employees') : null, [firestore]);
+  const employeesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'employees'), orderBy('createdAt', 'asc')) : null, [firestore]);
   const { data: employees, isLoading } = useCollection<Employee>(employeesQuery);
 
   const handleDelete = () => {
@@ -90,7 +90,10 @@ export default function EmployeesPage() {
     
     if (dialogMode === 'add') {
       const employeesCollection = collection(firestore, 'employees');
-      addDocumentNonBlocking(employeesCollection, formData);
+      addDocumentNonBlocking(employeesCollection, {
+        ...formData,
+        createdAt: new Date().toISOString(),
+      });
       toast({ title: "Success", description: "Employee added successfully." });
     } else if (dialogMode === 'edit' && selectedEmployee) {
       const employeeDocRef = doc(firestore, 'employees', selectedEmployee.id);
