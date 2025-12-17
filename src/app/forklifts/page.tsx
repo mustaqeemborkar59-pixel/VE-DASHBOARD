@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Forklift } from "@/lib/data";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useState, useMemo } from "react";
@@ -56,6 +56,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 type DialogMode = 'add' | 'edit' | 'delete' | null;
 
@@ -68,6 +69,7 @@ export default function ForkliftsPage() {
 
   const [equipmentTypeFilter, setEquipmentTypeFilter] = useState('All');
   const [capacityFilter, setCapacityFilter] = useState('All');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
   const { data: forklifts, isLoading } = useCollection<Forklift>(forkliftsQuery);
@@ -86,12 +88,17 @@ export default function ForkliftsPage() {
 
 
   const filteredForklifts = useMemo(() => {
+    const lowercasedSearchTerm = searchTerm.toLowerCase();
     return forklifts?.filter(forklift => {
       const typeMatch = equipmentTypeFilter === 'All' ? true : forklift.equipmentType === equipmentTypeFilter;
       const capacityMatch = capacityFilter === 'All' ? true : forklift.capacity === capacityFilter;
-      return typeMatch && capacityMatch;
+      const searchMatch = searchTerm === '' ? true : (
+        forklift.serialNumber.toLowerCase().includes(lowercasedSearchTerm) ||
+        forklift.make.toLowerCase().includes(lowercasedSearchTerm)
+      );
+      return typeMatch && capacityMatch && searchMatch;
     });
-  }, [forklifts, equipmentTypeFilter, capacityFilter]);
+  }, [forklifts, equipmentTypeFilter, capacityFilter, searchTerm]);
 
 
   const handleDelete = () => {
@@ -156,27 +163,39 @@ export default function ForkliftsPage() {
               Add Forklift
             </Button>
           </div>
-          <div className="mt-4 flex items-center gap-4">
-              <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {equipmentTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={capacityFilter} onValueChange={setCapacityFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by Capacity" />
-                </SelectTrigger>
-                <SelectContent>
-                  {capacities.map(capacity => (
-                    <SelectItem key={capacity} value={capacity}>{capacity}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="mt-4 flex flex-col md:flex-row items-center gap-4">
+              <div className="relative w-full md:w-auto">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search by Serial No. or Make..."
+                  className="pl-8 sm:w-[300px] w-full"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="flex w-full md:w-auto items-center gap-4">
+                <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
+                  <SelectTrigger className="w-full md:w-[180px]">
+                    <SelectValue placeholder="Filter by Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {equipmentTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={capacityFilter} onValueChange={setCapacityFilter}>
+                  <SelectTrigger className="w-full md:w-[180px]">
+                    <SelectValue placeholder="Filter by Capacity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {capacities.map(capacity => (
+                      <SelectItem key={capacity} value={capacity}>{capacity}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -197,8 +216,8 @@ export default function ForkliftsPage() {
                 <TableRow>
                   <TableCell colSpan={7} className="text-center">Loading...</TableCell>
                 </TableRow>
-              ) : (
-                filteredForklifts?.map((forklift) => (
+              ) : filteredForklifts && filteredForklifts.length > 0 ? (
+                filteredForklifts.map((forklift) => (
                   <TableRow key={forklift.id}>
                     <TableCell className="font-medium">{forklift.serialNumber}</TableCell>
                     <TableCell>{forklift.make}</TableCell>
@@ -228,6 +247,12 @@ export default function ForkliftsPage() {
                     </TableCell>
                   </TableRow>
                 ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center h-24">
+                    No forklifts found.
+                  </TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>
