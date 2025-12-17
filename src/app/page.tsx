@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, limit } from "firebase/firestore";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const { firestore } = useFirebase();
@@ -54,6 +55,8 @@ export default function Dashboard() {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+  
+  const cardClassName = "border-0 bg-gradient-to-br from-card to-card/60 shadow-lg text-card-foreground";
 
   return (
     <div className="flex flex-col gap-6">
@@ -64,7 +67,7 @@ export default function Dashboard() {
           </div>
         </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className={cn(cardClassName, "dark:from-blue-900/80 dark:to-blue-900/30 dark:shadow-blue-500/10")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
             <Activity className="h-5 w-5 text-muted-foreground" />
@@ -74,7 +77,7 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground">All time service requests</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={cn(cardClassName, "dark:from-amber-800/80 dark:to-amber-800/30 dark:shadow-amber-500/10")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending</CardTitle>
             <Clock className="h-5 w-5 text-muted-foreground" />
@@ -84,7 +87,7 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground">Requests awaiting assignment</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={cn(cardClassName, "dark:from-purple-900/80 dark:to-purple-900/30 dark:shadow-purple-500/10")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">In Progress</CardTitle>
             <Wrench className="h-5 w-5 text-muted-foreground" />
@@ -94,7 +97,7 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground">Jobs currently being worked on</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={cn(cardClassName, "dark:from-emerald-900/80 dark:to-emerald-900/30 dark:shadow-emerald-500/10")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
             <CheckCircle className="h-5 w-5 text-muted-foreground" />
