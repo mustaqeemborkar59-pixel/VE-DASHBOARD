@@ -21,8 +21,10 @@ import { Badge } from "@/components/ui/badge";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
 import { Wrench, User, Calendar, MessageSquare } from "lucide-react";
-import { useState } from "react";
-import { ForkliftIcon } from "@/components/icons/forklift-icon";
+import { useState, useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+type StatusColumn = 'Assigned' | 'In Progress' | 'Completed';
 
 export default function JobCardsPage() {
   const { firestore } = useFirebase();
@@ -72,71 +74,109 @@ export default function JobCardsPage() {
 
   const isLoading = isLoadingJobs || isLoadingTechs || isLoadingForklifts;
 
+  const jobColumns = useMemo(() => {
+    const columns: Record<StatusColumn, ServiceRequest[]> = {
+      'Assigned': [],
+      'In Progress': [],
+      'Completed': []
+    };
+
+    jobCards?.forEach(job => {
+      if (job.status === 'Assigned' || job.status === 'In Progress' || job.status === 'Completed') {
+        columns[job.status].push(job);
+      }
+    });
+
+    return columns;
+  }, [jobCards]);
+
+  const columnTitles: Record<StatusColumn, string> = {
+    'Assigned': 'Assigned',
+    'In Progress': 'In Progress',
+    'Completed': 'Completed'
+  };
+
   return (
     <>
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col h-full gap-6">
        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Job Cards</h1>
-            <p className="text-muted-foreground">Manage all active and completed service requests.</p>
+            <h1 className="text-3xl font-bold tracking-tight">Job Board</h1>
+            <p className="text-muted-foreground">Track all service requests from assignment to completion.</p>
           </div>
         </div>
-        {isLoading ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {[...Array(3)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardHeader><div className="h-6 w-3/4 bg-muted rounded"></div><div className="h-4 w-1/2 bg-muted rounded mt-2"></div></CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="h-4 w-full bg-muted rounded"></div>
-                    <div className="h-4 w-2/3 bg-muted rounded"></div>
-                    <div className="h-4 w-1/2 bg-muted rounded"></div>
-                  </CardContent>
-                  <CardFooter><div className="h-10 w-full bg-muted rounded"></div></CardFooter>
-                </Card>
-              ))}
-            </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {jobCards?.map((job) => {
-              const forklift = getForkliftInfo(job.forkliftId);
-              return (
-              <Card key={job.id} className="flex flex-col hover:shadow-md transition-shadow duration-300">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div className="flex flex-col gap-1">
-                        <CardTitle className="text-lg">Job: {forklift.info}</CardTitle>
-                        <CardDescription>S/N: {forklift.serial}</CardDescription>
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            {isLoading ? (
+                Object.keys(columnTitles).map(status => (
+                    <div key={status} className="flex flex-col gap-4">
+                        <div className="flex items-center gap-2">
+                           <Skeleton className="h-6 w-32 rounded-md" />
+                           <Skeleton className="h-6 w-6 rounded-full" />
+                        </div>
+                        <div className="flex flex-col gap-4 rounded-lg bg-card border p-4">
+                            <Skeleton className="h-40 w-full rounded-lg" />
+                            <Skeleton className="h-40 w-full rounded-lg" />
+                        </div>
                     </div>
-                    {getStatusBadge(job.status)}
-                  </div>
-                </CardHeader>
-                <CardContent className="grid gap-4 flex-grow">
-                  <div className="flex items-start gap-3">
-                    <MessageSquare className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                    <div className="flex flex-col">
-                        <h3 className="font-semibold text-sm">Reported Issue</h3>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{job.issueDescription}</p>
+                ))
+            ) : (
+                (Object.keys(jobColumns) as StatusColumn[]).map(status => (
+                    <div key={status} className="flex flex-col gap-4">
+                        <div className="flex items-center gap-2 px-2">
+                            <h2 className="text-lg font-semibold tracking-tight">{columnTitles[status]}</h2>
+                            <Badge variant="secondary" className="rounded-full">{jobColumns[status].length}</Badge>
+                        </div>
+                        <div className="flex flex-col gap-4 rounded-lg bg-card border p-4 h-full min-h-[200px]">
+                            {jobColumns[status].length > 0 ? (
+                                jobColumns[status].map(job => {
+                                    const forklift = getForkliftInfo(job.forkliftId);
+                                    return (
+                                        <Card key={job.id} className="flex flex-col hover:shadow-md transition-shadow duration-300">
+                                            <CardHeader>
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex flex-col gap-1">
+                                                    <CardTitle className="text-lg">Job: {forklift.info}</CardTitle>
+                                                    <CardDescription>S/N: {forklift.serial}</CardDescription>
+                                                </div>
+                                                {getStatusBadge(job.status)}
+                                            </div>
+                                            </CardHeader>
+                                            <CardContent className="grid gap-4 flex-grow">
+                                                <div className="flex items-start gap-3">
+                                                    <MessageSquare className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                                                    <div className="flex flex-col">
+                                                        <h3 className="font-semibold text-sm">Reported Issue</h3>
+                                                        <p className="text-sm text-muted-foreground line-clamp-2">{job.issueDescription}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <User className="h-5 w-5 text-muted-foreground" />
+                                                    <p className="text-sm text-muted-foreground"><span className="font-semibold text-card-foreground">Assigned:</span> {getEmployeeName(job.assignedTechnicianId)}</p>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                                                    <p className="text-sm text-muted-foreground"><span className="font-semibold text-card-foreground">Date:</span> {new Date(job.requestDate).toLocaleDateString()}</p>
+                                                </div>
+                                            </CardContent>
+                                            <CardFooter>
+                                            <Button variant="outline" className="w-full" onClick={() => handleViewDetails(job)}>
+                                                <Wrench className="mr-2 h-4 w-4" />
+                                                View Details
+                                            </Button>
+                                            </CardFooter>
+                                        </Card>
+                                    )
+                                })
+                            ) : (
+                                <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                                    No jobs in this stage.
+                                </div>
+                            )}
+                        </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <User className="h-5 w-5 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground"><span className="font-semibold text-card-foreground">Assigned:</span> {getEmployeeName(job.assignedTechnicianId)}</p>
-                  </div>
-                   <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground"><span className="font-semibold text-card-foreground">Date:</span> {new Date(job.requestDate).toLocaleDateString()}</p>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full" onClick={() => handleViewDetails(job)}>
-                    <Wrench className="mr-2 h-4 w-4" />
-                    View Details
-                  </Button>
-                </CardFooter>
-              </Card>
-            )})}
-          </div>
-        )}
+                ))
+            )}
+        </div>
     </div>
 
     {/* View Details Dialog */}
