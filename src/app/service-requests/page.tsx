@@ -74,12 +74,14 @@ export default function ServiceRequestsPage() {
 
   const handleUpdateStatus = (requestId: string, status: ServiceRequest['status']) => {
     if (!firestore) return;
+    setIsDropdownOpen(null); // Close dropdown
     const requestRef = doc(firestore, 'serviceRequests', requestId);
     updateDocumentNonBlocking(requestRef, { status });
   }
 
   const handleAssignTechnician = (requestId: string, technicianId: string) => {
     if (!firestore) return;
+    setIsDropdownOpen(null); // Close dropdown
     const requestRef = doc(firestore, 'serviceRequests', requestId);
     updateDocumentNonBlocking(requestRef, { assignedTechnicianId: technicianId, status: 'Assigned' });
   }
@@ -102,6 +104,7 @@ export default function ServiceRequestsPage() {
   };
   
   const handleViewDetails = (request: ServiceRequest) => {
+    setIsDropdownOpen(null);
     setSelectedRequest(request);
     setIsDetailDialogOpen(true);
   }
@@ -122,10 +125,6 @@ export default function ServiceRequestsPage() {
   };
 
   const isLoading = isLoadingRequests || isLoadingTechs || isLoadingForklifts;
-
-  const handleOpenDropdown = (requestId: string, open: boolean) => {
-    setIsDropdownOpen(open ? requestId : null);
-  }
 
   return (
     <>
@@ -176,7 +175,7 @@ export default function ServiceRequestsPage() {
                       </Button>
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu open={isDropdownOpen === request.id} onOpenChange={(open) => handleOpenDropdown(request.id, open)}>
+                    <DropdownMenu open={isDropdownOpen === request.id} onOpenChange={(open) => setIsDropdownOpen(open ? request.id : null)}>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
                           <span className="sr-only">Open menu</span>

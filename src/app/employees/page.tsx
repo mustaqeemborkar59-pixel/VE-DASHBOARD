@@ -62,6 +62,18 @@ export default function EmployeesPage() {
   const employeesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'employees'), orderBy('createdAt', 'asc')) : null, [firestore]);
   const { data: employees, isLoading } = useCollection<Employee>(employeesQuery);
 
+  const openAddEditDialog = (employee: Employee | null) => {
+    setIsDropdownOpen(null);
+    setSelectedEmployee(employee);
+    setIsAddEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (employee: Employee) => {
+    setIsDropdownOpen(null);
+    setSelectedEmployee(employee);
+    setIsDeleteDialogOpen(true);
+  };
+
   const handleDelete = () => {
     if (!firestore || !selectedEmployee) return;
     
@@ -97,10 +109,6 @@ export default function EmployeesPage() {
     setSelectedEmployee(null);
   };
 
-  const handleOpenDropdown = (employeeId: string, open: boolean) => {
-    setIsDropdownOpen(open ? employeeId : null);
-  }
-
   return (
     <>
       <Card>
@@ -110,7 +118,7 @@ export default function EmployeesPage() {
               <CardTitle>Employees</CardTitle>
               <CardDescription>Manage your workshop employees.</CardDescription>
             </div>
-            <Button onClick={() => { setSelectedEmployee(null); setIsAddEditDialogOpen(true); }} size="sm">
+            <Button onClick={() => openAddEditDialog(null)} size="sm">
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Employee
             </Button>
@@ -146,7 +154,7 @@ export default function EmployeesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                       <DropdownMenu open={isDropdownOpen === employee.id} onOpenChange={(open) => handleOpenDropdown(employee.id, open)}>
+                       <DropdownMenu open={isDropdownOpen === employee.id} onOpenChange={(open) => setIsDropdownOpen(open ? employee.id : null)}>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>
@@ -155,11 +163,11 @@ export default function EmployeesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onSelect={() => { setSelectedEmployee(employee); setIsAddEditDialogOpen(true); }}>
+                          <DropdownMenuItem onSelect={() => openAddEditDialog(employee)}>
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onSelect={() => { setSelectedEmployee(employee); setIsDeleteDialogOpen(true); }} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem onSelect={() => openDeleteDialog(employee)} className="text-destructive focus:text-destructive">
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>

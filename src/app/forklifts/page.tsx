@@ -74,6 +74,18 @@ export default function ForkliftsPage() {
   const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
   const { data: forklifts, isLoading } = useCollection<Forklift>(forkliftsQuery);
 
+  const openAddEditDialog = (forklift: Forklift | null) => {
+    setIsDropdownOpen(null);
+    setSelectedForklift(forklift);
+    setIsAddEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (forklift: Forklift) => {
+    setIsDropdownOpen(null);
+    setSelectedForklift(forklift);
+    setIsDeleteDialogOpen(true);
+  };
+
   const equipmentTypes = useMemo(() => {
     if (!forklifts) return [];
     const types = new Set(forklifts.map(f => f.equipmentType).filter(Boolean));
@@ -138,10 +150,6 @@ export default function ForkliftsPage() {
     setSelectedForklift(null);
   };
   
-  const handleOpenDropdown = (forkliftId: string, open: boolean) => {
-    setIsDropdownOpen(open ? forkliftId : null);
-  }
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -149,7 +157,7 @@ export default function ForkliftsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Forklift Fleet</h1>
           <p className="text-muted-foreground">Search, filter, and manage your fleet of forklifts.</p>
         </div>
-        <Button onClick={() => { setSelectedForklift(null); setIsAddEditDialogOpen(true); }} size="sm">
+        <Button onClick={() => openAddEditDialog(null)} size="sm">
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Forklift
         </Button>
@@ -226,7 +234,7 @@ export default function ForkliftsPage() {
                     <TableCell>{forklift.year}</TableCell>
                     <TableCell>{forklift.capacity}</TableCell>
                     <TableCell>
-                       <DropdownMenu open={isDropdownOpen === forklift.id} onOpenChange={(open) => handleOpenDropdown(forklift.id, open)}>
+                       <DropdownMenu open={isDropdownOpen === forklift.id} onOpenChange={(open) => setIsDropdownOpen(open ? forklift.id : null)}>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>
@@ -235,11 +243,11 @@ export default function ForkliftsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onSelect={() => { setSelectedForklift(forklift); setIsAddEditDialogOpen(true); }}>
+                          <DropdownMenuItem onSelect={() => openAddEditDialog(forklift)}>
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onSelect={() => { setSelectedForklift(forklift); setIsDeleteDialogOpen(true); }} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem onSelect={() => openDeleteDialog(forklift)} className="text-destructive focus:text-destructive">
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
