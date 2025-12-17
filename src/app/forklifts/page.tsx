@@ -57,6 +57,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type DialogMode = 'add' | 'edit' | 'delete' | null;
 
@@ -175,27 +176,33 @@ export default function ForkliftsPage() {
                   onChange={e => setSearchTerm(e.target.value)}
                 />
               </div>
-              <div className="flex w-full md:w-auto items-center gap-4">
-                <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
-                  <SelectTrigger className="w-full md:w-[180px]">
-                    <SelectValue placeholder="Filter by Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {equipmentTypes.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={capacityFilter} onValueChange={setCapacityFilter}>
-                  <SelectTrigger className="w-full md:w-[180px]">
-                    <SelectValue placeholder="Filter by Capacity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {capacities.map(capacity => (
-                      <SelectItem key={capacity} value={capacity}>{capacity}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex w-full md:w-auto items-end gap-4">
+                <div className="grid w-full md:w-[180px] gap-1.5">
+                  <Label htmlFor="type-filter">Type</Label>
+                  <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
+                    <SelectTrigger id="type-filter">
+                      <SelectValue placeholder="Filter by Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {equipmentTypes.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid w-full md:w-[180px] gap-1.5">
+                  <Label htmlFor="capacity-filter">Capacity</Label>
+                  <Select value={capacityFilter} onValueChange={setCapacityFilter}>
+                    <SelectTrigger id="capacity-filter">
+                      <SelectValue placeholder="Filter by Capacity" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {capacities.map(capacity => (
+                        <SelectItem key={capacity} value={capacity}>{capacity}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
           </div>
         </CardHeader>
