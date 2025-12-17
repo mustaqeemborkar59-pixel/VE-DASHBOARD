@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Card,
@@ -42,12 +43,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Forklift } from "@/lib/data";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
-import { useCollection, useFirebase, useMemoFirebase, deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
+import { collection, doc } from "firebase/firestore";
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ForkliftForm, ForkliftFormData } from "@/components/forklift-form";
-import { Input } from "@/components/ui/input";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type DialogMode = 'add' | 'edit' | 'delete' | null;
 
@@ -58,16 +66,29 @@ export default function ForkliftsPage() {
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [selectedForklift, setSelectedForklift] = useState<Forklift | null>(null);
 
-  const [equipmentTypeFilter, setEquipmentTypeFilter] = useState('');
-  const [capacityFilter, setCapacityFilter] = useState('');
+  const [equipmentTypeFilter, setEquipmentTypeFilter] = useState('All');
+  const [capacityFilter, setCapacityFilter] = useState('All');
 
   const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
   const { data: forklifts, isLoading } = useCollection<Forklift>(forkliftsQuery);
 
+  const equipmentTypes = useMemo(() => {
+    if (!forklifts) return [];
+    const types = new Set(forklifts.map(f => f.equipmentType).filter(Boolean));
+    return ['All', ...Array.from(types)];
+  }, [forklifts]);
+
+  const capacities = useMemo(() => {
+    if (!forklifts) return [];
+    const caps = new Set(forklifts.map(f => f.capacity).filter(Boolean));
+    return ['All', ...Array.from(caps)];
+  }, [forklifts]);
+
+
   const filteredForklifts = useMemo(() => {
     return forklifts?.filter(forklift => {
-      const typeMatch = equipmentTypeFilter ? forklift.equipmentType?.toLowerCase().includes(equipmentTypeFilter.toLowerCase()) : true;
-      const capacityMatch = capacityFilter ? forklift.capacity?.toLowerCase().includes(capacityFilter.toLowerCase()) : true;
+      const typeMatch = equipmentTypeFilter === 'All' ? true : forklift.equipmentType === equipmentTypeFilter;
+      const capacityMatch = capacityFilter === 'All' ? true : forklift.capacity === capacityFilter;
       return typeMatch && capacityMatch;
     });
   }, [forklifts, equipmentTypeFilter, capacityFilter]);
@@ -136,18 +157,26 @@ export default function ForkliftsPage() {
             </Button>
           </div>
           <div className="mt-4 flex items-center gap-4">
-              <Input
-                placeholder="Filter by Equipment Type..."
-                value={equipmentTypeFilter}
-                onChange={(e) => setEquipmentTypeFilter(e.target.value)}
-                className="max-w-sm"
-              />
-              <Input
-                placeholder="Filter by Capacity..."
-                value={capacityFilter}
-                onChange={(e) => setCapacityFilter(e.target.value)}
-                className="max-w-sm"
-              />
+              <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {equipmentTypes.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={capacityFilter} onValueChange={setCapacityFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by Capacity" />
+                </SelectTrigger>
+                <SelectContent>
+                  {capacities.map(capacity => (
+                    <SelectItem key={capacity} value={capacity}>{capacity}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
           </div>
         </CardHeader>
         <CardContent>
