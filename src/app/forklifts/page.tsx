@@ -150,26 +150,27 @@ export default function ForkliftsPage() {
   const isAddOrEdit = dialogMode === 'add' || dialogMode === 'edit';
 
   return (
-    <>
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Forklift Fleet</h1>
+          <p className="text-muted-foreground">Search, filter, and manage your fleet of forklifts.</p>
+        </div>
+        <Button onClick={() => openDialog('add')} size="sm">
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Forklift
+        </Button>
+      </div>
+      
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Forklifts</CardTitle>
-              <CardDescription>Manage your fleet of forklifts.</CardDescription>
-            </div>
-            <Button onClick={() => openDialog('add')} size="sm">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Forklift
-            </Button>
-          </div>
-          <div className="mt-4 flex flex-col md:flex-row items-center gap-4">
-              <div className="relative w-full md:w-auto">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+              <div className="relative w-full flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
                   placeholder="Search by Serial No. or Make..."
-                  className="pl-8 sm:w-[300px] w-full"
+                  className="pl-8 w-full md:w-[300px]"
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                 />
@@ -214,7 +215,7 @@ export default function ForkliftsPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center">Loading...</TableCell>
+                  <TableCell colSpan={7} className="text-center h-24">Loading fleet...</TableCell>
                 </TableRow>
               ) : filteredForklifts && filteredForklifts.length > 0 ? (
                 filteredForklifts.map((forklift) => (
@@ -292,6 +293,6 @@ export default function ForkliftsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }
