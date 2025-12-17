@@ -107,7 +107,7 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
           Cancel
         </Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (mode === 'add' ? 'Adding...' : 'Updating...') : (mode === 'add' ? 'Add Employee' : 'Update Employee')}
+          {isSubmitting ? (mode === 'add' ? 'Adding...' : 'Updating...') : (mode === 'add' ? 'Add Technician' : 'Update Technician')}
         </Button>
       </div>
     </form>

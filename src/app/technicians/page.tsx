@@ -68,8 +68,8 @@ export default function EmployeesPage() {
     deleteDocumentNonBlocking(employeeDocRef);
 
     toast({
-      title: "Employee Deleted",
-      description: `Employee ${selectedEmployee.fullName} has been removed.`,
+      title: "Technician Deleted",
+      description: `Technician ${selectedEmployee.fullName} has been removed.`,
     });
 
     closeDialog();
@@ -91,11 +91,11 @@ export default function EmployeesPage() {
     if (dialogMode === 'add') {
       const employeesCollection = collection(firestore, 'employees');
       addDocumentNonBlocking(employeesCollection, formData);
-      toast({ title: "Success", description: "Employee added successfully." });
+      toast({ title: "Success", description: "Technician added successfully." });
     } else if (dialogMode === 'edit' && selectedEmployee) {
       const employeeDocRef = doc(firestore, 'employees', selectedEmployee.id);
       updateDocumentNonBlocking(employeeDocRef, formData);
-      toast({ title: "Success", description: "Employee updated successfully." });
+      toast({ title: "Success", description: "Technician updated successfully." });
     }
 
     closeDialog();
@@ -109,12 +109,12 @@ export default function EmployeesPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Employees</CardTitle>
-              <CardDescription>Manage your workshop employees.</CardDescription>
+              <CardTitle>Technicians</CardTitle>
+              <CardDescription>Manage your workshop technicians.</CardDescription>
             </div>
             <Button onClick={() => openDialog('add')} size="sm">
               <PlusCircle className="mr-2 h-4 w-4" />
-              Add Employee
+              Add Technician
             </Button>
           </div>
         </CardHeader>
@@ -125,6 +125,7 @@ export default function EmployeesPage() {
                 <TableHead>Full Name</TableHead>
                 <TableHead>Role/Specialization</TableHead>
                 <TableHead>Contact Number</TableHead>
+                <TableHead>Work Location</TableHead>
                 <TableHead>Availability</TableHead>
                 <TableHead><span className="sr-only">Actions</span></TableHead>
               </TableRow>
@@ -132,7 +133,7 @@ export default function EmployeesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">Loading...</TableCell>
+                  <TableCell colSpan={6} className="text-center">Loading...</TableCell>
                 </TableRow>
               ) : (
                 employees?.map((employee) => (
@@ -140,6 +141,7 @@ export default function EmployeesPage() {
                     <TableCell className="font-medium">{employee.fullName}</TableCell>
                     <TableCell>{employee.specialization}</TableCell>
                     <TableCell>{employee.contactNumber}</TableCell>
+                    <TableCell>{employee.workLocation}</TableCell>
                     <TableCell>
                       <Badge variant={employee.availability ? 'outline' : 'secondary'} className={employee.availability ? 'border-green-600/40 text-green-700' : ''}>
                         {employee.availability ? 'Available' : 'Unavailable'}
@@ -177,9 +179,9 @@ export default function EmployeesPage() {
       <Dialog open={isAddOrEdit} onOpenChange={(isOpen) => !isOpen && closeDialog()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{dialogMode === 'add' ? 'Add New Employee' : 'Edit Employee'}</DialogTitle>
+            <DialogTitle>{dialogMode === 'add' ? 'Add New Technician' : 'Edit Technician'}</DialogTitle>
             <DialogDescription>
-              {dialogMode === 'add' ? 'Fill out the form to add a new employee.' : 'Update the details of the employee.'}
+              {dialogMode === 'add' ? 'Fill out the form to add a new technician.' : 'Update the details of the technician.'}
             </DialogDescription>
           </DialogHeader>
           <EmployeeForm
@@ -195,7 +197,7 @@ export default function EmployeesPage() {
       <AlertDialog open={dialogMode === 'delete'} onOpenChange={(isOpen) => !isOpen && closeDialog()}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to delete this employee?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure you want to delete this technician?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete <span className="font-medium">{selectedEmployee?.fullName}</span>. This action cannot be undone.
             </AlertDialogDescription>
