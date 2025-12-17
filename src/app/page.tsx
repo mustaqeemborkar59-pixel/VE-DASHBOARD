@@ -56,7 +56,7 @@ export default function Dashboard() {
     }
   };
   
-  const cardClassName = "border-0 bg-gradient-to-br from-card to-card/60 shadow-lg text-card-foreground";
+  const cardClassName = "border-0 bg-gradient-to-br shadow-lg";
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,44 +67,44 @@ export default function Dashboard() {
           </div>
         </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className={cn(cardClassName, "dark:from-blue-900/80 dark:to-blue-900/30 dark:shadow-blue-500/10")}>
+        <Card className={cn(cardClassName, "from-blue-100 to-blue-200/70 text-blue-900 shadow-blue-500/10 dark:from-blue-900/80 dark:to-blue-900/30 dark:text-blue-100")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
-            <Activity className="h-5 w-5 text-muted-foreground" />
+            <Activity className="h-5 w-5 text-blue-900/50 dark:text-blue-100/50" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{isLoadingRequests ? '...' : totalRequests}</div>
-            <p className="text-xs text-muted-foreground">All time service requests</p>
+            <p className="text-xs text-blue-900/80 dark:text-blue-100/80">All time service requests</p>
           </CardContent>
         </Card>
-        <Card className={cn(cardClassName, "dark:from-amber-800/80 dark:to-amber-800/30 dark:shadow-amber-500/10")}>
+        <Card className={cn(cardClassName, "from-amber-100 to-amber-200/70 text-amber-900 shadow-amber-500/10 dark:from-amber-800/80 dark:to-amber-800/30 dark:text-amber-100")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-5 w-5 text-muted-foreground" />
+            <Clock className="h-5 w-5 text-amber-900/50 dark:text-amber-100/50" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{isLoadingRequests ? '...' : pendingRequests}</div>
-            <p className="text-xs text-muted-foreground">Requests awaiting assignment</p>
+            <p className="text-xs text-amber-900/80 dark:text-amber-100/80">Requests awaiting assignment</p>
           </CardContent>
         </Card>
-        <Card className={cn(cardClassName, "dark:from-purple-900/80 dark:to-purple-900/30 dark:shadow-purple-500/10")}>
+        <Card className={cn(cardClassName, "from-purple-100 to-purple-200/70 text-purple-900 shadow-purple-500/10 dark:from-purple-900/80 dark:to-purple-900/30 dark:text-purple-100")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-            <Wrench className="h-5 w-5 text-muted-foreground" />
+            <Wrench className="h-5 w-5 text-purple-900/50 dark:text-purple-100/50" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{isLoadingRequests ? '...' : inProgressRequests}</div>
-            <p className="text-xs text-muted-foreground">Jobs currently being worked on</p>
+            <p className="text-xs text-purple-900/80 dark:text-purple-100/80">Jobs currently being worked on</p>
           </CardContent>
         </Card>
-        <Card className={cn(cardClassName, "dark:from-emerald-900/80 dark:to-emerald-900/30 dark:shadow-emerald-500/10")}>
+        <Card className={cn(cardClassName, "from-emerald-100 to-emerald-200/70 text-emerald-900 shadow-emerald-500/10 dark:from-emerald-900/80 dark:to-emerald-900/30 dark:text-emerald-100")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle className="h-5 w-5 text-muted-foreground" />
+            <CheckCircle className="h-5 w-5 text-emerald-900/50 dark:text-emerald-100/50" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{isLoadingRequests ? '...' : completedRequests}</div>
-            <p className="text-xs text-muted-foreground">Completed service requests</p>
+            <p className="text-xs text-emerald-900/80 dark:text-emerald-100/80">Completed service requests</p>
           </CardContent>
         </Card>
       </div>
