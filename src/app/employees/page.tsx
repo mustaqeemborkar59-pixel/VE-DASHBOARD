@@ -49,13 +49,14 @@ import { useToast } from "@/hooks/use-toast";
 import { EmployeeForm, EmployeeFormData } from "@/components/employee-form";
 import { Badge } from "@/components/ui/badge";
 
-type DialogMode = 'add' | 'edit' | 'delete' | null;
-
 export default function EmployeesPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
   
-  const [dialogMode, setDialogMode] = useState<DialogMode>(null);
+  const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState<string | null>(null);
+
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
   const employeesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'employees'), orderBy('createdAt', 'asc')) : null, [firestore]);
@@ -72,39 +73,33 @@ export default function EmployeesPage() {
       description: `Employee ${selectedEmployee.fullName} has been removed.`,
     });
 
-    closeDialog();
-  };
-
-  const openDialog = (mode: DialogMode, data?: Employee) => {
-    setDialogMode(mode);
-    setSelectedEmployee(data || null);
-  };
-
-  const closeDialog = () => {
-    setDialogMode(null);
+    setIsDeleteDialogOpen(false);
     setSelectedEmployee(null);
   };
   
   const handleFormSubmit = (formData: EmployeeFormData) => {
     if (!firestore) return;
     
-    if (dialogMode === 'add') {
+    if (selectedEmployee) { // Edit mode
+      const employeeDocRef = doc(firestore, 'employees', selectedEmployee.id);
+      updateDocumentNonBlocking(employeeDocRef, formData);
+      toast({ title: "Success", description: "Employee updated successfully." });
+    } else { // Add mode
       const employeesCollection = collection(firestore, 'employees');
       addDocumentNonBlocking(employeesCollection, {
         ...formData,
         createdAt: new Date().toISOString(),
       });
       toast({ title: "Success", description: "Employee added successfully." });
-    } else if (dialogMode === 'edit' && selectedEmployee) {
-      const employeeDocRef = doc(firestore, 'employees', selectedEmployee.id);
-      updateDocumentNonBlocking(employeeDocRef, formData);
-      toast({ title: "Success", description: "Employee updated successfully." });
     }
 
-    closeDialog();
+    setIsAddEditDialogOpen(false);
+    setSelectedEmployee(null);
   };
 
-  const isAddOrEdit = dialogMode === 'add' || dialogMode === 'edit';
+  const handleOpenDropdown = (employeeId: string, open: boolean) => {
+    setIsDropdownOpen(open ? employeeId : null);
+  }
 
   return (
     <>
@@ -115,7 +110,7 @@ export default function EmployeesPage() {
               <CardTitle>Employees</CardTitle>
               <CardDescription>Manage your workshop employees.</CardDescription>
             </div>
-            <Button onClick={() => openDialog('add')} size="sm">
+            <Button onClick={() => { setSelectedEmployee(null); setIsAddEditDialogOpen(true); }} size="sm">
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Employee
             </Button>
@@ -151,7 +146,7 @@ export default function EmployeesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                       <DropdownMenu>
+                       <DropdownMenu open={isDropdownOpen === employee.id} onOpenChange={(open) => handleOpenDropdown(employee.id, open)}>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>
@@ -160,11 +155,11 @@ export default function EmployeesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onSelect={() => openDialog('edit', employee)}>
+                          <DropdownMenuItem onSelect={() => { setSelectedEmployee(employee); setIsAddEditDialogOpen(true); }}>
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onSelect={() => openDialog('delete', employee)} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem onSelect={() => { setSelectedEmployee(employee); setIsDeleteDialogOpen(true); }} className="text-destructive focus:text-destructive">
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -179,25 +174,25 @@ export default function EmployeesPage() {
       </Card>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={isAddOrEdit} onOpenChange={(isOpen) => !isOpen && closeDialog()}>
+      <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{dialogMode === 'add' ? 'Add New Employee' : 'Edit Employee'}</DialogTitle>
+            <DialogTitle>{selectedEmployee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
             <DialogDescription>
-              {dialogMode === 'add' ? 'Fill out the form to add a new employee.' : 'Update the details of the employee.'}
+              {selectedEmployee ? 'Update the details of the employee.' : 'Fill out the form to add a new employee.'}
             </DialogDescription>
           </DialogHeader>
           <EmployeeForm
             onSubmit={handleFormSubmit}
-            onCancel={closeDialog}
+            onCancel={() => setIsAddEditDialogOpen(false)}
             initialData={selectedEmployee || undefined}
-            mode={dialogMode || 'add'}
+            mode={selectedEmployee ? 'edit' : 'add'}
           />
         </DialogContent>
       </Dialog>
       
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={dialogMode === 'delete'} onOpenChange={(isOpen) => !isOpen && closeDialog()}>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to delete this employee?</AlertDialogTitle>
@@ -206,7 +201,7 @@ export default function EmployeesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={closeDialog}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

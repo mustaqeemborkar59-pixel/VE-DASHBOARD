@@ -50,6 +50,7 @@ export default function ServiceRequestsPage() {
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState<string | null>(null);
 
   const serviceRequestsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'serviceRequests') : null, [firestore]);
   const employeesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'employees') : null, [firestore]);
@@ -122,6 +123,10 @@ export default function ServiceRequestsPage() {
 
   const isLoading = isLoadingRequests || isLoadingTechs || isLoadingForklifts;
 
+  const handleOpenDropdown = (requestId: string, open: boolean) => {
+    setIsDropdownOpen(open ? requestId : null);
+  }
+
   return (
     <>
     <Card>
@@ -171,7 +176,7 @@ export default function ServiceRequestsPage() {
                       </Button>
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
+                    <DropdownMenu open={isDropdownOpen === request.id} onOpenChange={(open) => handleOpenDropdown(request.id, open)}>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
                           <span className="sr-only">Open menu</span>
@@ -185,7 +190,7 @@ export default function ServiceRequestsPage() {
                           <DropdownMenuSubTrigger>Assign Employee</DropdownMenuSubTrigger>
                           <DropdownMenuSubContent>
                             {employees?.map(tech => (
-                              <DropdownMenuItem key={tech.id} onClick={() => handleAssignTechnician(request.id, tech.id)}>
+                              <DropdownMenuItem key={tech.id} onSelect={() => handleAssignTechnician(request.id, tech.id)}>
                                 {tech.fullName}
                               </DropdownMenuItem>
                             ))}
@@ -194,9 +199,9 @@ export default function ServiceRequestsPage() {
                         <DropdownMenuSub>
                           <DropdownMenuSubTrigger>Update Status</DropdownMenuSubTrigger>
                           <DropdownMenuSubContent>
-                              <DropdownMenuItem onClick={() => handleUpdateStatus(request.id, 'Pending')}>Pending</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdateStatus(request.id, 'In Progress')}>In Progress</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdateStatus(request.id, 'Completed')}>Completed</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => handleUpdateStatus(request.id, 'Pending')}>Pending</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => handleUpdateStatus(request.id, 'In Progress')}>In Progress</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => handleUpdateStatus(request.id, 'Completed')}>Completed</DropdownMenuItem>
                           </DropdownMenuSubContent>
                         </DropdownMenuSub>
                       </DropdownMenuContent>

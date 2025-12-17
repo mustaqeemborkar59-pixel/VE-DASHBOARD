@@ -3,9 +3,7 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -59,13 +57,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type DialogMode = 'add' | 'edit' | 'delete' | null;
-
 export default function ForkliftsPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
   
-  const [dialogMode, setDialogMode] = useState<DialogMode>(null);
+  const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState<string | null>(null);
+
   const [selectedForklift, setSelectedForklift] = useState<Forklift | null>(null);
 
   const [equipmentTypeFilter, setEquipmentTypeFilter] = useState('All');
@@ -113,42 +112,35 @@ export default function ForkliftsPage() {
       description: `Forklift ${selectedForklift.serialNumber} has been removed.`,
     });
 
-    closeDialog();
-  };
-
-  const openDialog = (mode: DialogMode, data?: Forklift) => {
-    setDialogMode(mode);
-    setSelectedForklift(data || null);
-  };
-
-  const closeDialog = () => {
-    setDialogMode(null);
+    setIsDeleteDialogOpen(false);
     setSelectedForklift(null);
   };
-  
+
   const handleFormSubmit = (formData: ForkliftFormData) => {
     if (!firestore) return;
     
-    if (dialogMode === 'add') {
-      const forkliftsCollection = collection(firestore, 'forklifts');
-      addDocumentNonBlocking(forkliftsCollection, {
-        ...formData,
-        year: parseInt(formData.year, 10),
-      });
-      toast({ title: "Success", description: "Forklift added successfully." });
-    } else if (dialogMode === 'edit' && selectedForklift) {
+    const dataToSubmit = {
+      ...formData,
+      year: parseInt(formData.year, 10),
+    };
+
+    if (selectedForklift) { // Edit mode
       const forkliftDocRef = doc(firestore, 'forklifts', selectedForklift.id);
-      updateDocumentNonBlocking(forkliftDocRef, {
-        ...formData,
-        year: parseInt(formData.year, 10),
-      });
+      updateDocumentNonBlocking(forkliftDocRef, dataToSubmit);
       toast({ title: "Success", description: "Forklift updated successfully." });
+    } else { // Add mode
+      const forkliftsCollection = collection(firestore, 'forklifts');
+      addDocumentNonBlocking(forkliftsCollection, dataToSubmit);
+      toast({ title: "Success", description: "Forklift added successfully." });
     }
 
-    closeDialog();
+    setIsAddEditDialogOpen(false);
+    setSelectedForklift(null);
   };
-
-  const isAddOrEdit = dialogMode === 'add' || dialogMode === 'edit';
+  
+  const handleOpenDropdown = (forkliftId: string, open: boolean) => {
+    setIsDropdownOpen(open ? forkliftId : null);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -157,7 +149,7 @@ export default function ForkliftsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Forklift Fleet</h1>
           <p className="text-muted-foreground">Search, filter, and manage your fleet of forklifts.</p>
         </div>
-        <Button onClick={() => openDialog('add')} size="sm">
+        <Button onClick={() => { setSelectedForklift(null); setIsAddEditDialogOpen(true); }} size="sm">
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Forklift
         </Button>
@@ -234,7 +226,7 @@ export default function ForkliftsPage() {
                     <TableCell>{forklift.year}</TableCell>
                     <TableCell>{forklift.capacity}</TableCell>
                     <TableCell>
-                       <DropdownMenu>
+                       <DropdownMenu open={isDropdownOpen === forklift.id} onOpenChange={(open) => handleOpenDropdown(forklift.id, open)}>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>
@@ -243,11 +235,11 @@ export default function ForkliftsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onSelect={() => openDialog('edit', forklift)}>
+                          <DropdownMenuItem onSelect={() => { setSelectedForklift(forklift); setIsAddEditDialogOpen(true); }}>
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onSelect={() => openDialog('delete', forklift)} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem onSelect={() => { setSelectedForklift(forklift); setIsDeleteDialogOpen(true); }} className="text-destructive focus:text-destructive">
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -268,25 +260,25 @@ export default function ForkliftsPage() {
       </Card>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={isAddOrEdit} onOpenChange={(isOpen) => !isOpen && closeDialog()}>
+      <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{dialogMode === 'add' ? 'Add New Forklift' : 'Edit Forklift'}</DialogTitle>
+            <DialogTitle>{selectedForklift ? 'Edit Forklift' : 'Add New Forklift'}</DialogTitle>
             <DialogDescription>
-              {dialogMode === 'add' ? 'Fill out the form to add a new forklift.' : 'Update the details of your forklift.'}
+              {selectedForklift ? 'Update the details of your forklift.' : 'Fill out the form to add a new forklift.'}
             </DialogDescription>
           </DialogHeader>
           <ForkliftForm
             onSubmit={handleFormSubmit}
-            onCancel={closeDialog}
+            onCancel={() => setIsAddEditDialogOpen(false)}
             initialData={selectedForklift || undefined}
-            mode={dialogMode || 'add'}
+            mode={selectedForklift ? 'edit' : 'add'}
           />
         </DialogContent>
       </Dialog>
       
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={dialogMode === 'delete'} onOpenChange={(isOpen) => !isOpen && closeDialog()}>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to delete this forklift?</AlertDialogTitle>
@@ -295,7 +287,7 @@ export default function ForkliftsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={closeDialog}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
