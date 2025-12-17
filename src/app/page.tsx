@@ -45,11 +45,11 @@ export default function Dashboard() {
       case 'Pending':
         return <Badge variant="secondary">Pending</Badge>;
       case 'Assigned':
-        return <Badge variant="outline">Assigned</Badge>;
+        return <Badge variant="outline" className="border-blue-500/40 text-blue-600 dark:border-blue-500/50 dark:text-blue-400">Assigned</Badge>;
       case 'In Progress':
-        return <Badge variant="outline" className="border-blue-500/50 text-blue-500">In Progress</Badge>;
+        return <Badge variant="outline" className="border-primary/50 text-primary">In Progress</Badge>;
       case 'Completed':
-        return <Badge className="bg-green-600/10 text-green-500 border-green-600/20 hover:bg-green-600/15">Completed</Badge>;
+        return <Badge className="bg-green-600/10 text-green-700 border-green-600/20 hover:bg-green-600/15 dark:text-green-400 dark:border-green-400/30">Completed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -60,48 +60,48 @@ export default function Dashboard() {
        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Workshop Dashboard</h1>
-            <p className="text-muted-foreground">Comprehensive overview of your workshop's operations and performance.</p>
+            <p className="text-muted-foreground">Comprehensive overview of your workshop's operations.</p>
           </div>
         </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-purple-600 to-pink-500 border-0 text-white">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-pink-100">Total Requests</CardTitle>
-            <Activity className="h-5 w-5 text-pink-100" />
+            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+            <Activity className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{isLoadingRequests ? '...' : totalRequests}</div>
-            <p className="text-xs text-pink-100">All time service requests</p>
+            <p className="text-xs text-muted-foreground">All time service requests</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-blue-500 to-cyan-400 border-0 text-white">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-cyan-100">Pending</CardTitle>
-            <Clock className="h-5 w-5 text-cyan-100" />
+            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            <Clock className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{isLoadingRequests ? '...' : pendingRequests}</div>
-            <p className="text-xs text-cyan-100">Requests awaiting assignment</p>
+            <p className="text-xs text-muted-foreground">Requests awaiting assignment</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-sky-500 to-indigo-500 border-0 text-white">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-indigo-100">In Progress</CardTitle>
-            <Wrench className="h-5 w-5 text-indigo-100" />
+            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+            <Wrench className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{isLoadingRequests ? '...' : inProgressRequests}</div>
-            <p className="text-xs text-indigo-100">Jobs currently being worked on</p>
+            <p className="text-xs text-muted-foreground">Jobs currently being worked on</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-green-500 to-lime-400 border-0 text-white">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-lime-100">Completed</CardTitle>
-            <CheckCircle className="h-5 w-5 text-lime-100" />
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            <CheckCircle className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{isLoadingRequests ? '...' : completedRequests}</div>
-            <p className="text-xs text-lime-100">Completed service requests</p>
+            <p className="text-xs text-muted-foreground">Completed service requests</p>
           </CardContent>
         </Card>
       </div>
@@ -139,7 +139,7 @@ export default function Dashboard() {
                 recentRequests?.map((request) => (
                   <TableRow key={request.id}>
                     <TableCell>
-                      <div className="font-medium">{request.forkliftId}</div>
+                      <div className="font-medium">{forklifts?.find(f => f.id === request.forkliftId)?.serialNumber || request.forkliftId}</div>
                       <div className="text-sm text-muted-foreground">{getForkliftModel(request.forkliftId)}</div>
                     </TableCell>
                     <TableCell className="max-w-xs truncate">{request.issueDescription}</TableCell>

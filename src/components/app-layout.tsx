@@ -62,9 +62,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   
   if (!isMounted) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <ForkliftIcon className="h-12 w-12 text-primary" />
+          <ForkliftIcon className="h-12 w-12 text-primary animate-pulse" />
           <p className="text-muted-foreground">Connecting to the workshop...</p>
         </div>
       </div>
@@ -74,7 +74,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar variant='inset' collapsible='icon'>
         <SidebarHeader>
           <div className="flex items-center gap-2">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
