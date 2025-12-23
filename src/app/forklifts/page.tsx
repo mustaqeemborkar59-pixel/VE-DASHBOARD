@@ -241,7 +241,7 @@ export default function ForkliftsPage() {
                     <TableBody>
                         {filteredForklifts.map((forklift) => (
                         <Fragment key={forklift.id}>
-                            <TableRow onClick={() => toggleRow(forklift.id)} className="cursor-pointer" data-state={expandedRow === forklift.id ? 'open' : 'closed'}>
+                            <TableRow onClick={() => toggleRow(forklift.id)} className={cn("cursor-pointer", expandedRow === forklift.id && "bg-muted/50 hover:bg-muted/50")} data-state={expandedRow === forklift.id ? 'open' : 'closed'}>
                                 <TableCell className="w-[100px] text-center">
                                     <Button variant="ghost" size="sm">
                                         <span className="text-xs">{expandedRow === forklift.id ? "Hide" : "View"}</span>
