@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from "react";
@@ -18,6 +19,7 @@ export type ForkliftFormData = {
   equipmentType: string;
   locationType: 'Workshop' | 'On-Site';
   siteName: string;
+  siteArea: string;
   siteCompany: string;
   siteContactPerson: string;
   siteContactNumber: string;
@@ -41,6 +43,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     equipmentType: '',
     locationType: 'Workshop',
     siteName: '',
+    siteArea: '',
     siteCompany: '',
     siteContactPerson: '',
     siteContactNumber: '',
@@ -58,6 +61,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
         equipmentType: initialData.equipmentType || '',
         locationType: initialData.locationType || 'Workshop',
         siteName: initialData.siteName || '',
+        siteArea: initialData.siteArea || '',
         siteCompany: initialData.siteCompany || '',
         siteContactPerson: initialData.siteContactPerson || '',
         siteContactNumber: initialData.siteContactNumber || '',
@@ -72,6 +76,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
             equipmentType: '',
             locationType: 'Workshop',
             siteName: '',
+            siteArea: '',
             siteCompany: '',
             siteContactPerson: '',
             siteContactNumber: '',
@@ -117,6 +122,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
 
     if (formData.locationType === 'Workshop') {
       dataToSubmit.siteName = '';
+      dataToSubmit.siteArea = '';
       dataToSubmit.siteCompany = '';
       dataToSubmit.siteContactPerson = '';
       dataToSubmit.siteContactNumber = '';
@@ -175,9 +181,15 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
 
           {formData.locationType === 'On-Site' && (
             <div className="grid gap-4 mt-2 border-l-2 border-primary pl-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="siteName">Site Name</Label>
-                  <Input id="siteName" value={formData.siteName} onChange={handleInputChange} placeholder="e.g., Main Warehouse" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="siteName">Site</Label>
+                    <Input id="siteName" value={formData.siteName} onChange={handleInputChange} placeholder="e.g., Main Warehouse" />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="siteArea">Area</Label>
+                    <Input id="siteArea" value={formData.siteArea} onChange={handleInputChange} placeholder="e.g., Downtown" />
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="siteCompany">Company Name</Label>

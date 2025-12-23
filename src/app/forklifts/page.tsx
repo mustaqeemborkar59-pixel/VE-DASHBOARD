@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Forklift } from "@/lib/data";
-import { MoreHorizontal, PlusCircle, Search, Home, Truck, ChevronDown, Warehouse } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
@@ -294,17 +294,25 @@ export default function ForkliftsPage() {
                                       <div className="col-span-full mt-4 border-t pt-4">
                                         <h4 className="font-semibold mb-2">Site Information</h4>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                          <div className="flex flex-col gap-1 col-span-2">
-                                            <span className="font-medium text-muted-foreground">Company</span>
-                                            <span>{forklift.siteCompany || 'N/A'}</span>
+                                          <div className="flex flex-col gap-1">
+                                            <span className="font-medium text-muted-foreground">Site</span>
+                                            <span>{forklift.siteName || 'N/A'}</span>
                                           </div>
                                           <div className="flex flex-col gap-1">
-                                            <span className="font-medium text-muted-foreground">Contact</span>
+                                            <span className="font-medium text-muted-foreground">Area</span>
+                                            <span>{forklift.siteArea || 'N/A'}</span>
+                                          </div>
+                                          <div className="flex flex-col gap-1">
+                                            <span className="font-medium text-muted-foreground">Contact Person</span>
                                             <span>{forklift.siteContactPerson || 'N/A'}</span>
                                           </div>
                                           <div className="flex flex-col gap-1">
-                                            <span className="font-medium text-muted-foreground">Phone</span>
+                                            <span className="font-medium text-muted-foreground">Contact Number</span>
                                             <span>{forklift.siteContactNumber || 'N/A'}</span>
+                                          </div>
+                                          <div className="flex flex-col gap-1 col-span-full">
+                                            <span className="font-medium text-muted-foreground">Company</span>
+                                            <span>{forklift.siteCompany || 'N/A'}</span>
                                           </div>
                                         </div>
                                       </div>

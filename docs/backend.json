@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "ServiceRequest": {
@@ -71,6 +72,10 @@
         "siteName": {
             "type": "string",
             "description": "Name of the site if the forklift is 'On-Site'."
+        },
+        "siteArea": {
+            "type": "string",
+            "description": "Geographical area or locality of the site."
         },
         "siteCompany": {
             "type": "string",

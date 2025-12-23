@@ -1,3 +1,4 @@
+
 export type Employee = {
   id: string;
   fullName: string;
@@ -20,6 +21,7 @@ export type Forklift = {
   equipmentType?: string;
   locationType: 'Workshop' | 'On-Site';
   siteName?: string;
+  siteArea?: string;
   siteCompany?: string;
   siteContactPerson?: string;
   siteContactNumber?: string;
