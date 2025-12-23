@@ -136,10 +136,17 @@ export default function ForkliftsPage() {
   const handleFormSubmit = (formData: Partial<ForkliftFormData>) => {
     if (!firestore) return;
     
-    const dataToSubmit = {
+    const dataToSubmit: Partial<Forklift> = {
       ...formData,
       year: formData.year ? parseInt(formData.year, 10) : new Date().getFullYear(),
     };
+    
+    if (formData.locationType === 'Workshop') {
+      dataToSubmit.siteCompany = '';
+      dataToSubmit.siteArea = '';
+      dataToSubmit.siteContactPerson = '';
+      dataToSubmit.siteContactNumber = '';
+    }
 
     if (selectedForklift) { // Edit mode
       const forkliftDocRef = doc(firestore, 'forklifts', selectedForklift.id);
@@ -246,7 +253,9 @@ export default function ForkliftsPage() {
                         <TableCell>{forklift.make}</TableCell>
                         <TableCell>{forklift.model}</TableCell>
                         <TableCell>
-                          <Badge variant={forklift.locationType === 'Workshop' ? 'secondary' : 'outline'}>
+                          <Badge variant={forklift.locationType === 'Workshop' ? 'secondary' : 'outline'} className={cn(
+                            forklift.locationType === 'On-Site' && 'border-amber-500/60 text-amber-700 dark:border-amber-400/50 dark:text-amber-400'
+                          )}>
                             {forklift.locationType === 'Workshop' ? <Warehouse className="mr-2 h-3.5 w-3.5"/> : <Truck className="mr-2 h-3.5 w-3.5"/>}
                             {forklift.locationType === 'On-Site' ? forklift.siteCompany : 'Workshop'}
                           </Badge>
