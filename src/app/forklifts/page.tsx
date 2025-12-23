@@ -73,16 +73,19 @@ export default function ForkliftsPage() {
   const [equipmentTypeFilter, setEquipmentTypeFilter] = useState('All');
   const [capacityFilter, setCapacityFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState<string | null>(null);
 
   const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
   const { data: forklifts, isLoading } = useCollection<Forklift>(forkliftsQuery);
 
   const openAddEditDialog = (forklift: Forklift | null) => {
+    setIsDropdownOpen(null);
     setSelectedForklift(forklift);
     setIsAddEditDialogOpen(true);
   };
 
   const openDeleteDialog = (forklift: Forklift) => {
+    setIsDropdownOpen(null);
     setSelectedForklift(forklift);
     setIsDeleteDialogOpen(true);
   };
@@ -242,7 +245,7 @@ export default function ForkliftsPage() {
                               </Badge>
                           </TableCell>
                           <TableCell onClick={(e) => e.stopPropagation()}>
-                             <DropdownMenu>
+                             <DropdownMenu open={isDropdownOpen === forklift.id} onOpenChange={(open) => setIsDropdownOpen(open ? forklift.id : null)}>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="h-8 w-8 p-0">
                                   <span className="sr-only">Open menu</span>
@@ -353,3 +356,5 @@ export default function ForkliftsPage() {
     </div>
   );
 }
+
+    
