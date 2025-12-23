@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Forklift } from "@/lib/data";
-import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
@@ -58,7 +58,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function ForkliftsPage() {
   const { firestore } = useFirebase();
@@ -302,23 +301,26 @@ export default function ForkliftsPage() {
                                                 
                                                 {forklift.locationType === 'On-Site' && (
                                                     <>
-                                                    <div className="col-span-full mt-4 border-t pt-4">
-                                                        <h4 className="font-semibold mb-2">Site Information</h4>
-                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                            <div className="flex flex-col gap-1 col-span-2">
+                                                    <div className="col-span-full mt-4 border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                                        <div>
+                                                            <h4 className="font-semibold mb-2">Site Location</h4>
+                                                            <div className="flex flex-col gap-1">
                                                                 <span className="font-medium text-muted-foreground">Site / Company</span>
                                                                 <span>{forklift.siteCompany || 'N/A'}</span>
                                                             </div>
-                                                            <div className="flex flex-col gap-1 col-span-2">
+                                                            <div className="flex flex-col gap-1 mt-2">
                                                                 <span className="font-medium text-muted-foreground">Area</span>
                                                                 <span>{forklift.siteArea || 'N/A'}</span>
                                                             </div>
-                                                            <div className="flex flex-col gap-1">
-                                                                <span className="font-medium text-muted-foreground">Contact Person</span>
+                                                        </div>
+                                                         <div>
+                                                            <h4 className="font-semibold mb-2">Site Contact</h4>
+                                                             <div className="flex items-center gap-2">
+                                                                <User className="h-4 w-4 text-muted-foreground" />
                                                                 <span>{forklift.siteContactPerson || 'N/A'}</span>
                                                             </div>
-                                                            <div className="flex flex-col gap-1">
-                                                                <span className="font-medium text-muted-foreground">Contact Number</span>
+                                                             <div className="flex items-center gap-2 mt-2">
+                                                                <Phone className="h-4 w-4 text-muted-foreground" />
                                                                 <span>{forklift.siteContactNumber || 'N/A'}</span>
                                                             </div>
                                                         </div>
