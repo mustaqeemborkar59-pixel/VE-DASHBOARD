@@ -66,7 +66,6 @@ export default function ForkliftsPage() {
   
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const [selectedForklift, setSelectedForklift] = useState<Forklift | null>(null);
@@ -79,13 +78,11 @@ export default function ForkliftsPage() {
   const { data: forklifts, isLoading } = useCollection<Forklift>(forkliftsQuery);
 
   const openAddEditDialog = (forklift: Forklift | null) => {
-    setIsDropdownOpen(null);
     setSelectedForklift(forklift);
     setIsAddEditDialogOpen(true);
   };
 
   const openDeleteDialog = (forklift: Forklift) => {
-    setIsDropdownOpen(null);
     setSelectedForklift(forklift);
     setIsDeleteDialogOpen(true);
   };
@@ -245,7 +242,7 @@ export default function ForkliftsPage() {
                               </Badge>
                           </TableCell>
                           <TableCell onClick={(e) => e.stopPropagation()}>
-                             <DropdownMenu open={isDropdownOpen === forklift.id} onOpenChange={(open) => setIsDropdownOpen(open ? forklift.id : null)}>
+                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="h-8 w-8 p-0">
                                   <span className="sr-only">Open menu</span>
@@ -289,15 +286,15 @@ export default function ForkliftsPage() {
                                     <div className="col-span-2 lg:col-span-4 font-semibold">Site Information</div>
                                     <div className="flex flex-col gap-1">
                                       <span className="font-medium text-muted-foreground">Company</span>
-                                      <span>{forklift.siteCompany || 'N/A'}</span>
+                                      <span>{forklift.siteCompany || 'N.A'}</span>
                                     </div>
                                     <div className="flex flex-col gap-1">
                                       <span className="font-medium text-muted-foreground">Contact</span>
-                                      <span>{forklift.siteContactPerson || 'N/A'}</span>
+                                      <span>{forklift.siteContactPerson || 'N.A'}</span>
                                     </div>
                                     <div className="flex flex-col gap-1">
                                       <span className="font-medium text-muted-foreground">Phone</span>
-                                      <span>{forklift.siteContactNumber || 'N/A'}</span>
+                                      <span>{forklift.siteContactNumber || 'N.A'}</span>
                                     </div>
                                   </>
                                 )}
@@ -356,5 +353,3 @@ export default function ForkliftsPage() {
     </div>
   );
 }
-
-    
