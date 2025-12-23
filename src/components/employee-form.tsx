@@ -86,7 +86,7 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="grid gap-2">
-              <Label htmlFor="specialization">Role / Specialization</Label>
+              <Label htmlFor="specialization">Role</Label>
               <Input id="specialization" value={formData.specialization} onChange={handleInputChange} placeholder="e.g., Technician, Worker" />
           </div>
           <div className="grid gap-2">

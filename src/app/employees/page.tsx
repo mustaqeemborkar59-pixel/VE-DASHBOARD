@@ -129,7 +129,7 @@ export default function EmployeesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Full Name</TableHead>
-                <TableHead>Role/Specialization</TableHead>
+                <TableHead>Role</TableHead>
                 <TableHead>Contact Number</TableHead>
                 <TableHead>Work Location</TableHead>
                 <TableHead>Availability</TableHead>
