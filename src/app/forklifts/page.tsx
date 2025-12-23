@@ -4,8 +4,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import {
   AlertDialog,
@@ -32,14 +30,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Forklift } from "@/lib/data";
 import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck } from "lucide-react";
@@ -60,6 +50,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function ForkliftsPage() {
   const { firestore } = useFirebase();
@@ -228,111 +219,114 @@ export default function ForkliftsPage() {
               <p className="text-muted-foreground">Loading fleet...</p>
             </div>
           ) : filteredForklifts && filteredForklifts.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]"></TableHead>
-                  <TableHead>Serial Number</TableHead>
-                  <TableHead>Make</TableHead>
-                  <TableHead>Model</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead className="w-[50px] text-right"><span className="sr-only">Actions</span></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredForklifts.map((forklift) => (
-                  <Fragment key={forklift.id}>
-                    <TableRow onClick={() => toggleRow(forklift.id)} className="cursor-pointer">
-                       <TableCell className="w-[100px] text-center">
-                          <Button variant="ghost" size="sm">
-                            <span className="text-xs">{expandedRow === forklift.id ? "Hide" : "View"}</span>
-                            <ChevronDown className={cn("h-4 w-4 ml-1 transition-transform", expandedRow === forklift.id && "rotate-180")} />
-                          </Button>
-                        </TableCell>
-                        <TableCell className="font-medium">{forklift.serialNumber}</TableCell>
-                        <TableCell>{forklift.make}</TableCell>
-                        <TableCell>{forklift.model}</TableCell>
-                        <TableCell>
-                          <Badge variant={'outline'} className={cn(
-                            forklift.locationType === 'Workshop' && 'border-green-500/60 text-green-700 dark:border-green-400/50 dark:text-green-400',
-                            forklift.locationType === 'On-Site' && 'border-amber-500/60 text-amber-700 dark:border-amber-400/50 dark:text-amber-400'
-                          )}>
-                            {forklift.locationType === 'Workshop' ? <Warehouse className="mr-2 h-3.5 w-3.5"/> : <Truck className="mr-2 h-3.5 w-3.5"/>}
-                            {forklift.locationType === 'On-Site' ? forklift.siteCompany : 'Workshop'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu open={openDropdownId === forklift.id} onOpenChange={(isOpen) => setOpenDropdownId(isOpen ? forklift.id : null)}>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onSelect={() => openAddEditDialog(forklift)}>
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onSelect={() => openDeleteDialog(forklift)} className="text-destructive focus:text-destructive">
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                    </TableRow>
-                    {expandedRow === forklift.id && (
-                       <TableRow>
-                        <TableCell colSpan={6} className="p-0">
-                           <div className="p-6 bg-muted/50">
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                  <div className="flex flex-col gap-1">
-                                    <span className="font-medium text-muted-foreground">Year</span>
-                                    <span>{forklift.year}</span>
-                                  </div>
-                                  <div className="flex flex-col gap-1">
-                                    <span className="font-medium text-muted-foreground">Capacity</span>
-                                    <span>{forklift.capacity || 'N/A'}</span>
-                                  </div>
-                                  <div className="flex flex-col gap-1 col-span-2">
-                                    <span className="font-medium text-muted-foreground">Equipment Type</span>
-                                    <span>{forklift.equipmentType || 'N/A'}</span>
-                                  </div>
-                                  
-                                  {forklift.locationType === 'On-Site' && (
-                                    <>
-                                      <div className="col-span-full mt-4 border-t pt-4">
-                                        <h4 className="font-semibold mb-2">Site Information</h4>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                          <div className="flex flex-col gap-1 col-span-2">
-                                            <span className="font-medium text-muted-foreground">Site / Company</span>
-                                            <span>{forklift.siteCompany || 'N/A'}</span>
-                                          </div>
-                                          <div className="flex flex-col gap-1 col-span-2">
-                                            <span className="font-medium text-muted-foreground">Area</span>
-                                            <span>{forklift.siteArea || 'N/A'}</span>
-                                          </div>
-                                          <div className="flex flex-col gap-1">
-                                            <span className="font-medium text-muted-foreground">Contact Person</span>
-                                            <span>{forklift.siteContactPerson || 'N/A'}</span>
-                                          </div>
-                                          <div className="flex flex-col gap-1">
-                                            <span className="font-medium text-muted-foreground">Contact Number</span>
-                                            <span>{forklift.siteContactNumber || 'N/A'}</span>
-                                          </div>
+             <div className="border rounded-xl shadow-sm">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead className="w-[100px]"></TableHead>
+                        <TableHead>Serial Number</TableHead>
+                        <TableHead>Make</TableHead>
+                        <TableHead>Model</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead className="w-[50px] text-right"><span className="sr-only">Actions</span></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredForklifts.map((forklift) => (
+                        <Fragment key={forklift.id}>
+                            <TableRow onClick={() => toggleRow(forklift.id)} className="cursor-pointer" data-state={expandedRow === forklift.id ? 'open' : 'closed'}>
+                                <TableCell className="w-[100px] text-center">
+                                    <Button variant="ghost" size="sm">
+                                        <span className="text-xs">{expandedRow === forklift.id ? "Hide" : "View"}</span>
+                                        <ChevronDown className={cn("h-4 w-4 ml-1 transition-transform", expandedRow === forklift.id && "rotate-180")} />
+                                    </Button>
+                                </TableCell>
+                                <TableCell className="font-medium">{forklift.serialNumber}</TableCell>
+                                <TableCell>{forklift.make}</TableCell>
+                                <TableCell>{forklift.model}</TableCell>
+                                <TableCell>
+                                    <Badge variant={'outline'} className={cn(
+                                        'font-medium',
+                                        forklift.locationType === 'Workshop' && 'border-green-500/60 bg-green-50 text-green-700 dark:border-green-400/50 dark:bg-green-900/20 dark:text-green-400',
+                                        forklift.locationType === 'On-Site' && 'border-amber-500/60 bg-amber-50 text-amber-700 dark:border-amber-400/50 dark:bg-amber-900/20 dark:text-amber-400'
+                                    )}>
+                                        {forklift.locationType === 'Workshop' ? <Warehouse className="mr-2 h-3.5 w-3.5"/> : <Truck className="mr-2 h-3.5 w-3.5"/>}
+                                        {forklift.locationType === 'On-Site' ? forklift.siteCompany : 'Workshop'}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <DropdownMenu open={openDropdownId === forklift.id} onOpenChange={(isOpen) => setOpenDropdownId(isOpen ? forklift.id : null)}>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuItem onSelect={() => openAddEditDialog(forklift)}>
+                                        Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onSelect={() => openDeleteDialog(forklift)} className="text-destructive focus:text-destructive">
+                                        Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                            </TableRow>
+                            {expandedRow === forklift.id && (
+                                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                                    <TableCell colSpan={6} className="p-0">
+                                        <div className="p-6">
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="font-medium text-muted-foreground">Year</span>
+                                                    <span>{forklift.year}</span>
+                                                </div>
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="font-medium text-muted-foreground">Capacity</span>
+                                                    <span>{forklift.capacity || 'N/A'}</span>
+                                                </div>
+                                                <div className="flex flex-col gap-1 col-span-2">
+                                                    <span className="font-medium text-muted-foreground">Equipment Type</span>
+                                                    <span>{forklift.equipmentType || 'N/A'}</span>
+                                                </div>
+                                                
+                                                {forklift.locationType === 'On-Site' && (
+                                                    <>
+                                                    <div className="col-span-full mt-4 border-t pt-4">
+                                                        <h4 className="font-semibold mb-2">Site Information</h4>
+                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                            <div className="flex flex-col gap-1 col-span-2">
+                                                                <span className="font-medium text-muted-foreground">Site / Company</span>
+                                                                <span>{forklift.siteCompany || 'N/A'}</span>
+                                                            </div>
+                                                            <div className="flex flex-col gap-1 col-span-2">
+                                                                <span className="font-medium text-muted-foreground">Area</span>
+                                                                <span>{forklift.siteArea || 'N/A'}</span>
+                                                            </div>
+                                                            <div className="flex flex-col gap-1">
+                                                                <span className="font-medium text-muted-foreground">Contact Person</span>
+                                                                <span>{forklift.siteContactPerson || 'N/A'}</span>
+                                                            </div>
+                                                            <div className="flex flex-col gap-1">
+                                                                <span className="font-medium text-muted-foreground">Contact Number</span>
+                                                                <span>{forklift.siteContactNumber || 'N/A'}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
-                                      </div>
-                                    </>
-                                  )}
-                              </div>
-                           </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </Fragment>
-                ))}
-              </TableBody>
-            </Table>
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </Fragment>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
           ) : (
              <div className="flex flex-col items-center justify-center h-64 rounded-lg border-2 border-dashed">
                 <h3 className="text-xl font-semibold">No Forklifts Found</h3>
@@ -380,3 +374,5 @@ export default function ForkliftsPage() {
     </div>
   );
 }
+
+    
