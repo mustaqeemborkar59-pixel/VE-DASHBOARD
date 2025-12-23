@@ -328,6 +328,12 @@ export default function ForkliftsPage() {
                                                     </>
                                                 )}
                                             </div>
+                                             {forklift.remarks && (
+                                                <div className="mt-4 pt-4 border-t">
+                                                     <h4 className="font-semibold mb-2 text-sm">Remarks</h4>
+                                                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{forklift.remarks}</p>
+                                                </div>
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -384,7 +390,3 @@ export default function ForkliftsPage() {
     </div>
   );
 }
-
-    
-
-    

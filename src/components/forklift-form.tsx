@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Forklift } from "@/lib/data";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "./ui/textarea";
 
 export type ForkliftFormData = {
   serialNumber: string;
@@ -22,6 +23,7 @@ export type ForkliftFormData = {
   siteArea: string;
   siteContactPerson: string;
   siteContactNumber: string;
+  remarks: string;
 };
 
 interface ForkliftFormProps {
@@ -45,6 +47,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     siteArea: '',
     siteContactPerson: '',
     siteContactNumber: '',
+    remarks: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -62,6 +65,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
         siteArea: initialData.siteArea || '',
         siteContactPerson: initialData.siteContactPerson || '',
         siteContactNumber: initialData.siteContactNumber || '',
+        remarks: initialData.remarks || '',
       });
     } else {
         setFormData({
@@ -76,11 +80,12 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
             siteArea: '',
             siteContactPerson: '',
             siteContactNumber: '',
+            remarks: '',
         });
     }
   }, [initialData, mode]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
   };
@@ -198,6 +203,13 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
                 </div>
             </div>
           )}
+        </div>
+        
+        <Separator />
+
+        <div className="grid gap-2">
+            <Label htmlFor="remarks">Remarks</Label>
+            <Textarea id="remarks" value={formData.remarks} onChange={handleInputChange} placeholder="Add any extra notes or remarks here..." />
         </div>
 
 

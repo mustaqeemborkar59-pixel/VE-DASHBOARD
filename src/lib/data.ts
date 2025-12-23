@@ -24,6 +24,7 @@ export type Forklift = {
   siteArea?: string;
   siteContactPerson?: string;
   siteContactNumber?: string;
+  remarks?: string;
 };
 
 export type ServiceRequest = {
