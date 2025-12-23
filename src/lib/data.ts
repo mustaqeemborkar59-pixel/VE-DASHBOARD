@@ -18,6 +18,11 @@ export type Forklift = {
   year: number;
   capacity?: string;
   equipmentType?: string;
+  locationType: 'Workshop' | 'On-Site';
+  siteName?: string;
+  siteCompany?: string;
+  siteContactPerson?: string;
+  siteContactNumber?: string;
 };
 
 export type ServiceRequest = {

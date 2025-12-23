@@ -62,13 +62,35 @@
         "equipmentType": {
           "type": "string",
           "description": "The type of equipment (e.g., Reach Truck, Pallet Jack)."
+        },
+        "locationType": {
+            "type": "string",
+            "enum": ["Workshop", "On-Site"],
+            "description": "Current location of the forklift."
+        },
+        "siteName": {
+            "type": "string",
+            "description": "Name of the site if the forklift is 'On-Site'."
+        },
+        "siteCompany": {
+            "type": "string",
+            "description": "Company name for the site location."
+        },
+        "siteContactPerson": {
+            "type": "string",
+            "description": "Name of the contact person at the site."
+        },
+        "siteContactNumber": {
+            "type": "string",
+            "description": "Contact number of the person at the site."
         }
       },
       "required": [
         "serialNumber",
         "make",
         "model",
-        "year"
+        "year",
+        "locationType"
       ]
     },
     "Employee": {

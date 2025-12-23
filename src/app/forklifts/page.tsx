@@ -29,6 +29,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import {
   DropdownMenu,
@@ -40,7 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Forklift } from "@/lib/data";
-import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, Eye, Home, Truck } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useState, useMemo } from "react";
@@ -56,6 +57,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 export default function ForkliftsPage() {
   const { firestore } = useFirebase();
@@ -63,6 +65,7 @@ export default function ForkliftsPage() {
   
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState<string | null>(null);
 
   const [selectedForklift, setSelectedForklift] = useState<Forklift | null>(null);
@@ -84,6 +87,12 @@ export default function ForkliftsPage() {
     setIsDropdownOpen(null);
     setSelectedForklift(forklift);
     setIsDeleteDialogOpen(true);
+  };
+
+  const openDetailDialog = (forklift: Forklift) => {
+    setIsDropdownOpen(null);
+    setSelectedForklift(forklift);
+    setIsDetailDialogOpen(true);
   };
 
   const equipmentTypes = useMemo(() => {
@@ -128,12 +137,12 @@ export default function ForkliftsPage() {
     setSelectedForklift(null);
   };
 
-  const handleFormSubmit = (formData: ForkliftFormData) => {
+  const handleFormSubmit = (formData: Partial<ForkliftFormData>) => {
     if (!firestore) return;
     
     const dataToSubmit = {
       ...formData,
-      year: parseInt(formData.year, 10),
+      year: formData.year ? parseInt(formData.year, 10) : new Date().getFullYear(),
     };
 
     if (selectedForklift) { // Edit mode
@@ -211,28 +220,32 @@ export default function ForkliftsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Serial Number</TableHead>
-                <TableHead>Make</TableHead>
-                <TableHead>Model</TableHead>
-                <TableHead>Equipment Type</TableHead>
-                <TableHead>Year</TableHead>
-                <TableHead>Capacity</TableHead>
+                <TableHead>Make & Model</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead><span className="sr-only">Actions</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center h-24">Loading fleet...</TableCell>
+                  <TableCell colSpan={5} className="text-center h-24">Loading fleet...</TableCell>
                 </TableRow>
               ) : filteredForklifts && filteredForklifts.length > 0 ? (
                 filteredForklifts.map((forklift) => (
                   <TableRow key={forklift.id}>
                     <TableCell className="font-medium">{forklift.serialNumber}</TableCell>
-                    <TableCell>{forklift.make}</TableCell>
-                    <TableCell>{forklift.model}</TableCell>
-                    <TableCell>{forklift.equipmentType}</TableCell>
-                    <TableCell>{forklift.year}</TableCell>
-                    <TableCell>{forklift.capacity}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{forklift.make}</div>
+                      <div className="text-sm text-muted-foreground">{forklift.model}</div>
+                    </TableCell>
+                    <TableCell>{forklift.locationType === 'On-Site' ? forklift.siteName : 'Workshop'}</TableCell>
+                    <TableCell>
+                        <Badge variant={forklift.locationType === 'Workshop' ? 'secondary' : 'outline'}>
+                            {forklift.locationType === 'Workshop' ? <Home className="mr-2 h-3.5 w-3.5"/> : <Truck className="mr-2 h-3.5 w-3.5"/>}
+                            {forklift.locationType}
+                        </Badge>
+                    </TableCell>
                     <TableCell>
                        <DropdownMenu open={isDropdownOpen === forklift.id} onOpenChange={(open) => setIsDropdownOpen(open ? forklift.id : null)}>
                         <DropdownMenuTrigger asChild>
@@ -243,6 +256,9 @@ export default function ForkliftsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onSelect={() => openDetailDialog(forklift)}>
+                            <Eye className="mr-2 h-4 w-4" /> View Details
+                          </DropdownMenuItem>
                           <DropdownMenuItem onSelect={() => openAddEditDialog(forklift)}>
                             Edit
                           </DropdownMenuItem>
@@ -257,7 +273,7 @@ export default function ForkliftsPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center h-24">
+                  <TableCell colSpan={5} className="text-center h-24">
                     No forklifts found.
                   </TableCell>
                 </TableRow>
@@ -269,7 +285,7 @@ export default function ForkliftsPage() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{selectedForklift ? 'Edit Forklift' : 'Add New Forklift'}</DialogTitle>
             <DialogDescription>
@@ -295,11 +311,72 @@ export default function ForkliftsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => { setIsDeleteDialogOpen(false); setSelectedForklift(null);}}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* View Details Dialog */}
+       <Dialog open={isDetailDialogOpen} onOpenChange={(open) => { if (!open) setSelectedForklift(null); setIsDetailDialogOpen(open); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Forklift Details</DialogTitle>
+            <DialogDescription>
+              <span className="font-medium">{selectedForklift?.make} {selectedForklift?.model}</span> - {selectedForklift?.serialNumber}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedForklift && (
+            <div className="grid gap-4 py-4 text-sm">
+              <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                <span className="font-medium text-muted-foreground">Status</span>
+                <Badge variant={selectedForklift.locationType === 'Workshop' ? 'secondary' : 'outline'} className="w-fit">
+                    {selectedForklift.locationType === 'Workshop' ? <Home className="mr-2 h-3.5 w-3.5"/> : <Truck className="mr-2 h-3.5 w-3.5"/>}
+                    {selectedForklift.locationType}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                <span className="font-medium text-muted-foreground">Year</span>
+                <span>{selectedForklift.year}</span>
+              </div>
+              <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                <span className="font-medium text-muted-foreground">Capacity</span>
+                <span>{selectedForklift.capacity || 'N/A'}</span>
+              </div>
+               <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                <span className="font-medium text-muted-foreground">Equipment Type</span>
+                <span>{selectedForklift.equipmentType || 'N/A'}</span>
+              </div>
+              
+              {selectedForklift.locationType === 'On-Site' && (
+                <>
+                  <div className="my-2 border-t -mx-6"></div>
+                  <h4 className="font-semibold text-base col-span-2">Site Information</h4>
+                  <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                    <span className="font-medium text-muted-foreground">Site Name</span>
+                    <span>{selectedForklift.siteName}</span>
+                  </div>
+                  <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                    <span className="font-medium text-muted-foreground">Company</span>
+                    <span>{selectedForklift.siteCompany || 'N/A'}</span>
+                  </div>
+                  <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                    <span className="font-medium text-muted-foreground">Contact</span>
+                    <span>{selectedForklift.siteContactPerson || 'N/A'}</span>
+                  </div>
+                  <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                    <span className="font-medium text-muted-foreground">Phone</span>
+                    <span>{selectedForklift.siteContactNumber || 'N/A'}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setIsDetailDialogOpen(false); setSelectedForklift(null); }}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type { Forklift } from "@/lib/data";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 export type ForkliftFormData = {
   serialNumber: string;
@@ -14,10 +16,15 @@ export type ForkliftFormData = {
   year: string;
   capacity: string;
   equipmentType: string;
+  locationType: 'Workshop' | 'On-Site';
+  siteName: string;
+  siteCompany: string;
+  siteContactPerson: string;
+  siteContactNumber: string;
 };
 
 interface ForkliftFormProps {
-  onSubmit: (data: ForkliftFormData) => void;
+  onSubmit: (data: Partial<ForkliftFormData>) => void;
   onCancel: () => void;
   initialData?: Forklift;
   mode: 'add' | 'edit';
@@ -32,6 +39,11 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     year: '',
     capacity: '',
     equipmentType: '',
+    locationType: 'Workshop',
+    siteName: '',
+    siteCompany: '',
+    siteContactPerson: '',
+    siteContactNumber: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,6 +56,11 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
         year: initialData.year.toString(),
         capacity: initialData.capacity || '',
         equipmentType: initialData.equipmentType || '',
+        locationType: initialData.locationType || 'Workshop',
+        siteName: initialData.siteName || '',
+        siteCompany: initialData.siteCompany || '',
+        siteContactPerson: initialData.siteContactPerson || '',
+        siteContactNumber: initialData.siteContactNumber || '',
       });
     } else {
         setFormData({
@@ -53,6 +70,11 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
             year: '',
             capacity: '',
             equipmentType: '',
+            locationType: 'Workshop',
+            siteName: '',
+            siteCompany: '',
+            siteContactPerson: '',
+            siteContactNumber: '',
         });
     }
   }, [initialData, mode]);
@@ -61,6 +83,10 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
   };
+  
+  const handleLocationChange = (value: 'Workshop' | 'On-Site') => {
+    setFormData(prev => ({ ...prev, locationType: value }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,13 +94,35 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please fill out all required fields.",
+        description: "Please fill out all required forklift details.",
       });
       return;
     }
     
+    if (formData.locationType === 'On-Site' && !formData.siteName) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please provide a site name for on-site forklifts.",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
-    onSubmit(formData);
+    
+    const dataToSubmit: Partial<ForkliftFormData> = {
+      ...formData,
+      year: formData.year,
+    };
+
+    if (formData.locationType === 'Workshop') {
+      dataToSubmit.siteName = '';
+      dataToSubmit.siteCompany = '';
+      dataToSubmit.siteContactPerson = '';
+      dataToSubmit.siteContactNumber = '';
+    }
+
+    onSubmit(dataToSubmit);
   };
 
   return (
@@ -93,10 +141,6 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
                 <Input id="model" value={formData.model} onChange={handleInputChange} placeholder="e.g., 8FGCU25" required />
             </div>
         </div>
-        <div className="grid gap-2">
-            <Label htmlFor="equipmentType">Equipment Type</Label>
-            <Input id="equipmentType" value={formData.equipmentType} onChange={handleInputChange} placeholder="e.g., Reach Truck" />
-        </div>
         <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
                 <Label htmlFor="year">Year</Label>
@@ -107,6 +151,53 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
                 <Input id="capacity" value={formData.capacity} onChange={handleInputChange} placeholder="e.g., 5000 lbs" />
             </div>
         </div>
+        <div className="grid gap-2">
+            <Label htmlFor="equipmentType">Equipment Type</Label>
+            <Input id="equipmentType" value={formData.equipmentType} onChange={handleInputChange} placeholder="e.g., Reach Truck" />
+        </div>
+        
+        <Separator />
+        
+        <div className="grid gap-4">
+          <h3 className="text-lg font-medium">Location Details</h3>
+           <div className="grid gap-2">
+              <Label htmlFor="locationType">Location</Label>
+              <Select onValueChange={handleLocationChange} value={formData.locationType}>
+                  <SelectTrigger id="locationType">
+                      <SelectValue placeholder="Select location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="Workshop">Workshop</SelectItem>
+                      <SelectItem value="On-Site">On-Site</SelectItem>
+                  </SelectContent>
+              </Select>
+           </div>
+
+          {formData.locationType === 'On-Site' && (
+            <div className="grid gap-4 mt-2 border-l-2 border-primary pl-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="siteName">Site Name</Label>
+                  <Input id="siteName" value={formData.siteName} onChange={handleInputChange} placeholder="e.g., Main Warehouse" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="siteCompany">Company Name</Label>
+                  <Input id="siteCompany" value={formData.siteCompany} onChange={handleInputChange} placeholder="e.g., ACME Corp" />
+                </div>
+                 <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="siteContactPerson">Contact Person</Label>
+                    <Input id="siteContactPerson" value={formData.siteContactPerson} onChange={handleInputChange} placeholder="e.g., Jane Smith" />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="siteContactNumber">Contact Number</Label>
+                    <Input id="siteContactNumber" value={formData.siteContactNumber} onChange={handleInputChange} placeholder="e.g., +1 555-1234" />
+                  </div>
+                </div>
+            </div>
+          )}
+        </div>
+
+
       <div className="flex justify-end gap-2 pt-4">
         <Button variant="outline" type="button" onClick={onCancel}>
           Cancel
