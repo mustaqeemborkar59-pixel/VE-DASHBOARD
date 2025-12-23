@@ -213,7 +213,7 @@ export default function ForkliftsPage() {
               <p className="text-muted-foreground">Loading fleet...</p>
             </div>
           ) : filteredForklifts && filteredForklifts.length > 0 ? (
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+             <div className="flex flex-col gap-4">
                 {filteredForklifts.map((forklift) => (
                   <Collapsible 
                     key={forklift.id} 
@@ -225,7 +225,7 @@ export default function ForkliftsPage() {
                         <CardHeader>
                            <div className="flex items-start justify-between">
                               <div>
-                                <p className="text-sm text-muted-foreground">Serial#</p>
+                                <p className="text-sm text-muted-foreground">{forklift.make} {forklift.model}</p>
                                 <CardTitle className="text-xl">{forklift.serialNumber}</CardTitle>
                               </div>
                               <DropdownMenu open={openDropdownId === forklift.id} onOpenChange={(isOpen) => setOpenDropdownId(isOpen ? forklift.id : null)}>
@@ -246,18 +246,18 @@ export default function ForkliftsPage() {
                                 </DropdownMenuContent>
                               </DropdownMenu>
                            </div>
-                           <CardDescription>{forklift.make} {forklift.model}</CardDescription>
+                           <CardDescription className="pt-2">
+                             <Badge variant={forklift.locationType === 'Workshop' ? 'secondary' : 'outline'}>
+                                {forklift.locationType === 'Workshop' ? <Warehouse className="mr-2 h-3.5 w-3.5"/> : <Truck className="mr-2 h-3.5 w-3.5"/>}
+                                {forklift.locationType === 'On-Site' ? forklift.siteName : 'Workshop'}
+                             </Badge>
+                           </CardDescription>
                         </CardHeader>
-                        <CardContent className="pt-0">
-                           <Badge variant={forklift.locationType === 'Workshop' ? 'secondary' : 'outline'}>
-                              {forklift.locationType === 'Workshop' ? <Warehouse className="mr-2 h-3.5 w-3.5"/> : <Truck className="mr-2 h-3.5 w-3.5"/>}
-                              {forklift.locationType === 'On-Site' ? forklift.siteName : 'Workshop'}
-                           </Badge>
-                        </CardContent>
+
                         <CollapsibleContent>
                           <Separator />
                           <div className="p-6 text-sm">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div className="flex flex-col gap-1">
                                   <span className="font-medium text-muted-foreground">Year</span>
                                   <span>{forklift.year}</span>
@@ -273,19 +273,22 @@ export default function ForkliftsPage() {
                                 
                                 {forklift.locationType === 'On-Site' && (
                                   <>
-                                    <div className="col-span-2 mt-2 border-t -mx-6"></div>
-                                    <div className="col-span-2 font-semibold">Site Information</div>
-                                    <div className="flex flex-col gap-1 col-span-2">
-                                      <span className="font-medium text-muted-foreground">Company</span>
-                                      <span>{forklift.siteCompany || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                      <span className="font-medium text-muted-foreground">Contact</span>
-                                      <span>{forklift.siteContactPerson || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                      <span className="font-medium text-muted-foreground">Phone</span>
-                                      <span>{forklift.siteContactNumber || 'N/A'}</span>
+                                    <div className="col-span-full mt-4 border-t pt-4">
+                                      <h4 className="font-semibold mb-2">Site Information</h4>
+                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="flex flex-col gap-1 col-span-2">
+                                          <span className="font-medium text-muted-foreground">Company</span>
+                                          <span>{forklift.siteCompany || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                          <span className="font-medium text-muted-foreground">Contact</span>
+                                          <span>{forklift.siteContactPerson || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                          <span className="font-medium text-muted-foreground">Phone</span>
+                                          <span>{forklift.siteContactNumber || 'N/A'}</span>
+                                        </div>
+                                      </div>
                                     </div>
                                   </>
                                 )}
