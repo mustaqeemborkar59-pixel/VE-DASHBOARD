@@ -20,9 +20,8 @@ export type Forklift = {
   capacity?: string;
   equipmentType?: string;
   locationType: 'Workshop' | 'On-Site';
-  siteName?: string;
-  siteArea?: string;
   siteCompany?: string;
+  siteArea?: string;
   siteContactPerson?: string;
   siteContactNumber?: string;
 };

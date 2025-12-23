@@ -248,7 +248,7 @@ export default function ForkliftsPage() {
                         <TableCell>
                           <Badge variant={forklift.locationType === 'Workshop' ? 'secondary' : 'outline'}>
                             {forklift.locationType === 'Workshop' ? <Warehouse className="mr-2 h-3.5 w-3.5"/> : <Truck className="mr-2 h-3.5 w-3.5"/>}
-                            {forklift.locationType === 'On-Site' ? forklift.siteName : 'Workshop'}
+                            {forklift.locationType === 'On-Site' ? forklift.siteCompany : 'Workshop'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -294,11 +294,11 @@ export default function ForkliftsPage() {
                                       <div className="col-span-full mt-4 border-t pt-4">
                                         <h4 className="font-semibold mb-2">Site Information</h4>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                          <div className="flex flex-col gap-1">
-                                            <span className="font-medium text-muted-foreground">Site</span>
-                                            <span>{forklift.siteName || 'N/A'}</span>
+                                          <div className="flex flex-col gap-1 col-span-2">
+                                            <span className="font-medium text-muted-foreground">Site / Company</span>
+                                            <span>{forklift.siteCompany || 'N/A'}</span>
                                           </div>
-                                          <div className="flex flex-col gap-1">
+                                          <div className="flex flex-col gap-1 col-span-2">
                                             <span className="font-medium text-muted-foreground">Area</span>
                                             <span>{forklift.siteArea || 'N/A'}</span>
                                           </div>
@@ -309,10 +309,6 @@ export default function ForkliftsPage() {
                                           <div className="flex flex-col gap-1">
                                             <span className="font-medium text-muted-foreground">Contact Number</span>
                                             <span>{forklift.siteContactNumber || 'N/A'}</span>
-                                          </div>
-                                          <div className="flex flex-col gap-1 col-span-full">
-                                            <span className="font-medium text-muted-foreground">Company</span>
-                                            <span>{forklift.siteCompany || 'N/A'}</span>
                                           </div>
                                         </div>
                                       </div>

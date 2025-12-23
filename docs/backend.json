@@ -69,17 +69,13 @@
             "enum": ["Workshop", "On-Site"],
             "description": "Current location of the forklift."
         },
-        "siteName": {
+        "siteCompany": {
             "type": "string",
-            "description": "Name of the site if the forklift is 'On-Site'."
+            "description": "Company name for the site location."
         },
         "siteArea": {
             "type": "string",
             "description": "Geographical area or locality of the site."
-        },
-        "siteCompany": {
-            "type": "string",
-            "description": "Company name for the site location."
         },
         "siteContactPerson": {
             "type": "string",

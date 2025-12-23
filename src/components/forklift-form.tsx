@@ -18,9 +18,8 @@ export type ForkliftFormData = {
   capacity: string;
   equipmentType: string;
   locationType: 'Workshop' | 'On-Site';
-  siteName: string;
-  siteArea: string;
   siteCompany: string;
+  siteArea: string;
   siteContactPerson: string;
   siteContactNumber: string;
 };
@@ -42,9 +41,8 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     capacity: '',
     equipmentType: '',
     locationType: 'Workshop',
-    siteName: '',
-    siteArea: '',
     siteCompany: '',
+    siteArea: '',
     siteContactPerson: '',
     siteContactNumber: '',
   });
@@ -60,9 +58,8 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
         capacity: initialData.capacity || '',
         equipmentType: initialData.equipmentType || '',
         locationType: initialData.locationType || 'Workshop',
-        siteName: initialData.siteName || '',
-        siteArea: initialData.siteArea || '',
         siteCompany: initialData.siteCompany || '',
+        siteArea: initialData.siteArea || '',
         siteContactPerson: initialData.siteContactPerson || '',
         siteContactNumber: initialData.siteContactNumber || '',
       });
@@ -75,9 +72,8 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
             capacity: '',
             equipmentType: '',
             locationType: 'Workshop',
-            siteName: '',
-            siteArea: '',
             siteCompany: '',
+            siteArea: '',
             siteContactPerson: '',
             siteContactNumber: '',
         });
@@ -104,11 +100,11 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
       return;
     }
     
-    if (formData.locationType === 'On-Site' && !formData.siteName) {
+    if (formData.locationType === 'On-Site' && !formData.siteCompany) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please provide a site name for on-site forklifts.",
+        description: "Please provide a site/company name for on-site forklifts.",
       });
       return;
     }
@@ -121,9 +117,8 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     };
 
     if (formData.locationType === 'Workshop') {
-      dataToSubmit.siteName = '';
-      dataToSubmit.siteArea = '';
       dataToSubmit.siteCompany = '';
+      dataToSubmit.siteArea = '';
       dataToSubmit.siteContactPerson = '';
       dataToSubmit.siteContactNumber = '';
     }
@@ -182,18 +177,14 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
           {formData.locationType === 'On-Site' && (
             <div className="grid gap-4 mt-2 border-l-2 border-primary pl-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="siteName">Site</Label>
-                    <Input id="siteName" value={formData.siteName} onChange={handleInputChange} placeholder="e.g., Main Warehouse" />
+                   <div className="grid gap-2 col-span-2">
+                    <Label htmlFor="siteCompany">Site / Company</Label>
+                    <Input id="siteCompany" value={formData.siteCompany} onChange={handleInputChange} placeholder="e.g., ACME Corp" />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="siteArea">Area</Label>
                     <Input id="siteArea" value={formData.siteArea} onChange={handleInputChange} placeholder="e.g., Downtown" />
                   </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="siteCompany">Company Name</Label>
-                  <Input id="siteCompany" value={formData.siteCompany} onChange={handleInputChange} placeholder="e.g., ACME Corp" />
                 </div>
                  <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
