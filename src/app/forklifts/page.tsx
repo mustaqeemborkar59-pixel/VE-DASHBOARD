@@ -6,7 +6,6 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter
 } from "@/components/ui/card";
 import {
   AlertDialog,
@@ -33,12 +32,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Forklift } from "@/lib/data";
 import { MoreHorizontal, PlusCircle, Search, Home, Truck, ChevronDown, Warehouse } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ForkliftForm, ForkliftFormData } from "@/components/forklift-form";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -54,7 +61,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
 
 export default function ForkliftsPage() {
   const { firestore } = useFirebase();
@@ -62,15 +68,13 @@ export default function ForkliftsPage() {
   
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
   const [selectedForklift, setSelectedForklift] = useState<Forklift | null>(null);
 
   const [equipmentTypeFilter, setEquipmentTypeFilter] = useState('All');
   const [capacityFilter, setCapacityFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [openCollapsibleId, setOpenCollapsibleId] = useState<string | null>(null);
-
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
   const { data: forklifts, isLoading } = useCollection<Forklift>(forkliftsQuery);
@@ -107,7 +111,8 @@ export default function ForkliftsPage() {
       const capacityMatch = capacityFilter === 'All' ? true : forklift.capacity === capacityFilter;
       const searchMatch = searchTerm === '' ? true : (
         forklift.serialNumber.toLowerCase().includes(lowercasedSearchTerm) ||
-        forklift.make.toLowerCase().includes(lowercasedSearchTerm)
+        forklift.make.toLowerCase().includes(lowercasedSearchTerm) ||
+        forklift.model.toLowerCase().includes(lowercasedSearchTerm)
       );
       return typeMatch && capacityMatch && searchMatch;
     });
@@ -171,7 +176,7 @@ export default function ForkliftsPage() {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Search by Serial No. or Make..."
+                  placeholder="Search by Serial No., Make, or Model..."
                   className="pl-8 w-full md:w-[300px]"
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
@@ -213,24 +218,43 @@ export default function ForkliftsPage() {
               <p className="text-muted-foreground">Loading fleet...</p>
             </div>
           ) : filteredForklifts && filteredForklifts.length > 0 ? (
-             <div className="flex flex-col gap-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Serial Number</TableHead>
+                  <TableHead>Make</TableHead>
+                  <TableHead>Model</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead className="w-[100px] text-center">Details</TableHead>
+                  <TableHead className="w-[50px] text-right"><span className="sr-only">Actions</span></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filteredForklifts.map((forklift) => (
-                  <Collapsible 
-                    key={forklift.id} 
-                    asChild 
-                    open={openCollapsibleId === forklift.id} 
-                    onOpenChange={(isOpen) => setOpenCollapsibleId(isOpen ? forklift.id : null)}
-                  >
-                     <Card>
-                        <CardHeader>
-                           <div className="flex items-start justify-between">
-                              <div>
-                                <p className="text-sm text-muted-foreground">{forklift.make} {forklift.model}</p>
-                                <CardTitle className="text-xl">{forklift.serialNumber}</CardTitle>
-                              </div>
+                  <Fragment key={forklift.id}>
+                    <Collapsible asChild key={forklift.id} open={expandedRow === forklift.id} onOpenChange={(open) => setExpandedRow(open ? forklift.id : null)}>
+                      <>
+                        <CollapsibleTrigger asChild>
+                          <TableRow className="cursor-pointer">
+                            <TableCell className="font-medium">{forklift.serialNumber}</TableCell>
+                            <TableCell>{forklift.make}</TableCell>
+                            <TableCell>{forklift.model}</TableCell>
+                            <TableCell>
+                              <Badge variant={forklift.locationType === 'Workshop' ? 'secondary' : 'outline'}>
+                                {forklift.locationType === 'Workshop' ? <Warehouse className="mr-2 h-3.5 w-3.5"/> : <Truck className="mr-2 h-3.5 w-3.5"/>}
+                                {forklift.locationType === 'On-Site' ? forklift.siteName : 'Workshop'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Button variant="ghost" size="sm">
+                                <span className="text-xs">{expandedRow === forklift.id ? "Hide" : "View"}</span>
+                                <ChevronDown className={cn("h-4 w-4 ml-1 transition-transform", expandedRow === forklift.id && "rotate-180")} />
+                              </Button>
+                            </TableCell>
+                            <TableCell className="text-right">
                               <DropdownMenu open={openDropdownId === forklift.id} onOpenChange={(isOpen) => setOpenDropdownId(isOpen ? forklift.id : null)}>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
                                     <MoreHorizontal className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
@@ -245,68 +269,59 @@ export default function ForkliftsPage() {
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
-                           </div>
-                           <CardDescription className="pt-2">
-                             <Badge variant={forklift.locationType === 'Workshop' ? 'secondary' : 'outline'}>
-                                {forklift.locationType === 'Workshop' ? <Warehouse className="mr-2 h-3.5 w-3.5"/> : <Truck className="mr-2 h-3.5 w-3.5"/>}
-                                {forklift.locationType === 'On-Site' ? forklift.siteName : 'Workshop'}
-                             </Badge>
-                           </CardDescription>
-                        </CardHeader>
-
-                        <CollapsibleContent>
-                          <Separator />
-                          <div className="p-6 text-sm">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="flex flex-col gap-1">
-                                  <span className="font-medium text-muted-foreground">Year</span>
-                                  <span>{forklift.year}</span>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                  <span className="font-medium text-muted-foreground">Capacity</span>
-                                  <span>{forklift.capacity || 'N/A'}</span>
-                                </div>
-                                <div className="flex flex-col gap-1 col-span-2">
-                                  <span className="font-medium text-muted-foreground">Equipment Type</span>
-                                  <span>{forklift.equipmentType || 'N/A'}</span>
-                                </div>
-                                
-                                {forklift.locationType === 'On-Site' && (
-                                  <>
-                                    <div className="col-span-full mt-4 border-t pt-4">
-                                      <h4 className="font-semibold mb-2">Site Information</h4>
-                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <div className="flex flex-col gap-1 col-span-2">
-                                          <span className="font-medium text-muted-foreground">Company</span>
-                                          <span>{forklift.siteCompany || 'N/A'}</span>
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                          <span className="font-medium text-muted-foreground">Contact</span>
-                                          <span>{forklift.siteContactPerson || 'N/A'}</span>
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                          <span className="font-medium text-muted-foreground">Phone</span>
-                                          <span>{forklift.siteContactNumber || 'N/A'}</span>
-                                        </div>
+                            </TableCell>
+                          </TableRow>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent asChild>
+                          <TableRow>
+                            <TableCell colSpan={6} className="p-0">
+                               <div className="p-6 bg-muted/50">
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                      <div className="flex flex-col gap-1">
+                                        <span className="font-medium text-muted-foreground">Year</span>
+                                        <span>{forklift.year}</span>
                                       </div>
-                                    </div>
-                                  </>
-                                )}
-                            </div>
-                          </div>
+                                      <div className="flex flex-col gap-1">
+                                        <span className="font-medium text-muted-foreground">Capacity</span>
+                                        <span>{forklift.capacity || 'N/A'}</span>
+                                      </div>
+                                      <div className="flex flex-col gap-1 col-span-2">
+                                        <span className="font-medium text-muted-foreground">Equipment Type</span>
+                                        <span>{forklift.equipmentType || 'N/A'}</span>
+                                      </div>
+                                      
+                                      {forklift.locationType === 'On-Site' && (
+                                        <>
+                                          <div className="col-span-full mt-4 border-t pt-4">
+                                            <h4 className="font-semibold mb-2">Site Information</h4>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                              <div className="flex flex-col gap-1 col-span-2">
+                                                <span className="font-medium text-muted-foreground">Company</span>
+                                                <span>{forklift.siteCompany || 'N/A'}</span>
+                                              </div>
+                                              <div className="flex flex-col gap-1">
+                                                <span className="font-medium text-muted-foreground">Contact</span>
+                                                <span>{forklift.siteContactPerson || 'N/A'}</span>
+                                              </div>
+                                              <div className="flex flex-col gap-1">
+                                                <span className="font-medium text-muted-foreground">Phone</span>
+                                                <span>{forklift.siteContactNumber || 'N/A'}</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </>
+                                      )}
+                                  </div>
+                               </div>
+                            </TableCell>
+                          </TableRow>
                         </CollapsibleContent>
-                        <CardFooter className="p-0">
-                          <CollapsibleTrigger asChild>
-                            <Button variant="ghost" className="w-full justify-center rounded-t-none">
-                              <span className="text-xs">{openCollapsibleId === forklift.id ? "View Less" : "View Details"}</span>
-                               <ChevronDown className={cn("h-4 w-4 ml-2 transition-transform", openCollapsibleId === forklift.id && "rotate-180")} />
-                            </Button>
-                          </CollapsibleTrigger>
-                        </CardFooter>
-                     </Card>
-                  </Collapsible>
+                      </>
+                    </Collapsible>
+                  </Fragment>
                 ))}
-             </div>
+              </TableBody>
+            </Table>
           ) : (
              <div className="flex flex-col items-center justify-center h-64 rounded-lg border-2 border-dashed">
                 <h3 className="text-xl font-semibold">No Forklifts Found</h3>
@@ -354,5 +369,3 @@ export default function ForkliftsPage() {
     </div>
   );
 }
-
-    
