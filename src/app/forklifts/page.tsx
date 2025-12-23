@@ -317,7 +317,7 @@ export default function ForkliftsPage() {
                                                             <h4 className="font-semibold mb-2">Site Contact</h4>
                                                              <div className="flex items-center gap-2">
                                                                 <User className="h-4 w-4 text-muted-foreground" />
-                                                                <span>{forklift.siteContactPerson || 'N/A'}</span>
+                                                                <span>{forklift.siteContactPerson || 'NA'}</span>
                                                             </div>
                                                              <div className="flex items-center gap-2 mt-2">
                                                                 <Phone className="h-4 w-4 text-muted-foreground" />
