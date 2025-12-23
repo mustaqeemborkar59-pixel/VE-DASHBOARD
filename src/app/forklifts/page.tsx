@@ -253,7 +253,8 @@ export default function ForkliftsPage() {
                         <TableCell>{forklift.make}</TableCell>
                         <TableCell>{forklift.model}</TableCell>
                         <TableCell>
-                          <Badge variant={forklift.locationType === 'Workshop' ? 'secondary' : 'outline'} className={cn(
+                          <Badge variant={'outline'} className={cn(
+                            forklift.locationType === 'Workshop' && 'border-green-500/60 text-green-700 dark:border-green-400/50 dark:text-green-400',
                             forklift.locationType === 'On-Site' && 'border-amber-500/60 text-amber-700 dark:border-amber-400/50 dark:text-amber-400'
                           )}>
                             {forklift.locationType === 'Workshop' ? <Warehouse className="mr-2 h-3.5 w-3.5"/> : <Truck className="mr-2 h-3.5 w-3.5"/>}
