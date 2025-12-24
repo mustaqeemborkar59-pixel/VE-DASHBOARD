@@ -59,7 +59,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const userEmail = user?.isAnonymous ? 'Anonymous User' : (user?.email || 'Not logged in');
   const userInitial = user?.isAnonymous ? 'A' : (user?.email?.[0]?.toUpperCase() || '?');
   
-  if (!isMounted) {
+  // Wait until mounted and auth state is determined
+  if (!isMounted || isUserLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -146,7 +147,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </div>
           <ThemeToggle />
         </header>
-        <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-4 sm:p-6">{user ? children : null}</main>
       </SidebarInset>
     </SidebarProvider>
   );
