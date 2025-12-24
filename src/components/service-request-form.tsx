@@ -60,7 +60,12 @@ export function ServiceRequestForm({
     onSubmit({ forkliftId, issueDescription });
   };
 
-  const selectedForklift = forklifts.find(forklift => forklift.id === forkliftId);
+  const selectedForkliftLabel = () => {
+    if (!forkliftId) return "Select a forklift...";
+    const forklift = forklifts.find((f) => f.id === forkliftId);
+    if (!forklift) return "Select a forklift...";
+    return `${forklift.make} ${forklift.model} (${forklift.serialNumber})`
+  }
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-6 py-4">
@@ -75,15 +80,15 @@ export function ServiceRequestForm({
                 className="w-full justify-between"
                 disabled={isLoadingForklifts}
                 >
-                {forkliftId
-                    ? forklifts.find((forklift) => forklift.id === forkliftId)?.serialNumber
-                    : "Select a forklift..."}
+                  <span className="truncate">
+                    {selectedForkliftLabel()}
+                  </span>
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                 <Command>
-                    <CommandInput placeholder="Search forklift..." />
+                    <CommandInput placeholder="Search by make, model, or serial no..." />
                     <CommandList>
                         <CommandEmpty>{isLoadingForklifts ? "Loading forklifts..." : "No forklift found."}</CommandEmpty>
                         <CommandGroup>
@@ -102,7 +107,10 @@ export function ServiceRequestForm({
                                 forkliftId === forklift.id ? "opacity-100" : "opacity-0"
                                 )}
                             />
-                            {forklift.make} {forklift.model} ({forklift.serialNumber})
+                            <div className="flex flex-col">
+                               <span className="font-medium">{forklift.make} {forklift.model}</span>
+                               <span className="text-xs text-muted-foreground">{forklift.serialNumber}</span>
+                            </div>
                             </CommandItem>
                         ))}
                         </CommandGroup>

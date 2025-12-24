@@ -218,7 +218,7 @@ export default function ServiceRequestsPage() {
 
     {/* New Service Request Dialog */}
     <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>New Service Request</DialogTitle>
             <DialogDescription>
