@@ -263,16 +263,6 @@ export default function ForkliftsPage() {
       
        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex w-full flex-1 items-center gap-2">
-           <div className="relative w-full sm:max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={searchPlaceholder}
-              className="pl-8"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-          </div>
           <Select value={searchField} onValueChange={(value) => setSearchField(value as SearchField)}>
             <SelectTrigger className="w-auto px-3">
                <SelectValue asChild>
@@ -285,6 +275,16 @@ export default function ForkliftsPage() {
               ))}
             </SelectContent>
           </Select>
+           <div className="relative w-full sm:max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder={searchPlaceholder}
+              className="pl-8"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
         <div className="flex w-full sm:w-auto items-center gap-2">
           <Select value={locationFilter} onValueChange={setLocationFilter}>
