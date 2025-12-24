@@ -4,6 +4,7 @@ import {
   Card,
   CardContent,
   CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -39,10 +40,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
-import { Forklift } from "@/lib/data";
-import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone } from "lucide-react";
+import { Forklift, ServiceRequest } from "@/lib/data";
+import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone, Wrench } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, doc } from "firebase/firestore";
+import { collection, doc, query, where } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ForkliftForm, ForkliftFormData } from "@/components/forklift-form";
@@ -59,6 +60,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { ForkliftIcon } from "@/components/icons/forklift-icon";
 
 export default function ForkliftsPage() {
   const { firestore } = useFirebase();
@@ -75,7 +77,21 @@ export default function ForkliftsPage() {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
-  const { data: forklifts, isLoading } = useCollection<Forklift>(forkliftsQuery);
+  const serviceRequestsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'serviceRequests'), where('status', '!=', 'Completed')) : null, [firestore]);
+  
+  const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
+  const { data: activeServiceRequests, isLoading: isLoadingRequests } = useCollection<ServiceRequest>(serviceRequestsQuery);
+  
+  const isLoading = isLoadingForklifts || isLoadingRequests;
+  
+  const stats = useMemo(() => {
+    const total = forklifts?.length || 0;
+    const inWorkshop = forklifts?.filter(f => f.locationType === 'Workshop').length || 0;
+    const onSite = forklifts?.filter(f => f.locationType === 'On-Site').length || 0;
+    const underMaintenance = activeServiceRequests?.length || 0;
+    return { total, inWorkshop, onSite, underMaintenance };
+  }, [forklifts, activeServiceRequests]);
+
 
   const openAddEditDialog = (forklift: Forklift | null) => {
     setOpenDropdownId(null);
@@ -165,9 +181,11 @@ export default function ForkliftsPage() {
     setExpandedRow(expandedRow === id ? null : id);
   };
   
+  const cardClassName = "border-0 bg-gradient-to-br shadow-lg";
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Forklift Fleet</h1>
           <p className="text-muted-foreground">Search, filter, and manage your fleet of forklifts.</p>
@@ -177,7 +195,50 @@ export default function ForkliftsPage() {
           Add Forklift
         </Button>
       </div>
-      
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Forklifts</CardTitle>
+            <ForkliftIcon className="h-5 w-5 text-white/80" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{isLoading ? '...' : stats.total}</div>
+            <p className="text-xs text-white/90">Total units in fleet</p>
+          </CardContent>
+        </Card>
+        <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">In Workshop</CardTitle>
+            <Warehouse className="h-5 w-5 text-white/80" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{isLoading ? '...' : stats.inWorkshop}</div>
+            <p className="text-xs text-white/90">Units available at workshop</p>
+          </CardContent>
+        </Card>
+        <Card className={cn(cardClassName, "from-amber-500 to-orange-600 text-white shadow-amber-500/30")}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">On-Site</CardTitle>
+            <Truck className="h-5 w-5 text-white/80" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{isLoading ? '...' : stats.onSite}</div>
+            <p className="text-xs text-white/90">Units deployed at client sites</p>
+          </CardContent>
+        </Card>
+        <Card className={cn(cardClassName, "from-violet-500 to-purple-600 text-white shadow-violet-500/30")}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Under Maintenance</CardTitle>
+            <Wrench className="h-5 w-5 text-white/80" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{isLoading ? '...' : stats.underMaintenance}</div>
+            <p className="text-xs text-white/90">Units with active service requests</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row items-center gap-4">
@@ -222,7 +283,7 @@ export default function ForkliftsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isLoadingForklifts ? (
             <div className="flex justify-center items-center h-64">
               <p className="text-muted-foreground">Loading fleet...</p>
             </div>
@@ -386,3 +447,5 @@ export default function ForkliftsPage() {
     </div>
   );
 }
+
+    
