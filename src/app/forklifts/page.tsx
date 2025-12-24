@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
-import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone, Wrench } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone, Wrench, X } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
@@ -70,6 +70,7 @@ export default function ForkliftsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedForklift, setSelectedForklift] = useState<Forklift | null>(null);
 
+  const [locationFilter, setLocationFilter] = useState('All');
   const [equipmentTypeFilter, setEquipmentTypeFilter] = useState('All');
   const [capacityFilter, setCapacityFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -122,14 +123,22 @@ export default function ForkliftsPage() {
     return forklifts?.filter(forklift => {
       const typeMatch = equipmentTypeFilter === 'All' ? true : forklift.equipmentType === equipmentTypeFilter;
       const capacityMatch = capacityFilter === 'All' ? true : forklift.capacity === capacityFilter;
+      const locationMatch = locationFilter === 'All' ? true : forklift.locationType === locationFilter;
       const searchMatch = searchTerm === '' ? true : (
         forklift.serialNumber.toLowerCase().includes(lowercasedSearchTerm) ||
         forklift.make.toLowerCase().includes(lowercasedSearchTerm) ||
         forklift.model.toLowerCase().includes(lowercasedSearchTerm)
       );
-      return typeMatch && capacityMatch && searchMatch;
+      return typeMatch && capacityMatch && locationMatch && searchMatch;
     });
-  }, [forklifts, equipmentTypeFilter, capacityFilter, searchTerm]);
+  }, [forklifts, equipmentTypeFilter, capacityFilter, locationFilter, searchTerm]);
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setLocationFilter('All');
+    setEquipmentTypeFilter('All');
+    setCapacityFilter('All');
+  };
 
 
   const handleDelete = () => {
@@ -228,45 +237,53 @@ export default function ForkliftsPage() {
         </Card>
       </div>
 
-      <div className="flex flex-col md:flex-row items-center gap-4">
-          <div className="relative w-full flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search by Serial No., Make, or Model..."
-              className="pl-8 w-full md:w-[300px]"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="flex w-full md:w-auto items-end gap-4">
-            <div className="grid w-full md:w-[180px] gap-1.5">
-              <Label htmlFor="type-filter">Type</Label>
-              <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
-                <SelectTrigger id="type-filter">
-                  <SelectValue placeholder="Filter by Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {equipmentTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid w-full md:w-[180px] gap-1.5">
-              <Label htmlFor="capacity-filter">Capacity</Label>
-              <Select value={capacityFilter} onValueChange={setCapacityFilter}>
-                <SelectTrigger id="capacity-filter">
-                  <SelectValue placeholder="Filter by Capacity" />
-                </SelectTrigger>
-                <SelectContent>
-                  {capacities.map(capacity => (
-                    <SelectItem key={capacity} value={capacity}>{capacity}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="relative w-full flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search by Serial No., Make, or Model..."
+            className="pl-8 w-full sm:w-[300px]"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex w-full sm:w-auto items-center gap-2">
+          <Select value={locationFilter} onValueChange={setLocationFilter}>
+            <SelectTrigger className="w-full sm:w-[150px]">
+              <SelectValue placeholder="Filter by Location" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Locations</SelectItem>
+              <SelectItem value="Workshop">Workshop</SelectItem>
+              <SelectItem value="On-Site">On-Site</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
+            <SelectTrigger className="w-full sm:w-[150px]">
+              <SelectValue placeholder="Filter by Type" />
+            </SelectTrigger>
+            <SelectContent>
+              {equipmentTypes.map(type => (
+                <SelectItem key={type} value={type}>{type}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={capacityFilter} onValueChange={setCapacityFilter}>
+            <SelectTrigger className="w-full sm:w-[150px]">
+              <SelectValue placeholder="Filter by Capacity" />
+            </SelectTrigger>
+            <SelectContent>
+              {capacities.map(capacity => (
+                <SelectItem key={capacity} value={capacity}>{capacity}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="ghost" onClick={resetFilters} className="text-muted-foreground">
+            <X className="h-4 w-4 mr-1"/>
+            Reset
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -349,7 +366,7 @@ export default function ForkliftsPage() {
                                         </div>
                                         <div className="flex flex-col gap-1">
                                           <Label className="text-xs text-muted-foreground">Voltage</Label>
-                                          <span className="font-medium">{forklift.voltage || 'N/A'}</span>
+                                          <span className="font-medium">{forklift.voltage || 'NA'}</span>
                                         </div>
                                          <div className="flex flex-col gap-1">
                                           <Label className="text-xs text-muted-foreground">Mast Height</Label>
@@ -435,7 +452,7 @@ export default function ForkliftsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => { setIsDeleteDialogOpen(false); setSelectedForklift(null);}}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => { setIsDeleteDialogOpen(false); setSelectedForklift(null);}}>Cancel</Cancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -443,3 +460,5 @@ export default function ForkliftsPage() {
     </div>
   );
 }
+
+    
