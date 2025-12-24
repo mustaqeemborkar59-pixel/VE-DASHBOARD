@@ -5,14 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Forklift } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export type ServiceRequestFormData = {
   forkliftId: string;
@@ -36,6 +44,7 @@ export function ServiceRequestForm({
   const [forkliftId, setForkliftId] = useState('');
   const [issueDescription, setIssueDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [open, setOpen] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,26 +60,56 @@ export function ServiceRequestForm({
     onSubmit({ forkliftId, issueDescription });
   };
 
+  const selectedForklift = forklifts.find(forklift => forklift.id === forkliftId);
+
   return (
     <form onSubmit={handleSubmit} className="grid gap-6 py-4">
       <div className="grid gap-2">
         <Label htmlFor="forklift">Forklift</Label>
-        <Select onValueChange={setForkliftId} value={forkliftId}>
-          <SelectTrigger id="forklift">
-            <SelectValue placeholder="Select a forklift" />
-          </SelectTrigger>
-          <SelectContent>
-            {isLoadingForklifts ? (
-              <SelectItem value="loading" disabled>Loading...</SelectItem>
-            ) : (
-              forklifts.map(forklift => (
-                <SelectItem key={forklift.id} value={forklift.id}>
-                  {forklift.make} {forklift.model} ({forklift.serialNumber})
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="w-full justify-between"
+                disabled={isLoadingForklifts}
+                >
+                {selectedForklift
+                    ? `${selectedForklift.make} ${selectedForklift.model} (${selectedForklift.serialNumber})`
+                    : "Select a forklift..."}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                <Command>
+                    <CommandInput placeholder="Search forklift..." />
+                    <CommandList>
+                        <CommandEmpty>{isLoadingForklifts ? "Loading forklifts..." : "No forklift found."}</CommandEmpty>
+                        <CommandGroup>
+                        {forklifts.map((forklift) => (
+                            <CommandItem
+                            key={forklift.id}
+                            value={`${forklift.serialNumber} ${forklift.make} ${forklift.model}`}
+                            onSelect={() => {
+                                setForkliftId(forklift.id)
+                                setOpen(false)
+                            }}
+                            >
+                            <Check
+                                className={cn(
+                                "mr-2 h-4 w-4",
+                                forkliftId === forklift.id ? "opacity-100" : "opacity-0"
+                                )}
+                            />
+                            {forklift.make} {forklift.model} ({forklift.serialNumber})
+                            </CommandItem>
+                        ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
       </div>
       <div className="grid gap-2">
         <Label htmlFor="issue">Issue Description</Label>
