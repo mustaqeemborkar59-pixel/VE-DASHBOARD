@@ -58,6 +58,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 export default function ForkliftsPage() {
   const { firestore } = useFirebase();
@@ -282,58 +283,57 @@ export default function ForkliftsPage() {
                                 </TableCell>
                             </TableRow>
                             {expandedRow === forklift.id && (
-                                <TableRow className="bg-accent hover:bg-accent">
-                                    <TableCell colSpan={6} className="p-0">
-                                        <div className="p-6">
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                                <div className="flex flex-col gap-1">
-                                                    <span className="font-medium text-muted-foreground">Year</span>
-                                                    <span>{forklift.year}</span>
-                                                </div>
-                                                <div className="flex flex-col gap-1">
-                                                    <span className="font-medium text-muted-foreground">Capacity</span>
-                                                    <span>{forklift.capacity || 'N/A'}</span>
-                                                </div>
-                                                <div className="flex flex-col gap-1 col-span-2">
-                                                    <span className="font-medium text-muted-foreground">Equipment Type</span>
-                                                    <span>{forklift.equipmentType || 'N/A'}</span>
-                                                </div>
-                                                
-                                                {forklift.locationType === 'On-Site' && (
-                                                    <>
-                                                    <div className="col-span-full mt-4 border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                                                        <div>
-                                                            <h4 className="font-semibold mb-2">Site Location</h4>
-                                                            <div className="flex flex-col gap-1">
-                                                                <span className="font-medium text-muted-foreground">Site / Company</span>
-                                                                <span>{forklift.siteCompany || 'N/A'}</span>
-                                                            </div>
-                                                            <div className="flex flex-col gap-1 mt-2">
-                                                                <span className="font-medium text-muted-foreground">Area</span>
-                                                                <span>{forklift.siteArea || 'N/A'}</span>
-                                                            </div>
-                                                        </div>
-                                                         <div>
-                                                            <h4 className="font-semibold mb-2">Site Contact</h4>
-                                                             <div className="flex items-center gap-2">
-                                                                <User className="h-4 w-4 text-muted-foreground" />
-                                                                <span>{forklift.siteContactPerson || 'NA'}</span>
-                                                            </div>
-                                                             <div className="flex items-center gap-2 mt-2">
-                                                                <Phone className="h-4 w-4 text-muted-foreground" />
-                                                                <span>{forklift.siteContactNumber || 'N/A'}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    </>
-                                                )}
+                                <TableRow className="bg-accent/50 hover:bg-accent/50">
+                                    <TableCell colSpan={6} className="p-2.5">
+                                        <div className="border rounded-md p-4 bg-background/50">
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4 text-sm">
+                                            
+                                            <div className="flex items-baseline">
+                                              <span className="font-medium text-muted-foreground w-28">Year</span>
+                                              <span className="font-mono">{forklift.year}</span>
                                             </div>
-                                             {forklift.remarks && (
-                                                <div className="mt-4 pt-4 border-t">
-                                                     <h4 className="font-semibold mb-2 text-sm">Remarks</h4>
-                                                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{forklift.remarks}</p>
+                                            <div className="flex items-baseline">
+                                              <span className="font-medium text-muted-foreground w-28">Capacity</span>
+                                              <span>{forklift.capacity || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex items-baseline">
+                                              <span className="font-medium text-muted-foreground w-28">Equip. Type</span>
+                                              <span>{forklift.equipmentType || 'N/A'}</span>
+                                            </div>
+
+                                            {forklift.locationType === 'On-Site' && (
+                                              <>
+                                                <div className="col-span-full"><Separator className="my-2" /></div>
+                                                <div className="flex items-baseline">
+                                                  <span className="font-medium text-muted-foreground w-28">Site / Company</span>
+                                                  <span>{forklift.siteCompany || 'N/A'}</span>
                                                 </div>
+                                                 <div className="flex items-baseline">
+                                                  <span className="font-medium text-muted-foreground w-28">Area</span>
+                                                  <span>{forklift.siteArea || 'N/A'}</span>
+                                                </div>
+                                                <div className="col-span-1"></div>
+                                                <div className="flex items-center">
+                                                  <span className="font-medium text-muted-foreground w-28 flex items-center gap-2"><User className="h-4 w-4" /> Contact</span>
+                                                  <span>{forklift.siteContactPerson || 'N/A'}</span>
+                                                </div>
+                                                 <div className="flex items-center">
+                                                  <span className="font-medium text-muted-foreground w-28 flex items-center gap-2"><Phone className="h-4 w-4" /> Phone</span>
+                                                  <span>{forklift.siteContactNumber || 'N/A'}</span>
+                                                </div>
+                                              </>
                                             )}
+
+                                            {forklift.remarks && (
+                                               <>
+                                                <div className="col-span-full"><Separator className="my-2" /></div>
+                                                <div className="col-span-full flex flex-col gap-1">
+                                                     <h4 className="font-medium text-muted-foreground">Remarks</h4>
+                                                     <p className="text-sm text-foreground whitespace-pre-wrap pl-2 border-l-2">{forklift.remarks}</p>
+                                                </div>
+                                               </>
+                                            )}
+                                          </div>
                                         </div>
                                     </TableCell>
                                 </TableRow>
