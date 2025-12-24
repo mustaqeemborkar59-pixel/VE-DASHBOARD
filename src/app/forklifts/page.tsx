@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
-import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone, Wrench, X, Filter } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone, Wrench, X, ListFilter } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
@@ -264,10 +264,8 @@ export default function ForkliftsPage() {
        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex w-full flex-1 items-center gap-2">
           <Select value={searchField} onValueChange={(value) => setSearchField(value as SearchField)}>
-            <SelectTrigger className="w-auto px-3">
-               <SelectValue asChild>
-                  <Filter className="h-4 w-4 text-muted-foreground" />
-               </SelectValue>
+            <SelectTrigger className="w-auto px-3 border-r-0 rounded-r-none">
+              <ListFilter className="h-4 w-4 text-muted-foreground" />
             </SelectTrigger>
             <SelectContent>
               {Object.entries(searchFieldLabels).map(([key, label]) => (
@@ -280,7 +278,7 @@ export default function ForkliftsPage() {
             <Input
               type="search"
               placeholder={searchPlaceholder}
-              className="pl-8"
+              className="pl-8 rounded-l-none"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
