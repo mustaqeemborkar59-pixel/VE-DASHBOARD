@@ -229,7 +229,7 @@ export default function ForkliftsPage() {
       </div>
 
       <Card>
-        <div className="flex flex-col md:flex-row items-center gap-4 p-6">
+        <div className="flex flex-col md:flex-row items-center gap-4 p-6 border-b">
             <div className="relative w-full flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -275,7 +275,7 @@ export default function ForkliftsPage() {
             <p className="text-muted-foreground">Loading fleet...</p>
           </div>
         ) : filteredForklifts && filteredForklifts.length > 0 ? (
-            <div className="border-t">
+            <div>
               <Table>
                   <TableHeader>
                       <TableRow>
