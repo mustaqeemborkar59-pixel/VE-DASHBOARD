@@ -41,12 +41,13 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
-import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone, Wrench, X, ListFilter } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone, Wrench, X, ListFilter, Upload } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ForkliftForm, ForkliftFormData } from "@/components/forklift-form";
+import { ForkliftImportDialog } from "@/components/forklift-import-dialog";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import {
   Select,
@@ -78,6 +79,7 @@ export default function ForkliftsPage() {
   
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedForklift, setSelectedForklift] = useState<Forklift | null>(null);
 
   const [locationFilter, setLocationFilter] = useState('All');
@@ -209,6 +211,14 @@ export default function ForkliftsPage() {
     setSelectedForklift(null);
   };
 
+  const handleImportComplete = (count: number) => {
+    toast({
+      title: 'Import Successful',
+      description: `${count} forklift(s) have been added to your fleet.`,
+    });
+    setIsImportDialogOpen(false);
+  };
+
   const toggleRow = (id: string) => {
     setExpandedRow(expandedRow === id ? null : id);
   };
@@ -222,10 +232,16 @@ export default function ForkliftsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Forklift Fleet</h1>
           <p className="text-muted-foreground">Search, filter, and manage your fleet of forklifts.</p>
         </div>
-        <Button onClick={() => openAddEditDialog(null)} size="sm">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Forklift
-        </Button>
+        <div className="flex items-center gap-2">
+           <Button onClick={() => setIsImportDialogOpen(true)} variant="outline" size="sm">
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
+          <Button onClick={() => openAddEditDialog(null)} size="sm">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Forklift
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -484,6 +500,13 @@ export default function ForkliftsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import Dialog */}
+      <ForkliftImportDialog
+        isOpen={isImportDialogOpen}
+        onClose={() => setIsImportDialogOpen(false)}
+        onImportComplete={handleImportComplete}
+      />
     </div>
   );
 }
