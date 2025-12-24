@@ -319,9 +319,9 @@ export default function ForkliftsPage() {
       </div>
 
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-3">
         {isLoadingForklifts ? (
-          <div className="flex justify-center items-center h-64 p-6 pt-0">
+          <div className="flex justify-center items-center h-64 p-3 pt-0">
             <p className="text-muted-foreground">Loading fleet...</p>
           </div>
         ) : filteredForklifts && filteredForklifts.length > 0 ? (

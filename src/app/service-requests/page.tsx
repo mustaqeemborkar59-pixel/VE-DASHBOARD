@@ -141,7 +141,7 @@ export default function ServiceRequestsPage() {
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 pt-0">
         <Table>
           <TableHeader>
             <TableRow>

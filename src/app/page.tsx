@@ -123,7 +123,7 @@ export default function Dashboard() {
                 </Link>
             </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 pt-0">
           <Table>
             <TableHeader>
               <TableRow>
