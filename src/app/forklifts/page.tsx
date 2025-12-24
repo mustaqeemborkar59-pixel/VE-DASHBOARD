@@ -241,7 +241,7 @@ export default function ForkliftsPage() {
                     <TableBody>
                         {filteredForklifts.map((forklift) => (
                         <Fragment key={forklift.id}>
-                            <TableRow onClick={() => toggleRow(forklift.id)} className={cn("cursor-pointer", expandedRow === forklift.id && "bg-muted/50 hover:bg-muted/50")} data-state={expandedRow === forklift.id ? 'open' : 'closed'}>
+                            <TableRow onClick={() => toggleRow(forklift.id)} className={cn("cursor-pointer", expandedRow === forklift.id && "bg-accent hover:bg-accent")} data-state={expandedRow === forklift.id ? 'open' : 'closed'}>
                                 <TableCell className="w-[100px] text-center">
                                     <Button variant="ghost" size="sm">
                                         <span className="text-xs">{expandedRow === forklift.id ? "Hide" : "View"}</span>
@@ -282,7 +282,7 @@ export default function ForkliftsPage() {
                                 </TableCell>
                             </TableRow>
                             {expandedRow === forklift.id && (
-                                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                                <TableRow className="bg-accent hover:bg-accent">
                                     <TableCell colSpan={6} className="p-0">
                                         <div className="p-6">
                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
