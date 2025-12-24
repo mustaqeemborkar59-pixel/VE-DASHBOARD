@@ -90,9 +90,9 @@ export function ServiceRequestForm({
                         {forklifts.map((forklift) => (
                             <CommandItem
                             key={forklift.id}
-                            value={`${forklift.serialNumber} ${forklift.make} ${forklift.model}`}
-                            onSelect={() => {
-                                setForkliftId(forklift.id)
+                            value={forklift.id}
+                            onSelect={(currentValue) => {
+                                setForkliftId(currentValue === forkliftId ? "" : currentValue)
                                 setOpen(false)
                             }}
                             >
