@@ -75,8 +75,8 @@ export function ServiceRequestForm({
                 className="w-full justify-between"
                 disabled={isLoadingForklifts}
                 >
-                {selectedForklift
-                    ? `${selectedForklift.make} ${selectedForklift.model} (${selectedForklift.serialNumber})`
+                {forkliftId
+                    ? forklifts.find((forklift) => forklift.id === forkliftId)?.serialNumber
                     : "Select a forklift..."}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -89,12 +89,12 @@ export function ServiceRequestForm({
                         <CommandGroup>
                         {forklifts.map((forklift) => (
                             <CommandItem
-                            key={forklift.id}
-                            value={forklift.id}
-                            onSelect={(currentValue) => {
-                                setForkliftId(currentValue === forkliftId ? "" : currentValue)
-                                setOpen(false)
-                            }}
+                                key={forklift.id}
+                                value={forklift.id}
+                                onSelect={(currentValue) => {
+                                    setForkliftId(currentValue === forkliftId ? "" : currentValue)
+                                    setOpen(false)
+                                }}
                             >
                             <Check
                                 className={cn(
