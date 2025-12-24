@@ -279,10 +279,6 @@ export default function ForkliftsPage() {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="ghost" onClick={resetFilters} className="text-muted-foreground">
-            <X className="h-4 w-4 mr-1"/>
-            Reset
-          </Button>
         </div>
       </div>
 
