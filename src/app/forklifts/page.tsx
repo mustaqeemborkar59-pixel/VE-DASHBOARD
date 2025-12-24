@@ -229,7 +229,7 @@ export default function ForkliftsPage() {
       </div>
 
       <Card>
-        <div className="flex flex-col md:flex-row items-center gap-4 p-6 border-b">
+        <div className="flex flex-col md:flex-row items-center gap-4 p-6">
             <div className="relative w-full flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -269,7 +269,9 @@ export default function ForkliftsPage() {
               </div>
             </div>
         </div>
+      </Card>
 
+      <Card>
         {isLoadingForklifts ? (
           <div className="flex justify-center items-center h-64 p-6 pt-0">
             <p className="text-muted-foreground">Loading fleet...</p>
