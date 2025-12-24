@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +22,8 @@ import { Forklift } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { addDocumentNonBlocking, useFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 export type ServiceRequestFormData = {
   forkliftId: string;
@@ -30,24 +33,23 @@ export type ServiceRequestFormData = {
 interface ServiceRequestFormProps {
   forklifts: Forklift[];
   isLoadingForklifts: boolean;
-  onSubmit: (data: ServiceRequestFormData) => void;
-  onCancel: () => void;
 }
 
 export function ServiceRequestForm({
   forklifts,
   isLoadingForklifts,
-  onSubmit,
-  onCancel,
 }: ServiceRequestFormProps) {
+  const router = useRouter();
+  const { firestore } = useFirebase();
   const { toast } = useToast();
   const [forkliftId, setForkliftId] = useState('');
   const [issueDescription, setIssueDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firestore) return;
     if (!forkliftId || !issueDescription) {
       toast({
         variant: "destructive",
@@ -57,7 +59,25 @@ export function ServiceRequestForm({
       return;
     }
     setIsSubmitting(true);
-    onSubmit({ forkliftId, issueDescription });
+    addDocumentNonBlocking(collection(firestore, 'serviceRequests'), {
+      forkliftId,
+      issueDescription,
+      status: 'Pending',
+      requestDate: new Date().toISOString(),
+    }).then(() => {
+        toast({
+            title: "Success",
+            description: "Service request submitted successfully.",
+        });
+        router.push('/service-requests');
+    }).catch(err => {
+        toast({
+            variant: "destructive",
+            title: "Submission Error",
+            description: "Could not submit the request. Please try again.",
+        });
+        setIsSubmitting(false);
+    });
   };
 
   const selectedForkliftLabel = () => {
@@ -68,7 +88,7 @@ export function ServiceRequestForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-6 py-4">
+    <form onSubmit={handleSubmit} className="grid gap-6">
       <div className="grid gap-2">
         <Label htmlFor="forklift">Forklift</Label>
         <Popover open={open} onOpenChange={setOpen}>
@@ -130,7 +150,7 @@ export function ServiceRequestForm({
         />
       </div>
       <div className="flex justify-end gap-2 pt-4">
-        <Button variant="outline" type="button" onClick={onCancel}>
+        <Button variant="outline" type="button" onClick={() => router.push('/service-requests')}>
           Cancel
         </Button>
         <Button type="submit" disabled={isSubmitting}>

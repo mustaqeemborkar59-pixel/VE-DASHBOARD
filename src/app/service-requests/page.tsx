@@ -37,17 +37,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { MoreHorizontal, PlusCircle, Eye } from "lucide-react";
-import { useCollection, useFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirebase, updateDocumentNonBlocking, useMemoFirebase } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { ServiceRequestForm, ServiceRequestFormData } from "@/components/service-request-form";
+import Link from "next/link";
 
 
 export default function ServiceRequestsPage() {
   const { firestore } = useFirebase();
-  const { toast } = useToast();
-  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState<string | null>(null);
@@ -85,23 +82,6 @@ export default function ServiceRequestsPage() {
     const requestRef = doc(firestore, 'serviceRequests', requestId);
     updateDocumentNonBlocking(requestRef, { assignedTechnicianId: technicianId, status: 'Assigned' });
   }
-
-  const handleFormSubmit = (formData: ServiceRequestFormData) => {
-    if (!firestore) return;
-
-    addDocumentNonBlocking(collection(firestore, 'serviceRequests'), {
-      ...formData,
-      status: 'Pending',
-      requestDate: new Date().toISOString(),
-    });
-
-    toast({
-      title: "Success",
-      description: "Service request submitted successfully.",
-    });
-
-    setIsFormDialogOpen(false);
-  };
   
   const handleViewDetails = (request: ServiceRequest) => {
     setIsDropdownOpen(null);
@@ -135,9 +115,11 @@ export default function ServiceRequestsPage() {
             <CardTitle>Service Requests</CardTitle>
             <CardDescription>Manage and assign forklift service requests.</CardDescription>
           </div>
-          <Button onClick={() => setIsFormDialogOpen(true)} size="sm">
+          <Button asChild size="sm">
+            <Link href="/service-requests/new">
               <PlusCircle className="mr-2 h-4 w-4" />
               New Request
+            </Link>
           </Button>
         </div>
       </CardHeader>
@@ -216,24 +198,6 @@ export default function ServiceRequestsPage() {
       </CardContent>
     </Card>
 
-    {/* New Service Request Dialog */}
-    <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>New Service Request</DialogTitle>
-            <DialogDescription>
-              Fill out the form to request maintenance for a forklift.
-            </DialogDescription>
-          </DialogHeader>
-          <ServiceRequestForm
-            forklifts={forklifts || []}
-            isLoadingForklifts={isLoadingForklifts}
-            onSubmit={handleFormSubmit}
-            onCancel={() => setIsFormDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-      
     {/* View Details Dialog */}
     <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
       <DialogContent className="sm:max-w-lg">
