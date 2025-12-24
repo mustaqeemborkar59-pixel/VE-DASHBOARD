@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
-import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone, Wrench, X } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone, Wrench, X, Filter } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
@@ -63,6 +63,14 @@ import { Separator } from "@/components/ui/separator";
 import { ForkliftIcon } from "@/components/icons/forklift-icon";
 
 type SearchField = 'All' | 'serialNumber' | 'make' | 'model' | 'siteCompany' | 'siteArea';
+const searchFieldLabels: Record<SearchField, string> = {
+  All: 'All Fields',
+  serialNumber: 'Serial No.',
+  make: 'Make',
+  model: 'Model',
+  siteCompany: 'Site / Company',
+  siteArea: 'Site Area'
+};
 
 export default function ForkliftsPage() {
   const { firestore } = useFirebase();
@@ -149,13 +157,12 @@ export default function ForkliftsPage() {
     });
   }, [forklifts, equipmentTypeFilter, capacityFilter, locationFilter, searchTerm, searchField]);
 
-  const resetFilters = () => {
-    setSearchTerm('');
-    setLocationFilter('All');
-    setEquipmentTypeFilter('All');
-    setCapacityFilter('All');
-    setSearchField('All');
-  };
+  const searchPlaceholder = useMemo(() => {
+    if (searchField === 'All') {
+      return "Search fleet...";
+    }
+    return `Search by ${searchFieldLabels[searchField]}...`;
+  }, [searchField]);
 
 
   const handleDelete = () => {
@@ -256,29 +263,28 @@ export default function ForkliftsPage() {
       
        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex w-full flex-1 items-center gap-2">
-          <Select value={searchField} onValueChange={(value) => setSearchField(value as SearchField)}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Search by..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All Fields</SelectItem>
-              <SelectItem value="serialNumber">Serial No.</SelectItem>
-              <SelectItem value="make">Make</SelectItem>
-              <SelectItem value="model">Model</SelectItem>
-              <SelectItem value="siteCompany">Site / Company</SelectItem>
-              <SelectItem value="siteArea">Site Area</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="relative w-full sm:max-w-xs">
+           <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search fleet..."
+              placeholder={searchPlaceholder}
               className="pl-8"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
+          <Select value={searchField} onValueChange={(value) => setSearchField(value as SearchField)}>
+            <SelectTrigger className="w-auto px-3">
+               <SelectValue asChild>
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+               </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(searchFieldLabels).map(([key, label]) => (
+                <SelectItem key={key} value={key}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex w-full sm:w-auto items-center gap-2">
           <Select value={locationFilter} onValueChange={setLocationFilter}>
@@ -488,5 +494,3 @@ export default function ForkliftsPage() {
     </div>
   );
 }
-
-    
