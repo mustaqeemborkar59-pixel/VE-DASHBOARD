@@ -128,6 +128,7 @@ export default function EmployeesPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[50px]">Sr.</TableHead>
                 <TableHead>Full Name</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Contact Number</TableHead>
@@ -139,11 +140,12 @@ export default function EmployeesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                  <TableCell colSpan={7} className="text-center">Loading...</TableCell>
                 </TableRow>
               ) : (
-                employees?.map((employee) => (
+                employees?.map((employee, index) => (
                   <TableRow key={employee.id}>
+                    <TableCell className="font-medium">{index + 1}</TableCell>
                     <TableCell className="font-medium">{employee.fullName}</TableCell>
                     <TableCell>{employee.specialization}</TableCell>
                     <TableCell>{employee.contactNumber}</TableCell>

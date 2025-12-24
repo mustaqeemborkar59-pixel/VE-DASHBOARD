@@ -145,6 +145,7 @@ export default function ServiceRequestsPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[50px]">Sr.</TableHead>
               <TableHead>Forklift</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Assigned To</TableHead>
@@ -156,11 +157,12 @@ export default function ServiceRequestsPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={7} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : (
-              serviceRequests?.map((request) => (
+              serviceRequests?.map((request, index) => (
                 <TableRow key={request.id}>
+                  <TableCell className="font-medium">{index + 1}</TableCell>
                   <TableCell>
                     <div className="font-medium">{getForkliftInfo(request.forkliftId)}</div>
                     <div className="text-sm text-muted-foreground">{forklifts?.find(f => f.id === request.forkliftId)?.serialNumber}</div>

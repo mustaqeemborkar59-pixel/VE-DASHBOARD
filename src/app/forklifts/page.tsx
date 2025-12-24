@@ -335,7 +335,7 @@ export default function ForkliftsPage() {
       </div>
 
       <Card>
-        <CardContent className="pt-3">
+        <CardContent className="p-3 pt-0">
         {isLoadingForklifts ? (
           <div className="flex justify-center items-center h-64 p-3 pt-0">
             <p className="text-muted-foreground">Loading fleet...</p>
@@ -343,8 +343,9 @@ export default function ForkliftsPage() {
         ) : filteredForklifts && filteredForklifts.length > 0 ? (
             <div>
               <Table>
-                  <TableHeader>
+                  <TableHeader className="sticky top-0 bg-card">
                       <TableRow>
+                      <TableHead className="w-[50px]">Sr.</TableHead>
                       <TableHead>Serial Number</TableHead>
                       <TableHead>Make</TableHead>
                       <TableHead>Model</TableHead>
@@ -353,9 +354,10 @@ export default function ForkliftsPage() {
                       </TableRow>
                   </TableHeader>
                   <TableBody>
-                      {filteredForklifts.map((forklift) => (
+                      {filteredForklifts.map((forklift, index) => (
                       <Fragment key={forklift.id}>
                           <TableRow onClick={() => toggleRow(forklift.id)} className={cn("cursor-pointer", expandedRow === forklift.id && "bg-accent hover:bg-accent")} data-state={expandedRow === forklift.id ? 'open' : 'closed'}>
+                              <TableCell className="font-medium">{index + 1}</TableCell>
                               <TableCell className="font-medium">{forklift.serialNumber}</TableCell>
                               <TableCell>{forklift.make}</TableCell>
                               <TableCell>{forklift.model}</TableCell>

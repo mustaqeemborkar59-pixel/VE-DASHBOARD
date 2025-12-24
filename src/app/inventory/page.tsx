@@ -44,6 +44,7 @@ export default function InventoryPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[50px]">Sr.</TableHead>
               <TableHead>SKU</TableHead>
               <TableHead>Part Name</TableHead>
               <TableHead className="text-right">Quantity</TableHead>
@@ -53,11 +54,12 @@ export default function InventoryPage() {
           <TableBody>
             {isLoading ? (
                 <TableRow>
-                    <TableCell colSpan={4} className="text-center">Loading...</TableCell>
+                    <TableCell colSpan={5} className="text-center">Loading...</TableCell>
                 </TableRow>
             ) : (
-                parts?.map((part) => (
+                parts?.map((part, index) => (
                 <TableRow key={part.id}>
+                    <TableCell className="font-medium">{index + 1}</TableCell>
                     <TableCell className="font-medium">{part.id}</TableCell>
                     <TableCell>{part.name}</TableCell>
                     <TableCell className="text-right">{part.quantity}</TableCell>

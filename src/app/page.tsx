@@ -127,6 +127,7 @@ export default function Dashboard() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[50px]">Sr.</TableHead>
                 <TableHead>Forklift</TableHead>
                 <TableHead>Issue</TableHead>
                 <TableHead>Status</TableHead>
@@ -136,11 +137,12 @@ export default function Dashboard() {
             <TableBody>
               {isLoadingRecent || isLoadingForklifts ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">Loading...</TableCell>
+                  <TableCell colSpan={5} className="text-center">Loading...</TableCell>
                 </TableRow>
               ) : (
-                recentRequests?.map((request) => (
+                recentRequests?.map((request, index) => (
                   <TableRow key={request.id}>
+                     <TableCell className="font-medium">{index + 1}</TableCell>
                     <TableCell>
                       <div className="font-medium">{forklifts?.find(f => f.id === request.forkliftId)?.serialNumber || request.forkliftId}</div>
                       <div className="text-sm text-muted-foreground">{getForkliftModel(request.forkliftId)}</div>
