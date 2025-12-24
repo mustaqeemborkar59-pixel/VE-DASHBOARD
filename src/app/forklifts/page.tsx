@@ -344,14 +344,16 @@ export default function ForkliftsPage() {
                               <TableCell>{forklift.make}</TableCell>
                               <TableCell>{forklift.model}</TableCell>
                               <TableCell>
+                                <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={(e) => { e.stopPropagation(); openAddEditDialog(forklift); }}>
                                   <Badge variant={'outline'} className={cn(
-                                      'font-medium',
+                                      'font-medium pointer-events-none',
                                       forklift.locationType === 'Workshop' && 'border-green-500/60 bg-green-50 text-green-700 dark:border-green-400/50 dark:bg-green-900/20 dark:text-green-400',
                                       forklift.locationType === 'On-Site' && 'border-amber-500/60 bg-amber-50 text-amber-700 dark:border-amber-400/50 dark:bg-amber-900/20 dark:text-amber-400'
                                   )}>
                                       {forklift.locationType === 'Workshop' ? <Warehouse className="mr-2 h-3.5 w-3.5"/> : <Truck className="mr-2 h-3.5 w-3.5"/>}
                                       {forklift.locationType === 'On-Site' ? forklift.siteCompany : 'Workshop'}
                                   </Badge>
+                                </Button>
                               </TableCell>
                               <TableCell className="text-right">
                                   <DropdownMenu open={openDropdownId === forklift.id} onOpenChange={(isOpen) => setOpenDropdownId(isOpen ? forklift.id : null)}>
