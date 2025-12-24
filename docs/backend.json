@@ -56,6 +56,10 @@
           "type": "number",
           "description": "Manufacturing year of the forklift."
         },
+        "srNumber": {
+          "type": "number",
+          "description": "The serial number for ordering."
+        },
         "capacity": {
           "type": "string",
           "description": "Lifting capacity of the forklift (e.g., '5000 lbs')."

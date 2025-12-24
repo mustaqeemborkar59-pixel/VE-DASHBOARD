@@ -17,6 +17,7 @@ export type Forklift = {
   make: string;
   model: string;
   year: number;
+  srNumber?: number;
   capacity?: string;
   equipmentType?: string;
   voltage?: string;

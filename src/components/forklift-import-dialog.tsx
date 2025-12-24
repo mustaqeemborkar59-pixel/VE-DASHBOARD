@@ -25,12 +25,12 @@ const requiredFields = [
 ];
 
 const allFields = [
-  'Sr', ...requiredFields, 'capacity', 'equipmentType', 'voltage', 'mastHeight',
+  'Sr', 'serialNumber', 'make', 'model', 'year', 'locationType', 'capacity', 'equipmentType', 'voltage', 'mastHeight',
   'siteCompany', 'siteArea', 'siteContactPerson', 'siteContactNumber', 'remarks'
 ];
 
 const forkliftDataFields = [
-  ...requiredFields, 'capacity', 'equipmentType', 'voltage', 'mastHeight',
+  'srNumber', ...requiredFields, 'capacity', 'equipmentType', 'voltage', 'mastHeight',
   'siteCompany', 'siteArea', 'siteContactPerson', 'siteContactNumber', 'remarks'
 ];
 
@@ -95,6 +95,12 @@ export function ForkliftImportDialog({ isOpen, onClose, onImportComplete }: Fork
         for (let i = 0; i < totalRecords; i++) {
           const record = json[i];
           const newForklift: Partial<Forklift> = {};
+          
+          // Map "Sr" to "srNumber"
+          if (record.Sr !== undefined) {
+              record.srNumber = record.Sr;
+              delete record.Sr;
+          }
 
           // Sanitize and map data
           forkliftDataFields.forEach(field => {

@@ -43,7 +43,7 @@ import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
 import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone, Wrench, X, ListFilter, Upload } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, doc, query, where } from "firebase/firestore";
+import { collection, doc, query, where, orderBy } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ForkliftForm, ForkliftFormData } from "@/components/forklift-form";
@@ -90,7 +90,7 @@ export default function ForkliftsPage() {
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
-  const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
+  const forkliftsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'forklifts'), orderBy('srNumber', 'asc')) : null, [firestore]);
   const serviceRequestsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'serviceRequests'), where('status', '!=', 'Completed')) : null, [firestore]);
   
   const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
@@ -202,6 +202,8 @@ export default function ForkliftsPage() {
       updateDocumentNonBlocking(forkliftDocRef, dataToSubmit);
       toast({ title: "Success", description: "Forklift updated successfully." });
     } else { // Add mode
+      const maxSrNumber = forklifts ? Math.max(0, ...forklifts.map(f => f.srNumber || 0)) : 0;
+      dataToSubmit.srNumber = maxSrNumber + 1;
       const forkliftsCollection = collection(firestore, 'forklifts');
       addDocumentNonBlocking(forkliftsCollection, dataToSubmit);
       toast({ title: "Success", description: "Forklift added successfully." });
@@ -354,10 +356,10 @@ export default function ForkliftsPage() {
                       </TableRow>
                   </TableHeader>
                   <TableBody>
-                      {filteredForklifts.map((forklift, index) => (
+                      {filteredForklifts.map((forklift) => (
                       <Fragment key={forklift.id}>
                           <TableRow onClick={() => toggleRow(forklift.id)} className={cn("cursor-pointer", expandedRow === forklift.id && "bg-accent hover:bg-accent")} data-state={expandedRow === forklift.id ? 'open' : 'closed'}>
-                              <TableCell className="font-medium">{index + 1}</TableCell>
+                              <TableCell className="font-medium">{forklift.srNumber}</TableCell>
                               <TableCell className="font-medium">{forklift.serialNumber}</TableCell>
                               <TableCell>{forklift.make}</TableCell>
                               <TableCell>{forklift.model}</TableCell>
