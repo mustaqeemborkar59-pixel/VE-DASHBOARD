@@ -102,7 +102,8 @@ export default function ForkliftsPage() {
     const total = forklifts?.length || 0;
     const inWorkshop = forklifts?.filter(f => f.locationType === 'Workshop').length || 0;
     const onSite = forklifts?.filter(f => f.locationType === 'On-Site').length || 0;
-    return { total, inWorkshop, onSite };
+    const notConfirmed = forklifts?.filter(f => f.locationType === 'Not Confirm').length || 0;
+    return { total, inWorkshop, onSite, notConfirmed };
   }, [forklifts]);
 
 
@@ -285,7 +286,7 @@ export default function ForkliftsPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">In Workshop</CardTitle>
@@ -304,6 +305,16 @@ export default function ForkliftsPage() {
           <CardContent>
             <div className="text-3xl font-bold">{isLoading ? '...' : stats.onSite}</div>
             <p className="text-xs text-white/90">Units deployed at client sites</p>
+          </CardContent>
+        </Card>
+        <Card className={cn(cardClassName, "from-red-500 to-rose-600 text-white shadow-red-500/30")}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Not Confirmed</CardTitle>
+            <AlertTriangle className="h-5 w-5 text-white/80" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{isLoading ? '...' : stats.notConfirmed}</div>
+            <p className="text-xs text-white/90">Units with unconfirmed locations</p>
           </CardContent>
         </Card>
         <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
@@ -550,5 +561,3 @@ export default function ForkliftsPage() {
     </div>
   );
 }
-
-    
