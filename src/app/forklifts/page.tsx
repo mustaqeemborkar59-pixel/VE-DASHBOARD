@@ -229,16 +229,6 @@ export default function ForkliftsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Forklifts</CardTitle>
-            <ForkliftIcon className="h-5 w-5 text-white/80" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{isLoading ? '...' : stats.total}</div>
-            <p className="text-xs text-white/90">Total units in fleet</p>
-          </CardContent>
-        </Card>
         <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">In Workshop</CardTitle>
@@ -257,6 +247,16 @@ export default function ForkliftsPage() {
           <CardContent>
             <div className="text-3xl font-bold">{isLoading ? '...' : stats.onSite}</div>
             <p className="text-xs text-white/90">Units deployed at client sites</p>
+          </CardContent>
+        </Card>
+        <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Forklifts</CardTitle>
+            <ForkliftIcon className="h-5 w-5 text-white/80" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{isLoading ? '...' : stats.total}</div>
+            <p className="text-xs text-white/90">Total units in fleet</p>
           </CardContent>
         </Card>
       </div>
