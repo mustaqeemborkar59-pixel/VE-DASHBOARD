@@ -228,50 +228,49 @@ export default function ForkliftsPage() {
         </Card>
       </div>
 
-      <Card>
-        <div className="flex flex-col md:flex-row items-center gap-4 p-6">
-            <div className="relative w-full flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search by Serial No., Make, or Model..."
-                className="pl-8 w-full md:w-[300px]"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
+      <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="relative w-full flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search by Serial No., Make, or Model..."
+              className="pl-8 w-full md:w-[300px]"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex w-full md:w-auto items-end gap-4">
+            <div className="grid w-full md:w-[180px] gap-1.5">
+              <Label htmlFor="type-filter">Type</Label>
+              <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
+                <SelectTrigger id="type-filter">
+                  <SelectValue placeholder="Filter by Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {equipmentTypes.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex w-full md:w-auto items-end gap-4">
-              <div className="grid w-full md:w-[180px] gap-1.5">
-                <Label htmlFor="type-filter">Type</Label>
-                <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
-                  <SelectTrigger id="type-filter">
-                    <SelectValue placeholder="Filter by Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {equipmentTypes.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid w-full md:w-[180px] gap-1.5">
-                <Label htmlFor="capacity-filter">Capacity</Label>
-                <Select value={capacityFilter} onValueChange={setCapacityFilter}>
-                  <SelectTrigger id="capacity-filter">
-                    <SelectValue placeholder="Filter by Capacity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {capacities.map(capacity => (
-                      <SelectItem key={capacity} value={capacity}>{capacity}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid w-full md:w-[180px] gap-1.5">
+              <Label htmlFor="capacity-filter">Capacity</Label>
+              <Select value={capacityFilter} onValueChange={setCapacityFilter}>
+                <SelectTrigger id="capacity-filter">
+                  <SelectValue placeholder="Filter by Capacity" />
+                </SelectTrigger>
+                <SelectContent>
+                  {capacities.map(capacity => (
+                    <SelectItem key={capacity} value={capacity}>{capacity}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-        </div>
-      </Card>
+          </div>
+      </div>
 
       <Card>
+        <CardContent className="pt-6">
         {isLoadingForklifts ? (
           <div className="flex justify-center items-center h-64 p-6 pt-0">
             <p className="text-muted-foreground">Loading fleet...</p>
@@ -405,6 +404,7 @@ export default function ForkliftsPage() {
               </p>
             </div>
         )}
+        </CardContent>
       </Card>
 
       {/* Add/Edit Dialog */}
