@@ -88,9 +88,8 @@ export default function ForkliftsPage() {
     const total = forklifts?.length || 0;
     const inWorkshop = forklifts?.filter(f => f.locationType === 'Workshop').length || 0;
     const onSite = forklifts?.filter(f => f.locationType === 'On-Site').length || 0;
-    const underMaintenance = activeServiceRequests?.length || 0;
-    return { total, inWorkshop, onSite, underMaintenance };
-  }, [forklifts, activeServiceRequests]);
+    return { total, inWorkshop, onSite };
+  }, [forklifts]);
 
 
   const openAddEditDialog = (forklift: Forklift | null) => {
@@ -196,7 +195,7 @@ export default function ForkliftsPage() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Forklifts</CardTitle>
@@ -225,16 +224,6 @@ export default function ForkliftsPage() {
           <CardContent>
             <div className="text-3xl font-bold">{isLoading ? '...' : stats.onSite}</div>
             <p className="text-xs text-white/90">Units deployed at client sites</p>
-          </CardContent>
-        </Card>
-        <Card className={cn(cardClassName, "from-violet-500 to-purple-600 text-white shadow-violet-500/30")}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Under Maintenance</CardTitle>
-            <Wrench className="h-5 w-5 text-white/80" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{isLoading ? '...' : stats.underMaintenance}</div>
-            <p className="text-xs text-white/90">Units with active service requests</p>
           </CardContent>
         </Card>
       </div>
@@ -448,4 +437,5 @@ export default function ForkliftsPage() {
   );
 }
 
+    
     
