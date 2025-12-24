@@ -15,36 +15,38 @@ import { Label } from '@/components/ui/label';
 import { useFirebase } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { ForkliftIcon } from '@/components/icons/forklift-icon';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function SignUpPage() {
   const router = useRouter();
   const { auth } = useFirebase();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth) return;
     setIsLoading(true);
-    setError(null);
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       router.push('/');
     } catch (error: any) {
+      let errorMessage = 'An unexpected error occurred. Please try again later.';
       if (error.code === 'auth/email-already-in-use') {
-        setError('This email address is already taken.');
+        errorMessage = 'This email address is already taken.';
       } else if (error.code === 'auth/weak-password') {
-        setError('The password is too weak. Please use at least 6 characters.');
+        errorMessage = 'The password is too weak. Please use at least 6 characters.';
       }
-      else {
-        setError('An unexpected error occurred. Please try again later.');
-      }
+      
+      toast({
+        variant: 'destructive',
+        title: 'Sign-up Failed',
+        description: errorMessage,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -64,13 +66,6 @@ export default function SignUpPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp} className="grid gap-4">
-             {error && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Sign-up Failed</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
