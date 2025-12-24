@@ -78,7 +78,7 @@
         },
         "locationType": {
             "type": "string",
-            "enum": ["Workshop", "On-Site"],
+            "enum": ["Workshop", "On-Site", "Not Confirm"],
             "description": "Current location of the forklift."
         },
         "siteCompany": {
@@ -291,3 +291,5 @@
     }
   }
 }
+
+    

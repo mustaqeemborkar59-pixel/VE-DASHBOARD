@@ -22,7 +22,7 @@ export type Forklift = {
   equipmentType?: string;
   voltage?: string;
   mastHeight?: string;
-  locationType: 'Workshop' | 'On-Site';
+  locationType: 'Workshop' | 'On-Site' | 'Not Confirm';
   siteCompany?: string;
   siteArea?: string;
   siteContactPerson?: string;
@@ -47,3 +47,5 @@ export type Part = {
   unitPrice: number;
   sku?: string; // sku is not in the backend.json but is used in the inventory page
 };
+
+    

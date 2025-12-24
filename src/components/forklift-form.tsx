@@ -10,6 +10,7 @@ import type { Forklift } from "@/lib/data";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "./ui/textarea";
+import { cn } from "@/lib/utils";
 
 export type ForkliftFormData = {
   serialNumber: string;
@@ -20,7 +21,7 @@ export type ForkliftFormData = {
   equipmentType: string;
   voltage: string;
   mastHeight: string;
-  locationType: 'Workshop' | 'On-Site';
+  locationType: 'Workshop' | 'On-Site' | 'Not Confirm';
   siteCompany: string;
   siteArea: string;
   siteContactPerson: string;
@@ -98,7 +99,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     setFormData(prev => ({ ...prev, [id]: value }));
   };
   
-  const handleLocationChange = (value: 'Workshop' | 'On-Site') => {
+  const handleLocationChange = (value: ForkliftFormData['locationType']) => {
     setFormData(prev => ({ ...prev, locationType: value }));
   };
 
@@ -129,7 +130,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
       year: formData.year,
     };
 
-    if (formData.locationType === 'Workshop') {
+    if (formData.locationType === 'Workshop' || formData.locationType === 'Not Confirm') {
       dataToSubmit.siteCompany = '';
       dataToSubmit.siteArea = '';
       dataToSubmit.siteContactPerson = '';
@@ -193,6 +194,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
                   <SelectContent>
                       <SelectItem value="Workshop">Workshop</SelectItem>
                       <SelectItem value="On-Site">On-Site</SelectItem>
+                      <SelectItem value="Not Confirm" className="text-destructive focus:text-destructive">Location Not Confirmed</SelectItem>
                   </SelectContent>
               </Select>
            </div>
@@ -242,3 +244,5 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     </form>
   );
 }
+
+    

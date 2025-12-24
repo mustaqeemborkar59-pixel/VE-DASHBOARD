@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
-import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone, Wrench, X, ListFilter, Upload } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone, Wrench, X, ListFilter, Upload, AlertTriangle } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
@@ -190,7 +190,7 @@ export default function ForkliftsPage() {
       year: formData.year ? parseInt(formData.year, 10) : new Date().getFullYear(),
     };
     
-    if (formData.locationType === 'Workshop') {
+    if (formData.locationType === 'Workshop' || formData.locationType === 'Not Confirm') {
       dataToSubmit.siteCompany = '';
       dataToSubmit.siteArea = '';
       dataToSubmit.siteContactPerson = '';
@@ -226,6 +226,45 @@ export default function ForkliftsPage() {
   };
   
   const cardClassName = "border-0 bg-gradient-to-br shadow-lg";
+  
+  const getLocationIcon = (locationType: Forklift['locationType']) => {
+    switch (locationType) {
+      case 'Workshop':
+        return <Warehouse className="mr-2 h-3.5 w-3.5" />;
+      case 'On-Site':
+        return <Truck className="mr-2 h-3.5 w-3.5" />;
+      case 'Not Confirm':
+        return <AlertTriangle className="mr-2 h-3.5 w-3.5" />;
+      default:
+        return null;
+    }
+  }
+  
+  const getLocationText = (forklift: Forklift) => {
+    switch (forklift.locationType) {
+      case 'Workshop':
+        return 'Workshop';
+      case 'On-Site':
+        return forklift.siteCompany || 'On-Site';
+      case 'Not Confirm':
+        return 'Not Confirmed';
+      default:
+        return 'Unknown';
+    }
+  }
+  
+  const getLocationBadgeClass = (locationType: Forklift['locationType']) => {
+    switch (locationType) {
+      case 'Workshop':
+        return 'border-green-500/60 bg-green-50 text-green-700 dark:border-green-400/50 dark:bg-green-900/20 dark:text-green-400';
+      case 'On-Site':
+        return 'border-amber-500/60 bg-amber-50 text-amber-700 dark:border-amber-400/50 dark:bg-amber-900/20 dark:text-amber-400';
+      case 'Not Confirm':
+        return 'border-red-500/60 bg-red-50 text-red-700 dark:border-red-400/50 dark:bg-red-900/20 dark:text-red-400';
+      default:
+        return '';
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -311,6 +350,7 @@ export default function ForkliftsPage() {
               <SelectItem value="All">All Locations</SelectItem>
               <SelectItem value="Workshop">Workshop</SelectItem>
               <SelectItem value="On-Site">On-Site</SelectItem>
+              <SelectItem value="Not Confirm">Not Confirmed</SelectItem>
             </SelectContent>
           </Select>
           <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
@@ -365,13 +405,9 @@ export default function ForkliftsPage() {
                               <TableCell>{forklift.model}</TableCell>
                               <TableCell>
                                 <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={(e) => { e.stopPropagation(); openAddEditDialog(forklift); }}>
-                                  <Badge variant={'outline'} className={cn(
-                                      'font-medium pointer-events-none',
-                                      forklift.locationType === 'Workshop' && 'border-green-500/60 bg-green-50 text-green-700 dark:border-green-400/50 dark:bg-green-900/20 dark:text-green-400',
-                                      forklift.locationType === 'On-Site' && 'border-amber-500/60 bg-amber-50 text-amber-700 dark:border-amber-400/50 dark:bg-amber-900/20 dark:text-amber-400'
-                                  )}>
-                                      {forklift.locationType === 'Workshop' ? <Warehouse className="mr-2 h-3.5 w-3.5"/> : <Truck className="mr-2 h-3.5 w-3.5"/>}
-                                      {forklift.locationType === 'On-Site' ? forklift.siteCompany : 'Workshop'}
+                                  <Badge variant={'outline'} className={cn('font-medium pointer-events-none', getLocationBadgeClass(forklift.locationType))}>
+                                    {getLocationIcon(forklift.locationType)}
+                                    {getLocationText(forklift)}
                                   </Badge>
                                 </Button>
                               </TableCell>
@@ -514,3 +550,5 @@ export default function ForkliftsPage() {
     </div>
   );
 }
+
+    
