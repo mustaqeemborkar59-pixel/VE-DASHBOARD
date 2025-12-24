@@ -124,15 +124,14 @@ export default function EmployeesPage() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="p-3 pt-0">
+        <CardContent className="p-0 md:p-3 pt-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50px]">Sr.</TableHead>
+                <TableHead className="w-[50px] hidden sm:table-cell">Sr.</TableHead>
                 <TableHead>Full Name</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Contact Number</TableHead>
-                <TableHead>Work Location</TableHead>
+                <TableHead className="hidden md:table-cell">Role</TableHead>
+                <TableHead className="hidden lg:table-cell">Contact Number</TableHead>
                 <TableHead>Availability</TableHead>
                 <TableHead><span className="sr-only">Actions</span></TableHead>
               </TableRow>
@@ -145,11 +144,13 @@ export default function EmployeesPage() {
               ) : (
                 employees?.map((employee, index) => (
                   <TableRow key={employee.id}>
-                    <TableCell className="font-medium">{index + 1}</TableCell>
-                    <TableCell className="font-medium">{employee.fullName}</TableCell>
-                    <TableCell>{employee.specialization}</TableCell>
-                    <TableCell>{employee.contactNumber}</TableCell>
-                    <TableCell>{employee.workLocation}</TableCell>
+                    <TableCell className="font-medium hidden sm:table-cell">{index + 1}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{employee.fullName}</div>
+                      <div className="text-sm text-muted-foreground md:hidden">{employee.specialization}</div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{employee.specialization}</TableCell>
+                    <TableCell className="hidden lg:table-cell">{employee.contactNumber}</TableCell>
                     <TableCell>
                       <Badge variant={employee.availability ? 'outline' : 'secondary'} className={employee.availability ? 'border-green-600/40 text-green-700' : ''}>
                         {employee.availability ? 'Available' : 'Unavailable'}
@@ -185,7 +186,7 @@ export default function EmployeesPage() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{selectedEmployee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
             <DialogDescription>

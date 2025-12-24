@@ -269,7 +269,7 @@ export default function ForkliftsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-       <div className="flex items-center justify-between">
+       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Forklift Fleet</h1>
           <p className="text-muted-foreground">Search, filter, and manage your fleet of forklifts.</p>
@@ -286,7 +286,7 @@ export default function ForkliftsPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">In Workshop</CardTitle>
@@ -332,7 +332,7 @@ export default function ForkliftsPage() {
        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex w-full flex-1 items-center gap-2">
           <Select value={searchField} onValueChange={(value) => setSearchField(value as SearchField)}>
-            <SelectTrigger className="w-auto px-3 border-r-0 rounded-r-none">
+            <SelectTrigger className="w-auto px-3 border-r-0 rounded-r-none focus:ring-0 focus:ring-offset-0">
               <ListFilter className="h-4 w-4 text-muted-foreground" />
             </SelectTrigger>
             <SelectContent>
@@ -341,7 +341,7 @@ export default function ForkliftsPage() {
               ))}
             </SelectContent>
           </Select>
-           <div className="relative w-full sm:max-w-sm">
+           <div className="relative w-full sm:max-w-xs">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
@@ -352,9 +352,9 @@ export default function ForkliftsPage() {
             />
           </div>
         </div>
-        <div className="flex w-full sm:w-auto items-center gap-2">
+        <div className="flex w-full flex-col sm:flex-row items-center gap-2">
           <Select value={locationFilter} onValueChange={setLocationFilter}>
-            <SelectTrigger className="w-full sm:w-auto">
+            <SelectTrigger className="w-full sm:w-[150px]">
               <SelectValue placeholder="Filter by Location" />
             </SelectTrigger>
             <SelectContent>
@@ -365,7 +365,7 @@ export default function ForkliftsPage() {
             </SelectContent>
           </Select>
           <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
-            <SelectTrigger className="w-full sm:w-auto">
+            <SelectTrigger className="w-full sm:w-[150px]">
               <SelectValue placeholder="Filter by Type" />
             </SelectTrigger>
             <SelectContent>
@@ -375,7 +375,7 @@ export default function ForkliftsPage() {
             </SelectContent>
           </Select>
           <Select value={capacityFilter} onValueChange={setCapacityFilter}>
-            <SelectTrigger className="w-full sm:w-auto">
+            <SelectTrigger className="w-full sm:w-[150px]">
               <SelectValue placeholder="Filter by Capacity" />
             </SelectTrigger>
             <SelectContent>
@@ -388,7 +388,7 @@ export default function ForkliftsPage() {
       </div>
 
       <Card>
-        <CardContent className="p-3 pt-0">
+        <CardContent className="p-0 md:p-3 pt-0">
         {isLoadingForklifts ? (
           <div className="flex justify-center items-center h-64 p-3 pt-0">
             <p className="text-muted-foreground">Loading fleet...</p>
@@ -398,10 +398,10 @@ export default function ForkliftsPage() {
               <Table>
                   <TableHeader className="sticky top-0 bg-card">
                       <TableRow>
-                      <TableHead className="w-[50px]">Sr.</TableHead>
+                      <TableHead className="w-[50px] hidden sm:table-cell">Sr.</TableHead>
                       <TableHead>Serial Number</TableHead>
-                      <TableHead>Make</TableHead>
-                      <TableHead>Model</TableHead>
+                      <TableHead className="hidden md:table-cell">Make</TableHead>
+                      <TableHead className="hidden md:table-cell">Model</TableHead>
                       <TableHead>Location</TableHead>
                       <TableHead className="w-[50px] text-right"><span className="sr-only">Actions</span></TableHead>
                       </TableRow>
@@ -410,10 +410,13 @@ export default function ForkliftsPage() {
                       {filteredForklifts.map((forklift) => (
                       <Fragment key={forklift.id}>
                           <TableRow onClick={() => toggleRow(forklift.id)} className={cn("cursor-pointer", expandedRow === forklift.id && "bg-accent hover:bg-accent")} data-state={expandedRow === forklift.id ? 'open' : 'closed'}>
-                              <TableCell className="font-medium">{forklift.srNumber}</TableCell>
-                              <TableCell className="font-medium">{forklift.serialNumber}</TableCell>
-                              <TableCell>{forklift.make}</TableCell>
-                              <TableCell>{forklift.model}</TableCell>
+                              <TableCell className="font-medium hidden sm:table-cell">{forklift.srNumber}</TableCell>
+                              <TableCell>
+                                <div className="font-medium">{forklift.serialNumber}</div>
+                                <div className="text-sm text-muted-foreground md:hidden">{forklift.make} {forklift.model}</div>
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">{forklift.make}</TableCell>
+                              <TableCell className="hidden md:table-cell">{forklift.model}</TableCell>
                               <TableCell>
                                 <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={(e) => { e.stopPropagation(); openAddEditDialog(forklift); }}>
                                   <Badge variant={'outline'} className={cn('font-medium pointer-events-none', getLocationBadgeClass(forklift.locationType))}>
@@ -470,19 +473,19 @@ export default function ForkliftsPage() {
                                         {forklift.locationType === 'On-Site' && (
                                           <>
                                             <div className="col-span-full"><Separator className="my-2" /></div>
-                                            <div className="col-span-2 flex flex-col gap-1">
+                                            <div className="col-span-full sm:col-span-1 flex flex-col gap-1">
                                               <Label className="text-xs text-muted-foreground">Site / Company</Label>
                                               <span className="font-medium">{forklift.siteCompany || 'N/A'}</span>
                                             </div>
-                                            <div className="col-span-2 flex flex-col gap-1">
+                                            <div className="col-span-full sm:col-span-1 flex flex-col gap-1">
                                               <Label className="text-xs text-muted-foreground">Area</Label>
                                               <span className="font-medium">{forklift.siteArea || 'N/A'}</span>
                                             </div>
-                                             <div className="col-span-2 flex flex-col gap-1">
+                                             <div className="col-span-full sm:col-span-1 flex flex-col gap-1">
                                               <Label className="text-xs text-muted-foreground flex items-center gap-2"><User className="h-3 w-3" /> Contact Person</Label>
                                               <span className="font-medium">{forklift.siteContactPerson || 'N/A'}</span>
                                             </div>
-                                             <div className="col-span-2 flex flex-col gap-1">
+                                             <div className="col-span-full sm:col-span-1 flex flex-col gap-1">
                                               <Label className="text-xs text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> Contact Number</Label>
                                               <span className="font-medium">{forklift.siteContactNumber || 'N/A'}</span>
                                             </div>

@@ -146,7 +146,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
             <Label htmlFor="serialNumber">Serial Number</Label>
             <Input id="serialNumber" value={formData.serialNumber} onChange={handleInputChange} placeholder="e.g., F12345" required />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="grid gap-2">
                 <Label htmlFor="make">Make</Label>
                 <Input id="make" value={formData.make} onChange={handleInputChange} placeholder="e.g., Toyota" required />
@@ -156,7 +156,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
                 <Input id="model" value={formData.model} onChange={handleInputChange} placeholder="e.g., 8FGCU25" required />
             </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="grid gap-2">
                 <Label htmlFor="year">Year</Label>
                 <Input id="year" type="number" value={formData.year} onChange={handleInputChange} placeholder="e.g., 2021" required />
@@ -166,7 +166,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
                 <Input id="capacity" value={formData.capacity} onChange={handleInputChange} placeholder="e.g., 5000 lbs" />
             </div>
         </div>
-         <div className="grid grid-cols-2 gap-4">
+         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="grid gap-2">
                 <Label htmlFor="voltage">Voltage</Label>
                 <Input id="voltage" value={formData.voltage} onChange={handleInputChange} placeholder="e.g., 36V" />
@@ -201,17 +201,17 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
 
           {formData.locationType === 'On-Site' && (
             <div className="grid gap-4 mt-2 border-l-2 border-primary pl-4">
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="grid gap-2 col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                   <div className="grid gap-2 col-span-2 sm:col-span-1">
                     <Label htmlFor="siteCompany">Site / Company</Label>
                     <Input id="siteCompany" value={formData.siteCompany} onChange={handleInputChange} placeholder="e.g., ACME Corp" />
                   </div>
-                  <div className="grid gap-2">
+                  <div className="grid gap-2 col-span-2 sm:col-span-1">
                     <Label htmlFor="siteArea">Area</Label>
                     <Input id="siteArea" value={formData.siteArea} onChange={handleInputChange} placeholder="e.g., Downtown" />
                   </div>
                 </div>
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="siteContactPerson">Contact Person</Label>
                     <Input id="siteContactPerson" value={formData.siteContactPerson} onChange={handleInputChange} placeholder="e.g., Jane Smith" />

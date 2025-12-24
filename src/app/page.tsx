@@ -39,7 +39,12 @@ export default function Dashboard() {
   const completedRequests = serviceRequests?.filter(r => r.status === 'Completed').length || 0;
   const inProgressRequests = serviceRequests?.filter(r => r.status === 'In Progress' || r.status === 'Assigned').length || 0;
 
-  const getForkliftModel = (id: string) => forklifts?.find(f => f.id === id)?.model || 'Unknown';
+  const getForkliftModel = (id: string) => {
+    if (!forklifts) return '...';
+    const forklift = forklifts.find(f => f.id === id);
+    if (!forklift) return 'Unknown';
+    return `${forklift.make} ${forklift.model}`;
+  };
 
   const getStatusBadge = (status: 'Pending' | 'Assigned' | 'In Progress' | 'Completed') => {
     switch (status) {
@@ -66,7 +71,7 @@ export default function Dashboard() {
             <p className="text-muted-foreground">Comprehensive overview of your workshop's operations.</p>
           </div>
         </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
@@ -123,15 +128,15 @@ export default function Dashboard() {
                 </Link>
             </Button>
         </CardHeader>
-        <CardContent className="p-3 pt-0">
+        <CardContent className="p-0 md:p-3 pt-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50px]">Sr.</TableHead>
+                <TableHead className="w-[50px] hidden sm:table-cell">Sr.</TableHead>
                 <TableHead>Forklift</TableHead>
-                <TableHead>Issue</TableHead>
+                <TableHead className="hidden md:table-cell">Issue</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead className="hidden lg:table-cell">Date</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -142,14 +147,14 @@ export default function Dashboard() {
               ) : (
                 recentRequests?.map((request, index) => (
                   <TableRow key={request.id}>
-                     <TableCell className="font-medium">{index + 1}</TableCell>
+                     <TableCell className="font-medium hidden sm:table-cell">{index + 1}</TableCell>
                     <TableCell>
-                      <div className="font-medium">{forklifts?.find(f => f.id === request.forkliftId)?.serialNumber || request.forkliftId}</div>
+                      <div className="font-medium">{forklifts?.find(f => f.id === request.forkliftId)?.serialNumber || '...'}</div>
                       <div className="text-sm text-muted-foreground">{getForkliftModel(request.forkliftId)}</div>
                     </TableCell>
-                    <TableCell className="max-w-xs truncate">{request.issueDescription}</TableCell>
+                    <TableCell className="max-w-xs truncate hidden md:table-cell">{request.issueDescription}</TableCell>
                     <TableCell>{getStatusBadge(request.status)}</TableCell>
-                    <TableCell>{new Date(request.requestDate).toLocaleDateString()}</TableCell>
+                    <TableCell className="hidden lg:table-cell">{new Date(request.requestDate).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))
               )}

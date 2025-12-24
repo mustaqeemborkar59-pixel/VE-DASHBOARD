@@ -123,15 +123,15 @@ export default function ServiceRequestsPage() {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-3 pt-0">
+      <CardContent className="p-0 md:p-3 pt-0">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[50px]">Sr.</TableHead>
+              <TableHead className="w-[50px] hidden sm:table-cell">Sr.</TableHead>
               <TableHead>Forklift</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Assigned To</TableHead>
-              <TableHead>Date</TableHead>
+              <TableHead className="hidden md:table-cell">Assigned To</TableHead>
+              <TableHead className="hidden lg:table-cell">Date</TableHead>
               <TableHead>Details</TableHead>
               <TableHead><span className="sr-only">Actions</span></TableHead>
             </TableRow>
@@ -144,14 +144,14 @@ export default function ServiceRequestsPage() {
             ) : (
               serviceRequests?.map((request, index) => (
                 <TableRow key={request.id}>
-                  <TableCell className="font-medium">{index + 1}</TableCell>
+                  <TableCell className="font-medium hidden sm:table-cell">{index + 1}</TableCell>
                   <TableCell>
                     <div className="font-medium">{getForkliftInfo(request.forkliftId)}</div>
                     <div className="text-sm text-muted-foreground">{forklifts?.find(f => f.id === request.forkliftId)?.serialNumber}</div>
                   </TableCell>
                   <TableCell>{getStatusBadge(request.status)}</TableCell>
-                  <TableCell>{getEmployeeName(request.assignedTechnicianId)}</TableCell>
-                  <TableCell>{new Date(request.requestDate).toLocaleDateString()}</TableCell>
+                  <TableCell className="hidden md:table-cell">{getEmployeeName(request.assignedTechnicianId)}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{new Date(request.requestDate).toLocaleDateString()}</TableCell>
                   <TableCell>
                       <Button variant="ghost" size="icon" onClick={() => handleViewDetails(request)}>
                           <Eye className="h-4 w-4" />
@@ -200,11 +200,11 @@ export default function ServiceRequestsPage() {
 
     {/* View Details Dialog */}
     <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Service Request Details</DialogTitle>
           <DialogDescription>
-            Complete information for request ID: <span className="font-medium">{selectedRequest?.id}</span>
+            Complete information for request ID: <span className="font-mono text-xs">{selectedRequest?.id}</span>
           </DialogDescription>
         </DialogHeader>
         {selectedRequest && (
