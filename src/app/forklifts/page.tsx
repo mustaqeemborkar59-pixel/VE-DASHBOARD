@@ -62,6 +62,8 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { ForkliftIcon } from "@/components/icons/forklift-icon";
 
+type SearchField = 'All' | 'serialNumber' | 'make' | 'model' | 'siteCompany' | 'siteArea';
+
 export default function ForkliftsPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
@@ -74,6 +76,7 @@ export default function ForkliftsPage() {
   const [equipmentTypeFilter, setEquipmentTypeFilter] = useState('All');
   const [capacityFilter, setCapacityFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchField, setSearchField] = useState<SearchField>('All');
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
@@ -124,20 +127,34 @@ export default function ForkliftsPage() {
       const typeMatch = equipmentTypeFilter === 'All' ? true : forklift.equipmentType === equipmentTypeFilter;
       const capacityMatch = capacityFilter === 'All' ? true : forklift.capacity === capacityFilter;
       const locationMatch = locationFilter === 'All' ? true : forklift.locationType === locationFilter;
-      const searchMatch = searchTerm === '' ? true : (
-        forklift.serialNumber.toLowerCase().includes(lowercasedSearchTerm) ||
-        forklift.make.toLowerCase().includes(lowercasedSearchTerm) ||
-        forklift.model.toLowerCase().includes(lowercasedSearchTerm)
-      );
+      
+      if (searchTerm === '') return typeMatch && capacityMatch && locationMatch;
+
+      const searchInField = (field: keyof Forklift) => 
+          forklift[field]?.toString().toLowerCase().includes(lowercasedSearchTerm) ?? false;
+
+      let searchMatch = false;
+      if (searchField === 'All') {
+        searchMatch = 
+          searchInField('serialNumber') || 
+          searchInField('make') || 
+          searchInField('model') ||
+          searchInField('siteCompany') ||
+          searchInField('siteArea');
+      } else {
+        searchMatch = searchInField(searchField);
+      }
+
       return typeMatch && capacityMatch && locationMatch && searchMatch;
     });
-  }, [forklifts, equipmentTypeFilter, capacityFilter, locationFilter, searchTerm]);
+  }, [forklifts, equipmentTypeFilter, capacityFilter, locationFilter, searchTerm, searchField]);
 
   const resetFilters = () => {
     setSearchTerm('');
     setLocationFilter('All');
     setEquipmentTypeFilter('All');
     setCapacityFilter('All');
+    setSearchField('All');
   };
 
 
@@ -236,21 +253,36 @@ export default function ForkliftsPage() {
           </CardContent>
         </Card>
       </div>
-
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="relative w-full flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search by Serial No., Make, or Model..."
-            className="pl-8 w-full sm:w-[300px]"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
+      
+       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex w-full flex-1 items-center gap-2">
+          <Select value={searchField} onValueChange={(value) => setSearchField(value as SearchField)}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Search by..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Fields</SelectItem>
+              <SelectItem value="serialNumber">Serial No.</SelectItem>
+              <SelectItem value="make">Make</SelectItem>
+              <SelectItem value="model">Model</SelectItem>
+              <SelectItem value="siteCompany">Site / Company</SelectItem>
+              <SelectItem value="siteArea">Site Area</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="relative w-full sm:max-w-xs">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search fleet..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
         <div className="flex w-full sm:w-auto items-center gap-2">
           <Select value={locationFilter} onValueChange={setLocationFilter}>
-            <SelectTrigger className="w-full sm:w-[150px]">
+            <SelectTrigger className="w-full sm:w-auto">
               <SelectValue placeholder="Filter by Location" />
             </SelectTrigger>
             <SelectContent>
@@ -260,7 +292,7 @@ export default function ForkliftsPage() {
             </SelectContent>
           </Select>
           <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
-            <SelectTrigger className="w-full sm:w-[150px]">
+            <SelectTrigger className="w-full sm:w-auto">
               <SelectValue placeholder="Filter by Type" />
             </SelectTrigger>
             <SelectContent>
@@ -270,7 +302,7 @@ export default function ForkliftsPage() {
             </SelectContent>
           </Select>
           <Select value={capacityFilter} onValueChange={setCapacityFilter}>
-            <SelectTrigger className="w-full sm:w-[150px]">
+            <SelectTrigger className="w-full sm:w-auto">
               <SelectValue placeholder="Filter by Capacity" />
             </SelectTrigger>
             <SelectContent>
@@ -456,3 +488,5 @@ export default function ForkliftsPage() {
     </div>
   );
 }
+
+    
