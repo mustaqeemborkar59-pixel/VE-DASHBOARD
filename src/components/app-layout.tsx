@@ -45,7 +45,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (isMounted && !isUserLoading && (!user || user.isAnonymous)) {
+    if (isMounted && !isUserLoading && !user) {
       router.push('/login');
     }
   }, [isMounted, user, isUserLoading, router]);
@@ -60,7 +60,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const userEmail = user?.email || 'Not logged in';
   const userInitial = user?.email?.[0]?.toUpperCase() || '?';
   
-  if (!isMounted || isUserLoading || !user || user.isAnonymous) {
+  if (!isMounted || isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
