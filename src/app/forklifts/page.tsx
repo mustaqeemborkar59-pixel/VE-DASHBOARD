@@ -348,6 +348,14 @@ export default function ForkliftsPage() {
                                             <Label className="text-xs text-muted-foreground">Equip. Type</Label>
                                             <span className="font-medium">{forklift.equipmentType || 'N/A'}</span>
                                           </div>
+                                          <div className="flex flex-col gap-1">
+                                            <Label className="text-xs text-muted-foreground">Voltage</Label>
+                                            <span className="font-medium">{forklift.voltage || 'N/A'}</span>
+                                          </div>
+                                           <div className="flex flex-col gap-1">
+                                            <Label className="text-xs text-muted-foreground">Mast Height</Label>
+                                            <span className="font-medium">{forklift.mastHeight || 'N/A'}</span>
+                                          </div>
                                           
                                           {forklift.locationType === 'On-Site' && (
                                             <>
@@ -436,6 +444,3 @@ export default function ForkliftsPage() {
     </div>
   );
 }
-
-    
-    

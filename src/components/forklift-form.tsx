@@ -18,6 +18,8 @@ export type ForkliftFormData = {
   year: string;
   capacity: string;
   equipmentType: string;
+  voltage: string;
+  mastHeight: string;
   locationType: 'Workshop' | 'On-Site';
   siteCompany: string;
   siteArea: string;
@@ -42,6 +44,8 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     year: '',
     capacity: '',
     equipmentType: '',
+    voltage: '',
+    mastHeight: '',
     locationType: 'Workshop',
     siteCompany: '',
     siteArea: '',
@@ -60,6 +64,8 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
         year: initialData.year.toString(),
         capacity: initialData.capacity || '',
         equipmentType: initialData.equipmentType || '',
+        voltage: initialData.voltage || '',
+        mastHeight: initialData.mastHeight || '',
         locationType: initialData.locationType || 'Workshop',
         siteCompany: initialData.siteCompany || '',
         siteArea: initialData.siteArea || '',
@@ -75,6 +81,8 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
             year: '',
             capacity: '',
             equipmentType: '',
+            voltage: '',
+            mastHeight: '',
             locationType: 'Workshop',
             siteCompany: '',
             siteArea: '',
@@ -155,6 +163,16 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
             <div className="grid gap-2">
                 <Label htmlFor="capacity">Capacity</Label>
                 <Input id="capacity" value={formData.capacity} onChange={handleInputChange} placeholder="e.g., 5000 lbs" />
+            </div>
+        </div>
+         <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+                <Label htmlFor="voltage">Voltage</Label>
+                <Input id="voltage" value={formData.voltage} onChange={handleInputChange} placeholder="e.g., 36V" />
+            </div>
+            <div className="grid gap-2">
+                <Label htmlFor="mastHeight">Mast Height</Label>
+                <Input id="mastHeight" value={formData.mastHeight} onChange={handleInputChange} placeholder="e.g., 189 inches" />
             </div>
         </div>
         <div className="grid gap-2">

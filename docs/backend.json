@@ -64,6 +64,14 @@
           "type": "string",
           "description": "The type of equipment (e.g., Reach Truck, Pallet Jack)."
         },
+        "voltage": {
+          "type": "string",
+          "description": "Voltage of the forklift's battery (e.g., '36V', '48V')."
+        },
+        "mastHeight": {
+          "type": "string",
+          "description": "The mast height of the forklift (e.g., '189 inches')."
+        },
         "locationType": {
             "type": "string",
             "enum": ["Workshop", "On-Site"],
