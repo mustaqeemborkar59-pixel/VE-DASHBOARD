@@ -329,7 +329,6 @@ export default function ForkliftsPage() {
               <Table>
                   <TableHeader>
                       <TableRow>
-                      <TableHead className="w-[100px]"></TableHead>
                       <TableHead>Serial Number</TableHead>
                       <TableHead>Make</TableHead>
                       <TableHead>Model</TableHead>
@@ -341,12 +340,6 @@ export default function ForkliftsPage() {
                       {filteredForklifts.map((forklift) => (
                       <Fragment key={forklift.id}>
                           <TableRow onClick={() => toggleRow(forklift.id)} className={cn("cursor-pointer", expandedRow === forklift.id && "bg-accent hover:bg-accent")} data-state={expandedRow === forklift.id ? 'open' : 'closed'}>
-                              <TableCell className="w-[100px] text-center">
-                                  <Button variant="ghost" size="sm">
-                                      <span className="text-xs">{expandedRow === forklift.id ? "Hide" : "View"}</span>
-                                      <ChevronDown className={cn("h-4 w-4 ml-1 transition-transform", expandedRow === forklift.id && "rotate-180")} />
-                                  </Button>
-                              </TableCell>
                               <TableCell className="font-medium">{forklift.serialNumber}</TableCell>
                               <TableCell>{forklift.make}</TableCell>
                               <TableCell>{forklift.model}</TableCell>
