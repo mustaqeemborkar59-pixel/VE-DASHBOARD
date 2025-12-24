@@ -48,6 +48,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { EmployeeForm, EmployeeFormData } from "@/components/employee-form";
 import { Badge } from "@/components/ui/badge";
+import AppLayout from "@/components/app-layout";
 
 export default function EmployeesPage() {
   const { firestore } = useFirebase();
@@ -110,7 +111,7 @@ export default function EmployeesPage() {
   };
 
   return (
-    <>
+    <AppLayout>
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -217,6 +218,6 @@ export default function EmployeesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </AppLayout>
   );
 }

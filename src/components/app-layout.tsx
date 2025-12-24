@@ -2,8 +2,8 @@
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { BarChart, ClipboardList, LayoutDashboard, Wrench, Warehouse, LogOut, Settings, User } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { BarChart, LogOut, Settings, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import {
@@ -22,8 +22,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ForkliftIcon } from './icons/forklift-icon';
 import { useFirebase } from '@/firebase';
-import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { ThemeToggle } from './theme-toggle';
+import { LayoutDashboard, Wrench, Warehouse } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -38,39 +38,38 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { auth, user, isUserLoading } = useFirebase();
   const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   useEffect(() => {
-    // Initiate sign-in only on the client and if needed
-    if (isMounted && auth && !user && !isUserLoading) {
-      initiateAnonymousSignIn(auth);
+    if (isMounted && !isUserLoading && (!user || user.isAnonymous)) {
+      router.push('/login');
     }
-  }, [isMounted, auth, user, isUserLoading]);
+  }, [isMounted, user, isUserLoading, router]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (auth) {
-      auth.signOut();
+      await auth.signOut();
+      router.push('/login');
     }
   };
 
-  const userEmail = user?.isAnonymous ? 'Anonymous User' : (user?.email || 'Not logged in');
-  const userInitial = user?.isAnonymous ? 'A' : (user?.email?.[0]?.toUpperCase() || '?');
+  const userEmail = user?.email || 'Not logged in';
+  const userInitial = user?.email?.[0]?.toUpperCase() || '?';
   
-  // Wait until mounted and auth state is determined
-  if (!isMounted || isUserLoading) {
+  if (!isMounted || isUserLoading || !user || user.isAnonymous) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <ForkliftIcon className="h-12 w-12 text-primary animate-pulse" />
-          <p className="text-muted-foreground">Connecting to the workshop...</p>
+          <p className="text-muted-foreground">Loading Workshop...</p>
         </div>
       </div>
     );
   }
-
 
   return (
     <SidebarProvider>
@@ -108,12 +107,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <DropdownMenuTrigger asChild>
                 <button className='flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2'>
                     <Avatar className="h-8 w-8">
-                        {user && !user.isAnonymous && user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || ''} />}
+                        {user && user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || ''} />}
                         <AvatarFallback>{userInitial}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col items-start overflow-hidden">
                         <span className="truncate font-medium">{user?.displayName || userEmail}</span>
-                        <span className="truncate text-xs text-muted-foreground">{user?.isAnonymous ? 'Logged in anonymously' : user?.email}</span>
+                        <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
                     </div>
                 </button>
             </DropdownMenuTrigger>
@@ -121,9 +120,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{user?.displayName || userEmail}</p>
-
                   <p className="text-xs leading-none text-muted-foreground">
-                    {user?.isAnonymous ? 'Anonymous' : user?.email}
+                    {user?.email}
                   </p>
                 </div>
               </DropdownMenuLabel>
@@ -131,11 +129,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <DropdownMenuItem disabled><User className="mr-2 h-4 w-4"/>Profile</DropdownMenuItem>
               <DropdownMenuItem disabled><Settings className="mr-2 h-4 w-4"/>Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
-              {user ? (
-                <DropdownMenuItem onClick={handleLogout}><LogOut className="mr-2 h-4 w-4"/>Log out</DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onClick={() => auth && initiateAnonymousSignIn(auth)}><LogOut className="mr-2 h-4 w-4"/>Log in</DropdownMenuItem>
-              )}
+              <DropdownMenuItem onClick={handleLogout}><LogOut className="mr-2 h-4 w-4"/>Log out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarFooter>
@@ -147,7 +141,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </div>
           <ThemeToggle />
         </header>
-        <main className="flex-1 overflow-auto p-4 sm:p-6">{user ? children : null}</main>
+        <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

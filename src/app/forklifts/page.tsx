@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Card,
@@ -62,6 +61,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { ForkliftIcon } from "@/components/icons/forklift-icon";
+import AppLayout from "@/components/app-layout";
 
 type SearchField = 'All' | 'serialNumber' | 'make' | 'model' | 'siteCompany' | 'siteArea';
 const searchFieldLabels: Record<SearchField, string> = {
@@ -268,299 +268,301 @@ export default function ForkliftsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Forklift Fleet</h1>
-          <p className="text-muted-foreground">Search, filter, and manage your fleet of forklifts.</p>
+    <AppLayout>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Forklift Fleet</h1>
+            <p className="text-muted-foreground">Search, filter, and manage your fleet of forklifts.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setIsImportDialogOpen(true)} variant="outline" size="sm">
+              <Upload className="mr-2 h-4 w-4" />
+              Import
+            </Button>
+            <Button onClick={() => openAddEditDialog(null)} size="sm">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Forklift
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-           <Button onClick={() => setIsImportDialogOpen(true)} variant="outline" size="sm">
-            <Upload className="mr-2 h-4 w-4" />
-            Import
-          </Button>
-          <Button onClick={() => openAddEditDialog(null)} size="sm">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Forklift
-          </Button>
-        </div>
-      </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Workshop</CardTitle>
-            <Warehouse className="h-5 w-5 text-white/80" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{isLoading ? '...' : stats.inWorkshop}</div>
-            <p className="text-xs text-white/90">Units available at workshop</p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">In Workshop</CardTitle>
+              <Warehouse className="h-5 w-5 text-white/80" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{isLoading ? '...' : stats.inWorkshop}</div>
+              <p className="text-xs text-white/90">Units available at workshop</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(cardClassName, "from-amber-500 to-orange-600 text-white shadow-amber-500/30")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">On-Site</CardTitle>
+              <Truck className="h-5 w-5 text-white/80" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{isLoading ? '...' : stats.onSite}</div>
+              <p className="text-xs text-white/90">Units deployed at client sites</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(cardClassName, "from-red-500 to-rose-600 text-white shadow-red-500/30")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Not Confirmed</CardTitle>
+              <AlertTriangle className="h-5 w-5 text-white/80" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{isLoading ? '...' : stats.notConfirmed}</div>
+              <p className="text-xs text-white/90">Units with unconfirmed locations</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Forklifts</CardTitle>
+              <ForkliftIcon className="h-5 w-5 text-white/80" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{isLoading ? '...' : stats.total}</div>
+              <p className="text-xs text-white/90">Total units in fleet</p>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex w-full flex-1 items-center gap-2">
+            <Select value={searchField} onValueChange={(value) => setSearchField(value as SearchField)}>
+              <SelectTrigger className="w-auto px-3 border-r-0 rounded-r-none focus:ring-0 focus:ring-offset-0">
+                <ListFilter className="h-4 w-4 text-muted-foreground" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(searchFieldLabels).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder={searchPlaceholder}
+                className="pl-8 rounded-l-none"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex w-full flex-col sm:flex-row items-center gap-2">
+            <Select value={locationFilter} onValueChange={setLocationFilter}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectValue placeholder="Filter by Location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Locations</SelectItem>
+                <SelectItem value="Workshop">Workshop</SelectItem>
+                <SelectItem value="On-Site">On-Site</SelectItem>
+                <SelectItem value="Not Confirm">Not Confirmed</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectValue placeholder="Filter by Type" />
+              </SelectTrigger>
+              <SelectContent>
+                {equipmentTypes.map(type => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={capacityFilter} onValueChange={setCapacityFilter}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectValue placeholder="Filter by Capacity" />
+              </SelectTrigger>
+              <SelectContent>
+                {capacities.map(capacity => (
+                  <SelectItem key={capacity} value={capacity}>{capacity}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <Card>
+          <CardContent className="p-0 md:p-3 pt-0">
+          {isLoadingForklifts ? (
+            <div className="flex justify-center items-center h-64 p-3 pt-0">
+              <p className="text-muted-foreground">Loading fleet...</p>
+            </div>
+          ) : filteredForklifts && filteredForklifts.length > 0 ? (
+              <div>
+                <Table>
+                    <TableHeader className="sticky top-0 bg-card">
+                        <TableRow>
+                        <TableHead className="w-[50px] hidden sm:table-cell">Sr.</TableHead>
+                        <TableHead>Serial Number</TableHead>
+                        <TableHead className="hidden md:table-cell">Make</TableHead>
+                        <TableHead className="hidden md:table-cell">Model</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead className="w-[50px] text-right"><span className="sr-only">Actions</span></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredForklifts.map((forklift) => (
+                        <Fragment key={forklift.id}>
+                            <TableRow onClick={() => toggleRow(forklift.id)} className={cn("cursor-pointer", expandedRow === forklift.id && "bg-accent hover:bg-accent")} data-state={expandedRow === forklift.id ? 'open' : 'closed'}>
+                                <TableCell className="font-medium hidden sm:table-cell">{forklift.srNumber}</TableCell>
+                                <TableCell>
+                                  <div className="font-medium">{forklift.serialNumber}</div>
+                                  <div className="text-sm text-muted-foreground md:hidden">{forklift.make} {forklift.model}</div>
+                                </TableCell>
+                                <TableCell className="hidden md:table-cell">{forklift.make}</TableCell>
+                                <TableCell className="hidden md:table-cell">{forklift.model}</TableCell>
+                                <TableCell>
+                                  <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={(e) => { e.stopPropagation(); openAddEditDialog(forklift); }}>
+                                    <Badge variant={'outline'} className={cn('font-medium pointer-events-none', getLocationBadgeClass(forklift.locationType))}>
+                                      {getLocationIcon(forklift.locationType)}
+                                      {getLocationText(forklift)}
+                                    </Badge>
+                                  </Button>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <DropdownMenu open={openDropdownId === forklift.id} onOpenChange={(isOpen) => setOpenDropdownId(isOpen ? forklift.id : null)}>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuItem onSelect={() => openAddEditDialog(forklift)}>
+                                        Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onSelect={() => openDeleteDialog(forklift)} className="text-destructive focus:text-destructive">
+                                        Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                            </TableRow>
+                            {expandedRow === forklift.id && (
+                                <TableRow className="bg-accent/50 hover:bg-accent/50">
+                                    <TableCell colSpan={6} className="p-2.5">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border rounded-md bg-background/50">
+                                          <div className="flex flex-col gap-1">
+                                            <Label className="text-xs text-muted-foreground">MFG Year</Label>
+                                            <span className="font-medium">{forklift.year}</span>
+                                          </div>
+                                          <div className="flex flex-col gap-1">
+                                            <Label className="text-xs text-muted-foreground">Capacity</Label>
+                                            <span className="font-medium">{forklift.capacity || 'N/A'}</span>
+                                          </div>
+                                          <div className="flex flex-col gap-1">
+                                            <Label className="text-xs text-muted-foreground">Equip. Type</Label>
+                                            <span className="font-medium">{forklift.equipmentType || 'N/A'}</span>
+                                          </div>
+                                          <div className="flex flex-col gap-1">
+                                            <Label className="text-xs text-muted-foreground">Voltage</Label>
+                                            <span className="font-medium">{forklift.voltage || 'NA'}</span>
+                                          </div>
+                                          <div className="flex flex-col gap-1">
+                                            <Label className="text-xs text-muted-foreground">Mast Height</Label>
+                                            <span className="font-medium">{forklift.mastHeight || 'N/A'}</span>
+                                          </div>
+                                          
+                                          {forklift.locationType === 'On-Site' && (
+                                            <>
+                                              <div className="col-span-full"><Separator className="my-2" /></div>
+                                              <div className="col-span-full sm:col-span-1 flex flex-col gap-1">
+                                                <Label className="text-xs text-muted-foreground">Site / Company</Label>
+                                                <span className="font-medium">{forklift.siteCompany || 'N/A'}</span>
+                                              </div>
+                                              <div className="col-span-full sm:col-span-1 flex flex-col gap-1">
+                                                <Label className="text-xs text-muted-foreground">Area</Label>
+                                                <span className="font-medium">{forklift.siteArea || 'N/A'}</span>
+                                              </div>
+                                              <div className="col-span-full sm:col-span-1 flex flex-col gap-1">
+                                                <Label className="text-xs text-muted-foreground flex items-center gap-2"><User className="h-3 w-3" /> Contact Person</Label>
+                                                <span className="font-medium">{forklift.siteContactPerson || 'N/A'}</span>
+                                              </div>
+                                              <div className="col-span-full sm:col-span-1 flex flex-col gap-1">
+                                                <Label className="text-xs text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> Contact Number</Label>
+                                                <span className="font-medium">{forklift.siteContactNumber || 'N/A'}</span>
+                                              </div>
+                                            </>
+                                          )}
+
+                                          {forklift.remarks && (
+                                            <>
+                                              <div className="col-span-full"><Separator className="my-2" /></div>
+                                              <div className="col-span-full flex flex-col gap-1">
+                                                    <Label className="text-xs text-muted-foreground">Remarks</Label>
+                                                    <p className="text-sm text-foreground whitespace-pre-wrap">{forklift.remarks}</p>
+                                              </div>
+                                            </>
+                                          )}
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </Fragment>
+                        ))}
+                    </TableBody>
+                </Table>
+              </div>
+          ) : (
+              <div className="flex flex-col items-center justify-center h-64 rounded-b-lg border-t">
+                <h3 className="text-xl font-semibold">No Forklifts Found</h3>
+                <p className="text-muted-foreground mt-2">
+                  No forklifts match your current filters. Try adding one!
+                </p>
+              </div>
+          )}
           </CardContent>
         </Card>
-        <Card className={cn(cardClassName, "from-amber-500 to-orange-600 text-white shadow-amber-500/30")}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">On-Site</CardTitle>
-            <Truck className="h-5 w-5 text-white/80" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{isLoading ? '...' : stats.onSite}</div>
-            <p className="text-xs text-white/90">Units deployed at client sites</p>
-          </CardContent>
-        </Card>
-        <Card className={cn(cardClassName, "from-red-500 to-rose-600 text-white shadow-red-500/30")}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Not Confirmed</CardTitle>
-            <AlertTriangle className="h-5 w-5 text-white/80" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{isLoading ? '...' : stats.notConfirmed}</div>
-            <p className="text-xs text-white/90">Units with unconfirmed locations</p>
-          </CardContent>
-        </Card>
-        <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Forklifts</CardTitle>
-            <ForkliftIcon className="h-5 w-5 text-white/80" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{isLoading ? '...' : stats.total}</div>
-            <p className="text-xs text-white/90">Total units in fleet</p>
-          </CardContent>
-        </Card>
-      </div>
-      
-       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex w-full flex-1 items-center gap-2">
-          <Select value={searchField} onValueChange={(value) => setSearchField(value as SearchField)}>
-            <SelectTrigger className="w-auto px-3 border-r-0 rounded-r-none focus:ring-0 focus:ring-offset-0">
-              <ListFilter className="h-4 w-4 text-muted-foreground" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(searchFieldLabels).map(([key, label]) => (
-                <SelectItem key={key} value={key}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-           <div className="relative w-full sm:max-w-xs">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={searchPlaceholder}
-              className="pl-8 rounded-l-none"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+
+        {/* Add/Edit Dialog */}
+        <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{selectedForklift ? 'Edit Forklift' : 'Add New Forklift'}</DialogTitle>
+              <DialogDescription>
+                {selectedForklift ? 'Update the details of your forklift.' : 'Fill out the form to add a new forklift.'}
+              </DialogDescription>
+            </DialogHeader>
+            <ForkliftForm
+              onSubmit={handleFormSubmit}
+              onCancel={() => { setIsAddEditDialogOpen(false); setSelectedForklift(null);}}
+              initialData={selectedForklift || undefined}
+              mode={selectedForklift ? 'edit' : 'add'}
             />
-          </div>
-        </div>
-        <div className="flex w-full flex-col sm:flex-row items-center gap-2">
-          <Select value={locationFilter} onValueChange={setLocationFilter}>
-            <SelectTrigger className="w-full sm:w-[150px]">
-              <SelectValue placeholder="Filter by Location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All Locations</SelectItem>
-              <SelectItem value="Workshop">Workshop</SelectItem>
-              <SelectItem value="On-Site">On-Site</SelectItem>
-              <SelectItem value="Not Confirm">Not Confirmed</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
-            <SelectTrigger className="w-full sm:w-[150px]">
-              <SelectValue placeholder="Filter by Type" />
-            </SelectTrigger>
-            <SelectContent>
-              {equipmentTypes.map(type => (
-                <SelectItem key={type} value={type}>{type}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={capacityFilter} onValueChange={setCapacityFilter}>
-            <SelectTrigger className="w-full sm:w-[150px]">
-              <SelectValue placeholder="Filter by Capacity" />
-            </SelectTrigger>
-            <SelectContent>
-              {capacities.map(capacity => (
-                <SelectItem key={capacity} value={capacity}>{capacity}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to delete this forklift?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the forklift with serial number <span className="font-medium">{selectedForklift?.serialNumber}</span>. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => { setIsDeleteDialogOpen(false); setSelectedForklift(null);}}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Import Dialog */}
+        <ForkliftImportDialog
+          isOpen={isImportDialogOpen}
+          onClose={() => setIsImportDialogOpen(false)}
+          onImportComplete={handleImportComplete}
+        />
       </div>
-
-      <Card>
-        <CardContent className="p-0 md:p-3 pt-0">
-        {isLoadingForklifts ? (
-          <div className="flex justify-center items-center h-64 p-3 pt-0">
-            <p className="text-muted-foreground">Loading fleet...</p>
-          </div>
-        ) : filteredForklifts && filteredForklifts.length > 0 ? (
-            <div>
-              <Table>
-                  <TableHeader className="sticky top-0 bg-card">
-                      <TableRow>
-                      <TableHead className="w-[50px] hidden sm:table-cell">Sr.</TableHead>
-                      <TableHead>Serial Number</TableHead>
-                      <TableHead className="hidden md:table-cell">Make</TableHead>
-                      <TableHead className="hidden md:table-cell">Model</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead className="w-[50px] text-right"><span className="sr-only">Actions</span></TableHead>
-                      </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                      {filteredForklifts.map((forklift) => (
-                      <Fragment key={forklift.id}>
-                          <TableRow onClick={() => toggleRow(forklift.id)} className={cn("cursor-pointer", expandedRow === forklift.id && "bg-accent hover:bg-accent")} data-state={expandedRow === forklift.id ? 'open' : 'closed'}>
-                              <TableCell className="font-medium hidden sm:table-cell">{forklift.srNumber}</TableCell>
-                              <TableCell>
-                                <div className="font-medium">{forklift.serialNumber}</div>
-                                <div className="text-sm text-muted-foreground md:hidden">{forklift.make} {forklift.model}</div>
-                              </TableCell>
-                              <TableCell className="hidden md:table-cell">{forklift.make}</TableCell>
-                              <TableCell className="hidden md:table-cell">{forklift.model}</TableCell>
-                              <TableCell>
-                                <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={(e) => { e.stopPropagation(); openAddEditDialog(forklift); }}>
-                                  <Badge variant={'outline'} className={cn('font-medium pointer-events-none', getLocationBadgeClass(forklift.locationType))}>
-                                    {getLocationIcon(forklift.locationType)}
-                                    {getLocationText(forklift)}
-                                  </Badge>
-                                </Button>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                  <DropdownMenu open={openDropdownId === forklift.id} onOpenChange={(isOpen) => setOpenDropdownId(isOpen ? forklift.id : null)}>
-                                  <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                                          <MoreHorizontal className="h-4 w-4" />
-                                      </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                      <DropdownMenuItem onSelect={() => openAddEditDialog(forklift)}>
-                                      Edit
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onSelect={() => openDeleteDialog(forklift)} className="text-destructive focus:text-destructive">
-                                      Delete
-                                      </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                  </DropdownMenu>
-                              </TableCell>
-                          </TableRow>
-                          {expandedRow === forklift.id && (
-                              <TableRow className="bg-accent/50 hover:bg-accent/50">
-                                  <TableCell colSpan={6} className="p-2.5">
-                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border rounded-md bg-background/50">
-                                        <div className="flex flex-col gap-1">
-                                          <Label className="text-xs text-muted-foreground">MFG Year</Label>
-                                          <span className="font-medium">{forklift.year}</span>
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                          <Label className="text-xs text-muted-foreground">Capacity</Label>
-                                          <span className="font-medium">{forklift.capacity || 'N/A'}</span>
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                          <Label className="text-xs text-muted-foreground">Equip. Type</Label>
-                                          <span className="font-medium">{forklift.equipmentType || 'N/A'}</span>
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                          <Label className="text-xs text-muted-foreground">Voltage</Label>
-                                          <span className="font-medium">{forklift.voltage || 'NA'}</span>
-                                        </div>
-                                         <div className="flex flex-col gap-1">
-                                          <Label className="text-xs text-muted-foreground">Mast Height</Label>
-                                          <span className="font-medium">{forklift.mastHeight || 'N/A'}</span>
-                                        </div>
-                                        
-                                        {forklift.locationType === 'On-Site' && (
-                                          <>
-                                            <div className="col-span-full"><Separator className="my-2" /></div>
-                                            <div className="col-span-full sm:col-span-1 flex flex-col gap-1">
-                                              <Label className="text-xs text-muted-foreground">Site / Company</Label>
-                                              <span className="font-medium">{forklift.siteCompany || 'N/A'}</span>
-                                            </div>
-                                            <div className="col-span-full sm:col-span-1 flex flex-col gap-1">
-                                              <Label className="text-xs text-muted-foreground">Area</Label>
-                                              <span className="font-medium">{forklift.siteArea || 'N/A'}</span>
-                                            </div>
-                                             <div className="col-span-full sm:col-span-1 flex flex-col gap-1">
-                                              <Label className="text-xs text-muted-foreground flex items-center gap-2"><User className="h-3 w-3" /> Contact Person</Label>
-                                              <span className="font-medium">{forklift.siteContactPerson || 'N/A'}</span>
-                                            </div>
-                                             <div className="col-span-full sm:col-span-1 flex flex-col gap-1">
-                                              <Label className="text-xs text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> Contact Number</Label>
-                                              <span className="font-medium">{forklift.siteContactNumber || 'N/A'}</span>
-                                            </div>
-                                          </>
-                                        )}
-
-                                        {forklift.remarks && (
-                                           <>
-                                            <div className="col-span-full"><Separator className="my-2" /></div>
-                                            <div className="col-span-full flex flex-col gap-1">
-                                                 <Label className="text-xs text-muted-foreground">Remarks</Label>
-                                                 <p className="text-sm text-foreground whitespace-pre-wrap">{forklift.remarks}</p>
-                                            </div>
-                                           </>
-                                        )}
-                                      </div>
-                                  </TableCell>
-                              </TableRow>
-                          )}
-                      </Fragment>
-                      ))}
-                  </TableBody>
-              </Table>
-            </div>
-        ) : (
-            <div className="flex flex-col items-center justify-center h-64 rounded-b-lg border-t">
-              <h3 className="text-xl font-semibold">No Forklifts Found</h3>
-              <p className="text-muted-foreground mt-2">
-                No forklifts match your current filters. Try adding one!
-              </p>
-            </div>
-        )}
-        </CardContent>
-      </Card>
-
-      {/* Add/Edit Dialog */}
-      <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{selectedForklift ? 'Edit Forklift' : 'Add New Forklift'}</DialogTitle>
-            <DialogDescription>
-              {selectedForklift ? 'Update the details of your forklift.' : 'Fill out the form to add a new forklift.'}
-            </DialogDescription>
-          </DialogHeader>
-          <ForkliftForm
-            onSubmit={handleFormSubmit}
-            onCancel={() => { setIsAddEditDialogOpen(false); setSelectedForklift(null);}}
-            initialData={selectedForklift || undefined}
-            mode={selectedForklift ? 'edit' : 'add'}
-          />
-        </DialogContent>
-      </Dialog>
-      
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to delete this forklift?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the forklift with serial number <span className="font-medium">{selectedForklift?.serialNumber}</span>. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => { setIsDeleteDialogOpen(false); setSelectedForklift(null);}}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Import Dialog */}
-      <ForkliftImportDialog
-        isOpen={isImportDialogOpen}
-        onClose={() => setIsImportDialogOpen(false)}
-        onImportComplete={handleImportComplete}
-      />
-    </div>
+    </AppLayout>
   );
 }

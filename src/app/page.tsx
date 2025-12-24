@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, limit } from "firebase/firestore";
 import { cn } from "@/lib/utils";
+import AppLayout from "@/components/app-layout";
 
 export default function Dashboard() {
   const { firestore } = useFirebase();
@@ -64,104 +65,106 @@ export default function Dashboard() {
   const cardClassName = "border-0 bg-gradient-to-br shadow-lg";
 
   return (
-    <div className="flex flex-col gap-6">
-       <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Workshop Dashboard</h1>
-            <p className="text-muted-foreground">Comprehensive overview of your workshop's operations.</p>
+    <AppLayout>
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Workshop Dashboard</h1>
+              <p className="text-muted-foreground">Comprehensive overview of your workshop's operations.</p>
+            </div>
           </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+              <Activity className="h-5 w-5 text-white/80" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{isLoadingRequests ? '...' : totalRequests}</div>
+              <p className="text-xs text-white/90">All time service requests</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(cardClassName, "from-amber-500 to-orange-600 text-white shadow-amber-500/30")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending</CardTitle>
+              <Clock className="h-5 w-5 text-white/80" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{isLoadingRequests ? '...' : pendingRequests}</div>
+              <p className="text-xs text-white/90">Requests awaiting assignment</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(cardClassName, "from-violet-500 to-purple-600 text-white shadow-violet-500/30")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+              <Wrench className="h-5 w-5 text-white/80" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{isLoadingRequests ? '...' : inProgressRequests}</div>
+              <p className="text-xs text-white/90">Jobs currently being worked on</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CheckCircle className="h-5 w-5 text-white/80" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{isLoadingRequests ? '...' : completedRequests}</div>
+              <p className="text-xs text-white/90">Completed service requests</p>
+            </CardContent>
+          </Card>
         </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
-            <Activity className="h-5 w-5 text-white/80" />
+
+        <Card>
+          <CardHeader className="flex flex-row items-center">
+              <div className="grid gap-2">
+                  <CardTitle>Recent Service Requests</CardTitle>
+                  <CardDescription>
+                      A summary of the most recent service requests.
+                  </CardDescription>
+              </div>
+              <Button asChild size="sm" className="ml-auto gap-1">
+                  <Link href="/service-requests">
+                      View All
+                  </Link>
+              </Button>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{isLoadingRequests ? '...' : totalRequests}</div>
-            <p className="text-xs text-white/90">All time service requests</p>
-          </CardContent>
-        </Card>
-        <Card className={cn(cardClassName, "from-amber-500 to-orange-600 text-white shadow-amber-500/30")}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-5 w-5 text-white/80" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{isLoadingRequests ? '...' : pendingRequests}</div>
-            <p className="text-xs text-white/90">Requests awaiting assignment</p>
-          </CardContent>
-        </Card>
-        <Card className={cn(cardClassName, "from-violet-500 to-purple-600 text-white shadow-violet-500/30")}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-            <Wrench className="h-5 w-5 text-white/80" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{isLoadingRequests ? '...' : inProgressRequests}</div>
-            <p className="text-xs text-white/90">Jobs currently being worked on</p>
-          </CardContent>
-        </Card>
-        <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle className="h-5 w-5 text-white/80" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{isLoadingRequests ? '...' : completedRequests}</div>
-            <p className="text-xs text-white/90">Completed service requests</p>
+          <CardContent className="p-0 md:p-3 pt-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[50px] hidden sm:table-cell">Sr.</TableHead>
+                  <TableHead>Forklift</TableHead>
+                  <TableHead className="hidden md:table-cell">Issue</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="hidden lg:table-cell">Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoadingRecent || isLoadingForklifts ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center">Loading...</TableCell>
+                  </TableRow>
+                ) : (
+                  recentRequests?.map((request, index) => (
+                    <TableRow key={request.id}>
+                      <TableCell className="font-medium hidden sm:table-cell">{index + 1}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{forklifts?.find(f => f.id === request.forkliftId)?.serialNumber || '...'}</div>
+                        <div className="text-sm text-muted-foreground">{getForkliftModel(request.forkliftId)}</div>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate hidden md:table-cell">{request.issueDescription}</TableCell>
+                      <TableCell>{getStatusBadge(request.status)}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{new Date(request.requestDate).toLocaleDateString()}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center">
-            <div className="grid gap-2">
-                <CardTitle>Recent Service Requests</CardTitle>
-                <CardDescription>
-                    A summary of the most recent service requests.
-                </CardDescription>
-            </div>
-            <Button asChild size="sm" className="ml-auto gap-1">
-                <Link href="/service-requests">
-                    View All
-                </Link>
-            </Button>
-        </CardHeader>
-        <CardContent className="p-0 md:p-3 pt-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px] hidden sm:table-cell">Sr.</TableHead>
-                <TableHead>Forklift</TableHead>
-                <TableHead className="hidden md:table-cell">Issue</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden lg:table-cell">Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoadingRecent || isLoadingForklifts ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center">Loading...</TableCell>
-                </TableRow>
-              ) : (
-                recentRequests?.map((request, index) => (
-                  <TableRow key={request.id}>
-                     <TableCell className="font-medium hidden sm:table-cell">{index + 1}</TableCell>
-                    <TableCell>
-                      <div className="font-medium">{forklifts?.find(f => f.id === request.forkliftId)?.serialNumber || '...'}</div>
-                      <div className="text-sm text-muted-foreground">{getForkliftModel(request.forkliftId)}</div>
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate hidden md:table-cell">{request.issueDescription}</TableCell>
-                    <TableCell>{getStatusBadge(request.status)}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{new Date(request.requestDate).toLocaleDateString()}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+    </AppLayout>
   );
 }
