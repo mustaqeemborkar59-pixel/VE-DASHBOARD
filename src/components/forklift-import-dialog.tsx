@@ -25,6 +25,11 @@ const requiredFields = [
 ];
 
 const allFields = [
+  'Sr', ...requiredFields, 'capacity', 'equipmentType', 'voltage', 'mastHeight',
+  'siteCompany', 'siteArea', 'siteContactPerson', 'siteContactNumber', 'remarks'
+];
+
+const forkliftDataFields = [
   ...requiredFields, 'capacity', 'equipmentType', 'voltage', 'mastHeight',
   'siteCompany', 'siteArea', 'siteContactPerson', 'siteContactNumber', 'remarks'
 ];
@@ -92,7 +97,7 @@ export function ForkliftImportDialog({ isOpen, onClose, onImportComplete }: Fork
           const newForklift: Partial<Forklift> = {};
 
           // Sanitize and map data
-          allFields.forEach(field => {
+          forkliftDataFields.forEach(field => {
             if (record[field] !== undefined && record[field] !== null) {
               (newForklift as any)[field] = record[field];
             }
@@ -139,7 +144,7 @@ export function ForkliftImportDialog({ isOpen, onClose, onImportComplete }: Fork
 
   const handleDownloadSample = () => {
     const csvContent = allFields.join(',') + '\n';
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-s8;' });
     const link = document.createElement('a');
     if (link.href) {
       URL.revokeObjectURL(link.href);
