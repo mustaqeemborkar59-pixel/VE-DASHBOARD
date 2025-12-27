@@ -78,7 +78,7 @@ export default function ForkliftsPage() {
   const { toast } = useToast();
   
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [forkliftToDelete, setForkliftToDelete] = useState<Forklift | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedForklift, setSelectedForklift] = useState<Forklift | null>(null);
 
@@ -108,17 +108,9 @@ export default function ForkliftsPage() {
 
 
   const openAddEditDialog = (forklift: Forklift | null) => {
-    setOpenDropdownId(null);
     setSelectedForklift(forklift);
-    setIsDeleteDialogOpen(false); // Close delete dialog if open
+    setForkliftToDelete(null); // Ensure delete dialog is not active
     setIsAddEditDialogOpen(true);
-  };
-
-  const openDeleteDialog = (forklift: Forklift) => {
-    setOpenDropdownId(null);
-    setSelectedForklift(forklift);
-    setIsAddEditDialogOpen(false); // Close add/edit dialog if open
-    setIsDeleteDialogOpen(true);
   };
 
   const equipmentTypes = useMemo(() => {
@@ -171,18 +163,17 @@ export default function ForkliftsPage() {
 
 
   const handleDelete = () => {
-    if (!firestore || !selectedForklift) return;
+    if (!firestore || !forkliftToDelete) return;
     
-    const forkliftDocRef = doc(firestore, 'forklifts', selectedForklift.id);
+    const forkliftDocRef = doc(firestore, 'forklifts', forkliftToDelete.id);
     deleteDocumentNonBlocking(forkliftDocRef);
 
     toast({
       title: "Forklift Deleted",
-      description: `Forklift ${selectedForklift.serialNumber} has been removed.`,
+      description: `Forklift ${forkliftToDelete.serialNumber} has been removed.`,
     });
 
-    setIsDeleteDialogOpen(false);
-    setSelectedForklift(null);
+    setForkliftToDelete(null);
   };
 
   const handleFormSubmit = (formData: Partial<ForkliftFormData>) => {
@@ -268,11 +259,6 @@ export default function ForkliftsPage() {
         return '';
     }
   }
-
-  const handleCancelDelete = () => {
-    setIsDeleteDialogOpen(false);
-    setSelectedForklift(null);
-  };
 
   return (
     <AppLayout>
@@ -434,7 +420,7 @@ export default function ForkliftsPage() {
                                   </Button>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <DropdownMenu open={openDropdownId === forklift.id} onOpenChange={(isOpen) => setOpenDropdownId(isOpen ? forklift.id : null)}>
+                                    <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
                                             <MoreHorizontal className="h-4 w-4" />
@@ -446,7 +432,7 @@ export default function ForkliftsPage() {
                                         Edit
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onSelect={() => openDeleteDialog(forklift)} className="text-destructive focus:text-destructive">
+                                        <DropdownMenuItem onSelect={() => setForkliftToDelete(forklift)} className="text-destructive focus:text-destructive">
                                         Delete
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -548,16 +534,16 @@ export default function ForkliftsPage() {
         </Dialog>
         
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={isDeleteDialogOpen}>
+        <AlertDialog open={!!forkliftToDelete} onOpenChange={(open) => !open && setForkliftToDelete(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure you want to delete this forklift?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete the forklift with serial number <span className="font-medium">{selectedForklift?.serialNumber}</span>. This action cannot be undone.
+                This will permanently delete the forklift with serial number <span className="font-medium">{forkliftToDelete?.serialNumber}</span>. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel onClick={() => setForkliftToDelete(null)}>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

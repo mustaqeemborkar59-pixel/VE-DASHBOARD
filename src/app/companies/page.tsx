@@ -54,25 +54,16 @@ export default function CompaniesPage() {
   const { toast } = useToast();
   
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('createdAt', 'desc')) : null, [firestore]);
   const { data: companies, isLoading } = useCollection<Company>(companiesQuery);
   
   const openAddEditDialog = (company: Company | null) => {
-    setOpenDropdownId(null);
     setSelectedCompany(company);
-    setIsDeleteDialogOpen(false); // Close delete dialog if open
+    setCompanyToDelete(null); // Ensure delete dialog is not controlled by this action
     setIsAddEditDialogOpen(true);
-  };
-
-  const openDeleteDialog = (company: Company) => {
-    setOpenDropdownId(null);
-    setSelectedCompany(company);
-    setIsAddEditDialogOpen(false); // Close add/edit dialog if open
-    setIsDeleteDialogOpen(true);
   };
 
   const handleFormSubmit = (formData: CompanyFormData) => {
@@ -95,23 +86,17 @@ export default function CompaniesPage() {
   };
 
   const handleDelete = () => {
-    if (!firestore || !selectedCompany) return;
+    if (!firestore || !companyToDelete) return;
     
-    const companyDocRef = doc(firestore, 'companies', selectedCompany.id);
+    const companyDocRef = doc(firestore, 'companies', companyToDelete.id);
     deleteDocumentNonBlocking(companyDocRef);
 
     toast({
       title: "Company Deleted",
-      description: `Company ${selectedCompany.name} has been removed.`,
+      description: `Company ${companyToDelete.name} has been removed.`,
     });
 
-    setIsDeleteDialogOpen(false);
-    setSelectedCompany(null);
-  };
-
-  const handleCancelDelete = () => {
-    setIsDeleteDialogOpen(false);
-    setSelectedCompany(null);
+    setCompanyToDelete(null);
   };
 
   return (
@@ -151,7 +136,7 @@ export default function CompaniesPage() {
                     <TableCell className="hidden md:table-cell max-w-sm truncate">{company.address}</TableCell>
                     <TableCell className="hidden lg:table-cell font-mono">{company.gstin}</TableCell>
                     <TableCell>
-                      <DropdownMenu open={openDropdownId === company.id} onOpenChange={(open) => setOpenDropdownId(open ? company.id : null)}>
+                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>
@@ -164,7 +149,7 @@ export default function CompaniesPage() {
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onSelect={() => openDeleteDialog(company)} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem onSelect={() => setCompanyToDelete(company)} className="text-destructive focus:text-destructive">
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -195,16 +180,16 @@ export default function CompaniesPage() {
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={isDeleteDialogOpen}>
+      <AlertDialog open={!!companyToDelete} onOpenChange={(open) => !open && setCompanyToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete <span className="font-medium">{selectedCompany?.name}</span>. This action cannot be undone.
+              This will permanently delete <span className="font-medium">{companyToDelete?.name}</span>. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setCompanyToDelete(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

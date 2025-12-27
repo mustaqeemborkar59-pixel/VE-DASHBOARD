@@ -19,7 +19,7 @@ import { useReactToPrint } from 'react-to-print';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function BillingPage() {
   const { firestore } = useFirebase();
@@ -49,8 +49,6 @@ export default function BillingPage() {
   
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   // Queries
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
@@ -234,11 +232,6 @@ export default function BillingPage() {
     }, 100);
   };
   
-  const openDeleteDialog = (invoice: Invoice) => {
-    setInvoiceToDelete(invoice);
-    setIsDeleteDialogOpen(true);
-  };
-
   const handleDeleteInvoice = () => {
       if (!firestore || !invoiceToDelete) return;
       const invoiceDocRef = doc(firestore, 'invoices', invoiceToDelete.id);
@@ -247,13 +240,7 @@ export default function BillingPage() {
           title: "Invoice Deleted",
           description: `Invoice No. ${invoiceToDelete.billNo}-MHE has been deleted.`,
       });
-      setIsDeleteDialogOpen(false);
       setInvoiceToDelete(null);
-  };
-
-  const handleCancelDelete = () => {
-    setIsDeleteDialogOpen(false);
-    setInvoiceToDelete(null);
   };
 
   // Trigger print when invoiceToPrint is set
@@ -442,49 +429,30 @@ export default function BillingPage() {
                                     <TableCell>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
                                     <TableCell className="text-right">{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
                                     <TableCell className="text-right">
-                                       <AlertDialog>
-                                            <DropdownMenu open={openDropdownId === invoice.id} onOpenChange={(open) => setOpenDropdownId(open ? invoice.id : null)}>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                                        <span className="sr-only">Open menu</span>
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem onSelect={() => handleReprint(invoice)}>
-                                                        <Printer className="mr-2 h-4 w-4" />
-                                                        Print
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={() => handleEdit(invoice)}>
-                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <AlertDialogTrigger asChild>
-                                                        <DropdownMenuItem 
-                                                          onSelect={(e) => { e.preventDefault(); setInvoiceToDelete(invoice); }} 
-                                                          className="text-destructive focus:text-destructive"
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Delete
-                                                        </DropdownMenuItem>
-                                                    </AlertDialogTrigger>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    This action cannot be undone. This will permanently delete Invoice No. <span className="font-medium">{invoiceToDelete?.billNo}-MHE</span>.
-                                                </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                <AlertDialogCancel onClick={() => setInvoiceToDelete(null)}>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={handleDeleteInvoice} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <span className="sr-only">Open menu</span>
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                <DropdownMenuItem onSelect={() => handleReprint(invoice)}>
+                                                    <Printer className="mr-2 h-4 w-4" />
+                                                    Print
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleEdit(invoice)}>
+                                                    <Pencil className="mr-2 h-4 w-4" />
+                                                    Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onSelect={() => setInvoiceToDelete(invoice)} className="text-destructive focus:text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
                            ))
@@ -497,6 +465,22 @@ export default function BillingPage() {
                 </Table>
             </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && setInvoiceToDelete(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete Invoice No. <span className="font-medium">{invoiceToDelete?.billNo}-MHE</span>.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setInvoiceToDelete(null)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteInvoice} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
         
         {/* Hidden Invoice for printing */}
         <div className="absolute -z-10 -left-[9999px] -top-[9999px]">

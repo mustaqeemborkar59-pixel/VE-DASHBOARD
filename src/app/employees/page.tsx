@@ -55,41 +55,30 @@ export default function EmployeesPage() {
   const { toast } = useToast();
   
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
   const employeesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'employees'), orderBy('createdAt', 'asc')) : null, [firestore]);
   const { data: employees, isLoading } = useCollection<Employee>(employeesQuery);
 
   const openAddEditDialog = (employee: Employee | null) => {
-    setOpenDropdownId(null);
     setSelectedEmployee(employee);
-    setIsDeleteDialogOpen(false); // Close delete dialog if open
+    setEmployeeToDelete(null); // Ensure delete dialog isn't active
     setIsAddEditDialogOpen(true);
   };
 
-  const openDeleteDialog = (employee: Employee) => {
-    setOpenDropdownId(null);
-    setSelectedEmployee(employee);
-    setIsAddEditDialogOpen(false); // Close add/edit dialog if open
-    setIsDeleteDialogOpen(true);
-  };
-
   const handleDelete = () => {
-    if (!firestore || !selectedEmployee) return;
+    if (!firestore || !employeeToDelete) return;
     
-    const employeeDocRef = doc(firestore, 'employees', selectedEmployee.id);
+    const employeeDocRef = doc(firestore, 'employees', employeeToDelete.id);
     deleteDocumentNonBlocking(employeeDocRef);
 
     toast({
       title: "Employee Deleted",
-      description: `Employee ${selectedEmployee.fullName} has been removed.`,
+      description: `Employee ${employeeToDelete.fullName} has been removed.`,
     });
 
-    setIsDeleteDialogOpen(false);
-    setSelectedEmployee(null);
+    setEmployeeToDelete(null);
   };
   
   const handleFormSubmit = (formData: EmployeeFormData) => {
@@ -109,11 +98,6 @@ export default function EmployeesPage() {
     }
 
     setIsAddEditDialogOpen(false);
-    setSelectedEmployee(null);
-  };
-
-  const handleCancelDelete = () => {
-    setIsDeleteDialogOpen(false);
     setSelectedEmployee(null);
   };
 
@@ -165,7 +149,7 @@ export default function EmployeesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                       <DropdownMenu open={openDropdownId === employee.id} onOpenChange={(open) => setOpenDropdownId(open ? employee.id : null)}>
+                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>
@@ -178,7 +162,7 @@ export default function EmployeesPage() {
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onSelect={() => openDeleteDialog(employee)} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem onSelect={() => setEmployeeToDelete(employee)} className="text-destructive focus:text-destructive">
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -211,16 +195,16 @@ export default function EmployeesPage() {
       </Dialog>
       
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen}>
+      <AlertDialog open={!!employeeToDelete} onOpenChange={(open) => !open && setEmployeeToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to delete this employee?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete <span className="font-medium">{selectedEmployee?.fullName}</span>. This action cannot be undone.
+              This will permanently delete <span className="font-medium">{employeeToDelete?.fullName}</span>. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setEmployeeToDelete(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
