@@ -8,22 +8,32 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
-import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, addDoc } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, limit, addDoc, doc } from 'firebase/firestore';
 import { Company, Invoice } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, Check, ChevronsUpDown, Plus, Trash2, Printer } from 'lucide-react';
-import { format } from 'date-fns';
+import { CalendarIcon, Check, ChevronsUpDown, Plus, Trash2, Printer, MoreHorizontal, Pencil, Ban } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { InvoiceTemplate, type InvoiceData } from '@/components/invoice-template';
 import { useReactToPrint } from 'react-to-print';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function BillingPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
   const invoiceRef = useRef<HTMLDivElement>(null);
+  
+  const initialFormState = {
+    companyId: '',
+    billDate: new Date(),
+    poNumber: 'AGREEMENT',
+    site: '',
+    items: [{ particulars: '', amount: 0 }],
+  };
 
   const [companyId, setCompanyId] = useState<string>('');
   const [isCompanyPopoverOpen, setIsCompanyPopoverOpen] = useState(false);
@@ -33,6 +43,10 @@ export default function BillingPage() {
   const [items, setItems] = useState([{ particulars: '', amount: 0 }]);
   
   const [invoiceToPrint, setInvoiceToPrint] = useState<InvoiceData | null>(null);
+  
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Queries
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
@@ -45,11 +59,13 @@ export default function BillingPage() {
   const { data: allInvoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(allInvoicesQuery);
 
   const nextBillNo = useMemo(() => {
+    if (editingInvoice) return editingInvoice.billNo;
     if (lastInvoiceArr && lastInvoiceArr.length > 0) {
-      return (lastInvoiceArr[0].billNo || 0) + 1;
+      const maxBillNo = allInvoices ? Math.max(...allInvoices.map(inv => inv.billNo)) : 0;
+      return maxBillNo >= (lastInvoiceArr[0].billNo || 0) ? maxBillNo + 1 : (lastInvoiceArr[0].billNo || 0) + 1;
     }
     return 1;
-  }, [lastInvoiceArr]);
+  }, [lastInvoiceArr, editingInvoice, allInvoices]);
   
   const selectedCompany = useMemo(() => companies?.find(c => c.id === companyId), [companies, companyId]);
 
@@ -125,8 +141,17 @@ export default function BillingPage() {
           amountInWords: grandTotalInWords,
       }
   }
+  
+  const resetForm = () => {
+      setCompanyId(initialFormState.companyId);
+      setBillDate(initialFormState.billDate);
+      setPoNumber(initialFormState.poNumber);
+      setSite(initialFormState.site);
+      setItems(initialFormState.items);
+      setEditingInvoice(null);
+  };
 
-  const handleGenerateInvoice = async () => {
+  const handleFormSubmit = async () => {
     if (!companyId || !billDate || !site || !selectedCompany || items.some(i => !i.particulars || i.amount <= 0)) {
       toast({
         variant: 'destructive',
@@ -137,7 +162,7 @@ export default function BillingPage() {
     }
     
     if (firestore) {
-      const newInvoiceData: Omit<Invoice, 'id'> = {
+      const invoiceData: Omit<Invoice, 'id'> = {
         billNo: nextBillNo,
         billNoSuffix: 'MHE',
         billDate: format(billDate, 'yyyy-MM-dd'),
@@ -152,21 +177,26 @@ export default function BillingPage() {
       };
 
       try {
-        await addDoc(collection(firestore, 'invoices'), newInvoiceData);
-        toast({
-            title: 'Invoice Saved',
-            description: `Invoice No. ${nextBillNo}-MHE has been saved.`,
-        });
+          if (editingInvoice) {
+            // Update existing invoice
+            const invoiceDocRef = doc(firestore, 'invoices', editingInvoice.id);
+            updateDocumentNonBlocking(invoiceDocRef, invoiceData);
+            toast({
+                title: 'Invoice Updated',
+                description: `Invoice No. ${invoiceData.billNo}-MHE has been updated.`,
+            });
+          } else {
+            // Add new invoice
+            await addDoc(collection(firestore, 'invoices'), invoiceData);
+            toast({
+                title: 'Invoice Saved',
+                description: `Invoice No. ${nextBillNo}-MHE has been saved.`,
+            });
+          }
 
-        const printableData = generateInvoiceData(newInvoiceData, selectedCompany);
+        const printableData = generateInvoiceData(invoiceData, selectedCompany);
         setInvoiceToPrint(printableData);
-
-        // Reset form
-        setCompanyId('');
-        setBillDate(new Date());
-        setPoNumber('AGREEMENT');
-        setSite('');
-        setItems([{ particulars: '', amount: 0 }]);
+        resetForm();
         
       } catch (error) {
          toast({
@@ -188,6 +218,36 @@ export default function BillingPage() {
     }
   }
 
+  const handleEdit = (invoice: Invoice) => {
+    setEditingInvoice(invoice);
+    setCompanyId(invoice.companyId);
+    // Add a day to the date to fix timezone issue
+    const date = new Date(invoice.billDate);
+    date.setDate(date.getDate() + 1);
+    setBillDate(date);
+    setPoNumber(invoice.poNumber || 'AGREEMENT');
+    setSite(invoice.site || '');
+    setItems(invoice.items);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  const openDeleteDialog = (invoice: Invoice) => {
+    setInvoiceToDelete(invoice);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteInvoice = () => {
+      if (!firestore || !invoiceToDelete) return;
+      const invoiceDocRef = doc(firestore, 'invoices', invoiceToDelete.id);
+      deleteDocumentNonBlocking(invoiceDocRef);
+      toast({
+          title: "Invoice Deleted",
+          description: `Invoice No. ${invoiceToDelete.billNo}-MHE has been deleted.`,
+      });
+      setIsDeleteDialogOpen(false);
+      setInvoiceToDelete(null);
+  };
+
   // Trigger print when invoiceToPrint is set
   useEffect(() => {
     if (invoiceToPrint) {
@@ -200,8 +260,18 @@ export default function BillingPage() {
       <div className="flex flex-col gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Generate Monthly Invoice</CardTitle>
-            <CardDescription>Fill the details below to create a new invoice.</CardDescription>
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle>{editingInvoice ? 'Edit Invoice' : 'Generate Monthly Invoice'}</CardTitle>
+                <CardDescription>{editingInvoice ? `Updating Invoice No. ${editingInvoice.billNo}-MHE` : 'Fill the details below to create a new invoice.'}</CardDescription>
+              </div>
+              {editingInvoice && (
+                <Button variant="outline" size="sm" onClick={resetForm}>
+                  <Ban className="mr-2 h-4 w-4" />
+                  Cancel Edit
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -338,8 +408,8 @@ export default function BillingPage() {
             </div>
 
             <div className="flex justify-end pt-4">
-              <Button onClick={handleGenerateInvoice} size="lg">
-                Generate & Save Invoice
+              <Button onClick={handleFormSubmit} size="lg">
+                 {editingInvoice ? 'Update Invoice' : 'Generate & Save Invoice'}
               </Button>
             </div>
           </CardContent>
@@ -348,7 +418,7 @@ export default function BillingPage() {
         <Card>
             <CardHeader>
                 <CardTitle>Recent Invoices</CardTitle>
-                <CardDescription>View and re-print previously generated invoices.</CardDescription>
+                <CardDescription>View, edit, and re-print previously generated invoices.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -374,10 +444,30 @@ export default function BillingPage() {
                                     <TableCell>{format(new Date(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
                                     <TableCell className="text-right">{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" onClick={() => handleReprint(invoice)}>
-                                            <Printer className="mr-2 h-4 w-4" />
-                                            Print
-                                        </Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <span className="sr-only">Open menu</span>
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                <DropdownMenuItem onSelect={() => handleReprint(invoice)}>
+                                                    <Printer className="mr-2 h-4 w-4" />
+                                                    Print
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleEdit(invoice)}>
+                                                    <Pencil className="mr-2 h-4 w-4" />
+                                                    Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onSelect={() => openDeleteDialog(invoice)} className="text-destructive focus:text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
                            ))
@@ -395,9 +485,24 @@ export default function BillingPage() {
         <div className="absolute -z-10 -left-[9999px] -top-[9999px]">
             {invoiceToPrint && <InvoiceTemplate ref={invoiceRef} data={invoiceToPrint} />}
         </div>
+        
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete Invoice No. <span className="font-medium">{invoiceToDelete?.billNo}-MHE</span>. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteInvoice} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+
       </div>
     </AppLayout>
   );
 }
-
-    
