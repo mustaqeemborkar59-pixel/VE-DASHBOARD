@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import AppLayout from "@/components/app-layout";
@@ -8,11 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, addDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, addDoc, doc } from 'firebase/firestore';
 import { Company, Invoice } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Check, ChevronsUpDown, Plus, Trash2, Printer, MoreHorizontal, Pencil, Ban } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, Trash2, Printer, MoreHorizontal, Pencil, PlusCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { InvoiceTemplate, type InvoiceData } from '@/components/invoice-template';
 import { useReactToPrint } from 'react-to-print';
@@ -21,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 export default function BillingPage() {
   const { firestore } = useFirebase();
@@ -50,15 +52,15 @@ export default function BillingPage() {
   
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+
 
   // Queries
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
-  const lastInvoiceQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billNo', 'desc'), limit(1)) : null, [firestore]);
   const allInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billDate', 'desc')) : null, [firestore]);
 
   // Data
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
-  const { data: lastInvoiceArr } = useCollection<Invoice>(lastInvoiceQuery);
   const { data: allInvoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(allInvoicesQuery);
 
   const selectedCompany = useMemo(() => companies?.find(c => c.id === companyId), [companies, companyId]);
@@ -194,7 +196,7 @@ export default function BillingPage() {
 
         const printableData = generateInvoiceData(invoiceData, selectedCompany);
         setInvoiceToPrint(printableData);
-        resetForm();
+        setIsFormDialogOpen(false);
         
       } catch (error) {
          toast({
@@ -216,16 +218,18 @@ export default function BillingPage() {
     }
   }
 
-  const handleEdit = (invoice: Invoice) => {
-    setEditingInvoice(invoice);
-    setCompanyId(invoice.companyId);
-    setBillDate(invoice.billDate);
-    setPoNumber(invoice.poNumber || 'AGREEMENT');
-    setSite(invoice.site || '');
-    setItems(invoice.items);
-    setTimeout(() => {
-      document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 100);
+  const handleOpenFormDialog = (invoice: Invoice | null) => {
+    if (invoice) {
+      setEditingInvoice(invoice);
+      setCompanyId(invoice.companyId);
+      setBillDate(invoice.billDate);
+      setPoNumber(invoice.poNumber || 'AGREEMENT');
+      setSite(invoice.site || '');
+      setItems(invoice.items);
+    } else {
+      resetForm();
+    }
+    setIsFormDialogOpen(true);
   };
   
   const handleDeleteInvoice = () => {
@@ -249,150 +253,17 @@ export default function BillingPage() {
     <AppLayout>
       <div className="flex flex-col gap-6">
         <Card>
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle>{editingInvoice ? 'Edit Invoice' : 'Generate Monthly Invoice'}</CardTitle>
-                <CardDescription>{editingInvoice ? `Updating Invoice No. ${editingInvoice.billNo}-MHE` : 'Fill the details below to create a new invoice.'}</CardDescription>
-              </div>
-              {editingInvoice && (
-                <Button variant="outline" size="sm" onClick={resetForm}>
-                  <Ban className="mr-2 h-4 w-4" />
-                  Cancel Edit
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="company">Bill To</Label>
-                <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      id="company"
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={isCompanyPopoverOpen}
-                      className="w-full justify-between"
-                      disabled={isLoadingCompanies}
-                    >
-                      <span className="truncate">{selectedCompany ? selectedCompany.name : "Select company..."}</span>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                    <Command>
-                      <CommandInput placeholder="Search company..." />
-                      <CommandList>
-                        <CommandEmpty>No company found. Add one on the Companies page.</CommandEmpty>
-                        <CommandGroup>
-                          {companies?.map((company) => (
-                            <CommandItem
-                              key={company.id}
-                              value={company.name}
-                              onSelect={() => {
-                                setCompanyId(company.id);
-                                setIsCompanyPopoverOpen(false);
-                              }}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", companyId === company.id ? "opacity-100" : "opacity-0")} />
-                              {company.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="billDate">Bill Date</Label>
-                <Input
-                    id="billDate"
-                    type="date"
-                    value={billDate}
-                    onChange={(e) => setBillDate(e.target.value)}
-                    className="w-full"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="site">Site</Label>
-                <Input id="site" value={site} onChange={e => setSite(e.target.value)} placeholder="e.g., THANE DEPOT" />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="poNumber">PO.NO</Label>
-                <Input id="poNumber" value={poNumber} onChange={e => setPoNumber(e.target.value)} />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <Label>Particulars</Label>
-              {items.map((item, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Input
-                    type="text"
-                    placeholder="Item description"
-                    value={item.particulars}
-                    onChange={(e) => handleItemChange(index, 'particulars', e.target.value)}
-                    className="flex-grow"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Amount"
-                    value={item.amount || ''}
-                    onChange={(e) => handleItemChange(index, 'amount', parseFloat(e.target.value))}
-                    className="w-48"
-                  />
-                  <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={items.length === 1}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              ))}
-              <Button variant="outline" size="sm" onClick={handleAddItem}>
-                <Plus className="mr-2 h-4 w-4" /> Add Item
-              </Button>
-            </div>
-            
-            <div className="flex justify-end">
-              <div className="w-full max-w-sm space-y-2">
-                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Net Total</span>
-                  <span>{calculations.netTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">CGST @ 9%</span>
-                   <span>{calculations.cgst.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">SGST @ 9%</span>
-                   <span>{calculations.sgst.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
-                </div>
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Grand Total</span>
-                   <span>{calculations.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
-                </div>
-                <div className="text-sm text-muted-foreground pt-1">
-                  In words: <span className="font-medium text-foreground">{amountInWords}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-4">
-              <Button onClick={handleFormSubmit} size="lg">
-                 {editingInvoice ? 'Update Invoice' : 'Generate & Save Invoice'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
             <CardHeader>
-                <CardTitle>Recent Invoices</CardTitle>
-                <CardDescription>View, edit, and re-print previously generated invoices.</CardDescription>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle>Invoices</CardTitle>
+                        <CardDescription>View, edit, and create new invoices.</CardDescription>
+                    </div>
+                    <Button onClick={() => handleOpenFormDialog(null)} size="sm">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Invoice
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -431,7 +302,7 @@ export default function BillingPage() {
                                                     <Printer className="mr-2 h-4 w-4" />
                                                     Print
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleEdit(invoice)}>
+                                                <DropdownMenuItem onSelect={() => handleOpenFormDialog(invoice)}>
                                                     <Pencil className="mr-2 h-4 w-4" />
                                                     Edit
                                                 </DropdownMenuItem>
@@ -454,6 +325,142 @@ export default function BillingPage() {
                 </Table>
             </CardContent>
         </Card>
+
+        <Dialog open={isFormDialogOpen} onOpenChange={(isOpen) => {
+            setIsFormDialogOpen(isOpen);
+            if (!isOpen) {
+                setEditingInvoice(null);
+                resetForm();
+            }
+        }}>
+            <DialogContent className="sm:max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle>{editingInvoice ? 'Edit Invoice' : 'Generate New Invoice'}</DialogTitle>
+                    <DialogDescription>{editingInvoice ? `Updating Invoice No. ${editingInvoice.billNo}-MHE` : 'Fill the details below to create a new invoice.'}</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="company">Bill To</Label>
+                            <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                id="company"
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={isCompanyPopoverOpen}
+                                className="w-full justify-between"
+                                disabled={isLoadingCompanies}
+                                >
+                                <span className="truncate">{selectedCompany ? selectedCompany.name : "Select company..."}</span>
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                <Command>
+                                <CommandInput placeholder="Search company..." />
+                                <CommandList>
+                                    <CommandEmpty>No company found. Add one on the Companies page.</CommandEmpty>
+                                    <CommandGroup>
+                                    {companies?.map((company) => (
+                                        <CommandItem
+                                        key={company.id}
+                                        value={company.name}
+                                        onSelect={() => {
+                                            setCompanyId(company.id);
+                                            setIsCompanyPopoverOpen(false);
+                                        }}
+                                        >
+                                        <Check className={cn("mr-2 h-4 w-4", companyId === company.id ? "opacity-100" : "opacity-0")} />
+                                        {company.name}
+                                        </CommandItem>
+                                    ))}
+                                    </CommandGroup>
+                                </CommandList>
+                                </Command>
+                            </PopoverContent>
+                            </Popover>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="billDate">Bill Date</Label>
+                            <Input
+                                id="billDate"
+                                type="date"
+                                value={billDate}
+                                onChange={(e) => setBillDate(e.target.value)}
+                                className="w-full"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="site">Site</Label>
+                            <Input id="site" value={site} onChange={e => setSite(e.target.value)} placeholder="e.g., THANE DEPOT" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="poNumber">PO.NO</Label>
+                            <Input id="poNumber" value={poNumber} onChange={e => setPoNumber(e.target.value)} />
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <Label>Particulars</Label>
+                        {items.map((item, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                            <Input
+                                type="text"
+                                placeholder="Item description"
+                                value={item.particulars}
+                                onChange={(e) => handleItemChange(index, 'particulars', e.target.value)}
+                                className="flex-grow"
+                            />
+                            <Input
+                                type="number"
+                                placeholder="Amount"
+                                value={item.amount || ''}
+                                onChange={(e) => handleItemChange(index, 'amount', parseFloat(e.target.value))}
+                                className="w-48"
+                            />
+                            <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={items.length === 1}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                            </div>
+                        ))}
+                        <Button variant="outline" size="sm" onClick={handleAddItem}>
+                            <Plus className="mr-2 h-4 w-4" /> Add Item
+                        </Button>
+                    </div>
+                    
+                    <div className="flex justify-end">
+                        <div className="w-full max-w-sm space-y-2">
+                            <div className="flex justify-between">
+                            <span className="text-muted-foreground">Net Total</span>
+                            <span>{calculations.netTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                            </div>
+                            <div className="flex justify-between">
+                            <span className="text-muted-foreground">CGST @ 9%</span>
+                            <span>{calculations.cgst.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                            </div>
+                            <div className="flex justify-between">
+                            <span className="text-muted-foreground">SGST @ 9%</span>
+                            <span>{calculations.sgst.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                            </div>
+                            <div className="flex justify-between font-bold text-lg">
+                            <span>Grand Total</span>
+                            <span>{calculations.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                            </div>
+                            <div className="text-sm text-muted-foreground pt-1">
+                            In words: <span className="font-medium text-foreground">{amountInWords}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter className="pt-4">
+                    <Button variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleFormSubmit}>
+                        {editingInvoice ? 'Update & Print Invoice' : 'Generate & Print Invoice'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
         <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && setInvoiceToDelete(null)}>
             <AlertDialogContent>
@@ -478,3 +485,5 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
