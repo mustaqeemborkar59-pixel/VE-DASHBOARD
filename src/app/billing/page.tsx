@@ -225,6 +225,10 @@ export default function BillingPage() {
       setPoNumber(invoice.poNumber || 'AGREEMENT');
       setSite(invoice.site || '');
       setItems(invoice.items);
+      setTimeout(() => {
+        const mainEl = document.querySelector('main');
+        if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
     } else {
       resetForm();
       setEditingInvoice(null);
@@ -332,105 +336,107 @@ export default function BillingPage() {
                 resetForm();
             }
         }}>
-            <DialogContent className="sm:max-w-4xl">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
+                <DialogHeader className="p-6 pb-0">
                     <DialogTitle>{editingInvoice ? 'Edit Invoice' : 'Generate New Invoice'}</DialogTitle>
                     <DialogDescription>{editingInvoice ? `Updating Invoice No. ${editingInvoice.billNo}-MHE` : 'Fill the details below to create a new invoice.'}</DialogDescription>
                 </DialogHeader>
-                <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="company">Bill To</Label>
-                            <Select value={companyId} onValueChange={setCompanyId} disabled={isLoadingCompanies}>
-                                <SelectTrigger id="company" className="w-full">
-                                    <SelectValue placeholder="Select a company..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {isLoadingCompanies ? (
-                                        <SelectItem value="loading" disabled>Loading companies...</SelectItem>
-                                    ) : (
-                                        companies?.map(company => (
-                                            <SelectItem key={company.id} value={company.id}>
-                                                {company.name}
-                                            </SelectItem>
-                                        ))
-                                    )}
-                                </SelectContent>
-                            </Select>
+                <div className="flex-grow overflow-y-auto px-6">
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="company">Bill To</Label>
+                                <Select value={companyId} onValueChange={setCompanyId} disabled={isLoadingCompanies}>
+                                    <SelectTrigger id="company" className="w-full">
+                                        <SelectValue placeholder="Select a company..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {isLoadingCompanies ? (
+                                            <SelectItem value="loading" disabled>Loading companies...</SelectItem>
+                                        ) : (
+                                            companies?.map(company => (
+                                                <SelectItem key={company.id} value={company.id}>
+                                                    {company.name}
+                                                </SelectItem>
+                                            ))
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="billDate">Bill Date</Label>
+                                <Input
+                                    id="billDate"
+                                    type="date"
+                                    value={billDate}
+                                    onChange={(e) => setBillDate(e.target.value)}
+                                    className="w-full"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="site">Site</Label>
+                                <Input id="site" value={site} onChange={e => setSite(e.target.value)} placeholder="e.g., THANE DEPOT" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="poNumber">PO.NO</Label>
+                                <Input id="poNumber" value={poNumber} onChange={e => setPoNumber(e.target.value)} />
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="billDate">Bill Date</Label>
-                            <Input
-                                id="billDate"
-                                type="date"
-                                value={billDate}
-                                onChange={(e) => setBillDate(e.target.value)}
-                                className="w-full"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="site">Site</Label>
-                            <Input id="site" value={site} onChange={e => setSite(e.target.value)} placeholder="e.g., THANE DEPOT" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="poNumber">PO.NO</Label>
-                            <Input id="poNumber" value={poNumber} onChange={e => setPoNumber(e.target.value)} />
-                        </div>
-                    </div>
 
-                    <div className="space-y-4">
-                        <Label>Particulars</Label>
-                        {items.map((item, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                            <Input
-                                type="text"
-                                placeholder="Item description"
-                                value={item.particulars}
-                                onChange={(e) => handleItemChange(index, 'particulars', e.target.value)}
-                                className="flex-grow"
-                            />
-                            <Input
-                                type="number"
-                                placeholder="Amount"
-                                value={item.amount || ''}
-                                onChange={(e) => handleItemChange(index, 'amount', parseFloat(e.target.value))}
-                                className="w-48"
-                            />
-                            <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={items.length === 1}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                        <div className="space-y-4">
+                            <Label>Particulars</Label>
+                            {items.map((item, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                <Input
+                                    type="text"
+                                    placeholder="Item description"
+                                    value={item.particulars}
+                                    onChange={(e) => handleItemChange(index, 'particulars', e.target.value)}
+                                    className="flex-grow"
+                                />
+                                <Input
+                                    type="number"
+                                    placeholder="Amount"
+                                    value={item.amount || ''}
+                                    onChange={(e) => handleItemChange(index, 'amount', parseFloat(e.target.value))}
+                                    className="w-48"
+                                />
+                                <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={items.length === 1}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                                </div>
+                            ))}
+                            <Button variant="outline" size="sm" onClick={handleAddItem}>
+                                <Plus className="mr-2 h-4 w-4" /> Add Item
                             </Button>
-                            </div>
-                        ))}
-                        <Button variant="outline" size="sm" onClick={handleAddItem}>
-                            <Plus className="mr-2 h-4 w-4" /> Add Item
-                        </Button>
-                    </div>
-                    
-                    <div className="flex justify-end">
-                        <div className="w-full max-w-sm space-y-2">
-                            <div className="flex justify-between">
-                            <span className="text-muted-foreground">Net Total</span>
-                            <span>{calculations.netTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
-                            </div>
-                            <div className="flex justify-between">
-                            <span className="text-muted-foreground">CGST @ 9%</span>
-                            <span>{calculations.cgst.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
-                            </div>
-                            <div className="flex justify-between">
-                            <span className="text-muted-foreground">SGST @ 9%</span>
-                            <span>{calculations.sgst.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
-                            </div>
-                            <div className="flex justify-between font-bold text-lg">
-                            <span>Grand Total</span>
-                            <span>{calculations.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
-                            </div>
-                            <div className="text-sm text-muted-foreground pt-1">
-                            In words: <span className="font-medium text-foreground">{amountInWords}</span>
+                        </div>
+                        
+                        <div className="flex justify-end">
+                            <div className="w-full max-w-sm space-y-2">
+                                <div className="flex justify-between">
+                                <span className="text-muted-foreground">Net Total</span>
+                                <span>{calculations.netTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                <span className="text-muted-foreground">CGST @ 9%</span>
+                                <span>{calculations.cgst.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                <span className="text-muted-foreground">SGST @ 9%</span>
+                                <span>{calculations.sgst.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                                </div>
+                                <div className="flex justify-between font-bold text-lg">
+                                <span>Grand Total</span>
+                                <span>{calculations.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                                </div>
+                                <div className="text-sm text-muted-foreground pt-1">
+                                In words: <span className="font-medium text-foreground">{amountInWords}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <DialogFooter className="pt-4">
+                <DialogFooter className="p-6 pt-4 border-t">
                     <Button variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>
                     <Button onClick={handleFormSubmit}>
                         {editingInvoice ? 'Update & Print Invoice' : 'Generate & Print Invoice'}
