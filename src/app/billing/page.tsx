@@ -102,7 +102,7 @@ export default function BillingPage() {
   });
   
   const amountInWords = useMemo(() => {
-    return toWords.convert(calculations.grandTotal) + ' Only';
+    return toWords.convert(calculations.grandTotal);
   },[calculations.grandTotal, toWords]);
   
   const generateInvoiceData = (invoice: Omit<Invoice, 'id'>, company: Company): InvoiceData => {
@@ -114,7 +114,7 @@ export default function BillingPage() {
           ignoreZeroCurrency: false,
         }
       });
-      const grandTotalInWords = words.convert(invoice.grandTotal) + ' Only';
+      const grandTotalInWords = words.convert(invoice.grandTotal);
       
       return {
           to: {
@@ -469,4 +469,5 @@ export default function BillingPage() {
   );
 }
 
+    
     
