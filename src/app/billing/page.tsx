@@ -7,13 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Calendar } from '@/components/ui/calendar';
 import { useCollection, useFirebase, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, limit, addDoc, doc } from 'firebase/firestore';
 import { Company, Invoice } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, Check, ChevronsUpDown, Plus, Trash2, Printer, MoreHorizontal, Pencil, Ban } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, Trash2, Printer, MoreHorizontal, Pencil, Ban } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { InvoiceTemplate, type InvoiceData } from '@/components/invoice-template';
 import { useReactToPrint } from 'react-to-print';
@@ -27,9 +26,13 @@ export default function BillingPage() {
   const { toast } = useToast();
   const invoiceRef = useRef<HTMLDivElement>(null);
   
+  const toISODateString = (date: Date) => {
+    return format(date, 'yyyy-MM-dd');
+  }
+
   const initialFormState = {
     companyId: '',
-    billDate: new Date(),
+    billDate: toISODateString(new Date()),
     poNumber: 'AGREEMENT',
     site: '',
     items: [{ particulars: '', amount: 0 }],
@@ -37,7 +40,7 @@ export default function BillingPage() {
 
   const [companyId, setCompanyId] = useState<string>('');
   const [isCompanyPopoverOpen, setIsCompanyPopoverOpen] = useState(false);
-  const [billDate, setBillDate] = useState<Date | undefined>(new Date());
+  const [billDate, setBillDate] = useState<string>(toISODateString(new Date()));
   const [poNumber, setPoNumber] = useState('AGREEMENT');
   const [site, setSite] = useState('');
   const [items, setItems] = useState([{ particulars: '', amount: 0 }]);
@@ -129,10 +132,10 @@ export default function BillingPage() {
             address: company.address,
             gstin: company.gstin || '',
           },
-          billDate: format(new Date(invoice.billDate), 'dd/MM/yyyy'),
+          billDate: format(parseISO(invoice.billDate), 'dd/MM/yyyy'),
           billNo: `${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}`,
           poNo: invoice.poNumber || 'AGREEMENT',
-          month: format(new Date(invoice.billDate), 'MMM yyyy').toUpperCase(),
+          month: format(parseISO(invoice.billDate), 'MMM yyyy').toUpperCase(),
           site: invoice.site || '',
           items: invoice.items,
           netTotal: invoice.netTotal,
@@ -166,7 +169,7 @@ export default function BillingPage() {
       const invoiceData: Omit<Invoice, 'id'> = {
         billNo: nextBillNo,
         billNoSuffix: 'MHE',
-        billDate: format(billDate, 'yyyy-MM-dd'),
+        billDate: billDate, // Already in yyyy-MM-dd format
         companyId,
         poNumber,
         site,
@@ -222,11 +225,7 @@ export default function BillingPage() {
   const handleEdit = (invoice: Invoice) => {
     setEditingInvoice(invoice);
     setCompanyId(invoice.companyId);
-    // The date from firestore is a string, so we create a new Date object from it.
-    // The date is in YYYY-MM-DD format, which JS new Date() parses as UTC.
-    // To avoid timezone issues, we can parse it as ISO string to keep it consistent.
-    const date = parseISO(invoice.billDate);
-    setBillDate(date);
+    setBillDate(invoice.billDate);
     setPoNumber(invoice.poNumber || 'AGREEMENT');
     setSite(invoice.site || '');
     setItems(invoice.items);
@@ -323,23 +322,13 @@ export default function BillingPage() {
               {/* Bill Date */}
               <div className="space-y-2">
                 <Label htmlFor="billDate">Bill Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !billDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {billDate ? format(billDate, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={billDate} onSelect={setBillDate} initialFocus />
-                  </PopoverContent>
-                </Popover>
+                <Input
+                    id="billDate"
+                    type="date"
+                    value={billDate}
+                    onChange={(e) => setBillDate(e.target.value)}
+                    className="w-full"
+                />
               </div>
               
                {/* Site */}
