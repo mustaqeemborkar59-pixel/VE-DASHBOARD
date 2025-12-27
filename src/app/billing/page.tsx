@@ -280,7 +280,7 @@ export default function BillingPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Company Selection */}
               <div className="space-y-2">
                 <Label htmlFor="company">Bill To</Label>
