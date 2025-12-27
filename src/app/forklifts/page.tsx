@@ -267,6 +267,11 @@ export default function ForkliftsPage() {
     }
   }
 
+  const handleCancelDelete = () => {
+    setIsDeleteDialogOpen(false);
+    setSelectedForklift(null);
+  };
+
   return (
     <AppLayout>
       <div className="flex flex-col gap-6">
@@ -550,7 +555,7 @@ export default function ForkliftsPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setSelectedForklift(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -566,5 +571,3 @@ export default function ForkliftsPage() {
     </AppLayout>
   );
 }
-
-    

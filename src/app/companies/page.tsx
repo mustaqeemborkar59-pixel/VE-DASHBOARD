@@ -107,6 +107,11 @@ export default function CompaniesPage() {
     setSelectedCompany(null);
   };
 
+  const handleCancelDelete = () => {
+    setIsDeleteDialogOpen(false);
+    setSelectedCompany(null);
+  };
+
   return (
     <AppLayout>
       <Card>
@@ -197,7 +202,7 @@ export default function CompaniesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSelectedCompany(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -205,5 +210,3 @@ export default function CompaniesPage() {
     </AppLayout>
   );
 }
-
-    

@@ -110,6 +110,11 @@ export default function EmployeesPage() {
     setSelectedEmployee(null);
   };
 
+  const handleCancelDelete = () => {
+    setIsDeleteDialogOpen(false);
+    setSelectedEmployee(null);
+  };
+
   return (
     <AppLayout>
       <Card>
@@ -213,7 +218,7 @@ export default function EmployeesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSelectedEmployee(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -221,5 +226,3 @@ export default function EmployeesPage() {
     </AppLayout>
   );
 }
-
-    

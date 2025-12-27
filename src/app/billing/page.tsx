@@ -249,6 +249,11 @@ export default function BillingPage() {
       setInvoiceToDelete(null);
   };
 
+  const handleCancelDelete = () => {
+    setIsDeleteDialogOpen(false);
+    setInvoiceToDelete(null);
+  };
+
   // Trigger print when invoiceToPrint is set
   useEffect(() => {
     if (invoiceToPrint) {
@@ -487,7 +492,7 @@ export default function BillingPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setInvoiceToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleDeleteInvoice} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -497,5 +502,3 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-    
