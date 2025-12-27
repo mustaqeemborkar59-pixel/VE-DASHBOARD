@@ -229,7 +229,9 @@ export default function BillingPage() {
     setPoNumber(invoice.poNumber || 'AGREEMENT');
     setSite(invoice.site || '');
     setItems(invoice.items);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
   
   const openDeleteDialog = (invoice: Invoice) => {
