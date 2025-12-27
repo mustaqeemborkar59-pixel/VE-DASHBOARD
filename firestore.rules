@@ -2,13 +2,42 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check for authenticated, non-anonymous users
+
+    // Helper function to check for authenticated users
     function isSignedIn() {
-      return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';
+      return request.auth != null;
     }
 
-    // Allow read/write access only to authenticated, non-anonymous users.
+    // By default, deny all reads and writes
     match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Allow any authenticated user to read/write all primary collections.
+    // This is a starting point. For production, you should implement
+    // more granular, per-user, or role-based security rules.
+    match /forklifts/{forkliftId} {
+      allow read, write: if isSignedIn();
+    }
+    match /employees/{employeeId} {
+      allow read, write: if isSignedIn();
+    }
+    match /serviceRequests/{serviceRequestId} {
+      allow read, write: if isSignedIn();
+    }
+    match /jobCards/{jobCardId} {
+      allow read, write: if isSignedIn();
+    }
+    match /parts/{partId} {
+      allow read, write: if isSignedIn();
+    }
+    match /maintenanceLogs/{maintenanceLogId} {
+      allow read, write: if isSignedIn();
+    }
+    match /companies/{companyId} {
+      allow read, write: if isSignedIn();
+    }
+    match /invoices/{invoiceId} {
       allow read, write: if isSignedIn();
     }
   }
