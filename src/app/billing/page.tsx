@@ -222,9 +222,10 @@ export default function BillingPage() {
   const handleEdit = (invoice: Invoice) => {
     setEditingInvoice(invoice);
     setCompanyId(invoice.companyId);
-    // Add a day to the date to fix timezone issue
-    const date = new Date(invoice.billDate);
-    date.setDate(date.getDate() + 1);
+    // The date from firestore is a string, so we create a new Date object from it.
+    // The date is in YYYY-MM-DD format, which JS new Date() parses as UTC.
+    // To avoid timezone issues, we can parse it as ISO string to keep it consistent.
+    const date = parseISO(invoice.billDate);
     setBillDate(date);
     setPoNumber(invoice.poNumber || 'AGREEMENT');
     setSite(invoice.site || '');
@@ -442,7 +443,7 @@ export default function BillingPage() {
                                 <TableRow key={invoice.id}>
                                     <TableCell className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
                                     <TableCell>{companies?.find(c => c.id === invoice.companyId)?.name || 'Unknown'}</TableCell>
-                                    <TableCell>{format(new Date(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
+                                    <TableCell>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
                                     <TableCell className="text-right">{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu open={openDropdownId === invoice.id} onOpenChange={(open) => setOpenDropdownId(open ? invoice.id : null)}>
