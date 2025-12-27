@@ -268,10 +268,9 @@ export default function BillingPage() {
         });
         
         const companyName = company.name.replace(/[\s/.]+/g, '-').toUpperCase();
-        const billMonth = format(parseISO(invoice.billDate), 'MMMM').toUpperCase();
-        const billYear = format(parseISO(invoice.billDate), 'yyyy');
+        const billMonthYear = format(parseISO(invoice.billDate), 'MMM-yy').toUpperCase();
         
-        const fileName = `Bill no.${invoice.billNo}-${companyName}-${billMonth}-${billYear}.docx`;
+        const fileName = `Bill no.${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}-${companyName}-(${billMonthYear})-GST 18^L1.docx`;
 
         const blob = await Packer.toBlob(doc);
         saveAs(blob, fileName);
