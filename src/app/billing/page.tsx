@@ -214,7 +214,7 @@ export default function BillingPage() {
                                         new Paragraph("GSTIN: 27AFVPM0759G1ZY"),
                                         new Paragraph("SAC code: 997319\n          998519"),
                                     ]}),
-                                    new DocxTableCell({ width: { size: 50, type: WidthType A.PERCENTAGE }, children: [
+                                    new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [
                                         new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
                                         new Paragraph(`GSTIN: ${invoiceData.to.gstin}`),
                                     ]}),
