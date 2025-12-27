@@ -233,9 +233,16 @@ export default function BillingPage() {
                 ],
             }],
         });
+        
+        const companyName = company.name.replace(/\s+/g, '-').toUpperCase();
+        const siteName = invoice.site ? invoice.site.replace(/\s+/g, '-').toUpperCase() : 'NO-SITE';
+        const billMonth = format(parseISO(invoice.billDate), 'MMMM').toUpperCase();
+        const billYear = format(parseISO(invoice.billDate), 'yyyy');
+        
+        const fileName = `Bill no.${invoice.billNo}-${companyName}-${siteName}-${billMonth}-${billYear}.docx`;
 
         const blob = await Packer.toBlob(doc);
-        saveAs(blob, `Invoice-${invoiceData.billNo}.docx`);
+        saveAs(blob, fileName);
 
     } catch (e) {
       toast({
@@ -303,8 +310,8 @@ export default function BillingPage() {
     
     if (firestore) {
       let billNoToUse = editingInvoice ? editingInvoice.billNo : 1;
-      if (!editingInvoice) {
-        const currentMaxBillNo = allInvoices ? Math.max(0, ...allInvoices.map(inv => inv.billNo)) : 0;
+      if (!editingInvoice && allInvoices && allInvoices.length > 0) {
+        const currentMaxBillNo = Math.max(0, ...allInvoices.map(inv => inv.billNo));
         billNoToUse = currentMaxBillNo + 1;
       }
       
@@ -618,5 +625,7 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
 
     
