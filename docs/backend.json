@@ -77,25 +77,29 @@
           "description": "The mast height of the forklift (e.g., '189 inches')."
         },
         "locationType": {
-            "type": "string",
-            "enum": ["Workshop", "On-Site", "Not Confirm"],
-            "description": "Current location of the forklift."
+          "type": "string",
+          "enum": [
+            "Workshop",
+            "On-Site",
+            "Not Confirm"
+          ],
+          "description": "Current location of the forklift."
         },
         "siteCompany": {
-            "type": "string",
-            "description": "Company name for the site location."
+          "type": "string",
+          "description": "Company name for the site location."
         },
         "siteArea": {
-            "type": "string",
-            "description": "Geographical area or locality of the site."
+          "type": "string",
+          "description": "Geographical area or locality of the site."
         },
         "siteContactPerson": {
-            "type": "string",
-            "description": "Name of the contact person at the site."
+          "type": "string",
+          "description": "Name of the contact person at the site."
         },
         "siteContactNumber": {
-            "type": "string",
-            "description": "Contact number of the person at the site."
+          "type": "string",
+          "description": "Contact number of the person at the site."
         },
         "remarks": {
           "type": "string",
@@ -244,6 +248,77 @@
         "date",
         "description"
       ]
+    },
+    "Company": {
+      "title": "Company",
+      "description": "Represents a client company.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the company."
+        },
+        "address": {
+          "type": "string",
+          "description": "Full address of the company."
+        },
+        "gstin": {
+          "type": "string",
+          "description": "GST Identification Number of the company."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["name", "address"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Represents a tax invoice.",
+      "type": "object",
+      "properties": {
+        "billNo": {
+          "type": "number",
+          "description": "The sequential invoice number."
+        },
+        "billNoSuffix": {
+            "type": "string",
+            "description": "The suffix for the bill number, e.g., 'MHE'"
+        },
+        "billDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "companyId": {
+          "type": "string",
+          "description": "Reference to the Company being billed."
+        },
+        "poNumber": {
+          "type": "string",
+          "description": "Purchase Order number, if any."
+        },
+        "site": {
+          "type": "string",
+          "description": "The site or location of the service."
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "particulars": { "type": "string" },
+              "amount": { "type": "number" }
+            },
+            "required": ["particulars", "amount"]
+          }
+        },
+        "netTotal": { "type": "number" },
+        "cgst": { "type": "number" },
+        "sgst": { "type": "number" },
+        "grandTotal": { "type": "number" }
+      },
+      "required": ["billNo", "billDate", "companyId", "items", "grandTotal"]
     }
   },
   "auth": {
@@ -287,6 +362,18 @@
         "$ref": "#/entities/MaintenanceLog"
       },
       "description": "Stores maintenance logs for forklifts."
+    },
+    "/companies/{companyId}": {
+      "schema": {
+        "$ref": "#/entities/Company"
+      },
+      "description": "Stores client company profiles."
+    },
+    "/invoices/{invoiceId}": {
+      "schema": {
+        "$ref": "#/entities/Invoice"
+      },
+      "description": "Stores all generated invoices."
     }
   }
 }

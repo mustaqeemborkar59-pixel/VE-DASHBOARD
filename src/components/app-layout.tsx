@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BarChart, LogOut, Settings, User, ReceiptText } from 'lucide-react';
+import { BarChart, LogOut, Settings, User, ReceiptText, Building } from 'lucide-react';
 import { useEffect } from 'react';
 
 import {
@@ -28,11 +28,12 @@ import { LayoutDashboard, Wrench, Warehouse } from 'lucide-react';
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/service-requests', label: 'Service Requests', icon: Wrench },
-  { href: '/employees', label: 'Employees', icon: User },
   { href: '/forklifts', label: 'Forklifts', icon: ForkliftIcon },
+  { href: '/employees', label: 'Employees', icon: User },
+  { href: '/companies', label: 'Companies', icon: Building },
   { href: '/inventory', label: 'Inventory', icon: Warehouse },
-  { href: '/reports', label: 'Reports', icon: BarChart },
   { href: '/billing', label: 'Billing', icon: ReceiptText },
+  { href: '/reports', label: 'Reports', icon: BarChart },
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -41,7 +42,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // If auth is not loading and there's no user, redirect to login
     if (!isUserLoading && !user) {
       router.push('/login');
     }
@@ -54,8 +54,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     }
   };
   
-  // While loading or if no user is authenticated yet, show a loading screen.
-  // This prevents child components from rendering and attempting to fetch data.
   if (isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -70,7 +68,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const userEmail = user.email || 'Not logged in';
   const userInitial = user.email?.[0]?.toUpperCase() || '?';
 
-  // Only render the full layout if a user is authenticated
   return (
     <SidebarProvider>
       <Sidebar variant='inset' collapsible='icon'>

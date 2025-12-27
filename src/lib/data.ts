@@ -48,4 +48,30 @@ export type Part = {
   sku?: string; // sku is not in the backend.json but is used in the inventory page
 };
 
-    
+export type Company = {
+    id: string;
+    name: string;
+    address: string;
+    gstin?: string;
+    createdAt: string;
+}
+
+export type InvoiceItem = {
+    particulars: string;
+    amount: number;
+}
+
+export type Invoice = {
+    id: string;
+    billNo: number;
+    billNoSuffix?: string;
+    billDate: string; // YYYY-MM-DD
+    companyId: string;
+    poNumber?: string;
+    site?: string;
+    items: InvoiceItem[];
+    netTotal: number;
+    cgst: number;
+    sgst: number;
+    grandTotal: number;
+}
