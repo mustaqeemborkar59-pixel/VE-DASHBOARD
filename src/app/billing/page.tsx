@@ -152,7 +152,7 @@ export default function BillingPage() {
             sections: [{
                 properties: {
                     page: {
-                        margin: { top: 720, right: 720, bottom: 720, left: 720 },
+                        margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }, // 2.54cm = 1440 twips
                         size: { orientation: PageOrientation.PORTRAIT }
                     },
                 },
