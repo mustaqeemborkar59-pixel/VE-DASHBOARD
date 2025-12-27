@@ -43,11 +43,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
 import AppLayout from "@/components/app-layout";
-import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy } from 'firebase/firestore';
 import { Company } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { CompanyForm, CompanyFormData } from '@/components/company-form';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function CompaniesPage() {
   const { firestore } = useFirebase();
@@ -62,8 +63,13 @@ export default function CompaniesPage() {
   
   const openAddEditDialog = (company: Company | null) => {
     setSelectedCompany(company);
-    setCompanyToDelete(null); // Ensure delete dialog is not controlled by this action
+    setCompanyToDelete(null);
     setIsAddEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (company: Company) => {
+    setSelectedCompany(null);
+    setCompanyToDelete(company);
   };
 
   const handleFormSubmit = (formData: CompanyFormData) => {
@@ -129,8 +135,8 @@ export default function CompaniesPage() {
                 <TableRow>
                   <TableCell colSpan={4} className="text-center">Loading companies...</TableCell>
                 </TableRow>
-              ) : (
-                companies?.map((company) => (
+              ) : companies && companies.length > 0 ? (
+                companies.map((company) => (
                   <TableRow key={company.id}>
                     <TableCell className="font-medium">{company.name}</TableCell>
                     <TableCell className="hidden md:table-cell max-w-sm truncate">{company.address}</TableCell>
@@ -149,7 +155,7 @@ export default function CompaniesPage() {
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onSelect={() => setCompanyToDelete(company)} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem onSelect={() => openDeleteDialog(company)} className="text-destructive focus:text-destructive">
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -157,6 +163,10 @@ export default function CompaniesPage() {
                     </TableCell>
                   </TableRow>
                 ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center h-24">No companies found.</TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>
@@ -189,7 +199,7 @@ export default function CompaniesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setCompanyToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

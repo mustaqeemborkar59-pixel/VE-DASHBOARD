@@ -42,13 +42,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Employee } from "@/lib/data";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
-import { useCollection, useFirebase, useMemoFirebase, deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
+import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { EmployeeForm, EmployeeFormData } from "@/components/employee-form";
 import { Badge } from "@/components/ui/badge";
 import AppLayout from "@/components/app-layout";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export default function EmployeesPage() {
   const { firestore } = useFirebase();
@@ -63,8 +64,13 @@ export default function EmployeesPage() {
 
   const openAddEditDialog = (employee: Employee | null) => {
     setSelectedEmployee(employee);
-    setEmployeeToDelete(null); // Ensure delete dialog isn't active
+    setEmployeeToDelete(null);
     setIsAddEditDialogOpen(true);
+  };
+  
+  const openDeleteDialog = (employee: Employee) => {
+    setSelectedEmployee(null);
+    setEmployeeToDelete(employee);
   };
 
   const handleDelete = () => {
@@ -131,10 +137,10 @@ export default function EmployeesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center">Loading...</TableCell>
+                  <TableCell colSpan={6} className="text-center">Loading...</TableCell>
                 </TableRow>
-              ) : (
-                employees?.map((employee, index) => (
+              ) : employees && employees.length > 0 ? (
+                employees.map((employee, index) => (
                   <TableRow key={employee.id}>
                     <TableCell className="font-medium hidden sm:table-cell">{index + 1}</TableCell>
                     <TableCell>
@@ -162,7 +168,7 @@ export default function EmployeesPage() {
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onSelect={() => setEmployeeToDelete(employee)} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem onSelect={() => openDeleteDialog(employee)} className="text-destructive focus:text-destructive">
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -170,13 +176,16 @@ export default function EmployeesPage() {
                     </TableCell>
                   </TableRow>
                 ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">No employees found.</TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
-      {/* Add/Edit Dialog */}
       <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -194,7 +203,6 @@ export default function EmployeesPage() {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!employeeToDelete} onOpenChange={(open) => !open && setEmployeeToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -204,7 +212,7 @@ export default function EmployeesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setEmployeeToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

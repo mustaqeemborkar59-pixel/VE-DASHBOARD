@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
-import { MoreHorizontal, PlusCircle, Search, ChevronDown, Warehouse, Truck, User, Phone, Wrench, X, ListFilter, Upload, AlertTriangle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, Warehouse, Truck, User, Phone, Wrench, ListFilter, Upload, AlertTriangle } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
@@ -87,7 +87,6 @@ export default function ForkliftsPage() {
   const [capacityFilter, setCapacityFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchField, setSearchField] = useState<SearchField>('All');
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const forkliftsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'forklifts'), orderBy('srNumber', 'asc')) : null, [firestore]);
@@ -109,8 +108,13 @@ export default function ForkliftsPage() {
 
   const openAddEditDialog = (forklift: Forklift | null) => {
     setSelectedForklift(forklift);
-    setForkliftToDelete(null); // Ensure delete dialog is not active
+    setForkliftToDelete(null);
     setIsAddEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (forklift: Forklift) => {
+    setSelectedForklift(null);
+    setForkliftToDelete(forklift);
   };
 
   const equipmentTypes = useMemo(() => {
@@ -127,13 +131,14 @@ export default function ForkliftsPage() {
 
 
   const filteredForklifts = useMemo(() => {
+    if (!forklifts) return [];
     const lowercasedSearchTerm = searchTerm.toLowerCase();
-    return forklifts?.filter(forklift => {
+    return forklifts.filter(forklift => {
       const typeMatch = equipmentTypeFilter === 'All' ? true : forklift.equipmentType === equipmentTypeFilter;
       const capacityMatch = capacityFilter === 'All' ? true : forklift.capacity === capacityFilter;
       const locationMatch = locationFilter === 'All' ? true : forklift.locationType === locationFilter;
       
-      if (searchTerm === '') return typeMatch && capacityMatch && locationMatch;
+      if (!searchTerm) return typeMatch && capacityMatch && locationMatch;
 
       const searchInField = (field: keyof Forklift) => 
           forklift[field]?.toString().toLowerCase().includes(lowercasedSearchTerm) ?? false;
@@ -191,11 +196,11 @@ export default function ForkliftsPage() {
       dataToSubmit.siteContactNumber = '';
     }
 
-    if (selectedForklift) { // Edit mode
+    if (selectedForklift) {
       const forkliftDocRef = doc(firestore, 'forklifts', selectedForklift.id);
       updateDocumentNonBlocking(forkliftDocRef, dataToSubmit);
       toast({ title: "Success", description: "Forklift updated successfully." });
-    } else { // Add mode
+    } else {
       const maxSrNumber = forklifts ? Math.max(0, ...forklifts.map(f => f.srNumber || 0)) : 0;
       dataToSubmit.srNumber = maxSrNumber + 1;
       const forkliftsCollection = collection(firestore, 'forklifts');
@@ -432,7 +437,7 @@ export default function ForkliftsPage() {
                                         Edit
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onSelect={() => setForkliftToDelete(forklift)} className="text-destructive focus:text-destructive">
+                                        <DropdownMenuItem onSelect={() => openDeleteDialog(forklift)} className="text-destructive focus:text-destructive">
                                         Delete
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -515,7 +520,6 @@ export default function ForkliftsPage() {
           </CardContent>
         </Card>
 
-        {/* Add/Edit Dialog */}
         <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
           <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
@@ -533,7 +537,6 @@ export default function ForkliftsPage() {
           </DialogContent>
         </Dialog>
         
-        {/* Delete Confirmation Dialog */}
         <AlertDialog open={!!forkliftToDelete} onOpenChange={(open) => !open && setForkliftToDelete(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -543,13 +546,12 @@ export default function ForkliftsPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setForkliftToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Import Dialog */}
         <ForkliftImportDialog
           isOpen={isImportDialogOpen}
           onClose={() => setIsImportDialogOpen(false)}

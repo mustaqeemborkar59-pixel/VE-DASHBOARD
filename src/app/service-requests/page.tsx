@@ -37,18 +37,18 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { MoreHorizontal, PlusCircle, Eye } from "lucide-react";
-import { useCollection, useFirebase, updateDocumentNonBlocking, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useState } from "react";
 import Link from "next/link";
 import AppLayout from "@/components/app-layout";
+import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 
 export default function ServiceRequestsPage() {
   const { firestore } = useFirebase();
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   const serviceRequestsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'serviceRequests') : null, [firestore]);
   const employeesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'employees') : null, [firestore]);
@@ -72,20 +72,17 @@ export default function ServiceRequestsPage() {
 
   const handleUpdateStatus = (requestId: string, status: ServiceRequest['status']) => {
     if (!firestore) return;
-    setOpenDropdownId(null); // Close dropdown
     const requestRef = doc(firestore, 'serviceRequests', requestId);
     updateDocumentNonBlocking(requestRef, { status });
   }
 
   const handleAssignTechnician = (requestId: string, technicianId: string) => {
     if (!firestore) return;
-    setOpenDropdownId(null); // Close dropdown
     const requestRef = doc(firestore, 'serviceRequests', requestId);
     updateDocumentNonBlocking(requestRef, { assignedTechnicianId: technicianId, status: 'Assigned' });
   }
   
   const handleViewDetails = (request: ServiceRequest) => {
-    setOpenDropdownId(null);
     setSelectedRequest(request);
     setIsDetailDialogOpen(true);
   }
@@ -142,8 +139,8 @@ export default function ServiceRequestsPage() {
                 <TableRow>
                   <TableCell colSpan={7} className="text-center">Loading...</TableCell>
                 </TableRow>
-              ) : (
-                serviceRequests?.map((request, index) => (
+              ) : serviceRequests && serviceRequests.length > 0 ? (
+                serviceRequests.map((request, index) => (
                   <TableRow key={request.id}>
                     <TableCell className="font-medium hidden sm:table-cell">{index + 1}</TableCell>
                     <TableCell>
@@ -160,7 +157,7 @@ export default function ServiceRequestsPage() {
                         </Button>
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu open={openDropdownId === request.id} onOpenChange={(open) => setOpenDropdownId(open ? request.id : null)}>
+                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>
@@ -193,6 +190,10 @@ export default function ServiceRequestsPage() {
                     </TableCell>
                   </TableRow>
                 ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">No service requests found.</TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>

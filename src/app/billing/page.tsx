@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { useCollection, useFirebase, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, addDoc, doc } from 'firebase/firestore';
 import { Company, Invoice } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,7 @@ import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function BillingPage() {
   const { firestore } = useFirebase();
@@ -60,15 +61,6 @@ export default function BillingPage() {
   const { data: lastInvoiceArr } = useCollection<Invoice>(lastInvoiceQuery);
   const { data: allInvoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(allInvoicesQuery);
 
-  const nextBillNo = useMemo(() => {
-    if (editingInvoice) return editingInvoice.billNo;
-    if (lastInvoiceArr && lastInvoiceArr.length > 0) {
-      const maxBillNo = allInvoices ? Math.max(...allInvoices.map(inv => inv.billNo)) : 0;
-      return maxBillNo >= (lastInvoiceArr[0].billNo || 0) ? maxBillNo + 1 : (lastInvoiceArr[0].billNo || 0) + 1;
-    }
-    return 1;
-  }, [lastInvoiceArr, editingInvoice, allInvoices]);
-  
   const selectedCompany = useMemo(() => companies?.find(c => c.id === companyId), [companies, companyId]);
 
   const calculations = useMemo(() => {
@@ -105,7 +97,7 @@ export default function BillingPage() {
   
   const handlePrint = useReactToPrint({
     content: () => invoiceRef.current,
-    documentTitle: `Invoice-${invoiceToPrint?.billNo || nextBillNo}`,
+    documentTitle: `Invoice-${invoiceToPrint?.billNo || 'new'}`,
     onAfterPrint: () => setInvoiceToPrint(null),
   });
   
@@ -164,10 +156,16 @@ export default function BillingPage() {
     }
     
     if (firestore) {
+      let billNoToUse = editingInvoice ? editingInvoice.billNo : 1;
+      if (!editingInvoice) {
+        const currentMaxBillNo = allInvoices ? Math.max(0, ...allInvoices.map(inv => inv.billNo)) : 0;
+        billNoToUse = currentMaxBillNo + 1;
+      }
+      
       const invoiceData: Omit<Invoice, 'id'> = {
-        billNo: nextBillNo,
+        billNo: billNoToUse,
         billNoSuffix: 'MHE',
-        billDate: billDate, // Already in yyyy-MM-dd format
+        billDate: billDate,
         companyId,
         poNumber,
         site,
@@ -179,22 +177,20 @@ export default function BillingPage() {
       };
 
       try {
-          if (editingInvoice) {
-            // Update existing invoice
-            const invoiceDocRef = doc(firestore, 'invoices', editingInvoice.id);
-            updateDocumentNonBlocking(invoiceDocRef, invoiceData);
-            toast({
-                title: 'Invoice Updated',
-                description: `Invoice No. ${invoiceData.billNo}-MHE has been updated.`,
-            });
-          } else {
-            // Add new invoice
-            await addDoc(collection(firestore, 'invoices'), invoiceData);
-            toast({
-                title: 'Invoice Saved',
-                description: `Invoice No. ${nextBillNo}-MHE has been saved.`,
-            });
-          }
+        if (editingInvoice) {
+          const invoiceDocRef = doc(firestore, 'invoices', editingInvoice.id);
+          updateDocumentNonBlocking(invoiceDocRef, invoiceData);
+          toast({
+              title: 'Invoice Updated',
+              description: `Invoice No. ${invoiceData.billNo}-MHE has been updated.`,
+          });
+        } else {
+          addDocumentNonBlocking(collection(firestore, 'invoices'), invoiceData);
+          toast({
+              title: 'Invoice Saved',
+              description: `Invoice No. ${billNoToUse}-MHE has been saved.`,
+          });
+        }
 
         const printableData = generateInvoiceData(invoiceData, selectedCompany);
         setInvoiceToPrint(printableData);
@@ -233,17 +229,16 @@ export default function BillingPage() {
   };
   
   const handleDeleteInvoice = () => {
-      if (!firestore || !invoiceToDelete) return;
-      const invoiceDocRef = doc(firestore, 'invoices', invoiceToDelete.id);
-      deleteDocumentNonBlocking(invoiceDocRef);
-      toast({
-          title: "Invoice Deleted",
-          description: `Invoice No. ${invoiceToDelete.billNo}-MHE has been deleted.`,
-      });
-      setInvoiceToDelete(null);
+    if (!firestore || !invoiceToDelete) return;
+    const invoiceDocRef = doc(firestore, 'invoices', invoiceToDelete.id);
+    deleteDocumentNonBlocking(invoiceDocRef);
+    toast({
+        title: "Invoice Deleted",
+        description: `Invoice No. ${invoiceToDelete.billNo}-MHE has been deleted.`,
+    });
+    setInvoiceToDelete(null);
   };
 
-  // Trigger print when invoiceToPrint is set
   useEffect(() => {
     if (invoiceToPrint) {
         handlePrint();
@@ -270,7 +265,6 @@ export default function BillingPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Company Selection */}
               <div className="space-y-2">
                 <Label htmlFor="company">Bill To</Label>
                 <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
@@ -313,7 +307,6 @@ export default function BillingPage() {
                 </Popover>
               </div>
 
-              {/* Bill Date */}
               <div className="space-y-2">
                 <Label htmlFor="billDate">Bill Date</Label>
                 <Input
@@ -325,20 +318,17 @@ export default function BillingPage() {
                 />
               </div>
               
-              {/* Site */}
               <div className="space-y-2">
                 <Label htmlFor="site">Site</Label>
                 <Input id="site" value={site} onChange={e => setSite(e.target.value)} placeholder="e.g., THANE DEPOT" />
               </div>
 
-              {/* PO Number */}
               <div className="space-y-2">
                 <Label htmlFor="poNumber">PO.NO</Label>
                 <Input id="poNumber" value={poNumber} onChange={e => setPoNumber(e.target.value)} />
               </div>
             </div>
 
-            {/* Items */}
             <div className="space-y-4">
               <Label>Particulars</Label>
               {items.map((item, index) => (
@@ -367,7 +357,6 @@ export default function BillingPage() {
               </Button>
             </div>
             
-            {/* Totals */}
             <div className="flex justify-end">
               <div className="w-full max-w-sm space-y-2">
                  <div className="flex justify-between">
@@ -466,7 +455,6 @@ export default function BillingPage() {
             </CardContent>
         </Card>
 
-        {/* Delete Confirmation Dialog */}
         <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && setInvoiceToDelete(null)}>
             <AlertDialogContent>
                 <AlertDialogHeader>
@@ -476,13 +464,12 @@ export default function BillingPage() {
                 </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setInvoiceToDelete(null)}>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleDeleteInvoice} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
         
-        {/* Hidden Invoice for printing */}
         <div className="absolute -z-10 -left-[9999px] -top-[9999px]">
             {invoiceToPrint && <InvoiceTemplate ref={invoiceRef} data={invoiceToPrint} />}
         </div>

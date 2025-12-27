@@ -21,7 +21,7 @@
         },
         "status": {
           "type": "string",
-          "description": "Current status of the service request (e.g., Open, Assigned, In Progress, Completed)."
+          "description": "Current status of the service request (e.g., Pending, Assigned, In Progress, Completed)."
         },
         "assignedTechnicianId": {
           "type": "string",
