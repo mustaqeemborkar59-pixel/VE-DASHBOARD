@@ -163,11 +163,8 @@ export default function BillingPage() {
                         rows: [
                             new DocxTableRow({
                                 children: [
-                                    new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: "VITHAL ENTERPRISES", bold: true, size: 28 })] })] }),
-                                    new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [
-                                        new Paragraph({ children: [new TextRun({ text: "TAX INVOICE", bold: true, underline: {} })], alignment: AlignmentType.RIGHT, style: 'default' }),
-                                        new Paragraph({ text: `Bill Date: ${invoiceData.billDate}`, alignment: AlignmentType.RIGHT }),
-                                    ], verticalAlign: VerticalAlign.TOP }),
+                                    new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: "TAX INVOICE", bold: true, underline: {} })], alignment: AlignmentType.CENTER, style: 'default' })], verticalAlign: VerticalAlign.CENTER }),
+                                    new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: `Bill Date: ${invoiceData.billDate}`, alignment: AlignmentType.RIGHT })], verticalAlign: VerticalAlign.CENTER }),
                                 ],
                             }),
                         ],
@@ -182,7 +179,7 @@ export default function BillingPage() {
                                 children: [
                                     new DocxTableCell({
                                         children: [
-                                            new Paragraph({ children: [new TextRun({ text: "To,", bold: true })] }),
+                                            new Paragraph({ children: [new TextRun({ text: "To," })] }),
                                             new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
                                             new Paragraph({ text: invoiceData.to.address }),
                                         ],
@@ -661,3 +658,4 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+    
