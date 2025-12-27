@@ -110,12 +110,14 @@ export default function ForkliftsPage() {
   const openAddEditDialog = (forklift: Forklift | null) => {
     setOpenDropdownId(null);
     setSelectedForklift(forklift);
+    setIsDeleteDialogOpen(false); // Close delete dialog if open
     setIsAddEditDialogOpen(true);
   };
 
   const openDeleteDialog = (forklift: Forklift) => {
     setOpenDropdownId(null);
     setSelectedForklift(forklift);
+    setIsAddEditDialogOpen(false); // Close add/edit dialog if open
     setIsDeleteDialogOpen(true);
   };
 

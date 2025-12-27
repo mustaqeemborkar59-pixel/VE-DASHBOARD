@@ -66,12 +66,14 @@ export default function EmployeesPage() {
   const openAddEditDialog = (employee: Employee | null) => {
     setOpenDropdownId(null);
     setSelectedEmployee(employee);
+    setIsDeleteDialogOpen(false); // Close delete dialog if open
     setIsAddEditDialogOpen(true);
   };
 
   const openDeleteDialog = (employee: Employee) => {
     setOpenDropdownId(null);
     setSelectedEmployee(employee);
+    setIsAddEditDialogOpen(false); // Close add/edit dialog if open
     setIsDeleteDialogOpen(true);
   };
 

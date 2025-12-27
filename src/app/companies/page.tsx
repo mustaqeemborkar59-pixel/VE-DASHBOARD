@@ -64,12 +64,14 @@ export default function CompaniesPage() {
   const openAddEditDialog = (company: Company | null) => {
     setOpenDropdownId(null);
     setSelectedCompany(company);
+    setIsDeleteDialogOpen(false); // Close delete dialog if open
     setIsAddEditDialogOpen(true);
   };
 
   const openDeleteDialog = (company: Company) => {
     setOpenDropdownId(null);
     setSelectedCompany(company);
+    setIsAddEditDialogOpen(false); // Close add/edit dialog if open
     setIsDeleteDialogOpen(true);
   };
 
