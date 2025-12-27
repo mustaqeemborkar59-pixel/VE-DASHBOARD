@@ -12,7 +12,7 @@ import { collection, query, orderBy, addDoc, doc } from 'firebase/firestore';
 import { Company, Invoice } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Printer, Pencil, PlusCircle, EllipsisVertical } from 'lucide-react';
+import { Plus, Trash2, Printer, Pencil, PlusCircle, EllipsisVertical, Download } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { InvoiceTemplate, type InvoiceData } from '@/components/invoice-template';
 import { useReactToPrint } from 'react-to-print';
@@ -22,6 +22,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Packer, Document, Paragraph, TextRun, AlignmentType, BorderStyle, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType, VerticalAlign, PageOrientation } from 'docx';
+import { saveAs } from 'file-saver';
+
 
 export default function BillingPage() {
   const { firestore } = useFirebase();
@@ -100,6 +103,149 @@ export default function BillingPage() {
     documentTitle: `Invoice-${invoiceToPrint?.billNo || 'new'}`,
     onAfterPrint: () => setInvoiceToPrint(null),
   });
+
+  const handleDownloadWord = async (invoice: Invoice) => {
+    const company = companies?.find(c => c.id === invoice.companyId);
+    if (!company) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not find company details for this invoice.' });
+      return;
+    }
+    const invoiceData = generateInvoiceData(invoice, company);
+    
+    try {
+        const formatCurrency = (amount: number) => amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '/-';
+
+        const doc = new Document({
+            sections: [{
+                properties: {
+                    page: {
+                        margin: { top: 720, right: 720, bottom: 720, left: 720 },
+                        size: { orientation: PageOrientation.PORTRAIT }
+                    },
+                },
+                children: [
+                    new DocxTable({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE }, insideHorizontal: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE } },
+                        rows: [
+                            new DocxTableRow({
+                                children: [
+                                    new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: "VITHAL ENTERPRISES", bold: true, size: 28 })] })] }),
+                                    new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [
+                                        new Paragraph({ children: [new TextRun({ text: "TAX INVOICE", bold: true, underline: {} })], alignment: AlignmentType.RIGHT, style: 'default' }),
+                                        new Paragraph({ text: `Bill Date: ${invoiceData.billDate}`, alignment: AlignmentType.RIGHT }),
+                                    ], verticalAlign: VerticalAlign.TOP }),
+                                ],
+                            }),
+                        ],
+                    }),
+                    new Paragraph({ text: "\n" }),
+                    new Paragraph({ children: [new TextRun({ text: "To,", bold: true })] }),
+                    new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
+                    new Paragraph({ text: invoiceData.to.address }),
+                    new Paragraph({ text: "\n" }),
+                    new DocxTable({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE }, insideHorizontal: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE } },
+                        rows: [
+                            new DocxTableRow({
+                                children: [
+                                    new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [
+                                        new Paragraph(`Bill No: ${invoiceData.billNo}`),
+                                        new Paragraph(`MONTH: ${invoiceData.month}`),
+                                    ]}),
+                                    new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [
+                                        new Paragraph(`PO.NO: ${invoiceData.poNo}`),
+                                        new Paragraph(`Site: ${invoiceData.site}`),
+                                    ]}),
+                                ],
+                            }),
+                        ],
+                    }),
+                    new Paragraph({ text: "\n" }),
+                    new Paragraph({ children: [new TextRun({ text: "CHARGES AS FOLLOWS: -", bold: true })] }),
+                    new DocxTable({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        rows: [
+                            new DocxTableRow({
+                                children: [
+                                    new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Particulars", bold: true })] })], borders: { top: { style: BorderStyle.SINGLE, size: 2 }, bottom: { style: BorderStyle.SINGLE, size: 2 }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }, verticalAlign: VerticalAlign.CENTER }),
+                                    new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Amount (RS.)", bold: true })], alignment: AlignmentType.RIGHT })], borders: { top: { style: BorderStyle.SINGLE, size: 2 }, bottom: { style: BorderStyle.SINGLE, size: 2 }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }, verticalAlign: VerticalAlign.CENTER }),
+                                ],
+                            }),
+                            ...invoiceData.items.map(item => new DocxTableRow({
+                                children: [
+                                    new DocxTableCell({ children: [new Paragraph(item.particulars)], borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } } }),
+                                    new DocxTableCell({ children: [new Paragraph({ text: formatCurrency(item.amount), alignment: AlignmentType.RIGHT })], borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } } }),
+                                ],
+                            })),
+                        ],
+                    }),
+                    new DocxTable({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        rows: [
+                             new DocxTableRow({ children: [
+                                new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [], borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } } }),
+                                new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [
+                                    new Paragraph({ text: `Net total=\t${formatCurrency(invoiceData.netTotal)}`, style: "default" }),
+                                    new Paragraph({ text: `CGST@9%\t${formatCurrency(invoiceData.cgst)}` }),
+                                    new Paragraph({ text: `SGST@9%\t${formatCurrency(invoiceData.sgst)}` }),
+                                ], borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } } }),
+                            ]}),
+                            new DocxTableRow({ children: [
+                                new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: "Total Amount payable", bold: true })] })], borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } } }),
+                                new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: formatCurrency(invoiceData.grandTotal), bold: true })], alignment: AlignmentType.RIGHT })], borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } } }),
+                            ]}),
+                        ],
+                        columnWidths: [5000, 5000],
+                    }),
+                    new Paragraph({ text: `In words: ${invoiceData.amountInWords.toUpperCase()}` }),
+                    new Paragraph({ text: "\n\n" }),
+                    new DocxTable({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE }, insideHorizontal: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE } },
+                        rows: [
+                            new DocxTableRow({
+                                children: [
+                                    new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [
+                                        new Paragraph({ children: [new TextRun({ text: "Vithal Enterprises", bold: true })] }),
+                                        new Paragraph("PAN CARD NO- AFVPM0759G"),
+                                        new Paragraph("SERVICE TAX CODE NO-AFVPM0759GST001"),
+                                        new Paragraph("GSTIN: 27AFVPM0759G1ZY"),
+                                        new Paragraph("SAC code: 997319\n          998519"),
+                                    ]}),
+                                    new DocxTableCell({ width: { size: 50, type: WidthType A.PERCENTAGE }, children: [
+                                        new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
+                                        new Paragraph(`GSTIN: ${invoiceData.to.gstin}`),
+                                    ]}),
+                                ],
+                            }),
+                        ],
+                    }),
+                    new Paragraph({ text: "\n\n\n" }),
+                    new Paragraph("Thanking you,"),
+                    new Paragraph("Yours truly,"),
+                    new Paragraph({ text: "\n" }),
+                    new Paragraph("For M/s Vithal Enterprises"),
+                    new Paragraph({ text: "\n\n\n\n" }),
+                    new Paragraph("R.V MAVLANKAR"),
+                    new Paragraph("9821728079"),
+                ],
+            }],
+        });
+
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, `Invoice-${invoiceData.billNo}.docx`);
+
+    } catch (e) {
+      toast({
+        variant: 'destructive',
+        title: 'Download Error',
+        description: 'Could not generate Word document.',
+      });
+      console.error(e);
+    }
+  };
   
   const amountInWords = useMemo(() => {
     return toWords.convert(calculations.grandTotal);
@@ -206,7 +352,7 @@ export default function BillingPage() {
     }
   };
   
-  const handleReprint = (invoice: Invoice) => {
+  const prepareAndPrint = (invoice: Invoice) => {
     const company = companies?.find(c => c.id === invoice.companyId);
     if (company) {
         const printableData = generateInvoiceData(invoice, company);
@@ -301,9 +447,13 @@ export default function BillingPage() {
                                             </PopoverTrigger>
                                             <PopoverContent className="w-40">
                                                 <div className="grid gap-1">
-                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onSelect={() => handleReprint(invoice)}>
+                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => prepareAndPrint(invoice)}>
                                                         <Printer className="mr-2 h-4 w-4" />
                                                         Print
+                                                    </Button>
+                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleDownloadWord(invoice)}>
+                                                        <Download className="mr-2 h-4 w-4" />
+                                                        Download
                                                     </Button>
                                                     <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenFormDialog(invoice)}>
                                                         <Pencil className="mr-2 h-4 w-4" />
@@ -468,6 +618,3 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-    
-    
