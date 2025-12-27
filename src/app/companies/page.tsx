@@ -197,7 +197,7 @@ export default function CompaniesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => { setIsDeleteDialogOpen(false); setSelectedCompany(null); }}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setSelectedCompany(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -205,3 +205,5 @@ export default function CompaniesPage() {
     </AppLayout>
   );
 }
+
+    

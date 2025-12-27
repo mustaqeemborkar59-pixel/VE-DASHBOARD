@@ -275,7 +275,7 @@ export default function BillingPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               {/* Company Selection */}
               <div className="space-y-2">
                 <Label htmlFor="company">Bill To</Label>
@@ -487,7 +487,7 @@ export default function BillingPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => { setIsDeleteDialogOpen(false); setInvoiceToDelete(null); }}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel onClick={() => setInvoiceToDelete(null)}>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleDeleteInvoice} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -497,3 +497,5 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
