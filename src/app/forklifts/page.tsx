@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Card,
@@ -30,17 +31,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
-import { MoreHorizontal, PlusCircle, Search, Warehouse, Truck, User, Phone, Wrench, ListFilter, Upload, AlertTriangle } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Trash2, Warehouse, Truck, User, Phone, Wrench, ListFilter, Upload, AlertTriangle } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
@@ -62,6 +55,7 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { ForkliftIcon } from "@/components/icons/forklift-icon";
 import AppLayout from "@/components/app-layout";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 type SearchField = 'All' | 'serialNumber' | 'make' | 'model' | 'siteCompany' | 'siteArea';
 const searchFieldLabels: Record<SearchField, string> = {
@@ -430,23 +424,25 @@ export default function ForkliftsPage() {
                                   </Button>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuItem onSelect={() => openAddEditDialog(forklift)}>
-                                        Edit
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onSelect={() => openDeleteDialog(forklift)} className="text-destructive focus:text-destructive">
-                                        Delete
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                    </DropdownMenu>
+                                    <Popover>
+                                      <PopoverTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                                              <EllipsisVertical className="h-4 w-4" />
+                                          </Button>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-40">
+                                          <div className="grid gap-1">
+                                              <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => openAddEditDialog(forklift)}>
+                                                  <Pencil className="mr-2 h-4 w-4" />
+                                                  Edit
+                                              </Button>
+                                              <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => openDeleteDialog(forklift)}>
+                                                  <Trash2 className="mr-2 h-4 w-4" />
+                                                  Delete
+                                              </Button>
+                                          </div>
+                                      </PopoverContent>
+                                  </Popover>
                                 </TableCell>
                             </TableRow>
                             {expandedRow === forklift.id && (
@@ -542,7 +538,7 @@ export default function ForkliftsPage() {
           </DialogContent>
         </Dialog>
         
-        <AlertDialog open={!!forkliftToDelete}>
+        <AlertDialog open={!!forkliftToDelete} onOpenChange={(open) => !open && setForkliftToDelete(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure you want to delete this forklift?</AlertDialogTitle>
@@ -566,3 +562,5 @@ export default function ForkliftsPage() {
     </AppLayout>
   );
 }
+
+    

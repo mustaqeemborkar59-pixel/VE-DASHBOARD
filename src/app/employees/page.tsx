@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Card,
@@ -31,17 +32,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Employee } from "@/lib/data";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
 import { useState } from "react";
@@ -50,6 +43,7 @@ import { EmployeeForm, EmployeeFormData } from "@/components/employee-form";
 import { Badge } from "@/components/ui/badge";
 import AppLayout from "@/components/app-layout";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export default function EmployeesPage() {
   const { firestore } = useFirebase();
@@ -159,25 +153,26 @@ export default function EmployeesPage() {
                         {employee.availability ? 'Available' : 'Unavailable'}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onSelect={() => openAddEditDialog(employee)}>
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onSelect={() => openDeleteDialog(employee)} className="text-destructive focus:text-destructive">
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <TableCell className="text-right">
+                       <Popover>
+                          <PopoverTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                                  <EllipsisVertical className="h-4 w-4" />
+                              </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-40">
+                              <div className="grid gap-1">
+                                  <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => openAddEditDialog(employee)}>
+                                      <Pencil className="mr-2 h-4 w-4" />
+                                      Edit
+                                  </Button>
+                                  <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => openDeleteDialog(employee)}>
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete
+                                  </Button>
+                              </div>
+                          </PopoverContent>
+                      </Popover>
                     </TableCell>
                   </TableRow>
                 ))
@@ -208,7 +203,7 @@ export default function EmployeesPage() {
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!employeeToDelete}>
+      <AlertDialog open={!!employeeToDelete} onOpenChange={(open) => !open && setEmployeeToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to delete this employee?</AlertDialogTitle>
@@ -225,3 +220,5 @@ export default function EmployeesPage() {
     </AppLayout>
   );
 }
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import {
@@ -16,14 +17,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -41,7 +34,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy } from 'firebase/firestore';
@@ -49,6 +42,7 @@ import { Company } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { CompanyForm, CompanyFormData } from '@/components/company-form';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function CompaniesPage() {
   const { firestore } = useFirebase();
@@ -146,25 +140,26 @@ export default function CompaniesPage() {
                     <TableCell className="font-medium">{company.name}</TableCell>
                     <TableCell className="hidden md:table-cell max-w-sm truncate">{company.address}</TableCell>
                     <TableCell className="hidden lg:table-cell font-mono">{company.gstin}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onSelect={() => openAddEditDialog(company)}>
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onSelect={() => openDeleteDialog(company)} className="text-destructive focus:text-destructive">
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <TableCell className="text-right">
+                       <Popover>
+                          <PopoverTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                                  <EllipsisVertical className="h-4 w-4" />
+                              </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-40">
+                              <div className="grid gap-1">
+                                  <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => openAddEditDialog(company)}>
+                                      <Pencil className="mr-2 h-4 w-4" />
+                                      Edit
+                                  </Button>
+                                  <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => openDeleteDialog(company)}>
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete
+                                  </Button>
+                              </div>
+                          </PopoverContent>
+                      </Popover>
                     </TableCell>
                   </TableRow>
                 ))
@@ -195,7 +190,7 @@ export default function CompaniesPage() {
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!companyToDelete}>
+      <AlertDialog open={!!companyToDelete} onOpenChange={(open) => !open && setCompanyToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -212,3 +207,5 @@ export default function CompaniesPage() {
     </AppLayout>
   );
 }
+
+    

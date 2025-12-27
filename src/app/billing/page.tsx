@@ -13,13 +13,12 @@ import { collection, query, orderBy, addDoc, doc } from 'firebase/firestore';
 import { Company, Invoice } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Check, ChevronsUpDown, Plus, Trash2, Printer, MoreHorizontal, Pencil, PlusCircle } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, Trash2, Printer, Pencil, PlusCircle, EllipsisVertical } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { InvoiceTemplate, type InvoiceData } from '@/components/invoice-template';
 import { useReactToPrint } from 'react-to-print';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -219,6 +218,7 @@ export default function BillingPage() {
   }
 
   const handleOpenFormDialog = (invoice: Invoice | null) => {
+    setInvoiceToDelete(null);
     if (invoice) {
       setEditingInvoice(invoice);
       setCompanyId(invoice.companyId);
@@ -228,6 +228,7 @@ export default function BillingPage() {
       setItems(invoice.items);
     } else {
       resetForm();
+      setEditingInvoice(null);
     }
     setIsFormDialogOpen(true);
   };
@@ -289,30 +290,29 @@ export default function BillingPage() {
                                     <TableCell>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
                                     <TableCell className="text-right">{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
                                     <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <span className="sr-only">Open menu</span>
-                                                    <MoreHorizontal className="h-4 w-4" />
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                                                    <EllipsisVertical className="h-4 w-4" />
                                                 </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                <DropdownMenuItem onSelect={() => handleReprint(invoice)}>
-                                                    <Printer className="mr-2 h-4 w-4" />
-                                                    Print
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleOpenFormDialog(invoice)}>
-                                                    <Pencil className="mr-2 h-4 w-4" />
-                                                    Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onSelect={() => setInvoiceToDelete(invoice)} className="text-destructive focus:text-destructive">
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-40">
+                                                <div className="grid gap-1">
+                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onSelect={() => handleReprint(invoice)}>
+                                                        <Printer className="mr-2 h-4 w-4" />
+                                                        Print
+                                                    </Button>
+                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenFormDialog(invoice)}>
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        Edit
+                                                    </Button>
+                                                    <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => {setIsFormDialogOpen(false); setInvoiceToDelete(invoice)}}>
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </Button>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
                                     </TableCell>
                                 </TableRow>
                            ))
@@ -485,5 +485,7 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
 
     
