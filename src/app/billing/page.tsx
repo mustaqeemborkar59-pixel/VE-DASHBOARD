@@ -230,7 +230,7 @@ export default function BillingPage() {
     setSite(invoice.site || '');
     setItems(invoice.items);
     setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
     }, 100);
   };
   
