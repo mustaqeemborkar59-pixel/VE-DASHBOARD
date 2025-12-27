@@ -69,6 +69,7 @@ export default function CompaniesPage() {
 
   const openDeleteDialog = (company: Company) => {
     setSelectedCompany(null);
+    setIsAddEditDialogOpen(false);
     setCompanyToDelete(company);
   };
 
@@ -89,6 +90,10 @@ export default function CompaniesPage() {
     }
     setIsAddEditDialogOpen(false);
     setSelectedCompany(null);
+  };
+  
+  const handleCancelDelete = () => {
+    setCompanyToDelete(null);
   };
 
   const handleDelete = () => {
@@ -190,7 +195,7 @@ export default function CompaniesPage() {
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!companyToDelete} onOpenChange={(open) => !open && setCompanyToDelete(null)}>
+      <AlertDialog open={!!companyToDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -199,7 +204,7 @@ export default function CompaniesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

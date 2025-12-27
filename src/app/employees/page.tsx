@@ -70,7 +70,12 @@ export default function EmployeesPage() {
   
   const openDeleteDialog = (employee: Employee) => {
     setSelectedEmployee(null);
+    setIsAddEditDialogOpen(false);
     setEmployeeToDelete(employee);
+  };
+
+  const handleCancelDelete = () => {
+    setEmployeeToDelete(null);
   };
 
   const handleDelete = () => {
@@ -203,7 +208,7 @@ export default function EmployeesPage() {
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!employeeToDelete} onOpenChange={(open) => !open && setEmployeeToDelete(null)}>
+      <AlertDialog open={!!employeeToDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to delete this employee?</AlertDialogTitle>
@@ -212,7 +217,7 @@ export default function EmployeesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

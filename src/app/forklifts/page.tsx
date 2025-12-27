@@ -114,6 +114,7 @@ export default function ForkliftsPage() {
 
   const openDeleteDialog = (forklift: Forklift) => {
     setSelectedForklift(null);
+    setIsAddEditDialogOpen(false);
     setForkliftToDelete(forklift);
   };
 
@@ -165,6 +166,10 @@ export default function ForkliftsPage() {
     }
     return `Search by ${searchFieldLabels[searchField]}...`;
   }, [searchField]);
+
+  const handleCancelDelete = () => {
+    setForkliftToDelete(null);
+  };
 
 
   const handleDelete = () => {
@@ -537,7 +542,7 @@ export default function ForkliftsPage() {
           </DialogContent>
         </Dialog>
         
-        <AlertDialog open={!!forkliftToDelete} onOpenChange={(open) => !open && setForkliftToDelete(null)}>
+        <AlertDialog open={!!forkliftToDelete}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure you want to delete this forklift?</AlertDialogTitle>
@@ -546,7 +551,7 @@ export default function ForkliftsPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
