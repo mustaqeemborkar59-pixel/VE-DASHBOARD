@@ -13,11 +13,12 @@ import { collection, query, orderBy, limit, addDoc } from 'firebase/firestore';
 import { Company, Invoice } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, Check, ChevronsUpDown, Plus, Trash2 } from 'lucide-react';
+import { CalendarIcon, Check, ChevronsUpDown, Plus, Trash2, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { InvoiceTemplate, type InvoiceData } from '@/components/invoice-template';
 import { useReactToPrint } from 'react-to-print';
 import { ToWords } from 'to-words';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function BillingPage() {
   const { firestore } = useFirebase();
@@ -30,13 +31,18 @@ export default function BillingPage() {
   const [poNumber, setPoNumber] = useState('AGREEMENT');
   const [site, setSite] = useState('');
   const [items, setItems] = useState([{ particulars: '', amount: 0 }]);
-  const [showInvoice, setShowInvoice] = useState(false);
+  
+  const [invoiceToPrint, setInvoiceToPrint] = useState<InvoiceData | null>(null);
 
+  // Queries
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
-  const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
-
   const lastInvoiceQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billNo', 'desc'), limit(1)) : null, [firestore]);
+  const allInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billDate', 'desc')) : null, [firestore]);
+
+  // Data
+  const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
   const { data: lastInvoiceArr } = useCollection<Invoice>(lastInvoiceQuery);
+  const { data: allInvoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(allInvoicesQuery);
 
   const nextBillNo = useMemo(() => {
     if (lastInvoiceArr && lastInvoiceArr.length > 0) {
@@ -81,11 +87,47 @@ export default function BillingPage() {
   
   const handlePrint = useReactToPrint({
     content: () => invoiceRef.current,
-    documentTitle: `Invoice-${nextBillNo}-MHE`,
+    documentTitle: `Invoice-${invoiceToPrint?.billNo || nextBillNo}`,
+    onAfterPrint: () => setInvoiceToPrint(null),
   });
+  
+  const amountInWords = useMemo(() => {
+    return toWords.convert(calculations.grandTotal) + ' Only';
+  },[calculations.grandTotal, toWords]);
+  
+  const generateInvoiceData = (invoice: Omit<Invoice, 'id'>, company: Company): InvoiceData => {
+     const words = new ToWords({
+        localeCode: 'en-IN',
+        converterOptions: {
+          currency: true,
+          ignoreDecimal: true,
+          ignoreZeroCurrency: false,
+        }
+      });
+      const grandTotalInWords = words.convert(invoice.grandTotal) + ' Only';
+      
+      return {
+          to: {
+            name: company.name,
+            address: company.address,
+            gstin: company.gstin || '',
+          },
+          billDate: format(new Date(invoice.billDate), 'dd/MM/yyyy'),
+          billNo: `${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}`,
+          poNo: invoice.poNumber || 'AGREEMENT',
+          month: format(new Date(invoice.billDate), 'MMM yyyy').toUpperCase(),
+          site: invoice.site || '',
+          items: invoice.items,
+          netTotal: invoice.netTotal,
+          cgst: invoice.cgst,
+          sgst: invoice.sgst,
+          grandTotal: invoice.grandTotal,
+          amountInWords: grandTotalInWords,
+      }
+  }
 
   const handleGenerateInvoice = async () => {
-    if (!companyId || !billDate || !site || items.some(i => !i.particulars || i.amount <= 0)) {
+    if (!companyId || !billDate || !site || !selectedCompany || items.some(i => !i.particulars || i.amount <= 0)) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
@@ -94,10 +136,8 @@ export default function BillingPage() {
       return;
     }
     
-    setShowInvoice(true);
-
     if (firestore) {
-      const invoiceData: Omit<Invoice, 'id'> = {
+      const newInvoiceData: Omit<Invoice, 'id'> = {
         billNo: nextBillNo,
         billNoSuffix: 'MHE',
         billDate: format(billDate, 'yyyy-MM-dd'),
@@ -110,38 +150,50 @@ export default function BillingPage() {
         sgst: calculations.sgst,
         grandTotal: calculations.grandTotal,
       };
-      await addDoc(collection(firestore, 'invoices'), invoiceData);
-      toast({
-        title: 'Invoice Saved',
-        description: `Invoice No. ${nextBillNo}-MHE has been saved.`,
-      });
-      setTimeout(handlePrint, 500); // Allow state to update and component to render before printing
+
+      try {
+        await addDoc(collection(firestore, 'invoices'), newInvoiceData);
+        toast({
+            title: 'Invoice Saved',
+            description: `Invoice No. ${nextBillNo}-MHE has been saved.`,
+        });
+
+        const printableData = generateInvoiceData(newInvoiceData, selectedCompany);
+        setInvoiceToPrint(printableData);
+
+        // Reset form
+        setCompanyId('');
+        setBillDate(new Date());
+        setPoNumber('AGREEMENT');
+        setSite('');
+        setItems([{ particulars: '', amount: 0 }]);
+        
+      } catch (error) {
+         toast({
+            variant: 'destructive',
+            title: 'Save Error',
+            description: 'Could not save the invoice. Please try again.',
+        });
+      }
     }
   };
   
-  const amountInWords = useMemo(() => {
-    if (calculations.grandTotal === 0) return 'Zero Rupees';
-    return toWords.convert(calculations.grandTotal) + ' Only';
-  },[calculations.grandTotal, toWords]);
-  
-  const invoiceData: InvoiceData | null = selectedCompany && billDate ? {
-    to: {
-      name: selectedCompany.name,
-      address: selectedCompany.address,
-      gstin: selectedCompany.gstin || '',
-    },
-    billDate: format(billDate, 'dd/MM/yyyy'),
-    billNo: `${nextBillNo}-MHE`,
-    poNo: poNumber,
-    month: format(billDate, 'MMM yyyy').toUpperCase(),
-    site: site,
-    items,
-    netTotal: calculations.netTotal,
-    cgst: calculations.cgst,
-    sgst: calculations.sgst,
-    grandTotal: calculations.grandTotal,
-    amountInWords: amountInWords,
-  } : null;
+  const handleReprint = (invoice: Invoice) => {
+    const company = companies?.find(c => c.id === invoice.companyId);
+    if (company) {
+        const printableData = generateInvoiceData(invoice, company);
+        setInvoiceToPrint(printableData);
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not find company details for this invoice.' });
+    }
+  }
+
+  // Trigger print when invoiceToPrint is set
+  useEffect(() => {
+    if (invoiceToPrint) {
+        handlePrint();
+    }
+  }, [invoiceToPrint, handlePrint]);
 
   return (
     <AppLayout>
@@ -287,17 +339,65 @@ export default function BillingPage() {
 
             <div className="flex justify-end pt-4">
               <Button onClick={handleGenerateInvoice} size="lg">
-                Generate & Print Invoice
+                Generate & Save Invoice
               </Button>
             </div>
           </CardContent>
         </Card>
         
+        <Card>
+            <CardHeader>
+                <CardTitle>Recent Invoices</CardTitle>
+                <CardDescription>View and re-print previously generated invoices.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Bill No.</TableHead>
+                            <TableHead>Company</TableHead>
+                            <TableHead>Bill Date</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoadingInvoices ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center">Loading invoices...</TableCell>
+                            </TableRow>
+                        ) : allInvoices && allInvoices.length > 0 ? (
+                           allInvoices.map((invoice) => (
+                                <TableRow key={invoice.id}>
+                                    <TableCell className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
+                                    <TableCell>{companies?.find(c => c.id === invoice.companyId)?.name || 'Unknown'}</TableCell>
+                                    <TableCell>{format(new Date(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
+                                    <TableCell className="text-right">{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="outline" size="sm" onClick={() => handleReprint(invoice)}>
+                                            <Printer className="mr-2 h-4 w-4" />
+                                            Print
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                           ))
+                        ) : (
+                             <TableRow>
+                                <TableCell colSpan={5} className="text-center h-24">No invoices found.</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+        
         {/* Hidden Invoice for printing */}
         <div className="absolute -z-10 -left-[9999px] -top-[9999px]">
-            {invoiceData && <InvoiceTemplate ref={invoiceRef} data={invoiceData} />}
+            {invoiceToPrint && <InvoiceTemplate ref={invoiceRef} data={invoiceToPrint} />}
         </div>
       </div>
     </AppLayout>
   );
 }
+
+    
