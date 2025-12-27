@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import AppLayout from "@/components/app-layout";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,14 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, addDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Company, Invoice } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Printer, Pencil, PlusCircle, EllipsisVertical, Download } from 'lucide-react';
+import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { InvoiceTemplate, type InvoiceData } from '@/components/invoice-template';
-import { useReactToPrint } from 'react-to-print';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -29,7 +27,6 @@ import { saveAs } from 'file-saver';
 export default function BillingPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
-  const invoiceRef = useRef<HTMLDivElement>(null);
   
   const toISODateString = (date: Date) => {
     return format(date, 'yyyy-MM-dd');
@@ -48,9 +45,7 @@ export default function BillingPage() {
   const [poNumber, setPoNumber] = useState('AGREEMENT');
   const [site, setSite] = useState('');
   const [items, setItems] = useState([{ particulars: '', amount: 0 }]);
-  
-  const [invoiceToPrint, setInvoiceToPrint] = useState<InvoiceData | null>(null);
-  
+    
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
@@ -111,11 +106,36 @@ export default function BillingPage() {
     setItems(newItems);
   };
   
-  const handlePrint = useReactToPrint({
-    content: () => invoiceRef.current,
-    documentTitle: `Invoice-${invoiceToPrint?.billNo || 'new'}`,
-    onAfterPrint: () => setInvoiceToPrint(null),
-  });
+  const generateInvoiceDataForWord = (invoice: Invoice, company: Company) => {
+      const words = new ToWords({
+        localeCode: 'en-IN',
+        converterOptions: {
+          currency: true,
+          ignoreDecimal: true,
+          ignoreZeroCurrency: false,
+        }
+      });
+      const grandTotalInWords = words.convert(invoice.grandTotal);
+      
+      return {
+          to: {
+            name: company.name,
+            address: company.address,
+            gstin: company.gstin || '',
+          },
+          billDate: format(parseISO(invoice.billDate), 'dd/MM/yyyy'),
+          billNo: `${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}`,
+          poNo: invoice.poNumber || 'AGREEMENT',
+          month: format(parseISO(invoice.billDate), 'MMM yyyy').toUpperCase(),
+          site: invoice.site || '',
+          items: invoice.items,
+          netTotal: invoice.netTotal,
+          cgst: invoice.cgst,
+          sgst: invoice.sgst,
+          grandTotal: invoice.grandTotal,
+          amountInWords: grandTotalInWords,
+      }
+  }
 
   const handleDownloadWord = async (invoice: Invoice) => {
     const company = companies?.find(c => c.id === invoice.companyId);
@@ -123,7 +143,7 @@ export default function BillingPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not find company details for this invoice.' });
       return;
     }
-    const invoiceData = generateInvoiceData(invoice, company);
+    const invoiceData = generateInvoiceDataForWord(invoice, company);
     
     try {
         const formatCurrency = (amount: number) => amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '/-';
@@ -212,7 +232,7 @@ export default function BillingPage() {
                         ],
                         columnWidths: [5000, 5000],
                     }),
-                    new Paragraph({ text: `In words: ${invoiceData.amountInWords.toUpperCase()}` }),
+                    new Paragraph({ text: `In words: ${invoiceData.amountInWords}` }),
                     new Paragraph({ text: "\n\n" }),
                     new DocxTable({
                         width: { size: 100, type: WidthType.PERCENTAGE },
@@ -271,36 +291,6 @@ export default function BillingPage() {
     return toWords.convert(calculations.grandTotal);
   },[calculations.grandTotal, toWords]);
   
-  const generateInvoiceData = (invoice: Omit<Invoice, 'id'>, company: Company): InvoiceData => {
-     const words = new ToWords({
-        localeCode: 'en-IN',
-        converterOptions: {
-          currency: true,
-          ignoreDecimal: true,
-          ignoreZeroCurrency: false,
-        }
-      });
-      const grandTotalInWords = words.convert(invoice.grandTotal);
-      
-      return {
-          to: {
-            name: company.name,
-            address: company.address,
-            gstin: company.gstin || '',
-          },
-          billDate: format(parseISO(invoice.billDate), 'dd/MM/yyyy'),
-          billNo: `${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}`,
-          poNo: invoice.poNumber || 'AGREEMENT',
-          month: format(parseISO(invoice.billDate), 'MMM yyyy').toUpperCase(),
-          site: invoice.site || '',
-          items: invoice.items,
-          netTotal: invoice.netTotal,
-          cgst: invoice.cgst,
-          sgst: invoice.sgst,
-          grandTotal: invoice.grandTotal,
-          amountInWords: grandTotalInWords,
-      }
-  }
   
   const resetForm = () => {
       setCompanyId(initialFormState.companyId);
@@ -358,9 +348,6 @@ export default function BillingPage() {
               description: `Invoice No. ${billNoToUse}-MHE has been saved.`,
           });
         }
-
-        const printableData = generateInvoiceData(invoiceData, selectedCompany);
-        setInvoiceToPrint(printableData);
         setIsFormDialogOpen(false);
         
       } catch (error) {
@@ -373,16 +360,6 @@ export default function BillingPage() {
     }
   };
   
-  const prepareAndPrint = (invoice: Invoice) => {
-    const company = companies?.find(c => c.id === invoice.companyId);
-    if (company) {
-        const printableData = generateInvoiceData(invoice, company);
-        setInvoiceToPrint(printableData);
-    } else {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not find company details for this invoice.' });
-    }
-  }
-
   const handleOpenFormDialog = (invoice: Invoice | null) => {
     setInvoiceToDelete(null);
     if (invoice) {
@@ -438,11 +415,6 @@ export default function BillingPage() {
       }
   }
 
-  useEffect(() => {
-    if (invoiceToPrint) {
-        handlePrint();
-    }
-  }, [invoiceToPrint, handlePrint]);
 
   return (
     <AppLayout>
@@ -510,10 +482,6 @@ export default function BillingPage() {
                                             </PopoverTrigger>
                                             <PopoverContent className="w-40">
                                                 <div className="grid gap-1">
-                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => prepareAndPrint(invoice)}>
-                                                        <Printer className="mr-2 h-4 w-4" />
-                                                        Print
-                                                    </Button>
                                                     <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleDownloadWord(invoice)}>
                                                         <Download className="mr-2 h-4 w-4" />
                                                         Download
@@ -652,7 +620,7 @@ export default function BillingPage() {
                 <DialogFooter className="p-6 pt-4 border-t">
                     <Button variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>
                     <Button onClick={handleFormSubmit}>
-                        {editingInvoice ? 'Update & Print Invoice' : 'Generate & Print Invoice'}
+                        {editingInvoice ? 'Update Invoice' : 'Save Invoice'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -672,18 +640,7 @@ export default function BillingPage() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
-        
-        <div className="absolute -z-10 -left-[9999px] -top-[9999px]">
-            {invoiceToPrint && <InvoiceTemplate ref={invoiceRef} data={invoiceToPrint} />}
-        </div>
-        
       </div>
     </AppLayout>
   );
 }
-
-    
-
-    
-
-    
