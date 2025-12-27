@@ -173,9 +173,29 @@ export default function BillingPage() {
                         ],
                     }),
                     new Paragraph({ text: "\n" }),
-                    new Paragraph({ children: [new TextRun({ text: "To,", bold: true })] }),
-                    new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
-                    new Paragraph({ text: invoiceData.to.address }),
+                    new DocxTable({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE }, insideHorizontal: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE } },
+                        columnWidths: [4500, 5500],
+                        rows: [
+                            new DocxTableRow({
+                                children: [
+                                    new DocxTableCell({
+                                        children: [
+                                            new Paragraph({ children: [new TextRun({ text: "To,", bold: true })] }),
+                                            new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
+                                            new Paragraph({ text: invoiceData.to.address }),
+                                        ],
+                                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+                                    }),
+                                    new DocxTableCell({
+                                        children: [],
+                                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+                                    })
+                                ],
+                            }),
+                        ]
+                    }),
                     new Paragraph({ text: "\n" }),
                     new DocxTable({
                         width: { size: 100, type: WidthType.PERCENTAGE },
