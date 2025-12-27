@@ -7,13 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, addDoc, doc } from 'firebase/firestore';
 import { Company, Invoice } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Check, ChevronsUpDown, Plus, Trash2, Printer, Pencil, PlusCircle, EllipsisVertical } from 'lucide-react';
+import { Plus, Trash2, Printer, Pencil, PlusCircle, EllipsisVertical } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { InvoiceTemplate, type InvoiceData } from '@/components/invoice-template';
 import { useReactToPrint } from 'react-to-print';
@@ -22,6 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function BillingPage() {
   const { firestore } = useFirebase();
@@ -41,7 +41,6 @@ export default function BillingPage() {
   };
 
   const [companyId, setCompanyId] = useState<string>('');
-  const [isCompanyPopoverOpen, setIsCompanyPopoverOpen] = useState(false);
   const [billDate, setBillDate] = useState<string>(toISODateString(new Date()));
   const [poNumber, setPoNumber] = useState('AGREEMENT');
   const [site, setSite] = useState('');
@@ -274,7 +273,7 @@ export default function BillingPage() {
                             <TableHead>Company</TableHead>
                             <TableHead>Bill Date</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead className="w-[100px] text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -306,7 +305,7 @@ export default function BillingPage() {
                                                         <Pencil className="mr-2 h-4 w-4" />
                                                         Edit
                                                     </Button>
-                                                    <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => {setIsFormDialogOpen(false); setInvoiceToDelete(invoice)}}>
+                                                    <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => setInvoiceToDelete(invoice)}>
                                                         <Trash2 className="mr-2 h-4 w-4" />
                                                         Delete
                                                     </Button>
@@ -342,44 +341,22 @@ export default function BillingPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <Label htmlFor="company">Bill To</Label>
-                            <Popover open={isCompanyPopoverOpen} onOpenChange={setIsCompanyPopoverOpen}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                id="company"
-                                variant="outline"
-                                role="combobox"
-                                aria-expanded={isCompanyPopoverOpen}
-                                className="w-full justify-between"
-                                disabled={isLoadingCompanies}
-                                >
-                                <span className="truncate">{selectedCompany ? selectedCompany.name : "Select company..."}</span>
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                <Command>
-                                <CommandInput placeholder="Search company..." />
-                                <CommandList>
-                                    <CommandEmpty>No company found. Add one on the Companies page.</CommandEmpty>
-                                    <CommandGroup>
-                                    {companies?.map((company) => (
-                                        <CommandItem
-                                        key={company.id}
-                                        value={company.name}
-                                        onSelect={() => {
-                                            setCompanyId(company.id);
-                                            setIsCompanyPopoverOpen(false);
-                                        }}
-                                        >
-                                        <Check className={cn("mr-2 h-4 w-4", companyId === company.id ? "opacity-100" : "opacity-0")} />
-                                        {company.name}
-                                        </CommandItem>
-                                    ))}
-                                    </CommandGroup>
-                                </CommandList>
-                                </Command>
-                            </PopoverContent>
-                            </Popover>
+                            <Select value={companyId} onValueChange={setCompanyId} disabled={isLoadingCompanies}>
+                                <SelectTrigger id="company" className="w-full">
+                                    <SelectValue placeholder="Select a company..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {isLoadingCompanies ? (
+                                        <SelectItem value="loading" disabled>Loading companies...</SelectItem>
+                                    ) : (
+                                        companies?.map(company => (
+                                            <SelectItem key={company.id} value={company.id}>
+                                                {company.name}
+                                            </SelectItem>
+                                        ))
+                                    )}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="billDate">Bill Date</Label>
@@ -485,7 +462,5 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-    
 
     
