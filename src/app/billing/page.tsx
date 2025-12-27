@@ -264,7 +264,7 @@ export default function BillingPage() {
                       {billDate ? format(billDate, "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0" align="start">
                     <Calendar mode="single" selected={billDate} onSelect={setBillDate} initialFocus />
                   </PopoverContent>
                 </Popover>
