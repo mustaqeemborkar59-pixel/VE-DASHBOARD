@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BarChart, LogOut, Settings, User } from 'lucide-react';
+import { BarChart, LogOut, Settings, User, ReceiptText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import {
@@ -32,6 +32,7 @@ const navItems = [
   { href: '/forklifts', label: 'Forklifts', icon: ForkliftIcon },
   { href: '/inventory', label: 'Inventory', icon: Warehouse },
   { href: '/reports', label: 'Reports', icon: BarChart },
+  { href: '/billing', label: 'Billing', icon: ReceiptText },
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
