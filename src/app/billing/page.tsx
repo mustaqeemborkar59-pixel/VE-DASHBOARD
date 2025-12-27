@@ -54,6 +54,8 @@ export default function BillingPage() {
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+  
+  const [invoiceStartNumber, setInvoiceStartNumber] = useState('');
 
 
   // Queries
@@ -65,6 +67,17 @@ export default function BillingPage() {
   const { data: allInvoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(allInvoicesQuery);
 
   const selectedCompany = useMemo(() => companies?.find(c => c.id === companyId), [companies, companyId]);
+  
+  const maxBillNumber = useMemo(() => {
+    if (!allInvoices || allInvoices.length === 0) return 0;
+    return Math.max(0, ...allInvoices.map(inv => inv.billNo));
+  }, [allInvoices]);
+  
+  useEffect(() => {
+    if (maxBillNumber > 0 && !invoiceStartNumber) {
+        setInvoiceStartNumber((maxBillNumber + 1).toString());
+    }
+   }, [maxBillNumber, invoiceStartNumber]);
 
   const calculations = useMemo(() => {
     const netTotal = items.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
@@ -234,8 +247,8 @@ export default function BillingPage() {
             }],
         });
         
-        const companyName = company.name.replace(/\s+/g, '-').toUpperCase();
-        const siteName = invoice.site ? invoice.site.replace(/\s+/g, '-').toUpperCase() : 'NO-SITE';
+        const companyName = company.name.replace(/[\s/.]+/g, '-').toUpperCase();
+        const siteName = invoice.site ? invoice.site.replace(/[\s/.]+/g, '-').toUpperCase() : 'NO-SITE';
         const billMonth = format(parseISO(invoice.billDate), 'MMMM').toUpperCase();
         const billYear = format(parseISO(invoice.billDate), 'yyyy');
         
@@ -309,10 +322,10 @@ export default function BillingPage() {
     }
     
     if (firestore) {
-      let billNoToUse = editingInvoice ? editingInvoice.billNo : 1;
-      if (!editingInvoice && allInvoices && allInvoices.length > 0) {
-        const currentMaxBillNo = Math.max(0, ...allInvoices.map(inv => inv.billNo));
-        billNoToUse = currentMaxBillNo + 1;
+      let billNoToUse = editingInvoice ? editingInvoice.billNo : (Number(invoiceStartNumber) > maxBillNumber ? Number(invoiceStartNumber) : maxBillNumber + 1);
+
+      if (isNaN(billNoToUse)) {
+        billNoToUse = maxBillNumber + 1;
       }
       
       const invoiceData: Omit<Invoice, 'id'> = {
@@ -339,6 +352,7 @@ export default function BillingPage() {
           });
         } else {
           addDocumentNonBlocking(collection(firestore, 'invoices'), invoiceData);
+          setInvoiceStartNumber((billNoToUse + 1).toString());
           toast({
               title: 'Invoice Saved',
               description: `Invoice No. ${billNoToUse}-MHE has been saved.`,
@@ -399,6 +413,30 @@ export default function BillingPage() {
     });
     setInvoiceToDelete(null);
   };
+  
+  const handleStartNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (/^\d*$/.test(value)) { // only allow numbers
+        setInvoiceStartNumber(value);
+    }
+  };
+  
+  const handleUpdateStartNumber = () => {
+      const num = parseInt(invoiceStartNumber, 10);
+      if (isNaN(num) || num <= maxBillNumber) {
+          toast({
+              variant: 'destructive',
+              title: 'Invalid Number',
+              description: `Start number must be a number greater than the current max bill no (${maxBillNumber}).`
+          })
+          setInvoiceStartNumber((maxBillNumber + 1).toString());
+      } else {
+          toast({
+              title: 'Success',
+              description: `Next invoice will start from ${num}.`
+          })
+      }
+  }
 
   useEffect(() => {
     if (invoiceToPrint) {
@@ -423,6 +461,24 @@ export default function BillingPage() {
                 </div>
             </CardHeader>
             <CardContent>
+                <div className="flex flex-col sm:flex-row items-center gap-4 mb-6 p-4 border rounded-lg bg-muted/40">
+                    <div className="flex-1 w-full sm:w-auto">
+                        <Label htmlFor="invoiceStart" className="text-sm font-medium">Next Invoice Number</Label>
+                        <p className="text-xs text-muted-foreground">Set the number for the next invoice to be generated.</p>
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <Input
+                            id="invoiceStart"
+                            type="text"
+                            value={invoiceStartNumber}
+                            onChange={handleStartNumberChange}
+                            className="w-full sm:w-32"
+                            disabled={isLoadingInvoices}
+                            placeholder={isLoadingInvoices ? "Loading..." : (maxBillNumber + 1).toString()}
+                        />
+                        <Button onClick={handleUpdateStartNumber} disabled={isLoadingInvoices}>Update</Button>
+                    </div>
+                </div>
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -625,6 +681,8 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
 
     
 
