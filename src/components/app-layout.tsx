@@ -36,19 +36,14 @@ const navItems = [
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { auth, user, isUserLoading } = useFirebase();
-  const [isMounted, setIsMounted] = useState(false);
-  const pathname = usePathname();
   const router = useRouter();
-  
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   useEffect(() => {
-    if (isMounted && !isUserLoading && !user) {
+    // If auth is not loading and there's no user, redirect to login
+    if (!isUserLoading && !user) {
       router.push('/login');
     }
-  }, [isMounted, user, isUserLoading, router]);
+  }, [user, isUserLoading, router]);
 
   const handleLogout = async () => {
     if (auth) {
@@ -56,11 +51,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       router.push('/login');
     }
   };
-
-  const userEmail = user?.email || 'Not logged in';
-  const userInitial = user?.email?.[0]?.toUpperCase() || '?';
   
-  if (!isMounted || isUserLoading || !user) {
+  // While loading or if no user is authenticated yet, show a loading screen.
+  // This prevents child components from rendering and attempting to fetch data.
+  if (isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -71,6 +65,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  const userEmail = user.email || 'Not logged in';
+  const userInitial = user.email?.[0]?.toUpperCase() || '?';
+
+  // Only render the full layout if a user is authenticated
   return (
     <SidebarProvider>
       <Sidebar variant='inset' collapsible='icon'>
@@ -90,7 +88,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <SidebarMenuItem key={item.label}>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === item.href}
+                  isActive={usePathname() === item.href}
                   tooltip={{children: item.label, side: 'right', align: 'center'}}
                 >
                   <Link href={item.href}>
