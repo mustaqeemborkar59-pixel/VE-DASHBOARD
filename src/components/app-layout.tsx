@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { BarChart, LogOut, Settings, User, ReceiptText } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 import {
   SidebarProvider,
@@ -38,6 +38,7 @@ const navItems = [
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { auth, user, isUserLoading } = useFirebase();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     // If auth is not loading and there's no user, redirect to login
@@ -89,7 +90,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <SidebarMenuItem key={item.label}>
                 <SidebarMenuButton
                   asChild
-                  isActive={usePathname() === item.href}
+                  isActive={pathname === item.href}
                   tooltip={{children: item.label, side: 'right', align: 'center'}}
                 >
                   <Link href={item.href}>
