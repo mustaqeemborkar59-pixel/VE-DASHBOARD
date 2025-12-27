@@ -415,7 +415,6 @@ export default function BillingPage() {
       }
   }
 
-
   return (
     <AppLayout>
       <div className="flex flex-col gap-6">
