@@ -48,7 +48,7 @@ export default function ServiceRequestsPage() {
   const { firestore } = useFirebase();
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   const serviceRequestsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'serviceRequests') : null, [firestore]);
   const employeesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'employees') : null, [firestore]);
@@ -72,20 +72,20 @@ export default function ServiceRequestsPage() {
 
   const handleUpdateStatus = (requestId: string, status: ServiceRequest['status']) => {
     if (!firestore) return;
-    setIsDropdownOpen(null); // Close dropdown
+    setOpenDropdownId(null); // Close dropdown
     const requestRef = doc(firestore, 'serviceRequests', requestId);
     updateDocumentNonBlocking(requestRef, { status });
   }
 
   const handleAssignTechnician = (requestId: string, technicianId: string) => {
     if (!firestore) return;
-    setIsDropdownOpen(null); // Close dropdown
+    setOpenDropdownId(null); // Close dropdown
     const requestRef = doc(firestore, 'serviceRequests', requestId);
     updateDocumentNonBlocking(requestRef, { assignedTechnicianId: technicianId, status: 'Assigned' });
   }
   
   const handleViewDetails = (request: ServiceRequest) => {
-    setIsDropdownOpen(null);
+    setOpenDropdownId(null);
     setSelectedRequest(request);
     setIsDetailDialogOpen(true);
   }
@@ -160,7 +160,7 @@ export default function ServiceRequestsPage() {
                         </Button>
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu open={isDropdownOpen === request.id} onOpenChange={(open) => setIsDropdownOpen(open ? request.id : null)}>
+                      <DropdownMenu open={openDropdownId === request.id} onOpenChange={(open) => setOpenDropdownId(open ? request.id : null)}>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>

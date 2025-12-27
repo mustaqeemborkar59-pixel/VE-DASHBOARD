@@ -56,7 +56,7 @@ export default function EmployeesPage() {
   
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
@@ -64,13 +64,13 @@ export default function EmployeesPage() {
   const { data: employees, isLoading } = useCollection<Employee>(employeesQuery);
 
   const openAddEditDialog = (employee: Employee | null) => {
-    setIsDropdownOpen(null);
+    setOpenDropdownId(null);
     setSelectedEmployee(employee);
     setIsAddEditDialogOpen(true);
   };
 
   const openDeleteDialog = (employee: Employee) => {
-    setIsDropdownOpen(null);
+    setOpenDropdownId(null);
     setSelectedEmployee(employee);
     setIsDeleteDialogOpen(true);
   };
@@ -158,7 +158,7 @@ export default function EmployeesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                       <DropdownMenu open={isDropdownOpen === employee.id} onOpenChange={(open) => setIsDropdownOpen(open ? employee.id : null)}>
+                       <DropdownMenu open={openDropdownId === employee.id} onOpenChange={(open) => setOpenDropdownId(open ? employee.id : null)}>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>

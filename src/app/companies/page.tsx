@@ -55,20 +55,20 @@ export default function CompaniesPage() {
   
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('createdAt', 'desc')) : null, [firestore]);
   const { data: companies, isLoading } = useCollection<Company>(companiesQuery);
   
   const openAddEditDialog = (company: Company | null) => {
-    setIsDropdownOpen(null);
+    setOpenDropdownId(null);
     setSelectedCompany(company);
     setIsAddEditDialogOpen(true);
   };
 
   const openDeleteDialog = (company: Company) => {
-    setIsDropdownOpen(null);
+    setOpenDropdownId(null);
     setSelectedCompany(company);
     setIsDeleteDialogOpen(true);
   };
@@ -144,7 +144,7 @@ export default function CompaniesPage() {
                     <TableCell className="hidden md:table-cell max-w-sm truncate">{company.address}</TableCell>
                     <TableCell className="hidden lg:table-cell font-mono">{company.gstin}</TableCell>
                     <TableCell>
-                      <DropdownMenu open={isDropdownOpen === company.id} onOpenChange={(open) => setIsDropdownOpen(open ? company.id : null)}>
+                      <DropdownMenu open={openDropdownId === company.id} onOpenChange={(open) => setOpenDropdownId(open ? company.id : null)}>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>
