@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import AppLayout from "@/components/app-layout";
+import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 
 const monthlyRepairsData = [
   { month: "Jan", repairs: 18 },
@@ -43,10 +44,13 @@ export default function ReportsPage() {
   return (
     <AppLayout>
       <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Reports</h1>
               <p className="text-muted-foreground">Weekly and monthly reports on repairs and parts.</p>
+            </div>
+             <div className="flex items-center gap-2">
+                <DatePickerWithRange />
             </div>
           </div>
         <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
