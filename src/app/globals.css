@@ -4,14 +4,14 @@
 
 @layer base {
   :root {
-    --background: 220 20% 98%;
-    --foreground: 224 71.4% 4.1%;
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
+    --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
-    --primary: 220 89% 60%;
-    --primary-foreground: 210 40% 98%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 145 63% 42%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
@@ -19,60 +19,63 @@
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 220 89% 60%;
-    --chart-1: 220 89% 60%;
-    --chart-2: 16.1 82.4% 57.5%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 1rem;
-    
+    --ring: 145 63% 42%;
+    --chart-1: 10 80% 55%;
+    --chart-2: 275 55% 60%;
+    --chart-3: 150 50% 50%;
+    --chart-4: 230 60% 60%;
+    --chart-5: 45 80% 50%;
+    --radius: 0.75rem;
+
     /* Light Theme Sidebar */
-    --sidebar-background: 240 5% 96%;
-    --sidebar-foreground: 224 71.4% 4.1%;
-    --sidebar-primary: 220 89% 60%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 240 5% 92%;
-    --sidebar-accent-foreground: 224 71.4% 4.1%;
-    --sidebar-border: 240 5% 90%;
-    --sidebar-ring: 220 89% 60%;
+    --sidebar-background: 210 40% 98%;
+    --sidebar-foreground: 240 10% 3.9%;
+    --sidebar-primary: 145 63% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 94%;
+    --sidebar-accent-foreground: 240 10% 3.9%;
+    --sidebar-border: 210 40% 90%;
+    --sidebar-ring: 145 63% 42%;
   }
 
   .dark {
-    --background: 222 47% 5%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 5%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 90% 65%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217 33% 12%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 12%;
-    --muted-foreground: 215 28% 65%;
-    --accent: 217 33% 15%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 15%;
-    --input: 217 33% 15%;
-    --ring: 210 90% 65%;
-    --chart-1: 210 90% 60%;
-    --chart-2: 180 80% 50%;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 145 58% 52%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 15% 15%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 220 15% 15%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 220 15% 15%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 50.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 145 58% 52%;
+    --chart-1: 10 85% 60%;
+    --chart-2: 275 60% 65%;
+    --chart-3: 150 55% 55%;
+    --chart-4: 230 65% 65%;
+    --chart-5: 45 90% 55%;
 
     /* Dark Theme Sidebar */
-    --sidebar-background: 222 47% 3%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 90% 65%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217 33% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 12%;
-    --sidebar-ring: 210 90% 65%;
+    --sidebar-background: 240 10% 6%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 145 58% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 220 15% 15%;
+    --sidebar-ring: 145 58% 52%;
   }
 }
 
