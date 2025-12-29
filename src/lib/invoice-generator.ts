@@ -44,7 +44,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
             paragraphStyles: [{
                 id: "default",
                 name: "default",
-                run: { font: "Calibri", size: 22 }, 
+                run: { font: "Poppins", size: 22 }, 
                 paragraph: { spacing: { after: 0, before: 0, line: 276 } }
             }],
         },
