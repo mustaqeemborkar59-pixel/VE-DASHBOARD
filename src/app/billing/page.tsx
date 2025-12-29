@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
-import { Company, Invoice } from '@/lib/data';
+import { Company, Invoice, InvoiceItem } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download } from 'lucide-react';
@@ -36,14 +36,14 @@ export default function BillingPage() {
     billDate: toISODateString(new Date()),
     poNumber: 'AGREEMENT',
     site: '',
-    items: [{ particulars: '', amount: 0 }],
+    items: [{ particulars: '', rate: '', amount: 0 }],
   };
 
   const [companyId, setCompanyId] = useState<string>('');
   const [billDate, setBillDate] = useState<string>(toISODateString(new Date()));
   const [poNumber, setPoNumber] = useState('AGREEMENT');
   const [site, setSite] = useState('');
-  const [items, setItems] = useState([{ particulars: '', amount: 0 }]);
+  const [items, setItems] = useState<Omit<InvoiceItem, 'id'>[]>(initialFormState.items);
     
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
@@ -91,7 +91,7 @@ export default function BillingPage() {
   });
 
   const handleAddItem = () => {
-    setItems([...items, { particulars: '', amount: 0 }]);
+    setItems([...items, { particulars: '', rate: '', amount: 0 }]);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -99,7 +99,7 @@ export default function BillingPage() {
     setItems(newItems);
   };
 
-  const handleItemChange = (index: number, field: 'particulars' | 'amount', value: string | number) => {
+  const handleItemChange = (index: number, field: keyof InvoiceItem, value: string | number) => {
     const newItems = [...items];
     (newItems[index] as any)[field] = value;
     setItems(newItems);
@@ -139,11 +139,11 @@ export default function BillingPage() {
   };
 
   const handleFormSubmit = async () => {
-    if (!companyId || !billDate || !site || !selectedCompany || items.some(i => !i.particulars || i.amount <= 0)) {
+    if (!companyId || !billDate || !selectedCompany || items.some(i => !i.particulars || i.amount <= 0)) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
-        description: 'Please select a company, date, site and fill all invoice items.',
+        description: 'Please select a company, date, and fill all invoice items with an amount.',
       });
       return;
     }
@@ -205,7 +205,7 @@ export default function BillingPage() {
       setBillDate(invoice.billDate);
       setPoNumber(invoice.poNumber || 'AGREEMENT');
       setSite(invoice.site || '');
-      setItems(invoice.items);
+      setItems(invoice.items.map(item => ({ ...item, rate: item.rate ?? '' }))); // Ensure rate is a string
       setTimeout(() => {
         const mainEl = document.querySelector('main');
         if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
@@ -404,23 +404,30 @@ export default function BillingPage() {
                             <Label>Particulars</Label>
                             {items.map((item, index) => (
                                 <div key={index} className="flex items-center gap-2">
-                                <Input
-                                    type="text"
-                                    placeholder="Item description"
-                                    value={item.particulars}
-                                    onChange={(e) => handleItemChange(index, 'particulars', e.target.value)}
-                                    className="flex-grow"
-                                />
-                                <Input
-                                    type="number"
-                                    placeholder="Amount"
-                                    value={item.amount || ''}
-                                    onChange={(e) => handleItemChange(index, 'amount', parseFloat(e.target.value))}
-                                    className="w-48"
-                                />
-                                <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={items.length === 1}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
+                                    <Input
+                                        type="text"
+                                        placeholder="Item description"
+                                        value={item.particulars}
+                                        onChange={(e) => handleItemChange(index, 'particulars', e.target.value)}
+                                        className="flex-grow"
+                                    />
+                                    <Input
+                                        type="text"
+                                        placeholder="Rate (e.g., 500/hr)"
+                                        value={item.rate || ''}
+                                        onChange={(e) => handleItemChange(index, 'rate', e.target.value)}
+                                        className="w-40"
+                                    />
+                                    <Input
+                                        type="number"
+                                        placeholder="Amount"
+                                        value={item.amount || ''}
+                                        onChange={(e) => handleItemChange(index, 'amount', parseFloat(e.target.value))}
+                                        className="w-48"
+                                    />
+                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={items.length === 1}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
                                 </div>
                             ))}
                             <Button variant="outline" size="sm" onClick={handleAddItem}>

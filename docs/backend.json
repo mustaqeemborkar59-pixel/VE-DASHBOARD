@@ -308,6 +308,7 @@
             "type": "object",
             "properties": {
               "particulars": { "type": "string" },
+              "rate": { "type": "string" },
               "amount": { "type": "number" }
             },
             "required": ["particulars", "amount"]

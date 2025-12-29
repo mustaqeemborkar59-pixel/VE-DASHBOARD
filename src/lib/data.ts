@@ -58,6 +58,7 @@ export type Company = {
 
 export type InvoiceItem = {
     particulars: string;
+    rate?: string;
     amount: number;
 }
 
