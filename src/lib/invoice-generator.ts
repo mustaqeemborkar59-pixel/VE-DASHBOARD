@@ -44,14 +44,14 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
             paragraphStyles: [{
                 id: "default",
                 name: "default",
-                run: { font: "Poppins", size: 22 }, 
+                run: { font: "Calibri", size: 22 }, 
                 paragraph: { spacing: { after: 0, before: 0, line: 276 } }
             }],
         },
         sections: [{
             properties: {
                 page: {
-                    margin: { top: 2835, right: 1440, bottom: 1440, left: 1440 }, // 5cm top margin
+                    margin: { top: 2835, right: 1440, bottom: 1440, left: 1440 },
                     size: { orientation: PageOrientation.PORTRAIT }
                 },
             },
@@ -224,7 +224,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
         }],
     });
 
-    const companyName = company.name.replace(/\s+/g, '-').toUpperCase();
+    const companyName = company.name.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase();
     const monthYear = format(parseISO(invoice.billDate), 'MMM-yy').toUpperCase();
     const fileName = `Bill no.${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}-${companyName}-(${monthYear})-GST 18.docx`;
 
