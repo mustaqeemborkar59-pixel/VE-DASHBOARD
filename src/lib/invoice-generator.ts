@@ -51,7 +51,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
         sections: [{
             properties: {
                 page: {
-                    margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
+                    margin: { top: 2835, right: 1440, bottom: 1440, left: 1440 }, // 5cm top margin
                     size: { orientation: PageOrientation.PORTRAIT }
                 },
             },
