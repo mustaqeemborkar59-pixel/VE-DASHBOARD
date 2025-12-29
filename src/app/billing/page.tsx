@@ -149,6 +149,19 @@ export default function BillingPage() {
         const formatCurrency = (amount: number) => amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '/-';
 
         const doc = new Document({
+            styles: {
+                paragraphStyles: [{
+                    id: "default",
+                    name: "default",
+                    basedOn: "Normal",
+                    next: "Normal",
+                    quickFormat: true,
+                    run: {
+                        font: "Calibri",
+                        size: 22, // 11pt
+                    },
+                }],
+            },
             sections: [{
                 properties: {
                     page: {
@@ -163,7 +176,7 @@ export default function BillingPage() {
                         rows: [
                             new DocxTableRow({
                                 children: [
-                                    new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: "TAX INVOICE", bold: true, underline: {} })], alignment: AlignmentType.CENTER, style: 'default' })], verticalAlign: VerticalAlign.CENTER }),
+                                    new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: "TAX INVOICE", bold: true, underline: {}, size: 28 })], alignment: AlignmentType.CENTER, style: 'default' })], verticalAlign: VerticalAlign.CENTER }),
                                     new DocxTableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: `Bill Date: ${invoiceData.billDate}`, alignment: AlignmentType.RIGHT })], verticalAlign: VerticalAlign.CENTER }),
                                 ],
                             }),
