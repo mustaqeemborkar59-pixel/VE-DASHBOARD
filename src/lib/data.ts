@@ -22,6 +22,7 @@ export type Forklift = {
   equipmentType?: string;
   voltage?: string;
   mastHeight?: string;
+  poppons?: string;
   locationType: 'Workshop' | 'On-Site' | 'Not Confirm';
   siteCompany?: string;
   siteArea?: string;

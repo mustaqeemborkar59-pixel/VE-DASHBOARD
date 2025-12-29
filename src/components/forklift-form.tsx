@@ -21,6 +21,7 @@ export type ForkliftFormData = {
   equipmentType: string;
   voltage: string;
   mastHeight: string;
+  poppons: string;
   locationType: 'Workshop' | 'On-Site' | 'Not Confirm';
   siteCompany: string;
   siteArea: string;
@@ -47,6 +48,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     equipmentType: '',
     voltage: '',
     mastHeight: '',
+    poppons: '',
     locationType: 'Workshop',
     siteCompany: '',
     siteArea: '',
@@ -67,6 +69,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
         equipmentType: initialData.equipmentType || '',
         voltage: initialData.voltage || '',
         mastHeight: initialData.mastHeight || '',
+        poppons: initialData.poppons || '',
         locationType: initialData.locationType || 'Workshop',
         siteCompany: initialData.siteCompany || '',
         siteArea: initialData.siteArea || '',
@@ -84,6 +87,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
             equipmentType: '',
             voltage: '',
             mastHeight: '',
+            poppons: '',
             locationType: 'Workshop',
             siteCompany: '',
             siteArea: '',
@@ -176,9 +180,15 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
                 <Input id="mastHeight" value={formData.mastHeight} onChange={handleInputChange} placeholder="e.g., 189 inches" />
             </div>
         </div>
-        <div className="grid gap-2">
-            <Label htmlFor="equipmentType">Equipment Type</Label>
-            <Input id="equipmentType" value={formData.equipmentType} onChange={handleInputChange} placeholder="e.g., Reach Truck" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid gap-2">
+              <Label htmlFor="equipmentType">Equipment Type</Label>
+              <Input id="equipmentType" value={formData.equipmentType} onChange={handleInputChange} placeholder="e.g., Reach Truck" />
+          </div>
+          <div className="grid gap-2">
+              <Label htmlFor="poppons">POPPONS</Label>
+              <Input id="poppons" value={formData.poppons} onChange={handleInputChange} placeholder="Enter POPPONS" />
+          </div>
         </div>
         
         <Separator />
@@ -244,5 +254,3 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     </form>
   );
 }
-
-    

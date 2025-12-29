@@ -26,12 +26,12 @@ const requiredFields = [
 
 const allFields = [
   'Sr', 'serialNumber', 'make', 'model', 'year', 'locationType', 'capacity', 'equipmentType', 'voltage', 'mastHeight',
-  'siteCompany', 'siteArea', 'siteContactPerson', 'siteContactNumber', 'remarks'
+  'siteCompany', 'siteArea', 'siteContactPerson', 'siteContactNumber', 'remarks', 'poppons'
 ];
 
 const forkliftDataFields = [
   'srNumber', ...requiredFields, 'capacity', 'equipmentType', 'voltage', 'mastHeight',
-  'siteCompany', 'siteArea', 'siteContactPerson', 'siteContactNumber', 'remarks'
+  'siteCompany', 'siteArea', 'siteContactPerson', 'siteContactNumber', 'remarks', 'poppons'
 ];
 
 export function ForkliftImportDialog({ isOpen, onClose, onImportComplete }: ForkliftImportDialogProps) {

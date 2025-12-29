@@ -76,6 +76,10 @@
           "type": "string",
           "description": "The mast height of the forklift (e.g., '189 inches')."
         },
+        "poppons": {
+          "type": "string",
+          "description": "Custom field for POPPONS."
+        },
         "locationType": {
           "type": "string",
           "enum": [

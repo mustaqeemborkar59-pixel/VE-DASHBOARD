@@ -469,6 +469,10 @@ export default function ForkliftsPage() {
                                             <Label className="text-xs text-muted-foreground">Mast Height</Label>
                                             <span className="font-medium">{forklift.mastHeight || 'N/A'}</span>
                                           </div>
+                                           <div className="flex flex-col gap-1">
+                                            <Label className="text-xs text-muted-foreground">POPPONS</Label>
+                                            <span className="font-medium">{forklift.poppons || 'N/A'}</span>
+                                          </div>
                                           
                                           {forklift.locationType === 'On-Site' && (
                                             <>
@@ -562,5 +566,3 @@ export default function ForkliftsPage() {
     </AppLayout>
   );
 }
-
-    

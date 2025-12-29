@@ -1,4 +1,3 @@
-
 import { Packer, Document, Paragraph, TextRun, AlignmentType, BorderStyle, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType, VerticalAlign, PageOrientation } from 'docx';
 import { saveAs } from 'file-saver';
 import { format, parseISO } from 'date-fns';
@@ -45,39 +44,23 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
             paragraphStyles: [{
                 id: "default",
                 name: "default",
-                run: { font: "Calibri", size: 22 }, // 11pt
-                paragraph: { spacing: { after: 0, before: 0 } }
+                run: { font: "Calibri", size: 22 }, 
+                paragraph: { spacing: { after: 0, before: 0, line: 276 } }
             }],
         },
         sections: [{
             properties: {
                 page: {
-                    margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }, // 2.54cm = 1 inch = 1440 twips
+                    margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
                     size: { orientation: PageOrientation.PORTRAIT }
                 },
             },
             children: [
-                 new DocxTable({
-                    width: { size: 100, type: WidthType.PERCENTAGE },
-                    borders: { top: BorderStyle.NONE, bottom: BorderStyle.NONE, left: BorderStyle.NONE, right: BorderStyle.NONE, insideHorizontal: BorderStyle.NONE, insideVertical: BorderStyle.NONE },
-                    rows: [
-                        new DocxTableRow({
-                            children: [
-                                new DocxTableCell({
-                                    width: { size: 50, type: WidthType.PERCENTAGE },
-                                    children: [new Paragraph({ children: [new TextRun({ text: "TAX INVOICE", bold: true, underline: {}, size: 28 })], alignment: AlignmentType.CENTER })], // 14pt
-                                }),
-                                new DocxTableCell({
-                                    width: { size: 50, type: WidthType.PERCENTAGE },
-                                    children: [new Paragraph({ text: "" })],
-                                }),
-                            ],
-                        }),
-                    ],
+                new Paragraph({
+                    children: [new TextRun({ text: "TAX INVOICE", bold: true, underline: {}, size: 28 })],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 300 }
                 }),
-                new Paragraph({ text: "\n" }),
-                new Paragraph({ text: "\n" }),
-                new Paragraph({ text: "\n" }),
 
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -86,7 +69,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                        new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    width: { size: 55, type: WidthType.PERCENTAGE },
+                                    width: { size: 60, type: WidthType.PERCENTAGE },
                                     children: [
                                         new Paragraph({ text: "To," }),
                                         new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
@@ -94,9 +77,9 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     ],
                                 }),
                                 new DocxTableCell({
-                                    width: { size: 45, type: WidthType.PERCENTAGE },
+                                    width: { size: 40, type: WidthType.PERCENTAGE },
                                     children: [
-                                        new Paragraph({ children: [new TextRun({ text: `Bill Date: ${invoiceData.billDate}` })], alignment: AlignmentType.LEFT }),
+                                        new Paragraph({ children: [new TextRun({ text: `Bill Date: ${invoiceData.billDate}` })], alignment: AlignmentType.RIGHT }),
                                     ],
                                     verticalAlign: VerticalAlign.TOP
                                 }),
@@ -105,7 +88,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                     ]
                 }),
                 
-                new Paragraph({ text: "\n" }),
+                new Paragraph({ text: "", spacing: { before: 200 } }),
                 
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -123,8 +106,8 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
-                                        new Paragraph({ children: [new TextRun({ text: "PO.NO: ", bold: true }), new TextRun({ text: invoiceData.poNo })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "Site: ", bold: true }), new TextRun({ text: invoiceData.site })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "PO.NO: ", bold: true }), new TextRun({ text: invoiceData.poNo })], alignment: AlignmentType.RIGHT }),
+                                        new Paragraph({ children: [new TextRun({ text: "Site: ", bold: true }), new TextRun({ text: invoiceData.site })], alignment: AlignmentType.RIGHT }),
                                     ]
                                 }),
                             ],
@@ -132,16 +115,14 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                     ],
                 }),
                 
-                new Paragraph({ text: "\n" }),
-                new Paragraph({ children: [new TextRun({ text: "CHARGES AS FOLLOWS: -", bold: true })]}),
-                new Paragraph({ text: "\n" }),
+                new Paragraph({ children: [new TextRun({ text: "CHARGES AS FOLLOWS: -", bold: true })], spacing: { before: 200, after: 100 } }),
 
-                // Main Billing Table
+                // Billing Table with RATE Column
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
                     rows: [
                         new DocxTableRow({
-                            height: { value: 300, rule: "atLeast" },
+                            height: { value: 350, rule: "atLeast" },
                             children: [
                                 new DocxTableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: "Sr. No", bold: true })], alignment: AlignmentType.CENTER })], borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
                                 new DocxTableCell({ width: { size: 45, type: WidthType.PERCENTAGE }, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: "Particulars", bold: true })] })], borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
@@ -150,32 +131,30 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                             ],
                         }),
                         ...invoiceData.items.map((item, index) => new DocxTableRow({
-                            height: { value: 300, rule: "atLeast" }, 
+                            height: { value: 600, rule: "atLeast" }, 
                             children: [
                                 new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: (index + 1).toString(), alignment: AlignmentType.CENTER })], borders: { right: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE } } }),
                                 new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: item.particulars })], borders: { right: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE } } }),
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: item.rate || '', alignment: AlignmentType.RIGHT })], borders: { right: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE } } }),
+                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: item.rate ? `${item.rate}/-` : '', alignment: AlignmentType.RIGHT })], borders: { right: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE } } }),
                                 new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: formatCurrency(item.amount), alignment: AlignmentType.RIGHT })], borders: { left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
                             ],
                         })),
+                        // Totals Rows
                         new DocxTableRow({
-                            height: { value: 400, rule: "atLeast" },
                             children: [
-                                new DocxTableCell({ columnSpan: 3, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "Net total=", bold: true })] })], borders: { top: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE } } }),
+                                new DocxTableCell({ columnSpan: 3, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "Net total=", bold: true })] })], borders: { top: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
                                 new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(invoiceData.netTotal), bold: true })] })], borders: { top: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
                             ]
                         }),
                         new DocxTableRow({
-                            height: { value: 300, rule: "atLeast" },
                             children: [
-                                new DocxTableCell({ columnSpan: 3, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "CGST@9%", bold: true })] })], borders: { right: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE } } }),
+                                new DocxTableCell({ columnSpan: 3, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "CGST@9%", bold: true })] })], borders: { left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
                                 new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(invoiceData.cgst), bold: true })] })], borders: { left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
                             ]
                         }),
                         new DocxTableRow({
-                            height: { value: 300, rule: "atLeast" },
                             children: [
-                                new DocxTableCell({ columnSpan: 3, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "SGST@9%", bold: true })] })], borders: { right: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE } } }),
+                                new DocxTableCell({ columnSpan: 3, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "SGST@9%", bold: true })] })], borders: { left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
                                 new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(invoiceData.sgst), bold: true })] })], borders: { left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
                             ]
                         }),
@@ -191,7 +170,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
 
                 new Paragraph({ children: [new TextRun({ text: "In words: ", underline: {} }), new TextRun({ text: `${invoiceData.amountInWords} ONLY.`, bold: true })], spacing: { before: 200, after: 200 } }),
 
-                // Footer GST/PAN Details Table
+                // Footer Boxed Table for GST/PAN Details
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
                     rows: [
@@ -247,8 +226,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
 
     const companyName = company.name.replace(/\s+/g, '-').toUpperCase();
     const monthYear = format(parseISO(invoice.billDate), 'MMM-yy').toUpperCase();
-    const fileName = `Bill no.${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}-${companyName}-(${monthYear})-GST 18^L1.docx`;
-
+    const fileName = `Bill no.${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}-${companyName}-(${monthYear})-GST 18.docx`;
 
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);
