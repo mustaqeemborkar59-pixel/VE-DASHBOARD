@@ -242,7 +242,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     children: [
                                         new Paragraph({ text: "To," }),
                                         new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
-                                        new Paragraph({ children: createFormattedTextRuns(invoiceData.to.address) }),
+                                        new Paragraph({ children: createFormattedTextRuns(invoiceData.to.address, 20) }),
                                     ],
                                     margins: cellMargins,
                                     verticalAlign: VerticalAlign.CENTER
