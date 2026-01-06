@@ -78,7 +78,7 @@ const generateInvoiceDataForWord = (invoice: Invoice, company: Company, template
 }
 
 const createFormattedTextRuns = (text: string | number | undefined, sizeInPoints: number = 11): TextRun[] => {
-    if (text === undefined || text === null) return [new TextRun("")];
+    if (text === undefined || text === null) return [new TextRun({text: "", font: "Calibri"})];
     
     const size = sizeInPoints * 2; // docx library uses half-points
     const textAsString = String(text);
@@ -94,7 +94,7 @@ const createFormattedTextRuns = (text: string | number | undefined, sizeInPoints
         });
 
         if (lineIndex < lines.length - 1) {
-            textRuns.push(new TextRun({ break: 1, size }));
+            textRuns.push(new TextRun({ break: 1, size, font: "Calibri" }));
         }
 
         return textRuns;
@@ -134,15 +134,15 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
     const headerCells = [
         new DocxTableCell({
             width: { size: 10, type: WidthType.PERCENTAGE },
-            children: [new Paragraph({ children: [new TextRun({ text: "Sr. No", bold: true, size: 24 })], alignment: AlignmentType.CENTER })],
+            children: [new Paragraph({ children: [new TextRun({ text: "Sr. No", bold: true, size: 24, font: "Calibri" })], alignment: AlignmentType.CENTER })],
             verticalAlign: VerticalAlign.CENTER,
             borders: tableHeaderBorders,
             margins: cellMargins
         }),
         ...sortedColumns.map(column => new DocxTableCell({
-            width: { size: column.width, type: WidthType.PERCENTAGE },
+            width: { size: column.id === 'particulars' ? 66 : 12, type: WidthType.PERCENTAGE },
             children: [new Paragraph({ 
-                children: [new TextRun({ text: column.label, bold: true, size: 24 })], 
+                children: [new TextRun({ text: column.label, bold: true, size: 24, font: "Calibri" })], 
                 alignment: (column.label === 'Rate' || column.label === 'Amount') ? AlignmentType.CENTER : (column.align === 'right' ? AlignmentType.RIGHT : column.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT)
             })],
             verticalAlign: VerticalAlign.CENTER,
@@ -158,24 +158,24 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
             left: { style: BorderStyle.SINGLE },
             right: { style: BorderStyle.SINGLE },
         };
-        const tableBodyFontSize = settings.tableBodyFontSize ? settings.tableBodyFontSize * 2 : 24;
+        const tableBodyFontSize = (settings.tableBodyFontSize || 12) * 2;
 
         const cells = [
-             new DocxTableCell({ // Sr. No and Particulars column
+             new DocxTableCell({
                 columnSpan: 2,
-                children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: tableBodyFontSize })], alignment: AlignmentType.RIGHT })],
+                children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: tableBodyFontSize, font: "Calibri" })], alignment: AlignmentType.RIGHT })],
                 verticalAlign: VerticalAlign.CENTER,
                 borders: { ...totalRowsBorders, right: {style: BorderStyle.NONE}  },
                 margins: cellMargins,
             }),
-            new DocxTableCell({ // Rate column - empty
-                children: [new Paragraph('')],
-                borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  },
+            new DocxTableCell({
+                children: [new Paragraph({children: [new TextRun({text: '', font: "Calibri"})]})],
+                borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  },
                 margins: cellMargins,
                 verticalAlign: VerticalAlign.CENTER,
             }),
             new DocxTableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: value, bold: true, size: tableBodyFontSize })], alignment: AlignmentType.RIGHT })],
+                children: [new Paragraph({ children: [new TextRun({ text: value, bold: true, size: tableBodyFontSize, font: "Calibri" })], alignment: AlignmentType.RIGHT })],
                 verticalAlign: VerticalAlign.CENTER,
                 borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}  },
                 margins: cellMargins,
@@ -209,7 +209,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
             },
             children: [
                 new Paragraph({
-                    children: [new TextRun({ text: "INVOICE", bold: true, size: 28 })],
+                    children: [new TextRun({ text: "INVOICE", bold: true, size: 28, font: "Calibri" })],
                     alignment: AlignmentType.CENTER,
                     spacing: { after: 300 }
                 }),
@@ -223,8 +223,8 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
-                                        new Paragraph({ text: "To," }),
-                                        new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
+                                        new Paragraph({ children: [new TextRun({text: "To,", font: "Calibri"})] }),
+                                        new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true, font: "Calibri" })] }),
                                         new Paragraph({ children: createFormattedTextRuns(invoiceData.to.address, settings.addressFontSize) }),
                                     ],
                                     margins: cellMargins,
@@ -233,7 +233,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
-                                        new Paragraph({ children: [new TextRun({ text: `Bill Date: ${invoiceData.billDate}` })], alignment: AlignmentType.RIGHT }),
+                                        new Paragraph({ children: [new TextRun({ text: `Bill Date: ${invoiceData.billDate}`, font: "Calibri" })], alignment: AlignmentType.RIGHT }),
                                     ],
                                     verticalAlign: VerticalAlign.TOP,
                                     margins: cellMargins,
@@ -254,8 +254,8 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
-                                        new Paragraph({ children: [new TextRun({ text: "Bill No: ", bold: true }), new TextRun({ text: invoiceData.billNo })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "MONTH: ", bold: true }), new TextRun({ text: invoiceData.month })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "Bill No: ", bold: true, font: "Calibri" }), new TextRun({ text: invoiceData.billNo, font: "Calibri" })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "MONTH: ", bold: true, font: "Calibri" }), new TextRun({ text: invoiceData.month, font: "Calibri" })] }),
                                     ],
                                     margins: cellMargins,
                                     verticalAlign: VerticalAlign.CENTER
@@ -263,8 +263,8 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
-                                        new Paragraph({ children: [new TextRun({ text: "PO.NO: ", bold: true }), new TextRun({ text: invoiceData.poNo })], alignment: AlignmentType.RIGHT }),
-                                        new Paragraph({ children: [new TextRun({ text: "Site: ", bold: true }), new TextRun({ text: invoiceData.site })], alignment: AlignmentType.RIGHT }),
+                                        new Paragraph({ children: [new TextRun({ text: "PO.NO: ", bold: true, font: "Calibri" }), new TextRun({ text: invoiceData.poNo, font: "Calibri" })], alignment: AlignmentType.RIGHT }),
+                                        new Paragraph({ children: [new TextRun({ text: "Site: ", bold: true, font: "Calibri" }), new TextRun({ text: invoiceData.site, font: "Calibri" })], alignment: AlignmentType.RIGHT }),
                                     ],
                                     margins: cellMargins,
                                     verticalAlign: VerticalAlign.CENTER
@@ -274,7 +274,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                     ],
                 }),
                 
-                new Paragraph({ children: [new TextRun({ text: "CHARGES AS FOLLOWS: -", bold: true })], spacing: { before: 200, after: 100 } }),
+                new Paragraph({ children: [new TextRun({ text: "CHARGES AS FOLLOWS: -", bold: true, font: "Calibri" })], spacing: { before: 200, after: 100 } }),
 
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -284,22 +284,22 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                         }),
                         ...invoiceData.items.map((item, index) => new DocxTableRow({
                             children: [
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: (index + 1).toString(), size: settings.tableBodyFontSize ? settings.tableBodyFontSize * 2 : 24 })], alignment: AlignmentType.CENTER })], borders: {...tableCellBorders, ...tableBottomBorder}, margins: cellMargins }),
+                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: (index + 1).toString(), size: (settings.tableBodyFontSize || 11) * 2, font: "Calibri" })], alignment: AlignmentType.CENTER })], borders: {...tableCellBorders, ...tableBottomBorder}, margins: cellMargins }),
                                 ...sortedColumns.map(col => {
-                                    let cellContent: string | number | undefined = item[col.id];
+                                    const cellContent = item[col.id];
                                     const alignment = col.align === 'right' ? AlignmentType.RIGHT : col.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT;
-                                    const tableBodyFontSize = settings.tableBodyFontSize ? settings.tableBodyFontSize * 2 : 24;
+                                    const tableBodyFontSize = settings.tableBodyFontSize || 11;
 
-                                    if (col.id === 'amount' && typeof item[col.id] === 'number') {
+                                    if (col.id === 'amount' && typeof cellContent === 'number') {
                                         return new DocxTableCell({
                                             verticalAlign: VerticalAlign.CENTER,
-                                            children: [new Paragraph({ children: [new TextRun({ text: `${Number(item[col.id]).toFixed(2)}/-`, size: tableBodyFontSize })], alignment })],
+                                            children: [new Paragraph({ children: [new TextRun({ text: `${cellContent.toFixed(2)}/-`, size: tableBodyFontSize * 2, font: "Calibri" })], alignment })],
                                             borders: {...tableCellBorders, ...tableBottomBorder},
                                             margins: cellMargins
                                         });
                                     }
                                     
-                                    const textRuns = cellContent ? createFormattedTextRuns(cellContent, settings.tableBodyFontSize) : [new TextRun("")];
+                                    const textRuns = (cellContent !== undefined && cellContent !== null && cellContent !== '') ? createFormattedTextRuns(cellContent, tableBodyFontSize) : [new TextRun({text: "", font: "Calibri"})];
                                     return new DocxTableCell({
                                         verticalAlign: VerticalAlign.CENTER,
                                         children: [new Paragraph({ children: textRuns, alignment })],
@@ -316,7 +316,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                     ],
                 }),
 
-                new Paragraph({ children: [new TextRun({ text: "In words: " }), new TextRun({ text: `${invoiceData.amountInWords} ONLY.`, bold: true })], spacing: { before: 200, after: 200 } }),
+                new Paragraph({ children: [new TextRun({ text: "In words: ", font: "Calibri" }), new TextRun({ text: `${invoiceData.amountInWords} ONLY.`, bold: true, font: "Calibri" })], spacing: { before: 200, after: 200 } }),
 
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -327,16 +327,16 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
-                                        new Paragraph({ children: [new TextRun({ text: "Vithal Enterprises", bold: true })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "PAN CARD NO: ", bold: true }), new TextRun("AFVPM0759G")] }),
-                                        new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true }), new TextRun("27AFVPM0759G1ZY")] }),
-                                        new Paragraph({ children: [new TextRun({ text: "SAC code: ", bold: true }), new TextRun("997319, 998519")] }),
+                                        new Paragraph({ children: [new TextRun({ text: "Vithal Enterprises", bold: true, font: "Calibri" })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "PAN CARD NO: ", bold: true, font: "Calibri" }), new TextRun({text: "AFVPM0759G", font: "Calibri"})] }),
+                                        new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri" }), new TextRun({text: "27AFVPM0759G1ZY", font: "Calibri"})] }),
+                                        new Paragraph({ children: [new TextRun({ text: "SAC code: ", bold: true, font: "Calibri" }), new TextRun({text: "997319, 998519", font: "Calibri"})] }),
                                         new Paragraph({ text: " ", spacing: { before: 100 } }),
-                                        new Paragraph({ children: [new TextRun({ text: "Bank Details", bold: true })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true }), new TextRun("Your Bank Name")] }),
-                                        new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true }), new TextRun("1234567890")] }),
-                                        new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true }), new TextRun("BANK0001234")] }),
-                                        new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true }), new TextRun("Your Branch")] }),
+                                        new Paragraph({ children: [new TextRun({ text: "Bank Details", bold: true, font: "Calibri" })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true, font: "Calibri" }), new TextRun({text: "Your Bank Name", font: "Calibri"})] }),
+                                        new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true, font: "Calibri" }), new TextRun({text: "1234567890", font: "Calibri"})] }),
+                                        new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true, font: "Calibri" }), new TextRun({text: "BANK0001234", font: "Calibri"})] }),
+                                        new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true, font: "Calibri" }), new TextRun({text: "Your Branch", font: "Calibri"})] }),
                                     ],
                                     borders: { ...tableHeaderBorders },
                                     margins: cellMargins
@@ -345,15 +345,15 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
-                                        new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true }), new TextRun(invoiceData.to.gstin)] }),
+                                        new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true, font: "Calibri" })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.gstin, font: "Calibri"})] }),
                                         ...(invoiceData.to.bankName ? [
                                             new Paragraph({ text: " ", spacing: { before: 100 } }),
-                                            new Paragraph({ children: [new TextRun({ text: "Bank Details", bold: true })] }),
-                                            new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true }), new TextRun(invoiceData.to.bankName)] }),
-                                            new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true }), new TextRun(invoiceData.to.accountNumber)] }),
-                                            new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true }), new TextRun(invoiceData.to.ifscCode)] }),
-                                            new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true }), new TextRun(invoiceData.to.bankBranch)] }),
+                                            new Paragraph({ children: [new TextRun({ text: "Bank Details", bold: true, font: "Calibri" })] }),
+                                            new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.bankName, font: "Calibri"})] }),
+                                            new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.accountNumber, font: "Calibri"})] }),
+                                            new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.ifscCode, font: "Calibri"})] }),
+                                            new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.bankBranch, font: "Calibri"})] }),
                                         ] : [])
                                     ],
                                     borders: { ...tableHeaderBorders },
@@ -364,12 +364,12 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                     ],
                 }),
 
-                new Paragraph({ text: "Thanking you,", spacing: { before: 400 } }),
-                new Paragraph({ text: "Yours truly," }),
-                new Paragraph({ text: "For M/s Vithal Enterprises" }),
+                new Paragraph({ children: [new TextRun({text: "Thanking you,", font: "Calibri"})], spacing: { before: 400 } }),
+                new Paragraph({ children: [new TextRun({text: "Yours truly,", font: "Calibri"})] }),
+                new Paragraph({ children: [new TextRun({text: "For M/s Vithal Enterprises", font: "Calibri"})] }),
                 new Paragraph({ text: "", spacing: { before: 800 } }),
-                new Paragraph({ children: [new TextRun({ text: "R.V MAVLANKAR", bold: true })] }),
-                new Paragraph({ text: "9821728079" }),
+                new Paragraph({ children: [new TextRun({ text: "R.V MAVLANKAR", bold: true, font: "Calibri" })] }),
+                new Paragraph({ children: [new TextRun({text: "9821728079", font: "Calibri"})] }),
             ],
         }],
     });
