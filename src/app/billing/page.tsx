@@ -674,7 +674,13 @@ export default function BillingPage() {
         
         <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
             <DialogContent className="max-w-4xl p-0">
-                <div className="p-8 overflow-y-auto max-h-[90vh]">
+                 <DialogHeader className="p-6 pb-2">
+                    <DialogTitle>Invoice Preview</DialogTitle>
+                    <DialogDescription>
+                        A preview of Invoice No. {invoiceForPreview?.billNo}-{invoiceForPreview?.billNoSuffix || 'MHE'}.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="px-6 pb-6 overflow-y-auto max-h-[80vh]">
                    <InvoicePreview invoice={invoiceForPreview} company={companyForPreview} />
                 </div>
             </DialogContent>
