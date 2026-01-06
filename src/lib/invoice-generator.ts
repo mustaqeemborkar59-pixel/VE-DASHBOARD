@@ -245,11 +245,20 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                             height: { value: 350, rule: "atLeast" }, 
                             children: [
                                 new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: (index + 1).toString(), alignment: AlignmentType.CENTER })], borders: tableCellBorders }),
-                                ...sortedColumns.map(col => new DocxTableCell({
-                                    verticalAlign: VerticalAlign.TOP,
-                                    children: [new Paragraph({ children: createMultiLineText(item[col.id] as string), alignment: col.align === 'right' ? AlignmentType.RIGHT : col.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT })],
-                                    borders: tableCellBorders
-                                }))
+                                ...sortedColumns.map(col => {
+                                    let cellContent: string | number = item[col.id] as string | number;
+                                    const alignment = col.align === 'right' ? AlignmentType.RIGHT : col.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT;
+
+                                    if (col.id === 'amount' && typeof cellContent === 'number') {
+                                        cellContent = `${Number(cellContent).toFixed(2)}/-`;
+                                    }
+
+                                    return new DocxTableCell({
+                                        verticalAlign: VerticalAlign.TOP,
+                                        children: [new Paragraph({ children: createMultiLineText(cellContent), alignment })],
+                                        borders: tableCellBorders
+                                    });
+                                })
                             ],
                         })),
                         createTotalRow('Net total=', formatCurrency(invoiceData.netTotal)),
