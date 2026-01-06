@@ -128,8 +128,8 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
     
     const createTotalRow = (label: string, value: string, isGrandTotal = false) => {
         const totalRowsBorders = {
-            top: { style: isGrandTotal ? BorderStyle.DOUBLE : BorderStyle.SINGLE },
-            bottom: { style: isGrandTotal ? BorderStyle.DOUBLE : BorderStyle.SINGLE },
+            top: { style: BorderStyle.SINGLE },
+            bottom: { style: BorderStyle.SINGLE },
             left: { style: BorderStyle.SINGLE },
             right: { style: BorderStyle.SINGLE },
         };
