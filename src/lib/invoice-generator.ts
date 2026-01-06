@@ -63,9 +63,9 @@ const generateInvoiceDataForWord = (invoice: Invoice, company: Company, template
         site: (invoice.site || '').toUpperCase(),
         items: invoice.items,
         columns: template?.columns || [
-            { id: 'particulars' as keyof InvoiceItem, label: 'Particulars', width: 45, align: 'left' as const, order: 1 },
-            { id: 'rate' as keyof InvoiceItem, label: 'Rate', width: 20, align: 'right' as const, order: 2 },
-            { id: 'amount' as keyof InvoiceItem, label: 'Amount', width: 25, align: 'right' as const, order: 3 },
+            { id: 'particulars' as keyof InvoiceItem, label: 'Particulars', width: 71, align: 'left' as const, order: 1 },
+            { id: 'rate' as keyof InvoiceItem, label: 'Rate', width: 12, align: 'right' as const, order: 2 },
+            { id: 'amount' as keyof InvoiceItem, label: 'Amount', width: 12, align: 'right' as const, order: 3 },
         ],
         netTotal: invoice.netTotal,
         cgst: invoice.cgst,
