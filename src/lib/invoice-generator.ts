@@ -218,7 +218,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
             },
             children: [
                 new Paragraph({
-                    children: [new TextRun({ text: "TAX INVOICE", bold: true, underline: {}, size: 28 })],
+                    children: [new TextRun({ text: "INVOICE", bold: true, size: 28 })],
                     alignment: AlignmentType.CENTER,
                     spacing: { after: 300 }
                 }),
@@ -237,6 +237,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                         new Paragraph({ children: createMultiLineText(invoiceData.to.address) }),
                                     ],
                                     margins: cellMargins,
+                                    verticalAlign: VerticalAlign.CENTER
                                 }),
                                 new DocxTableCell({
                                     width: { size: 40, type: WidthType.PERCENTAGE },
@@ -266,6 +267,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                         new Paragraph({ children: [new TextRun({ text: "MONTH: ", bold: true }), new TextRun({ text: invoiceData.month })] }),
                                     ],
                                     margins: cellMargins,
+                                    verticalAlign: VerticalAlign.CENTER
                                 }),
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
@@ -274,6 +276,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                         new Paragraph({ children: [new TextRun({ text: "Site: ", bold: true }), new TextRun({ text: invoiceData.site })], alignment: AlignmentType.RIGHT }),
                                     ],
                                     margins: cellMargins,
+                                    verticalAlign: VerticalAlign.CENTER
                                 }),
                             ],
                         }),
