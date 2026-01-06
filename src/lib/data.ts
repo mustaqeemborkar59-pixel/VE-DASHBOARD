@@ -57,6 +57,7 @@ export type Company = {
     bankName?: string;
     accountNumber?: string;
     ifscCode?: string;
+    bankBranch?: string;
     createdAt: string;
 }
 

@@ -54,6 +54,7 @@ const generateInvoiceDataForWord = (invoice: Invoice, company: Company, template
           bankName: company.bankName || '',
           accountNumber: company.accountNumber || '',
           ifscCode: company.ifscCode || '',
+          bankBranch: company.bankBranch || '',
         },
         billDate: format(parseISO(invoice.billDate), 'dd/MM/yyyy'),
         billNo: `${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}`.toUpperCase(),
@@ -334,6 +335,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                         new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true }), new TextRun("Your Bank Name")] }),
                                         new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true }), new TextRun("1234567890")] }),
                                         new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true }), new TextRun("BANK0001234")] }),
+                                        new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true }), new TextRun("Your Branch")] }),
                                     ],
                                     borders: { ...tableHeaderBorders },
                                     margins: cellMargins
@@ -350,6 +352,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                             new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true }), new TextRun(invoiceData.to.bankName)] }),
                                             new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true }), new TextRun(invoiceData.to.accountNumber)] }),
                                             new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true }), new TextRun(invoiceData.to.ifscCode)] }),
+                                            new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true }), new TextRun(invoiceData.to.bankBranch)] }),
                                         ] : [])
                                     ],
                                     borders: { ...tableHeaderBorders },

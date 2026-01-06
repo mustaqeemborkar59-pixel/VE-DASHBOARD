@@ -282,6 +282,10 @@
             "type": "string",
             "description": "IFSC code of the company's bank branch."
         },
+        "bankBranch": {
+            "type": "string",
+            "description": "Branch of the company's bank."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"

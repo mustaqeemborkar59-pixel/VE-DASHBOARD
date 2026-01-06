@@ -15,6 +15,7 @@ export type CompanyFormData = {
   bankName: string;
   accountNumber: string;
   ifscCode: string;
+  bankBranch: string;
 };
 
 interface CompanyFormProps {
@@ -33,6 +34,7 @@ export function CompanyForm({ onSubmit, onCancel, initialData, mode }: CompanyFo
     bankName: '',
     accountNumber: '',
     ifscCode: '',
+    bankBranch: '',
   });
 
   useEffect(() => {
@@ -44,6 +46,7 @@ export function CompanyForm({ onSubmit, onCancel, initialData, mode }: CompanyFo
         bankName: initialData.bankName || '',
         accountNumber: initialData.accountNumber || '',
         ifscCode: initialData.ifscCode || '',
+        bankBranch: initialData.bankBranch || '',
       });
     } else {
       setFormData({
@@ -53,6 +56,7 @@ export function CompanyForm({ onSubmit, onCancel, initialData, mode }: CompanyFo
         bankName: '',
         accountNumber: '',
         ifscCode: '',
+        bankBranch: '',
       });
     }
   }, [initialData, mode]);
@@ -94,9 +98,15 @@ export function CompanyForm({ onSubmit, onCancel, initialData, mode }: CompanyFo
       
       <div className="space-y-4">
           <h3 className="text-lg font-medium">Bank Details (Optional)</h3>
-          <div className="grid gap-2">
-            <Label htmlFor="bankName">Bank Name</Label>
-            <Input id="bankName" value={formData.bankName} onChange={handleInputChange} placeholder="e.g., HDFC Bank" />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="bankName">Bank Name</Label>
+              <Input id="bankName" value={formData.bankName} onChange={handleInputChange} placeholder="e.g., HDFC Bank" />
+            </div>
+             <div className="grid gap-2">
+              <Label htmlFor="bankBranch">Bank Branch</Label>
+              <Input id="bankBranch" value={formData.bankBranch} onChange={handleInputChange} placeholder="e.g., Thane West" />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
