@@ -34,6 +34,7 @@ const navItems = [
   { href: '/inventory', label: 'Inventory', icon: Warehouse },
   { href: '/billing', label: 'Billing', icon: ReceiptText },
   { href: '/reports', label: 'Reports', icon: BarChart },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -143,5 +144,3 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
-
-    

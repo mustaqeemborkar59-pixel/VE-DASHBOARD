@@ -4,6 +4,7 @@ import { saveAs } from 'file-saver';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import type { Invoice, Company, InvoiceTemplate, InvoiceItem } from './data';
+import myCompanyDetails from './company-details.json';
 
 export type PageSettings = {
     size: 'A4' | 'LETTER' | 'LEGAL',
@@ -316,7 +317,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                     ],
                 }),
 
-                new Paragraph({ children: [new TextRun({ text: "In words: ", font: "Calibri" }), new TextRun({ text: `${invoiceData.amountInWords}`, bold: true, font: "Calibri" })], spacing: { before: 200, after: 200 } }),
+                new Paragraph({ children: [new TextRun({ text: "In words: ", font: "Calibri" }), new TextRun({ text: invoiceData.amountInWords, bold: true, font: "Calibri" })], spacing: { before: 200, after: 200 } }),
 
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -327,16 +328,16 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
-                                        new Paragraph({ children: [new TextRun({ text: "Vithal Enterprises", bold: true, font: "Calibri" })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "PAN CARD NO: ", bold: true, font: "Calibri" }), new TextRun({text: "AFVPM0759G", font: "Calibri"})] }),
-                                        new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri" }), new TextRun({text: "27AFVPM0759G1ZY", font: "Calibri"})] }),
-                                        new Paragraph({ children: [new TextRun({ text: "SAC code: ", bold: true, font: "Calibri" }), new TextRun({text: "997319, 998519", font: "Calibri"})] }),
+                                        new Paragraph({ children: [new TextRun({ text: myCompanyDetails.companyName, bold: true, font: "Calibri" })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "PAN CARD NO: ", bold: true, font: "Calibri" }), new TextRun({text: myCompanyDetails.pan, font: "Calibri"})] }),
+                                        new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri" }), new TextRun({text: myCompanyDetails.gstin, font: "Calibri"})] }),
+                                        new Paragraph({ children: [new TextRun({ text: "SAC code: ", bold: true, font: "Calibri" }), new TextRun({text: myCompanyDetails.sacCode, font: "Calibri"})] }),
                                         new Paragraph({ text: " ", spacing: { before: 100 } }),
                                         new Paragraph({ children: [new TextRun({ text: "Bank Details", bold: true, font: "Calibri" })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true, font: "Calibri" }), new TextRun({text: "Your Bank Name", font: "Calibri"})] }),
-                                        new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true, font: "Calibri" }), new TextRun({text: "1234567890", font: "Calibri"})] }),
-                                        new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true, font: "Calibri" }), new TextRun({text: "BANK0001234", font: "Calibri"})] }),
-                                        new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true, font: "Calibri" }), new TextRun({text: "Your Branch", font: "Calibri"})] }),
+                                        new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true, font: "Calibri" }), new TextRun({text: myCompanyDetails.bankName, font: "Calibri"})] }),
+                                        new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true, font: "Calibri" }), new TextRun({text: myCompanyDetails.accountNumber, font: "Calibri"})] }),
+                                        new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true, font: "Calibri" }), new TextRun({text: myCompanyDetails.ifscCode, font: "Calibri"})] }),
+                                        new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true, font: "Calibri" }), new TextRun({text: myCompanyDetails.bankBranch, font: "Calibri"})] }),
                                     ],
                                     borders: { ...tableHeaderBorders },
                                     margins: cellMargins
@@ -368,10 +369,10 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
 
                 new Paragraph({ children: [new TextRun({text: "Thanking you,", font: "Calibri"})], spacing: { before: 400 } }),
                 new Paragraph({ children: [new TextRun({text: "Yours truly,", font: "Calibri"})] }),
-                new Paragraph({ children: [new TextRun({text: "For M/s Vithal Enterprises", font: "Calibri"})] }),
+                new Paragraph({ children: [new TextRun({text: `For M/s ${myCompanyDetails.companyName}`, font: "Calibri"})] }),
                 new Paragraph({ text: "", spacing: { before: 800 } }),
-                new Paragraph({ children: [new TextRun({ text: "R.V MAVLANKAR", bold: true, font: "Calibri" })] }),
-                new Paragraph({ children: [new TextRun({text: "9821728079", font: "Calibri"})] }),
+                new Paragraph({ children: [new TextRun({ text: myCompanyDetails.contactPerson, bold: true, font: "Calibri" })] }),
+                new Paragraph({ children: [new TextRun({text: myCompanyDetails.contactNumber, font: "Calibri"})] }),
             ],
         }],
     });

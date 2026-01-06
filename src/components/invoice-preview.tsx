@@ -6,6 +6,7 @@ import type { Invoice, Company } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Separator } from './ui/separator';
+import myCompanyDetails from '@/lib/company-details.json';
 
 interface InvoicePreviewProps {
   invoice: Invoice | null;
@@ -118,16 +119,16 @@ export function InvoicePreview({ invoice, company }: InvoicePreviewProps) {
       
       <section className="grid grid-cols-2 gap-4 mb-8">
         <div>
-            <p className="font-bold">Vithal Enterprises</p>
-            <p><span className="font-bold">PAN CARD NO:</span> AFVPM0759G</p>
-            <p><span className="font-bold">GSTIN:</span> 27AFVPM0759G1ZY</p>
-            <p><span className="font-bold">SAC code:</span> 997319, 998519</p>
+            <p className="font-bold">{myCompanyDetails.companyName}</p>
+            <p><span className="font-bold">PAN CARD NO:</span> {myCompanyDetails.pan}</p>
+            <p><span className="font-bold">GSTIN:</span> {myCompanyDetails.gstin}</p>
+            <p><span className="font-bold">SAC code:</span> {myCompanyDetails.sacCode}</p>
             <br/>
             <p className="font-bold">Bank Details</p>
-            <p><span className="font-bold">Bank Name:</span> Your Bank Name</p>
-            <p><span className="font-bold">A/C No:</span> 1234567890</p>
-            <p><span className="font-bold">IFSC Code:</span> BANK0001234</p>
-            <p><span className="font-bold">Branch:</span> Your Branch</p>
+            <p><span className="font-bold">Bank Name:</span> {myCompanyDetails.bankName}</p>
+            <p><span className="font-bold">A/C No:</span> {myCompanyDetails.accountNumber}</p>
+            <p><span className="font-bold">IFSC Code:</span> {myCompanyDetails.ifscCode}</p>
+            <p><span className="font-bold">Branch:</span> {myCompanyDetails.bankBranch}</p>
         </div>
         <div className="border-l border-gray-400 pl-4">
             <p className="font-bold">{company.name}</p>
@@ -149,11 +150,11 @@ export function InvoicePreview({ invoice, company }: InvoicePreviewProps) {
       <footer className="mt-12">
         <p>Thanking you,</p>
         <p>Yours truly,</p>
-        <p>For M/s Vithal Enterprises</p>
+        <p>For M/s {myCompanyDetails.companyName}</p>
         <br />
         <br />
-        <p className="font-bold">R.V MAVLANKAR</p>
-        <p>9821728079</p>
+        <p className="font-bold">{myCompanyDetails.contactPerson}</p>
+        <p>{myCompanyDetails.contactNumber}</p>
       </footer>
     </div>
   );
