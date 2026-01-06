@@ -130,7 +130,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
         }))
     ];
     
-    const createTotalRow = (label: string, value: string) => {
+    const createTotalRow = (label: string, value: string, isGrandTotal = false) => {
         const totalRowsBorders = {
             top: { style: BorderStyle.SINGLE },
             bottom: { style: BorderStyle.SINGLE },
@@ -232,13 +232,15 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                         new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
                                         new Paragraph({ children: createMultiLineText(invoiceData.to.address) }),
                                     ],
+                                    margins: cellMargins,
                                 }),
                                 new DocxTableCell({
                                     width: { size: 40, type: WidthType.PERCENTAGE },
                                     children: [
                                         new Paragraph({ children: [new TextRun({ text: `Bill Date: ${invoiceData.billDate}` })], alignment: AlignmentType.RIGHT }),
                                     ],
-                                    verticalAlign: VerticalAlign.TOP
+                                    verticalAlign: VerticalAlign.TOP,
+                                    margins: cellMargins,
                                 }),
                             ],
                         }),
@@ -258,14 +260,16 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     children: [
                                         new Paragraph({ children: [new TextRun({ text: "Bill No: ", bold: true }), new TextRun({ text: invoiceData.billNo })] }),
                                         new Paragraph({ children: [new TextRun({ text: "MONTH: ", bold: true }), new TextRun({ text: invoiceData.month })] }),
-                                    ]
+                                    ],
+                                    margins: cellMargins,
                                 }),
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
                                         new Paragraph({ children: [new TextRun({ text: "PO.NO: ", bold: true }), new TextRun({ text: invoiceData.poNo })], alignment: AlignmentType.RIGHT }),
                                         new Paragraph({ children: [new TextRun({ text: "Site: ", bold: true }), new TextRun({ text: invoiceData.site })], alignment: AlignmentType.RIGHT }),
-                                    ]
+                                    ],
+                                    margins: cellMargins,
                                 }),
                             ],
                         }),
@@ -287,8 +291,8 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     let cellContent: string | number | undefined = item[col.id];
                                     const alignment = col.align === 'right' ? AlignmentType.RIGHT : col.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT;
 
-                                    if (col.id === 'amount' && typeof cellContent === 'number') {
-                                        cellContent = `${Number(cellContent).toFixed(2)}/-`;
+                                    if (col.id === 'amount' && typeof item[col.id] === 'number') {
+                                        cellContent = `${Number(item[col.id]).toFixed(2)}/-`;
                                     }
 
                                     return new DocxTableCell({
@@ -303,11 +307,11 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                         createTotalRow('Net total=', formatCurrency(invoiceData.netTotal)),
                         createTotalRow('CGST@9%', formatCurrency(invoiceData.cgst)),
                         createTotalRow('SGST@9%', formatCurrency(invoiceData.sgst)),
-                        createTotalRow('TOTAL AMOUNT PAYABLE', formatCurrency(invoiceData.grandTotal)),
+                        createTotalRow('TOTAL AMOUNT PAYABLE', formatCurrency(invoiceData.grandTotal), true),
                     ],
                 }),
 
-                new Paragraph({ children: [new TextRun({ text: "In words: ", underline: {} }), new TextRun({ text: `${invoiceData.amountInWords} ONLY.`, bold: true })], spacing: { before: 200, after: 200 } }),
+                new Paragraph({ children: [new TextRun({ text: "In words: " }), new TextRun({ text: `${invoiceData.amountInWords} ONLY.`, bold: true })], spacing: { before: 200, after: 200 } }),
 
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -319,22 +323,27 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
                                         new Paragraph({ children: [new TextRun({ text: "Vithal Enterprises", bold: true })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "PAN CARD NO: ", bold: true }), new TextRun({ text: "AFVPM0759G" })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "SERVICE TAX CODE NO: ", bold: true }), new TextRun({ text: "AFVPM0759GST001" })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true }), new TextRun({ text: "27AFVPM0759G1ZY" })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "SAC code: ", bold: true }), new TextRun({ text: "997319" })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "          998519", bold: true })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "PAN CARD NO: ", bold: true }), new TextRun("AFVPM0759G")] }),
+                                        new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true }), new TextRun("27AFVPM0759G1ZY")] }),
+                                        new Paragraph({ children: [new TextRun({ text: "SAC code: ", bold: true }), new TextRun("997319, 998519")] }),
+                                        new Paragraph({ text: " ", spacing: { before: 100 } }),
+                                        new Paragraph({ children: [new TextRun({ text: "Bank Details", bold: true, underline: {} })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true }), new TextRun("Your Bank Name")] }),
+                                        new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true }), new TextRun("1234567890")] }),
+                                        new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true }), new TextRun("BANK0001234")] }),
                                     ],
-                                    borders: { ...tableHeaderBorders }
+                                    borders: { ...tableHeaderBorders },
+                                    margins: cellMargins
                                 }),
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
                                         new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true }), new TextRun({ text: invoiceData.to.gstin })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true }), new TextRun(invoiceData.to.gstin)] }),
                                     ],
-                                    borders: { ...tableHeaderBorders }
+                                    borders: { ...tableHeaderBorders },
+                                    margins: cellMargins
                                 }),
                             ],
                         }),
@@ -358,5 +367,3 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);
 }
-
-    
