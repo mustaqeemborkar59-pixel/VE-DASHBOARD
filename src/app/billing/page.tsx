@@ -51,11 +51,36 @@ export default function BillingPage() {
     return format(date, 'yyyy-MM-dd');
   }
   
-  const [defaultPageSettings, setDefaultPageSettings] = useState<PageSettings>({
-    size: 'A4',
-    orientation: 'portrait',
-    margin: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 } // Default to 1.27cm
+  const [defaultPageSettings, setDefaultPageSettings] = useState<PageSettings>(() => {
+    if (typeof window === 'undefined') {
+        return {
+            size: 'A4',
+            orientation: 'portrait',
+            margin: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 }
+        };
+    }
+    try {
+        const savedSettings = localStorage.getItem('invoicePageSettings');
+        if (savedSettings) {
+            return JSON.parse(savedSettings);
+        }
+    } catch (error) {
+        console.error("Failed to parse page settings from localStorage", error);
+    }
+    return {
+        size: 'A4',
+        orientation: 'portrait',
+        margin: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 }
+    };
   });
+
+  useEffect(() => {
+    try {
+        localStorage.setItem('invoicePageSettings', JSON.stringify(defaultPageSettings));
+    } catch (error) {
+        console.error("Failed to save page settings to localStorage", error);
+    }
+  }, [defaultPageSettings]);
 
   const initialFormState = {
     companyId: '',
@@ -588,6 +613,8 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+    
+
     
 
     
