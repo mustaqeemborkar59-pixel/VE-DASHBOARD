@@ -105,6 +105,8 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
         left: { style: BorderStyle.SINGLE },
         right: { style: BorderStyle.SINGLE }
     };
+    
+    const tableBottomBorder = { bottom: { style: BorderStyle.SINGLE }};
 
     const headerCells = [
         new DocxTableCell({
@@ -132,21 +134,43 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
             right: { style: BorderStyle.SINGLE },
         };
         
-        return new DocxTableRow({
-            height: { value: 350, rule: "atLeast" },
-            children: [
-                new DocxTableCell({
-                    columnSpan: sortedColumns.length,
+        const particularsColIndex = sortedColumns.findIndex(c => c.id === 'particulars');
+        const rateColIndex = sortedColumns.findIndex(c => c.id === 'rate');
+        const amountColIndex = sortedColumns.findIndex(c => c.id === 'amount');
+        
+        const cells = [
+             new DocxTableCell({ // Sr. No column
+                children: [new Paragraph('')],
+                borders: { ...totalRowsBorders, right: {style: BorderStyle.NONE} },
+            }),
+        ];
+
+        // This loop ensures correct placement based on column order
+        for (let i = 0; i < sortedColumns.length; i++) {
+            if (i === particularsColIndex) {
+                 cells.push(new DocxTableCell({
                     children: [new Paragraph({ children: [new TextRun({ text: label, bold: true })], alignment: AlignmentType.RIGHT })],
                     verticalAlign: VerticalAlign.CENTER,
-                    borders: { ...totalRowsBorders, right: { style: BorderStyle.NONE } }
-                }),
-                new DocxTableCell({
+                    borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  }
+                }));
+            } else if (i === rateColIndex) {
+                 cells.push(new DocxTableCell({ // Rate column
+                    children: [new Paragraph('')],
+                    borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  }
+                }));
+            } else if (i === amountColIndex) {
+                 cells.push(new DocxTableCell({
                     children: [new Paragraph({ children: [new TextRun({ text: value, bold: true })], alignment: AlignmentType.RIGHT })],
                     verticalAlign: VerticalAlign.CENTER,
-                    borders: { ...totalRowsBorders, left: { style: BorderStyle.NONE } }
-                }),
-            ]
+                    borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}  }
+                }));
+            }
+        }
+
+
+        return new DocxTableRow({
+            height: { value: 350, rule: "atLeast" },
+            children: cells,
         });
     }
 
@@ -244,9 +268,9 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                         ...invoiceData.items.map((item, index) => new DocxTableRow({
                             height: { value: 350, rule: "atLeast" }, 
                             children: [
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: (index + 1).toString(), alignment: AlignmentType.CENTER })], borders: tableCellBorders }),
+                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: (index + 1).toString(), alignment: AlignmentType.CENTER })], borders: {...tableCellBorders, ...tableBottomBorder} }),
                                 ...sortedColumns.map(col => {
-                                    let cellContent: string | number = item[col.id] as string | number;
+                                    let cellContent: string | number | undefined = item[col.id];
                                     const alignment = col.align === 'right' ? AlignmentType.RIGHT : col.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT;
 
                                     if (col.id === 'amount' && typeof cellContent === 'number') {
@@ -256,7 +280,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     return new DocxTableCell({
                                         verticalAlign: VerticalAlign.TOP,
                                         children: [new Paragraph({ children: createMultiLineText(cellContent), alignment })],
-                                        borders: tableCellBorders
+                                        borders: {...tableCellBorders, ...tableBottomBorder}
                                     });
                                 })
                             ],
