@@ -1,10 +1,11 @@
-import { Packer, Document, Paragraph, TextRun, AlignmentType, BorderStyle, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType, VerticalAlign, PageOrientation } from 'docx';
+
+import { Packer, Document, Paragraph, TextRun, AlignmentType, BorderStyle, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType, VerticalAlign, PageOrientation, convertInchesToTwip } from 'docx';
 import { saveAs } from 'file-saver';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
-import type { Invoice, Company } from './data';
+import type { Invoice, Company, InvoiceTemplate } from './data';
 
-const generateInvoiceDataForWord = (invoice: Invoice, company: Company) => {
+const generateInvoiceDataForWord = (invoice: Invoice, company: Company, template?: InvoiceTemplate) => {
     const words = new ToWords({
       localeCode: 'en-IN',
       converterOptions: {
@@ -27,6 +28,11 @@ const generateInvoiceDataForWord = (invoice: Invoice, company: Company) => {
         month: format(parseISO(invoice.billDate), 'MMM yyyy').toUpperCase(),
         site: (invoice.site || '').toUpperCase(),
         items: invoice.items,
+        columns: template?.columns || [
+            { id: 'particulars', label: 'Particulars', width: 45, align: 'left', order: 1 },
+            { id: 'rate', label: 'Rate', width: 20, align: 'right', order: 2 },
+            { id: 'amount', label: 'Amount', width: 25, align: 'right', order: 3 },
+        ],
         netTotal: invoice.netTotal,
         cgst: invoice.cgst,
         sgst: invoice.sgst,
@@ -35,9 +41,83 @@ const generateInvoiceDataForWord = (invoice: Invoice, company: Company) => {
     }
 }
 
-export const generateAndDownloadInvoice = async (invoice: Invoice, company: Company) => {
-    const invoiceData = generateInvoiceDataForWord(invoice, company);
-    const formatCurrency = (amount: number) => amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '/-';
+const createMultiLineText = (text: string | number | undefined) => {
+    if (text === undefined || text === null) return [new TextRun("")];
+    
+    const textAsString = String(text);
+    const lines = textAsString.split('\n');
+    
+    return lines.flatMap((line, index) => {
+        const textRuns = [new TextRun(line)];
+        if (index < lines.length - 1) {
+            textRuns.push(new TextRun({ break: 1 }));
+        }
+        return textRuns;
+    });
+};
+
+
+export const generateAndDownloadInvoice = async (invoice: Invoice, company: Company, template?: InvoiceTemplate) => {
+    const invoiceData = generateInvoiceDataForWord(invoice, company, template);
+    const formatCurrency = (amount: number) => amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    
+    const sortedColumns = [...invoiceData.columns].sort((a, b) => a.order - b.order);
+
+    const tableHeaderBorders = {
+        top: { style: BorderStyle.SINGLE },
+        bottom: { style: BorderStyle.SINGLE },
+        left: { style: BorderStyle.SINGLE },
+        right: { style: BorderStyle.SINGLE }
+    };
+    
+    const tableCellBorders = {
+        left: { style: BorderStyle.SINGLE },
+        right: { style: BorderStyle.SINGLE }
+    };
+
+    const headerCells = [
+        new DocxTableCell({
+            width: { size: 5, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ children: [new TextRun({ text: "Sr. No", bold: true })], alignment: AlignmentType.CENTER })],
+            verticalAlign: VerticalAlign.CENTER,
+            borders: tableHeaderBorders,
+        }),
+        ...sortedColumns.map(column => new DocxTableCell({
+            width: { size: column.width, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ 
+                children: [new TextRun({ text: column.label, bold: true })], 
+                alignment: (column.label === 'Rate' || column.label === 'Amount') ? AlignmentType.CENTER : (column.align === 'right' ? AlignmentType.RIGHT : column.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT)
+            })],
+            verticalAlign: VerticalAlign.CENTER,
+            borders: tableHeaderBorders,
+        }))
+    ];
+    
+    const createTotalRow = (label: string, value: string, isGrandTotal = false) => {
+        const totalRowsBorders = {
+            top: { style: isGrandTotal ? BorderStyle.DOUBLE : BorderStyle.SINGLE },
+            bottom: { style: isGrandTotal ? BorderStyle.DOUBLE : BorderStyle.SINGLE },
+            left: { style: BorderStyle.SINGLE },
+            right: { style: BorderStyle.SINGLE },
+        };
+        
+        return new DocxTableRow({
+            height: { value: 350, rule: "atLeast" },
+            children: [
+                new DocxTableCell({
+                    columnSpan: sortedColumns.length,
+                    children: [new Paragraph({ children: [new TextRun({ text: label, bold: true })], alignment: AlignmentType.RIGHT })],
+                    verticalAlign: VerticalAlign.CENTER,
+                    borders: { ...totalRowsBorders, right: { style: BorderStyle.NONE } }
+                }),
+                new DocxTableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: value, bold: true })], alignment: AlignmentType.RIGHT })],
+                    verticalAlign: VerticalAlign.CENTER,
+                    borders: { ...totalRowsBorders, left: { style: BorderStyle.NONE } }
+                }),
+            ]
+        });
+    }
 
     const doc = new Document({
         styles: {
@@ -51,7 +131,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
         sections: [{
             properties: {
                 page: {
-                    margin: { top: 2835, right: 1440, bottom: 1440, left: 1440 },
+                    margin: { top: convertInchesToTwip(0.5), right: convertInchesToTwip(0.5), bottom: convertInchesToTwip(0.5), left: convertInchesToTwip(0.5) },
                     size: { orientation: PageOrientation.PORTRAIT }
                 },
             },
@@ -73,7 +153,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     children: [
                                         new Paragraph({ text: "To," }),
                                         new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
-                                        new Paragraph({ children: [new TextRun({ text: invoiceData.to.address, bold: true })] }),
+                                        new Paragraph({ children: createMultiLineText(invoiceData.to.address) }),
                                     ],
                                 }),
                                 new DocxTableCell({
@@ -117,60 +197,33 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                 
                 new Paragraph({ children: [new TextRun({ text: "CHARGES AS FOLLOWS: -", bold: true })], spacing: { before: 200, after: 100 } }),
 
-                // Billing Table with RATE Column
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
                     rows: [
                         new DocxTableRow({
                             height: { value: 350, rule: "atLeast" },
-                            children: [
-                                new DocxTableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: "Sr. No", bold: true })], alignment: AlignmentType.CENTER })], borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
-                                new DocxTableCell({ width: { size: 45, type: WidthType.PERCENTAGE }, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: "Particulars", bold: true })] })], borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
-                                new DocxTableCell({ width: { size: 20, type: WidthType.PERCENTAGE }, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: "Rate", bold: true })], alignment: AlignmentType.RIGHT })], borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
-                                new DocxTableCell({ width: { size: 25, type: WidthType.PERCENTAGE }, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: "Amount (RS.)", bold: true })], alignment: AlignmentType.RIGHT })], borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
-                            ],
+                            children: headerCells,
                         }),
                         ...invoiceData.items.map((item, index) => new DocxTableRow({
-                            height: { value: 600, rule: "atLeast" }, 
+                            height: { value: 350, rule: "atLeast" }, 
                             children: [
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: (index + 1).toString(), alignment: AlignmentType.CENTER })], borders: { right: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE } } }),
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: item.particulars })], borders: { right: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE } } }),
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: item.rate ? `${item.rate}/-` : '', alignment: AlignmentType.RIGHT })], borders: { right: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE } } }),
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: formatCurrency(item.amount), alignment: AlignmentType.RIGHT })], borders: { left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
+                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: (index + 1).toString(), alignment: AlignmentType.CENTER })], borders: tableCellBorders }),
+                                ...sortedColumns.map(col => new DocxTableCell({
+                                    verticalAlign: VerticalAlign.TOP,
+                                    children: [new Paragraph({ children: createMultiLineText(item[col.id as keyof typeof item] as string), alignment: col.align === 'right' ? AlignmentType.RIGHT : col.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT })],
+                                    borders: tableCellBorders
+                                }))
                             ],
                         })),
-                        // Totals Rows
-                        new DocxTableRow({
-                            children: [
-                                new DocxTableCell({ columnSpan: 3, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "Net total=", bold: true })] })], borders: { top: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(invoiceData.netTotal), bold: true })] })], borders: { top: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
-                            ]
-                        }),
-                        new DocxTableRow({
-                            children: [
-                                new DocxTableCell({ columnSpan: 3, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "CGST@9%", bold: true })] })], borders: { left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(invoiceData.cgst), bold: true })] })], borders: { left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
-                            ]
-                        }),
-                        new DocxTableRow({
-                            children: [
-                                new DocxTableCell({ columnSpan: 3, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "SGST@9%", bold: true })] })], borders: { left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(invoiceData.sgst), bold: true })] })], borders: { left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
-                            ]
-                        }),
-                        new DocxTableRow({
-                            height: { value: 450, rule: "atLeast" },
-                            children: [
-                                new DocxTableCell({ columnSpan: 3, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: "TOTAL AMOUNT PAYABLE", bold: true })] })], borders: { top: { style: BorderStyle.SINGLE, size: 4 }, bottom: { style: BorderStyle.SINGLE, size: 4 }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(invoiceData.grandTotal), bold: true })] })], borders: { top: { style: BorderStyle.SINGLE, size: 4 }, bottom: { style: BorderStyle.SINGLE, size: 4 }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } } }),
-                            ]
-                        }),
+                        createTotalRow('Net total=', formatCurrency(invoiceData.netTotal)),
+                        createTotalRow('CGST@9%', formatCurrency(invoiceData.cgst)),
+                        createTotalRow('SGST@9%', formatCurrency(invoiceData.sgst)),
+                        createTotalRow('TOTAL AMOUNT PAYABLE', formatCurrency(invoiceData.grandTotal), true),
                     ],
                 }),
 
                 new Paragraph({ children: [new TextRun({ text: "In words: ", underline: {} }), new TextRun({ text: `${invoiceData.amountInWords} ONLY.`, bold: true })], spacing: { before: 200, after: 200 } }),
 
-                // Footer Boxed Table for GST/PAN Details
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
                     rows: [
@@ -188,12 +241,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                         new Paragraph({ children: [new TextRun({ text: "SAC code: 997319", bold: true, underline: {} })] }),
                                         new Paragraph({ children: [new TextRun({ text: "          998519", bold: true, underline: {} })] }),
                                     ],
-                                    borders: { 
-                                        top: { style: BorderStyle.SINGLE }, 
-                                        bottom: { style: BorderStyle.SINGLE }, 
-                                        left: { style: BorderStyle.SINGLE }, 
-                                        right: { style: BorderStyle.SINGLE } 
-                                    }
+                                    borders: { ...tableHeaderBorders }
                                 }),
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
@@ -202,12 +250,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                         new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true, underline: {} })] }),
                                         new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true }), new TextRun({ text: invoiceData.to.gstin, underline: {} })] }),
                                     ],
-                                    borders: { 
-                                        top: { style: BorderStyle.SINGLE }, 
-                                        bottom: { style: BorderStyle.SINGLE }, 
-                                        left: { style: BorderStyle.SINGLE }, 
-                                        right: { style: BorderStyle.SINGLE } 
-                                    }
+                                    borders: { ...tableHeaderBorders }
                                 }),
                             ],
                         }),
