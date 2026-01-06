@@ -108,7 +108,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
     
     const tableBottomBorder = { bottom: { style: BorderStyle.SINGLE }};
     
-    const cellMargins = { left: 100, right: 100 };
+    const cellMargins = { top: 50, bottom: 50, left: 100, right: 100 };
 
     const headerCells = [
         new DocxTableCell({
@@ -313,17 +313,16 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                     width: { size: 100, type: WidthType.PERCENTAGE },
                     rows: [
                         new DocxTableRow({
-                            height: { value: 1600, rule: "atLeast" },
                             children: [
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
-                                        new Paragraph({ children: [new TextRun({ text: "Vithal Enterprises", bold: true, underline: {} })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "PAN CARD NO- ", bold: true }), new TextRun({ text: "AFVPM0759G" })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "SERVICE TAX CODE NO-", bold: true }), new TextRun({ text: "AFVPM0759GST001" })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "GSTIN: 27AFVPM0759G1ZY", bold: true })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "SAC code: 997319", bold: true })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "Vithal Enterprises", bold: true })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "PAN CARD NO: ", bold: true }), new TextRun({ text: "AFVPM0759G" })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "SERVICE TAX CODE NO: ", bold: true }), new TextRun({ text: "AFVPM0759GST001" })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true }), new TextRun({ text: "27AFVPM0759G1ZY" })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "SAC code: ", bold: true }), new TextRun({ text: "997319" })] }),
                                         new Paragraph({ children: [new TextRun({ text: "          998519", bold: true })] }),
                                     ],
                                     borders: { ...tableHeaderBorders }
@@ -359,3 +358,5 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);
 }
+
+    
