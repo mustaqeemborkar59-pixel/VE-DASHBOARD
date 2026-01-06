@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import AppLayout from "@/components/app-layout";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
-import { Company, Invoice, InvoiceItem } from '@/lib/data';
+import { Company, Invoice } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download } from 'lucide-react';
@@ -21,6 +21,26 @@ import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlo
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { generateAndDownloadInvoice } from '@/lib/invoice-generator';
+import { Textarea } from '@/components/ui/textarea';
+
+
+const AutoHeightTextarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => {
+    const internalRef = useRef<HTMLTextAreaElement>(null);
+    useImperativeHandle(ref, () => internalRef.current as HTMLTextAreaElement);
+
+    useEffect(() => {
+        const textarea = internalRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        }
+    }, [props.value]);
+
+    return <Textarea ref={internalRef} {...props} />;
+});
+AutoHeightTextarea.displayName = 'AutoHeightTextarea';
+
+type InvoiceItem = Omit<import('@/lib/data').InvoiceItem, 'id'> & { key: string };
 
 
 export default function BillingPage() {
@@ -36,14 +56,14 @@ export default function BillingPage() {
     billDate: toISODateString(new Date()),
     poNumber: 'AGREEMENT',
     site: '',
-    items: [{ particulars: '', rate: '', amount: 0 }],
+    items: [{ key: `item-${Date.now()}`, particulars: '', rate: '', amount: 0 }],
   };
 
   const [companyId, setCompanyId] = useState<string>('');
   const [billDate, setBillDate] = useState<string>(toISODateString(new Date()));
   const [poNumber, setPoNumber] = useState('AGREEMENT');
   const [site, setSite] = useState('');
-  const [items, setItems] = useState<Omit<InvoiceItem, 'id'>[]>(initialFormState.items);
+  const [items, setItems] = useState<InvoiceItem[]>(initialFormState.items);
     
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
@@ -54,7 +74,7 @@ export default function BillingPage() {
 
   // Queries
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
-  const allInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billDate', 'desc')) : null, [firestore]);
+  const allInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billNo', 'desc')) : null, [firestore]);
 
   // Data
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
@@ -91,17 +111,21 @@ export default function BillingPage() {
   });
 
   const handleAddItem = () => {
-    setItems([...items, { particulars: '', rate: '', amount: 0 }]);
+    setItems([...items, { key: `item-${Date.now()}`, particulars: '', rate: '', amount: 0 }]);
   };
 
-  const handleRemoveItem = (index: number) => {
-    const newItems = items.filter((_, i) => i !== index);
+  const handleRemoveItem = (key: string) => {
+    const newItems = items.filter((item) => item.key !== key);
     setItems(newItems);
   };
 
-  const handleItemChange = (index: number, field: keyof InvoiceItem, value: string | number) => {
-    const newItems = [...items];
-    (newItems[index] as any)[field] = value;
+  const handleItemChange = (key: string, field: keyof Omit<InvoiceItem, 'key'>, value: string | number) => {
+    const newItems = items.map(item => {
+        if(item.key === key) {
+            return { ...item, [field]: value };
+        }
+        return item;
+    });
     setItems(newItems);
   };
   
@@ -155,6 +179,8 @@ export default function BillingPage() {
         billNoToUse = maxBillNumber + 1;
       }
       
+      const itemsToSave = items.map(({ key, ...rest }) => rest);
+
       const invoiceData: Omit<Invoice, 'id'> = {
         billNo: billNoToUse,
         billNoSuffix: 'MHE',
@@ -162,7 +188,7 @@ export default function BillingPage() {
         companyId,
         poNumber,
         site,
-        items,
+        items: itemsToSave,
         netTotal: calculations.netTotal,
         cgst: calculations.cgst,
         sgst: calculations.sgst,
@@ -205,7 +231,7 @@ export default function BillingPage() {
       setBillDate(invoice.billDate);
       setPoNumber(invoice.poNumber || 'AGREEMENT');
       setSite(invoice.site || '');
-      setItems(invoice.items.map(item => ({ ...item, rate: item.rate ?? '' }))); // Ensure rate is a string
+      setItems(invoice.items.map((item, index) => ({ ...item, key: `item-${Date.now()}-${index}` })));
       setTimeout(() => {
         const mainEl = document.querySelector('main');
         if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
@@ -402,30 +428,30 @@ export default function BillingPage() {
 
                         <div className="space-y-4">
                             <Label>Particulars</Label>
-                            {items.map((item, index) => (
-                                <div key={index} className="flex items-center gap-2">
-                                    <Input
-                                        type="text"
+                            {items.map((item) => (
+                                <div key={item.key} className="flex items-center gap-2">
+                                    <AutoHeightTextarea
                                         placeholder="Item description"
                                         value={item.particulars}
-                                        onChange={(e) => handleItemChange(index, 'particulars', e.target.value)}
-                                        className="flex-grow"
+                                        onChange={(e) => handleItemChange(item.key, 'particulars', e.target.value)}
+                                        className="flex-grow resize-none overflow-hidden"
+                                        rows={1}
                                     />
                                     <Input
                                         type="text"
                                         placeholder="Rate (e.g., 500/hr)"
                                         value={item.rate || ''}
-                                        onChange={(e) => handleItemChange(index, 'rate', e.target.value)}
+                                        onChange={(e) => handleItemChange(item.key, 'rate', e.target.value)}
                                         className="w-40"
                                     />
                                     <Input
                                         type="number"
                                         placeholder="Amount"
                                         value={item.amount || ''}
-                                        onChange={(e) => handleItemChange(index, 'amount', parseFloat(e.target.value))}
+                                        onChange={(e) => handleItemChange(item.key, 'amount', parseFloat(e.target.value))}
                                         className="w-48"
                                     />
-                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={items.length === 1}>
+                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.key)} disabled={items.length === 1}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                 </div>
@@ -487,4 +513,6 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+    
+
     
