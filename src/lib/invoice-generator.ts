@@ -1,9 +1,34 @@
 
-import { Packer, Document, Paragraph, TextRun, AlignmentType, BorderStyle, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType, VerticalAlign, PageOrientation, convertInchesToTwip } from 'docx';
+import { Packer, Document, Paragraph, TextRun, AlignmentType, BorderStyle, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType, VerticalAlign, PageOrientation, convertInchesToTwip, IPageSize, PageSize } from 'docx';
 import { saveAs } from 'file-saver';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
-import type { Invoice, Company, InvoiceTemplate } from './data';
+import type { Invoice, Company, InvoiceTemplate, InvoiceItem } from './data';
+
+export type PageSettings = {
+    size: 'A4' | 'LETTER' | 'LEGAL',
+    orientation: 'portrait' | 'landscape',
+    margin: {
+        top: number;
+        right: number;
+        bottom: number;
+        left: number;
+    }
+}
+
+const getPageSize = (size: PageSettings['size']): IPageSize => {
+    switch (size) {
+        case 'A4':
+            return PageSize.A4;
+        case 'LETTER':
+            return PageSize.LETTER;
+        case 'LEGAL':
+            return PageSize.LEGAL;
+        default:
+            return PageSize.A4;
+    }
+}
+
 
 const generateInvoiceDataForWord = (invoice: Invoice, company: Company, template?: InvoiceTemplate) => {
     const words = new ToWords({
@@ -29,9 +54,9 @@ const generateInvoiceDataForWord = (invoice: Invoice, company: Company, template
         site: (invoice.site || '').toUpperCase(),
         items: invoice.items,
         columns: template?.columns || [
-            { id: 'particulars', label: 'Particulars', width: 45, align: 'left', order: 1 },
-            { id: 'rate', label: 'Rate', width: 20, align: 'right', order: 2 },
-            { id: 'amount', label: 'Amount', width: 25, align: 'right', order: 3 },
+            { id: 'particulars' as keyof InvoiceItem, label: 'Particulars', width: 45, align: 'left' as const, order: 1 },
+            { id: 'rate' as keyof InvoiceItem, label: 'Rate', width: 20, align: 'right' as const, order: 2 },
+            { id: 'amount' as keyof InvoiceItem, label: 'Amount', width: 25, align: 'right' as const, order: 3 },
         ],
         netTotal: invoice.netTotal,
         cgst: invoice.cgst,
@@ -57,7 +82,8 @@ const createMultiLineText = (text: string | number | undefined) => {
 };
 
 
-export const generateAndDownloadInvoice = async (invoice: Invoice, company: Company, template?: InvoiceTemplate) => {
+export const generateAndDownloadInvoice = async (invoice: Invoice, company: Company, pageSettings?: PageSettings, template?: InvoiceTemplate) => {
+    const settings = pageSettings || { size: 'A4', orientation: 'portrait', margin: {top: 0.5, right: 0.5, bottom: 0.5, left: 0.5} };
     const invoiceData = generateInvoiceDataForWord(invoice, company, template);
     const formatCurrency = (amount: number) => amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
@@ -131,8 +157,14 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
         sections: [{
             properties: {
                 page: {
-                    margin: { top: convertInchesToTwip(0.5), right: convertInchesToTwip(0.5), bottom: convertInchesToTwip(0.5), left: convertInchesToTwip(0.5) },
-                    size: { orientation: PageOrientation.PORTRAIT }
+                    size: getPageSize(settings.size),
+                    orientation: settings.orientation === 'landscape' ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT,
+                    margin: { 
+                        top: convertInchesToTwip(settings.margin.top), 
+                        right: convertInchesToTwip(settings.margin.right), 
+                        bottom: convertInchesToTwip(settings.margin.bottom), 
+                        left: convertInchesToTwip(settings.margin.left) 
+                    },
                 },
             },
             children: [
@@ -210,7 +242,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                 new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: (index + 1).toString(), alignment: AlignmentType.CENTER })], borders: tableCellBorders }),
                                 ...sortedColumns.map(col => new DocxTableCell({
                                     verticalAlign: VerticalAlign.TOP,
-                                    children: [new Paragraph({ children: createMultiLineText(item[col.id as keyof typeof item] as string), alignment: col.align === 'right' ? AlignmentType.RIGHT : col.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT })],
+                                    children: [new Paragraph({ children: createMultiLineText(item[col.id] as string), alignment: col.align === 'right' ? AlignmentType.RIGHT : col.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT })],
                                     borders: tableCellBorders
                                 }))
                             ],

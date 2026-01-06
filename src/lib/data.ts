@@ -76,4 +76,17 @@ export type Invoice = {
     cgst: number;
     sgst: number;
     grandTotal: number;
+    pageSize?: 'A4' | 'LETTER' | 'LEGAL';
+    pageOrientation?: 'portrait' | 'landscape';
+    pageMargins?: { top: number, right: number, bottom: number, left: number };
 }
+
+export type InvoiceTemplate = {
+  columns: {
+    id: keyof InvoiceItem;
+    label: string;
+    width: number;
+    align: 'left' | 'center' | 'right';
+    order: number;
+  }[];
+};
