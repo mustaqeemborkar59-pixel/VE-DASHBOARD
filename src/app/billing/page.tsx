@@ -53,11 +53,11 @@ export default function BillingPage() {
     return format(date, 'yyyy-MM-dd');
   }
   
-  const defaultPageSettings: PageSettings = {
+  const [defaultPageSettings, setDefaultPageSettings] = useState<PageSettings>({
     size: 'A4',
     orientation: 'portrait',
-    margin: { top: 0.5, right: 0.5, bottom: 0.5, left: 0.5 }
-  };
+    margin: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 } // Default to 1.27cm
+  });
 
   const initialFormState = {
     companyId: '',
@@ -65,7 +65,6 @@ export default function BillingPage() {
     poNumber: 'AGREEMENT',
     site: '',
     items: [{ key: `item-${Date.now()}`, particulars: '', rate: '', amount: 0 }],
-    pageSettings: defaultPageSettings,
   };
 
   const [companyId, setCompanyId] = useState<string>('');
@@ -73,7 +72,6 @@ export default function BillingPage() {
   const [poNumber, setPoNumber] = useState('AGREEMENT');
   const [site, setSite] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>(initialFormState.items);
-  const [pageSettings, setPageSettings] = useState<PageSettings>(initialFormState.pageSettings);
     
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
@@ -146,12 +144,15 @@ export default function BillingPage() {
       return;
     }
     
+    // Use invoice-specific settings if they exist, otherwise use default settings
+    const pageSettingsToUse: PageSettings = {
+        size: invoice.pageSize as any || defaultPageSettings.size,
+        orientation: invoice.pageOrientation as any || defaultPageSettings.orientation,
+        margin: invoice.pageMargins || defaultPageSettings.margin,
+    }
+
     try {
-        await generateAndDownloadInvoice(invoice, company, {
-            size: invoice.pageSize as any || 'A4',
-            orientation: invoice.pageOrientation as any || 'portrait',
-            margin: invoice.pageMargins || {top: 0.5, right: 0.5, bottom: 0.5, left: 0.5}
-        });
+        await generateAndDownloadInvoice(invoice, company, pageSettingsToUse);
     } catch (e) {
         toast({
             variant: 'destructive',
@@ -173,7 +174,6 @@ export default function BillingPage() {
       setPoNumber(initialFormState.poNumber);
       setSite(initialFormState.site);
       setItems(initialFormState.items);
-      setPageSettings(initialFormState.pageSettings);
       setEditingInvoice(null);
   };
 
@@ -208,9 +208,9 @@ export default function BillingPage() {
         cgst: calculations.cgst,
         sgst: calculations.sgst,
         grandTotal: calculations.grandTotal,
-        pageSize: pageSettings.size,
-        pageOrientation: pageSettings.orientation,
-        pageMargins: pageSettings.margin,
+        pageSize: defaultPageSettings.size,
+        pageOrientation: defaultPageSettings.orientation,
+        pageMargins: defaultPageSettings.margin,
       };
 
       try {
@@ -250,11 +250,8 @@ export default function BillingPage() {
       setPoNumber(invoice.poNumber || 'AGREEMENT');
       setSite(invoice.site || '');
       setItems(invoice.items.map((item, index) => ({ ...item, key: `item-${Date.now()}-${index}` })));
-      setPageSettings({
-          size: invoice.pageSize as any || defaultPageSettings.size,
-          orientation: invoice.pageOrientation as any || defaultPageSettings.orientation,
-          margin: invoice.pageMargins || defaultPageSettings.margin
-      })
+      // Note: We don't load the invoice-specific page settings into the form,
+      // as the form is for general details. The download will use the correct settings.
       setTimeout(() => {
         const mainEl = document.querySelector('main');
         if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
@@ -302,13 +299,13 @@ export default function BillingPage() {
   }
 
   const handlePageSettingsChange = (field: keyof PageSettings, value: any) => {
-      setPageSettings(prev => ({ ...prev, [field]: value }));
+      setDefaultPageSettings(prev => ({ ...prev, [field]: value }));
   }
 
   const handleMarginChange = (field: keyof PageSettings['margin'], value: string) => {
       const numValue = parseFloat(value);
       if (!isNaN(numValue) || value === '') {
-        setPageSettings(prev => ({
+        setDefaultPageSettings(prev => ({
             ...prev,
             margin: { ...prev.margin, [field]: value === '' ? '' : numValue }
         }));
@@ -350,6 +347,36 @@ export default function BillingPage() {
                         <Button onClick={handleUpdateStartNumber} disabled={isLoadingInvoices}>Update</Button>
                     </div>
                 </div>
+
+                <div className="mb-6 p-4 border rounded-lg bg-muted/40">
+                    <h3 className="text-sm font-medium mb-2">Default Document Settings</h3>
+                    <p className="text-xs text-muted-foreground mb-4">Set the default page layout for new Word document invoices.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="pageSize">Page Size</Label>
+                            <Select value={defaultPageSettings.size} onValueChange={(value) => handlePageSettingsChange('size', value)}>
+                                <SelectTrigger id="pageSize">
+                                    <SelectValue placeholder="Select page size" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="A4">A4</SelectItem>
+                                    <SelectItem value="LETTER">Letter</SelectItem>
+                                    <SelectItem value="LEGAL">Legal</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Margins (in cm)</Label>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                <Input type="number" placeholder="Top" value={defaultPageSettings.margin.top} onChange={(e) => handleMarginChange('top', e.target.value)} />
+                                <Input type="number" placeholder="Bottom" value={defaultPageSettings.margin.bottom} onChange={(e) => handleMarginChange('bottom', e.target.value)} />
+                                <Input type="number" placeholder="Left" value={defaultPageSettings.margin.left} onChange={(e) => handleMarginChange('left', e.target.value)} />
+                                <Input type="number" placeholder="Right" value={defaultPageSettings.margin.right} onChange={(e) => handleMarginChange('right', e.target.value)} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -498,36 +525,6 @@ export default function BillingPage() {
                             </Button>
                         </div>
                         
-                        <Separator />
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-medium">Page Settings</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="pageSize">Page Size</Label>
-                                    <Select value={pageSettings.size} onValueChange={(value) => handlePageSettingsChange('size', value)}>
-                                        <SelectTrigger id="pageSize">
-                                            <SelectValue placeholder="Select page size" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="A4">A4</SelectItem>
-                                            <SelectItem value="LETTER">Letter</SelectItem>
-                                            <SelectItem value="LEGAL">Legal</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Margins (in inches)</Label>
-                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                                        <Input type="number" placeholder="Top" value={pageSettings.margin.top} onChange={(e) => handleMarginChange('top', e.target.value)} />
-                                        <Input type="number" placeholder="Bottom" value={pageSettings.margin.bottom} onChange={(e) => handleMarginChange('bottom', e.target.value)} />
-                                        <Input type="number" placeholder="Left" value={pageSettings.margin.left} onChange={(e) => handleMarginChange('left', e.target.value)} />
-                                        <Input type="number" placeholder="Right" value={pageSettings.margin.right} onChange={(e) => handleMarginChange('right', e.target.value)} />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-
                         <div className="flex justify-end">
                             <div className="w-full max-w-sm space-y-2">
                                 <div className="flex justify-between">

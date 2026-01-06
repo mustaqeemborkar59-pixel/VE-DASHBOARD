@@ -1,5 +1,5 @@
 
-import { Packer, Document, Paragraph, TextRun, AlignmentType, BorderStyle, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType, VerticalAlign, PageOrientation, convertInchesToTwip, IPageSize, PageSize } from 'docx';
+import { Packer, Document, Paragraph, TextRun, AlignmentType, BorderStyle, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType, VerticalAlign, PageOrientation, IPageSize, PageSize } from 'docx';
 import { saveAs } from 'file-saver';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
@@ -27,6 +27,11 @@ const getPageSize = (size: PageSettings['size']): IPageSize => {
         default:
             return PageSize.A4;
     }
+}
+
+// Function to convert cm to Twips (1 cm = 567 Twips)
+const convertCmToTwip = (cm: number): number => {
+    return cm * 567;
 }
 
 
@@ -83,7 +88,7 @@ const createMultiLineText = (text: string | number | undefined) => {
 
 
 export const generateAndDownloadInvoice = async (invoice: Invoice, company: Company, pageSettings?: PageSettings, template?: InvoiceTemplate) => {
-    const settings = pageSettings || { size: 'A4', orientation: 'portrait', margin: {top: 0.5, right: 0.5, bottom: 0.5, left: 0.5} };
+    const settings = pageSettings || { size: 'A4', orientation: 'portrait', margin: {top: 1.27, right: 1.27, bottom: 1.27, left: 1.27} };
     const invoiceData = generateInvoiceDataForWord(invoice, company, template);
     const formatCurrency = (amount: number) => amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
@@ -160,10 +165,10 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                     size: getPageSize(settings.size),
                     orientation: settings.orientation === 'landscape' ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT,
                     margin: { 
-                        top: convertInchesToTwip(settings.margin.top), 
-                        right: convertInchesToTwip(settings.margin.right), 
-                        bottom: convertInchesToTwip(settings.margin.bottom), 
-                        left: convertInchesToTwip(settings.margin.left) 
+                        top: convertCmToTwip(settings.margin.top), 
+                        right: convertCmToTwip(settings.margin.right), 
+                        bottom: convertCmToTwip(settings.margin.bottom), 
+                        left: convertCmToTwip(settings.margin.left) 
                     },
                 },
             },
