@@ -12,7 +12,7 @@ import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Company, Invoice } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Settings } from 'lucide-react';
+import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Settings, Eye } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { generateAndDownloadInvoice, type PageSettings } from '@/lib/invoice-generator';
 import { Textarea } from '@/components/ui/textarea';
+import { InvoicePreview } from '@/components/invoice-preview';
 
 
 const AutoHeightTextarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => {
@@ -101,6 +102,9 @@ export default function BillingPage() {
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   
   const [invoiceStartNumber, setInvoiceStartNumber] = useState('');
+  
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [invoiceForPreview, setInvoiceForPreview] = useState<Invoice | null>(null);
 
 
   // Queries
@@ -112,6 +116,11 @@ export default function BillingPage() {
   const { data: allInvoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(allInvoicesQuery);
 
   const selectedCompany = useMemo(() => companies?.find(c => c.id === companyId), [companies, companyId]);
+  
+  const companyForPreview = useMemo(() => {
+    if (!invoiceForPreview || !companies) return null;
+    return companies.find(c => c.id === invoiceForPreview.companyId) || null;
+  }, [invoiceForPreview, companies]);
   
   const maxBillNumber = useMemo(() => {
     if (!allInvoices || allInvoices.length === 0) return 0;
@@ -304,6 +313,11 @@ export default function BillingPage() {
     setIsFormDialogOpen(true);
   };
   
+  const handleOpenPreview = (invoice: Invoice) => {
+    setInvoiceForPreview(invoice);
+    setIsPreviewOpen(true);
+  };
+
   const handleDeleteInvoice = () => {
     if (!firestore || !invoiceToDelete) return;
     const invoiceDocRef = doc(firestore, 'invoices', invoiceToDelete.id);
@@ -474,12 +488,12 @@ export default function BillingPage() {
                             </TableRow>
                         ) : allInvoices && allInvoices.length > 0 ? (
                            allInvoices.map((invoice) => (
-                                <TableRow key={invoice.id}>
+                                <TableRow key={invoice.id} onClick={() => handleOpenPreview(invoice)} className="cursor-pointer">
                                     <TableCell className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
                                     <TableCell>{companies?.find(c => c.id === invoice.companyId)?.name || 'Unknown'}</TableCell>
                                     <TableCell>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
                                     <TableCell className="text-right">{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
@@ -488,6 +502,10 @@ export default function BillingPage() {
                                             </PopoverTrigger>
                                             <PopoverContent className="w-40">
                                                 <div className="grid gap-1">
+                                                     <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenPreview(invoice)}>
+                                                        <Eye className="mr-2 h-4 w-4" />
+                                                        Preview
+                                                    </Button>
                                                     <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleDownloadWord(invoice)}>
                                                         <Download className="mr-2 h-4 w-4" />
                                                         Download
@@ -653,6 +671,14 @@ export default function BillingPage() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+        
+        <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+            <DialogContent className="max-w-4xl p-0">
+                <div className="p-8 overflow-y-auto max-h-[90vh]">
+                   <InvoicePreview invoice={invoiceForPreview} company={companyForPreview} />
+                </div>
+            </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
