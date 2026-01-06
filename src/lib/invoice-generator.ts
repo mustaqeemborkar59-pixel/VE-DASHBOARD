@@ -75,17 +75,25 @@ const generateInvoiceDataForWord = (invoice: Invoice, company: Company, template
     }
 }
 
-const createMultiLineText = (text: string | number | undefined) => {
+const createFormattedTextRuns = (text: string | number | undefined): TextRun[] => {
     if (text === undefined || text === null) return [new TextRun("")];
-    
+
     const textAsString = String(text);
     const lines = textAsString.split('\n');
-    
-    return lines.flatMap((line, index) => {
-        const textRuns = [new TextRun(line)];
-        if (index < lines.length - 1) {
+
+    return lines.flatMap((line, lineIndex) => {
+        const parts = line.split(/(\*\*.*?\*\*)/g).filter(part => part); // Split by bold markdown
+        const textRuns = parts.map(part => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return new TextRun({ text: part.slice(2, -2), bold: true });
+            }
+            return new TextRun(part);
+        });
+
+        if (lineIndex < lines.length - 1) {
             textRuns.push(new TextRun({ break: 1 }));
         }
+
         return textRuns;
     });
 };
@@ -141,7 +149,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
             left: { style: BorderStyle.SINGLE },
             right: { style: BorderStyle.SINGLE },
         };
-        
+
         const particularsColIndex = sortedColumns.findIndex(c => c.id === 'particulars');
         const rateColIndex = sortedColumns.findIndex(c => c.id === 'rate');
         const amountColIndex = sortedColumns.findIndex(c => c.id === 'amount');
@@ -234,7 +242,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     children: [
                                         new Paragraph({ text: "To," }),
                                         new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
-                                        new Paragraph({ children: createMultiLineText(invoiceData.to.address) }),
+                                        new Paragraph({ children: createFormattedTextRuns(invoiceData.to.address) }),
                                     ],
                                     margins: cellMargins,
                                     verticalAlign: VerticalAlign.CENTER
@@ -299,12 +307,17 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     const alignment = col.align === 'right' ? AlignmentType.RIGHT : col.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT;
 
                                     if (col.id === 'amount' && typeof item[col.id] === 'number') {
-                                        cellContent = `${Number(item[col.id]).toFixed(2)}/-`;
+                                        return new DocxTableCell({
+                                            verticalAlign: VerticalAlign.CENTER,
+                                            children: [new Paragraph({ text: `${Number(item[col.id]).toFixed(2)}/-`, alignment })],
+                                            borders: {...tableCellBorders, ...tableBottomBorder},
+                                            margins: cellMargins
+                                        });
                                     }
 
                                     return new DocxTableCell({
                                         verticalAlign: VerticalAlign.CENTER,
-                                        children: [new Paragraph({ children: createMultiLineText(cellContent), alignment })],
+                                        children: [new Paragraph({ children: createFormattedTextRuns(cellContent), alignment })],
                                         borders: {...tableCellBorders, ...tableBottomBorder},
                                         margins: cellMargins
                                     });
