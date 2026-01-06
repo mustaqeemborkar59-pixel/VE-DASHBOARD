@@ -346,15 +346,12 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
                                         new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true, font: "Calibri" })] }),
-                                        new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.gstin, font: "Calibri"})] }),
-                                        ...(invoiceData.to.bankName ? [
-                                            new Paragraph({ text: " ", spacing: { before: 100 } }),
-                                            new Paragraph({ children: [new TextRun({ text: "Bank Details", bold: true, font: "Calibri" })] }),
-                                            new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.bankName, font: "Calibri"})] }),
-                                            new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.accountNumber, font: "Calibri"})] }),
-                                            new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.ifscCode, font: "Calibri"})] }),
-                                            new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.bankBranch, font: "Calibri"})] }),
-                                        ] : [])
+                                        ...(invoiceData.to.gstin ? [new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.gstin, font: "Calibri"})] })] : []),
+                                        ...(invoiceData.to.bankName || invoiceData.to.accountNumber || invoiceData.to.ifscCode || invoiceData.to.bankBranch ? [new Paragraph({ text: " ", spacing: { before: 100 } }), new Paragraph({ children: [new TextRun({ text: "Bank Details", bold: true, font: "Calibri" })] })] : []),
+                                        ...(invoiceData.to.bankName ? [new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.bankName, font: "Calibri"})] })] : []),
+                                        ...(invoiceData.to.accountNumber ? [new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.accountNumber, font: "Calibri"})] })] : []),
+                                        ...(invoiceData.to.ifscCode ? [new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.ifscCode, font: "Calibri"})] })] : []),
+                                        ...(invoiceData.to.bankBranch ? [new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true, font: "Calibri" }), new TextRun({text: invoiceData.to.bankBranch, font: "Calibri"})] })] : []),
                                     ],
                                     borders: { ...tableHeaderBorders },
                                     margins: cellMargins
@@ -381,3 +378,4 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);
 }
+
