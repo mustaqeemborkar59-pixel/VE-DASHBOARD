@@ -65,7 +65,7 @@ const generateInvoiceDataForWord = (invoice: Invoice, company: Company, template
         site: (invoice.site || '').toUpperCase(),
         items: invoice.items,
         columns: template?.columns || [
-            { id: 'particulars' as keyof InvoiceItem, label: 'Particulars', width: 71, align: 'left' as const, order: 1 },
+            { id: 'particulars' as keyof InvoiceItem, label: 'Particulars', width: 66, align: 'left' as const, order: 1 },
             { id: 'rate' as keyof InvoiceItem, label: 'Rate', width: 12, align: 'right' as const, order: 2 },
             { id: 'amount' as keyof InvoiceItem, label: 'Amount', width: 12, align: 'right' as const, order: 3 },
         ],
@@ -88,9 +88,9 @@ const createFormattedTextRuns = (text: string | number | undefined, sizeInPoints
         const parts = line.split(/(\*\*.*?\*\*)/g).filter(part => part); // Split by bold markdown
         const textRuns = parts.map(part => {
             if (part.startsWith('**') && part.endsWith('**')) {
-                return new TextRun({ text: part.slice(2, -2), bold: true, size });
+                return new TextRun({ text: part.slice(2, -2), bold: true, size, font: "Calibri" });
             }
-            return new TextRun({ text: part, size });
+            return new TextRun({ text: part, size, font: "Calibri" });
         });
 
         if (lineIndex < lines.length - 1) {
@@ -133,7 +133,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
 
     const headerCells = [
         new DocxTableCell({
-            width: { size: 5, type: WidthType.PERCENTAGE },
+            width: { size: 10, type: WidthType.PERCENTAGE },
             children: [new Paragraph({ children: [new TextRun({ text: "Sr. No", bold: true, size: 24 })], alignment: AlignmentType.CENTER })],
             verticalAlign: VerticalAlign.CENTER,
             borders: tableHeaderBorders,
@@ -158,22 +158,17 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
             left: { style: BorderStyle.SINGLE },
             right: { style: BorderStyle.SINGLE },
         };
-        const tableBodyFontSize = settings.tableBodyFontSize ? settings.tableBodyFontSize * 2 : 22;
+        const tableBodyFontSize = settings.tableBodyFontSize ? settings.tableBodyFontSize * 2 : 24;
 
         const cells = [
-             new DocxTableCell({ // Sr. No column
-                children: [new Paragraph('')],
-                borders: { ...totalRowsBorders, right: {style: BorderStyle.NONE} },
-                margins: cellMargins,
-                verticalAlign: VerticalAlign.CENTER,
-            }),
-            new DocxTableCell({
+             new DocxTableCell({ // Sr. No and Particulars column
+                columnSpan: 2,
                 children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: tableBodyFontSize })], alignment: AlignmentType.RIGHT })],
                 verticalAlign: VerticalAlign.CENTER,
-                borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  },
+                borders: { ...totalRowsBorders, right: {style: BorderStyle.NONE}  },
                 margins: cellMargins,
             }),
-             new DocxTableCell({ // Rate column
+            new DocxTableCell({ // Rate column - empty
                 children: [new Paragraph('')],
                 borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  },
                 margins: cellMargins,
@@ -226,7 +221,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                        new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    width: { size: 60, type: WidthType.PERCENTAGE },
+                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
                                         new Paragraph({ text: "To," }),
                                         new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
@@ -236,7 +231,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     verticalAlign: VerticalAlign.CENTER
                                 }),
                                 new DocxTableCell({
-                                    width: { size: 40, type: WidthType.PERCENTAGE },
+                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
                                         new Paragraph({ children: [new TextRun({ text: `Bill Date: ${invoiceData.billDate}` })], alignment: AlignmentType.RIGHT }),
                                     ],
@@ -289,11 +284,11 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                         }),
                         ...invoiceData.items.map((item, index) => new DocxTableRow({
                             children: [
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: (index + 1).toString(), size: settings.tableBodyFontSize ? settings.tableBodyFontSize * 2 : 22 })], alignment: AlignmentType.CENTER })], borders: {...tableCellBorders, ...tableBottomBorder}, margins: cellMargins }),
+                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: (index + 1).toString(), size: settings.tableBodyFontSize ? settings.tableBodyFontSize * 2 : 24 })], alignment: AlignmentType.CENTER })], borders: {...tableCellBorders, ...tableBottomBorder}, margins: cellMargins }),
                                 ...sortedColumns.map(col => {
                                     let cellContent: string | number | undefined = item[col.id];
                                     const alignment = col.align === 'right' ? AlignmentType.RIGHT : col.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT;
-                                    const tableBodyFontSize = settings.tableBodyFontSize ? settings.tableBodyFontSize * 2 : 22;
+                                    const tableBodyFontSize = settings.tableBodyFontSize ? settings.tableBodyFontSize * 2 : 24;
 
                                     if (col.id === 'amount' && typeof item[col.id] === 'number') {
                                         return new DocxTableCell({
@@ -303,10 +298,11 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                             margins: cellMargins
                                         });
                                     }
-
+                                    
+                                    const textRuns = cellContent ? createFormattedTextRuns(cellContent, settings.tableBodyFontSize) : [new TextRun("")];
                                     return new DocxTableCell({
                                         verticalAlign: VerticalAlign.CENTER,
-                                        children: [new Paragraph({ children: createFormattedTextRuns(cellContent, settings.tableBodyFontSize), alignment })],
+                                        children: [new Paragraph({ children: textRuns, alignment })],
                                         borders: {...tableCellBorders, ...tableBottomBorder},
                                         margins: cellMargins
                                     });
