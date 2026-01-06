@@ -40,5 +40,8 @@ service cloud.firestore {
     match /invoices/{invoiceId} {
       allow read, write: if isSignedIn();
     }
+    match /companySettings/{docId} {
+      allow read, write: if isSignedIn();
+    }
   }
 }

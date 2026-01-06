@@ -384,5 +384,3 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);
 }
-
-    

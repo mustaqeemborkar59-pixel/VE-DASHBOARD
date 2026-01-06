@@ -340,6 +340,43 @@
         "grandTotal": { "type": "number" }
       },
       "required": ["billNo", "billDate", "companyId", "items", "grandTotal"]
+    },
+    "CompanySettings": {
+      "title": "CompanySettings",
+      "description": "Represents the details of the user's own company (e.g., Vithal Enterprises).",
+      "type": "object",
+      "properties": {
+        "companyName": {
+          "type": "string"
+        },
+        "pan": {
+          "type": "string"
+        },
+        "gstin": {
+          "type": "string"
+        },
+        "sacCode": {
+          "type": "string"
+        },
+        "bankName": {
+          "type": "string"
+        },
+        "accountNumber": {
+          "type": "string"
+        },
+        "ifscCode": {
+          "type": "string"
+        },
+        "bankBranch": {
+          "type": "string"
+        },
+        "contactPerson": {
+          "type": "string"
+        },
+        "contactNumber": {
+          "type": "string"
+        }
+      }
     }
   },
   "auth": {
@@ -395,6 +432,12 @@
         "$ref": "#/entities/Invoice"
       },
       "description": "Stores all generated invoices."
+    },
+    "/companySettings/{docId}": {
+      "schema": {
+        "$ref": "#/entities/CompanySettings"
+      },
+      "description": "Stores the user's own company details. Should only contain one document."
     }
   }
 }

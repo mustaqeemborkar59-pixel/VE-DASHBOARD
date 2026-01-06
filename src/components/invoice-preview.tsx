@@ -159,5 +159,3 @@ export function InvoicePreview({ invoice, company }: InvoicePreviewProps) {
     </div>
   );
 }
-
-    
