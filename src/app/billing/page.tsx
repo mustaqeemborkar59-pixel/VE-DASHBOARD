@@ -1,6 +1,6 @@
 
 'use client';
-import React, { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import AppLayout from "@/components/app-layout";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Company, Invoice } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download } from 'lucide-react';
+import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Settings } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,8 +22,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { generateAndDownloadInvoice, type PageSettings } from '@/lib/invoice-generator';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { PageSize, PageOrientation } from 'docx';
 
 
 const AutoHeightTextarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => {
@@ -250,8 +248,6 @@ export default function BillingPage() {
       setPoNumber(invoice.poNumber || 'AGREEMENT');
       setSite(invoice.site || '');
       setItems(invoice.items.map((item, index) => ({ ...item, key: `item-${Date.now()}-${index}` })));
-      // Note: We don't load the invoice-specific page settings into the form,
-      // as the form is for general details. The download will use the correct settings.
       setTimeout(() => {
         const mainEl = document.querySelector('main');
         if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
@@ -322,10 +318,54 @@ export default function BillingPage() {
                         <CardTitle>Invoices</CardTitle>
                         <CardDescription>View, edit, and create new invoices.</CardDescription>
                     </div>
-                    <Button onClick={() => handleOpenFormDialog(null)} size="sm">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add Invoice
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" size="icon">
+                                    <Settings className="h-4 w-4" />
+                                    <span className="sr-only">Document Settings</span>
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80">
+                                <div className="grid gap-4">
+                                    <div className="space-y-2">
+                                        <h4 className="font-medium leading-none">Default Document Settings</h4>
+                                        <p className="text-sm text-muted-foreground">
+                                            Set the default page layout for new Word document invoices.
+                                        </p>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <div className="grid grid-cols-3 items-center gap-4">
+                                            <Label htmlFor="pageSize">Page Size</Label>
+                                            <Select value={defaultPageSettings.size} onValueChange={(value) => handlePageSettingsChange('size', value)} >
+                                                <SelectTrigger id="pageSize" className="col-span-2 h-8">
+                                                    <SelectValue placeholder="Select page size" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="A4">A4</SelectItem>
+                                                    <SelectItem value="LETTER">Letter</SelectItem>
+                                                    <SelectItem value="LEGAL">Legal</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="grid grid-cols-3 items-center gap-4">
+                                            <Label>Margins (cm)</Label>
+                                            <div className="col-span-2 grid grid-cols-2 gap-2">
+                                                <Input type="number" placeholder="Top" value={defaultPageSettings.margin.top} onChange={(e) => handleMarginChange('top', e.target.value)} className="h-8"/>
+                                                <Input type="number" placeholder="Bottom" value={defaultPageSettings.margin.bottom} onChange={(e) => handleMarginChange('bottom', e.target.value)} className="h-8"/>
+                                                <Input type="number" placeholder="Left" value={defaultPageSettings.margin.left} onChange={(e) => handleMarginChange('left', e.target.value)} className="h-8"/>
+                                                <Input type="number" placeholder="Right" value={defaultPageSettings.margin.right} onChange={(e) => handleMarginChange('right', e.target.value)} className="h-8"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                        <Button onClick={() => handleOpenFormDialog(null)} size="sm">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Add Invoice
+                        </Button>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
@@ -345,35 +385,6 @@ export default function BillingPage() {
                             placeholder={isLoadingInvoices ? "Loading..." : (maxBillNumber + 1).toString()}
                         />
                         <Button onClick={handleUpdateStartNumber} disabled={isLoadingInvoices}>Update</Button>
-                    </div>
-                </div>
-
-                <div className="mb-6 p-4 border rounded-lg bg-muted/40">
-                    <h3 className="text-sm font-medium mb-2">Default Document Settings</h3>
-                    <p className="text-xs text-muted-foreground mb-4">Set the default page layout for new Word document invoices.</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="pageSize">Page Size</Label>
-                            <Select value={defaultPageSettings.size} onValueChange={(value) => handlePageSettingsChange('size', value)}>
-                                <SelectTrigger id="pageSize">
-                                    <SelectValue placeholder="Select page size" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="A4">A4</SelectItem>
-                                    <SelectItem value="LETTER">Letter</SelectItem>
-                                    <SelectItem value="LEGAL">Legal</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Margins (in cm)</Label>
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                                <Input type="number" placeholder="Top" value={defaultPageSettings.margin.top} onChange={(e) => handleMarginChange('top', e.target.value)} />
-                                <Input type="number" placeholder="Bottom" value={defaultPageSettings.margin.bottom} onChange={(e) => handleMarginChange('bottom', e.target.value)} />
-                                <Input type="number" placeholder="Left" value={defaultPageSettings.margin.left} onChange={(e) => handleMarginChange('left', e.target.value)} />
-                                <Input type="number" placeholder="Right" value={defaultPageSettings.margin.right} onChange={(e) => handleMarginChange('right', e.target.value)} />
-                            </div>
-                        </div>
                     </div>
                 </div>
 
