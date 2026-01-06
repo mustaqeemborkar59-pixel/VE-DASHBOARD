@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -110,7 +111,7 @@ export function InvoicePreview({ invoice, company }: InvoicePreviewProps) {
       </table>
 
       <p className="mb-6">
-        <span className="font-bold">In words:</span> {amountInWords} ONLY.
+        <span className="font-bold">In words:</span> {amountInWords}
       </p>
 
       <Separator className="my-4 bg-gray-400" />
