@@ -75,7 +75,7 @@ const generateInvoiceDataForWord = (invoice: Invoice, company: Company, template
     }
 }
 
-const createFormattedTextRuns = (text: string | number | undefined): TextRun[] => {
+const createFormattedTextRuns = (text: string | number | undefined, size: number = 22): TextRun[] => {
     if (text === undefined || text === null) return [new TextRun("")];
 
     const textAsString = String(text);
@@ -85,13 +85,13 @@ const createFormattedTextRuns = (text: string | number | undefined): TextRun[] =
         const parts = line.split(/(\*\*.*?\*\*)/g).filter(part => part); // Split by bold markdown
         const textRuns = parts.map(part => {
             if (part.startsWith('**') && part.endsWith('**')) {
-                return new TextRun({ text: part.slice(2, -2), bold: true });
+                return new TextRun({ text: part.slice(2, -2), bold: true, size });
             }
-            return new TextRun(part);
+            return new TextRun({ text: part, size });
         });
 
         if (lineIndex < lines.length - 1) {
-            textRuns.push(new TextRun({ break: 1 }));
+            textRuns.push(new TextRun({ break: 1, size }));
         }
 
         return textRuns;
@@ -125,7 +125,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
     const headerCells = [
         new DocxTableCell({
             width: { size: 5, type: WidthType.PERCENTAGE },
-            children: [new Paragraph({ children: [new TextRun({ text: "Sr. No", bold: true })], alignment: AlignmentType.CENTER })],
+            children: [new Paragraph({ children: [new TextRun({ text: "Sr. No", bold: true, size: 24 })], alignment: AlignmentType.CENTER })],
             verticalAlign: VerticalAlign.CENTER,
             borders: tableHeaderBorders,
             margins: cellMargins
@@ -133,7 +133,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
         ...sortedColumns.map(column => new DocxTableCell({
             width: { size: column.width, type: WidthType.PERCENTAGE },
             children: [new Paragraph({ 
-                children: [new TextRun({ text: column.label, bold: true })], 
+                children: [new TextRun({ text: column.label, bold: true, size: 24 })], 
                 alignment: (column.label === 'Rate' || column.label === 'Amount') ? AlignmentType.CENTER : (column.align === 'right' ? AlignmentType.RIGHT : column.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT)
             })],
             verticalAlign: VerticalAlign.CENTER,
@@ -167,7 +167,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
         for (let i = 0; i < sortedColumns.length; i++) {
             if (i === particularsColIndex) {
                  cells.push(new DocxTableCell({
-                    children: [new Paragraph({ children: [new TextRun({ text: label, bold: true })], alignment: AlignmentType.RIGHT })],
+                    children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: 24 })], alignment: AlignmentType.RIGHT })],
                     verticalAlign: VerticalAlign.CENTER,
                     borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  },
                     margins: cellMargins,
@@ -181,7 +181,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                 }));
             } else if (i === amountColIndex) {
                  cells.push(new DocxTableCell({
-                    children: [new Paragraph({ children: [new TextRun({ text: value, bold: true })], alignment: AlignmentType.RIGHT })],
+                    children: [new Paragraph({ children: [new TextRun({ text: value, bold: true, size: 24 })], alignment: AlignmentType.RIGHT })],
                     verticalAlign: VerticalAlign.CENTER,
                     borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}  },
                     margins: cellMargins,
@@ -301,7 +301,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                         }),
                         ...invoiceData.items.map((item, index) => new DocxTableRow({
                             children: [
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: (index + 1).toString(), alignment: AlignmentType.CENTER })], borders: {...tableCellBorders, ...tableBottomBorder}, margins: cellMargins }),
+                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: (index + 1).toString(), size: 24 })], alignment: AlignmentType.CENTER })], borders: {...tableCellBorders, ...tableBottomBorder}, margins: cellMargins }),
                                 ...sortedColumns.map(col => {
                                     let cellContent: string | number | undefined = item[col.id];
                                     const alignment = col.align === 'right' ? AlignmentType.RIGHT : col.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT;
@@ -309,7 +309,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     if (col.id === 'amount' && typeof item[col.id] === 'number') {
                                         return new DocxTableCell({
                                             verticalAlign: VerticalAlign.CENTER,
-                                            children: [new Paragraph({ text: `${Number(item[col.id]).toFixed(2)}/-`, alignment })],
+                                            children: [new Paragraph({ children: [new TextRun({ text: `${Number(item[col.id]).toFixed(2)}/-`, size: 24 })], alignment })],
                                             borders: {...tableCellBorders, ...tableBottomBorder},
                                             margins: cellMargins
                                         });
@@ -317,7 +317,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
 
                                     return new DocxTableCell({
                                         verticalAlign: VerticalAlign.CENTER,
-                                        children: [new Paragraph({ children: createFormattedTextRuns(cellContent), alignment })],
+                                        children: [new Paragraph({ children: createFormattedTextRuns(cellContent, 24), alignment })],
                                         borders: {...tableCellBorders, ...tableBottomBorder},
                                         margins: cellMargins
                                     });
