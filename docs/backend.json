@@ -270,6 +270,18 @@
           "type": "string",
           "description": "GST Identification Number of the company."
         },
+        "bankName": {
+            "type": "string",
+            "description": "Name of the company's bank."
+        },
+        "accountNumber": {
+            "type": "string",
+            "description": "Company's bank account number."
+        },
+        "ifscCode": {
+            "type": "string",
+            "description": "IFSC code of the company's bank branch."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"

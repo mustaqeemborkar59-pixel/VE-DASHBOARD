@@ -51,6 +51,9 @@ const generateInvoiceDataForWord = (invoice: Invoice, company: Company, template
           name: company.name.toUpperCase(),
           address: company.address.toUpperCase(),
           gstin: company.gstin || '',
+          bankName: company.bankName || '',
+          accountNumber: company.accountNumber || '',
+          ifscCode: company.ifscCode || '',
         },
         billDate: format(parseISO(invoice.billDate), 'dd/MM/yyyy'),
         billNo: `${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}`.toUpperCase(),
@@ -130,7 +133,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
         }))
     ];
     
-    const createTotalRow = (label: string, value: string, isGrandTotal = false) => {
+    const createTotalRow = (label: string, value: string) => {
         const totalRowsBorders = {
             top: { style: BorderStyle.SINGLE },
             bottom: { style: BorderStyle.SINGLE },
@@ -307,7 +310,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                         createTotalRow('Net total=', formatCurrency(invoiceData.netTotal)),
                         createTotalRow('CGST@9%', formatCurrency(invoiceData.cgst)),
                         createTotalRow('SGST@9%', formatCurrency(invoiceData.sgst)),
-                        createTotalRow('TOTAL AMOUNT PAYABLE', formatCurrency(invoiceData.grandTotal), true),
+                        createTotalRow('TOTAL AMOUNT PAYABLE', formatCurrency(invoiceData.grandTotal)),
                     ],
                 }),
 
@@ -327,7 +330,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                         new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true }), new TextRun("27AFVPM0759G1ZY")] }),
                                         new Paragraph({ children: [new TextRun({ text: "SAC code: ", bold: true }), new TextRun("997319, 998519")] }),
                                         new Paragraph({ text: " ", spacing: { before: 100 } }),
-                                        new Paragraph({ children: [new TextRun({ text: "Bank Details", bold: true, underline: {} })] }),
+                                        new Paragraph({ children: [new TextRun({ text: "Bank Details", bold: true })] }),
                                         new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true }), new TextRun("Your Bank Name")] }),
                                         new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true }), new TextRun("1234567890")] }),
                                         new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true }), new TextRun("BANK0001234")] }),
@@ -341,6 +344,13 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     children: [
                                         new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
                                         new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true }), new TextRun(invoiceData.to.gstin)] }),
+                                        ...(invoiceData.to.bankName ? [
+                                            new Paragraph({ text: " ", spacing: { before: 100 } }),
+                                            new Paragraph({ children: [new TextRun({ text: "Bank Details", bold: true })] }),
+                                            new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true }), new TextRun(invoiceData.to.bankName)] }),
+                                            new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true }), new TextRun(invoiceData.to.accountNumber)] }),
+                                            new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true }), new TextRun(invoiceData.to.ifscCode)] }),
+                                        ] : [])
                                     ],
                                     borders: { ...tableHeaderBorders },
                                     margins: cellMargins
