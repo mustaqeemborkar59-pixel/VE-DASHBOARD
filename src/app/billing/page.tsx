@@ -119,10 +119,22 @@ export default function BillingPage() {
   }, [allInvoices]);
   
   useEffect(() => {
-    if (maxBillNumber > 0 && !invoiceStartNumber) {
-        setInvoiceStartNumber((maxBillNumber + 1).toString());
+    if (isLoadingInvoices) return;
+
+    let nextNumber = maxBillNumber + 1;
+    try {
+      const savedStartNumber = localStorage.getItem('invoiceStartNumber');
+      if (savedStartNumber) {
+        const parsedSavedNumber = parseInt(savedStartNumber, 10);
+        if (!isNaN(parsedSavedNumber) && parsedSavedNumber > nextNumber) {
+          nextNumber = parsedSavedNumber;
+        }
+      }
+    } catch (error) {
+      console.error("Failed to read invoice start number from localStorage", error);
     }
-   }, [maxBillNumber, invoiceStartNumber]);
+    setInvoiceStartNumber(nextNumber.toString());
+  }, [maxBillNumber, isLoadingInvoices]);
 
   const calculations = useMemo(() => {
     const netTotal = items.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
@@ -211,7 +223,8 @@ export default function BillingPage() {
     }
     
     if (firestore) {
-      let billNoToUse = editingInvoice ? editingInvoice.billNo : (Number(invoiceStartNumber) > maxBillNumber ? Number(invoiceStartNumber) : maxBillNumber + 1);
+      const currentStartNumber = parseInt(invoiceStartNumber, 10);
+      let billNoToUse = editingInvoice ? editingInvoice.billNo : (currentStartNumber > maxBillNumber ? currentStartNumber : maxBillNumber + 1);
 
       if (isNaN(billNoToUse)) {
         billNoToUse = maxBillNumber + 1;
@@ -246,7 +259,9 @@ export default function BillingPage() {
           });
         } else {
           addDocumentNonBlocking(collection(firestore, 'invoices'), invoiceData);
-          setInvoiceStartNumber((billNoToUse + 1).toString());
+          const nextNum = billNoToUse + 1;
+          setInvoiceStartNumber(nextNum.toString());
+          localStorage.setItem('invoiceStartNumber', nextNum.toString());
           toast({
               title: 'Invoice Saved',
               description: `Invoice No. ${billNoToUse}-MHE has been saved.`,
@@ -312,10 +327,19 @@ export default function BillingPage() {
           })
           setInvoiceStartNumber((maxBillNumber + 1).toString());
       } else {
-          toast({
-              title: 'Success',
-              description: `Next invoice will start from ${num}.`
-          })
+          try {
+              localStorage.setItem('invoiceStartNumber', num.toString());
+              toast({
+                  title: 'Success',
+                  description: `Next invoice will start from ${num}.`
+              })
+          } catch(e) {
+              toast({
+                  variant: 'destructive',
+                  title: 'Error',
+                  description: `Could not save start number.`
+              })
+          }
       }
   }
 
@@ -613,6 +637,8 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+    
+
     
 
     
