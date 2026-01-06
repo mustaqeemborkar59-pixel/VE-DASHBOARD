@@ -107,6 +107,8 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
     };
     
     const tableBottomBorder = { bottom: { style: BorderStyle.SINGLE }};
+    
+    const cellMargins = { left: 100, right: 100 };
 
     const headerCells = [
         new DocxTableCell({
@@ -114,6 +116,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
             children: [new Paragraph({ children: [new TextRun({ text: "Sr. No", bold: true })], alignment: AlignmentType.CENTER })],
             verticalAlign: VerticalAlign.CENTER,
             borders: tableHeaderBorders,
+            margins: cellMargins
         }),
         ...sortedColumns.map(column => new DocxTableCell({
             width: { size: column.width, type: WidthType.PERCENTAGE },
@@ -123,10 +126,11 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
             })],
             verticalAlign: VerticalAlign.CENTER,
             borders: tableHeaderBorders,
+            margins: cellMargins
         }))
     ];
     
-    const createTotalRow = (label: string, value: string, isGrandTotal = false) => {
+    const createTotalRow = (label: string, value: string) => {
         const totalRowsBorders = {
             top: { style: BorderStyle.SINGLE },
             bottom: { style: BorderStyle.SINGLE },
@@ -142,6 +146,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
              new DocxTableCell({ // Sr. No column
                 children: [new Paragraph('')],
                 borders: { ...totalRowsBorders, right: {style: BorderStyle.NONE} },
+                margins: cellMargins,
             }),
         ];
 
@@ -151,18 +156,27 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                  cells.push(new DocxTableCell({
                     children: [new Paragraph({ children: [new TextRun({ text: label, bold: true })], alignment: AlignmentType.RIGHT })],
                     verticalAlign: VerticalAlign.CENTER,
-                    borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  }
+                    borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  },
+                    margins: cellMargins,
                 }));
             } else if (i === rateColIndex) {
                  cells.push(new DocxTableCell({ // Rate column
                     children: [new Paragraph('')],
-                    borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  }
+                    borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  },
+                    margins: cellMargins,
                 }));
             } else if (i === amountColIndex) {
                  cells.push(new DocxTableCell({
                     children: [new Paragraph({ children: [new TextRun({ text: value, bold: true })], alignment: AlignmentType.RIGHT })],
                     verticalAlign: VerticalAlign.CENTER,
-                    borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}  }
+                    borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}  },
+                    margins: cellMargins,
+                }));
+            } else {
+                 cells.push(new DocxTableCell({
+                    children: [new Paragraph('')],
+                    borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE} },
+                    margins: cellMargins,
                 }));
             }
         }
@@ -268,7 +282,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                         ...invoiceData.items.map((item, index) => new DocxTableRow({
                             height: { value: 350, rule: "atLeast" }, 
                             children: [
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: (index + 1).toString(), alignment: AlignmentType.CENTER })], borders: {...tableCellBorders, ...tableBottomBorder} }),
+                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ text: (index + 1).toString(), alignment: AlignmentType.CENTER })], borders: {...tableCellBorders, ...tableBottomBorder}, margins: cellMargins }),
                                 ...sortedColumns.map(col => {
                                     let cellContent: string | number | undefined = item[col.id];
                                     const alignment = col.align === 'right' ? AlignmentType.RIGHT : col.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT;
@@ -280,7 +294,8 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     return new DocxTableCell({
                                         verticalAlign: VerticalAlign.TOP,
                                         children: [new Paragraph({ children: createMultiLineText(cellContent), alignment })],
-                                        borders: {...tableCellBorders, ...tableBottomBorder}
+                                        borders: {...tableCellBorders, ...tableBottomBorder},
+                                        margins: cellMargins
                                     });
                                 })
                             ],
@@ -288,7 +303,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                         createTotalRow('Net total=', formatCurrency(invoiceData.netTotal)),
                         createTotalRow('CGST@9%', formatCurrency(invoiceData.cgst)),
                         createTotalRow('SGST@9%', formatCurrency(invoiceData.sgst)),
-                        createTotalRow('TOTAL AMOUNT PAYABLE', formatCurrency(invoiceData.grandTotal), true),
+                        createTotalRow('TOTAL AMOUNT PAYABLE', formatCurrency(invoiceData.grandTotal)),
                     ],
                 }),
 
