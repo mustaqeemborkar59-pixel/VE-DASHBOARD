@@ -74,7 +74,7 @@ const generateInvoiceDataForWord = (invoice: Invoice, company: Company, template
         cgst: invoice.cgst,
         sgst: invoice.sgst,
         grandTotal: invoice.grandTotal,
-        amountInWords: grandTotalInWords.toUpperCase(),
+        amountInWords: grandTotalInWords,
     }
 }
 
@@ -384,3 +384,5 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);
 }
+
+    
