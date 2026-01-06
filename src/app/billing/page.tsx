@@ -52,26 +52,26 @@ export default function BillingPage() {
   }
   
   const [defaultPageSettings, setDefaultPageSettings] = useState<PageSettings>(() => {
+    const defaultSettings: PageSettings = {
+        size: 'A4',
+        orientation: 'portrait',
+        margin: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 },
+        addressFontSize: 10,
+        tableBodyFontSize: 11,
+    };
     if (typeof window === 'undefined') {
-        return {
-            size: 'A4',
-            orientation: 'portrait',
-            margin: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 }
-        };
+        return defaultSettings;
     }
     try {
         const savedSettings = localStorage.getItem('invoicePageSettings');
         if (savedSettings) {
-            return JSON.parse(savedSettings);
+            // Merge saved settings with defaults to ensure new properties are added
+            return { ...defaultSettings, ...JSON.parse(savedSettings) };
         }
     } catch (error) {
         console.error("Failed to parse page settings from localStorage", error);
     }
-    return {
-        size: 'A4',
-        orientation: 'portrait',
-        margin: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 }
-    };
+    return defaultSettings;
   });
 
   useEffect(() => {
@@ -165,7 +165,8 @@ export default function BillingPage() {
   const handleItemChange = (key: string, field: keyof Omit<InvoiceItem, 'key'>, value: string | number) => {
     const newItems = items.map(item => {
         if(item.key === key) {
-            return { ...item, [field]: value };
+            const parsedValue = field === 'amount' ? (parseFloat(value as string) || 0) : value;
+            return { ...item, [field]: parsedValue };
         }
         return item;
     });
@@ -184,6 +185,8 @@ export default function BillingPage() {
         size: invoice.pageSize as any || defaultPageSettings.size,
         orientation: invoice.pageOrientation as any || defaultPageSettings.orientation,
         margin: invoice.pageMargins || defaultPageSettings.margin,
+        addressFontSize: invoice.addressFontSize || defaultPageSettings.addressFontSize,
+        tableBodyFontSize: invoice.tableBodyFontSize || defaultPageSettings.tableBodyFontSize,
     }
 
     try {
@@ -247,6 +250,8 @@ export default function BillingPage() {
         pageSize: defaultPageSettings.size,
         pageOrientation: defaultPageSettings.orientation,
         pageMargins: defaultPageSettings.margin,
+        addressFontSize: defaultPageSettings.addressFontSize,
+        tableBodyFontSize: defaultPageSettings.tableBodyFontSize,
       };
 
       try {
@@ -357,6 +362,13 @@ export default function BillingPage() {
       }
   }
 
+  const handleFontSizeChange = (field: 'addressFontSize' | 'tableBodyFontSize', value: string) => {
+      const numValue = parseInt(value, 10);
+      if (!isNaN(numValue) && numValue > 0) {
+        handlePageSettingsChange(field, numValue);
+      }
+  }
+
   return (
     <AppLayout>
       <div className="flex flex-col gap-6">
@@ -380,10 +392,10 @@ export default function BillingPage() {
                                     <div className="space-y-2">
                                         <h4 className="font-medium leading-none">Default Document Settings</h4>
                                         <p className="text-sm text-muted-foreground">
-                                            Set the default page layout for new Word document invoices.
+                                            Set the default layout for new Word document invoices.
                                         </p>
                                     </div>
-                                    <div className="grid gap-2">
+                                    <div className="grid gap-4">
                                         <div className="grid grid-cols-3 items-center gap-4">
                                             <Label htmlFor="pageSize">Page Size</Label>
                                             <Select value={defaultPageSettings.size} onValueChange={(value) => handlePageSettingsChange('size', value)} >
@@ -397,7 +409,7 @@ export default function BillingPage() {
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        <div className="grid grid-cols-3 items-center gap-4">
+                                        <div className="grid grid-cols-3 items-start gap-4">
                                             <Label>Margins (cm)</Label>
                                             <div className="col-span-2 grid grid-cols-2 gap-2">
                                                 <Input type="number" placeholder="Top" value={defaultPageSettings.margin.top} onChange={(e) => handleMarginChange('top', e.target.value)} className="h-8"/>
@@ -405,6 +417,14 @@ export default function BillingPage() {
                                                 <Input type="number" placeholder="Left" value={defaultPageSettings.margin.left} onChange={(e) => handleMarginChange('left', e.target.value)} className="h-8"/>
                                                 <Input type="number" placeholder="Right" value={defaultPageSettings.margin.right} onChange={(e) => handleMarginChange('right', e.target.value)} className="h-8"/>
                                             </div>
+                                        </div>
+                                         <div className="grid grid-cols-3 items-center gap-4">
+                                            <Label htmlFor="addressFontSize">Address Font</Label>
+                                            <Input id="addressFontSize" type="number" value={defaultPageSettings.addressFontSize} onChange={(e) => handleFontSizeChange('addressFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 10"/>
+                                        </div>
+                                        <div className="grid grid-cols-3 items-center gap-4">
+                                            <Label htmlFor="tableBodyFontSize">Table Font</Label>
+                                            <Input id="tableBodyFontSize" type="number" value={defaultPageSettings.tableBodyFontSize} onChange={(e) => handleFontSizeChange('tableBodyFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 11"/>
                                         </div>
                                     </div>
                                 </div>
@@ -572,7 +592,7 @@ export default function BillingPage() {
                                         type="number"
                                         placeholder="Amount"
                                         value={item.amount || ''}
-                                        onChange={(e) => handleItemChange(item.key, 'amount', parseFloat(e.target.value))}
+                                        onChange={(e) => handleItemChange(item.key, 'amount', e.target.value)}
                                         className="w-48"
                                     />
                                     <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.key)} disabled={items.length === 1}>
@@ -637,10 +657,3 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-    
-
-    
-
-    
-
-    

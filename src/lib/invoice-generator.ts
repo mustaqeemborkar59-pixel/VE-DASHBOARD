@@ -13,7 +13,9 @@ export type PageSettings = {
         right: number;
         bottom: number;
         left: number;
-    }
+    },
+    addressFontSize?: number,
+    tableBodyFontSize?: number,
 }
 
 const getPageSize = (size: PageSettings['size']): IPageSize => {
@@ -75,9 +77,10 @@ const generateInvoiceDataForWord = (invoice: Invoice, company: Company, template
     }
 }
 
-const createFormattedTextRuns = (text: string | number | undefined, size: number = 22): TextRun[] => {
+const createFormattedTextRuns = (text: string | number | undefined, sizeInPoints: number = 11): TextRun[] => {
     if (text === undefined || text === null) return [new TextRun("")];
-
+    
+    const size = sizeInPoints * 2; // docx library uses half-points
     const textAsString = String(text);
     const lines = textAsString.split('\n');
 
@@ -100,7 +103,13 @@ const createFormattedTextRuns = (text: string | number | undefined, size: number
 
 
 export const generateAndDownloadInvoice = async (invoice: Invoice, company: Company, pageSettings?: PageSettings, template?: InvoiceTemplate) => {
-    const settings = pageSettings || { size: 'A4', orientation: 'portrait', margin: {top: 1.27, right: 1.27, bottom: 1.27, left: 1.27} };
+    const settings: PageSettings = pageSettings || { 
+        size: 'A4', 
+        orientation: 'portrait', 
+        margin: {top: 1.27, right: 1.27, bottom: 1.27, left: 1.27},
+        addressFontSize: 10,
+        tableBodyFontSize: 11
+    };
     const invoiceData = generateInvoiceDataForWord(invoice, company, template);
     const formatCurrency = (amount: number) => amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
@@ -149,11 +158,8 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
             left: { style: BorderStyle.SINGLE },
             right: { style: BorderStyle.SINGLE },
         };
+        const tableBodyFontSize = settings.tableBodyFontSize ? settings.tableBodyFontSize * 2 : 22;
 
-        const particularsColIndex = sortedColumns.findIndex(c => c.id === 'particulars');
-        const rateColIndex = sortedColumns.findIndex(c => c.id === 'rate');
-        const amountColIndex = sortedColumns.findIndex(c => c.id === 'amount');
-        
         const cells = [
              new DocxTableCell({ // Sr. No column
                 children: [new Paragraph('')],
@@ -161,45 +167,27 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                 margins: cellMargins,
                 verticalAlign: VerticalAlign.CENTER,
             }),
+            new DocxTableCell({
+                children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: tableBodyFontSize })], alignment: AlignmentType.RIGHT })],
+                verticalAlign: VerticalAlign.CENTER,
+                borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  },
+                margins: cellMargins,
+            }),
+             new DocxTableCell({ // Rate column
+                children: [new Paragraph('')],
+                borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  },
+                margins: cellMargins,
+                verticalAlign: VerticalAlign.CENTER,
+            }),
+            new DocxTableCell({
+                children: [new Paragraph({ children: [new TextRun({ text: value, bold: true, size: tableBodyFontSize })], alignment: AlignmentType.RIGHT })],
+                verticalAlign: VerticalAlign.CENTER,
+                borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}  },
+                margins: cellMargins,
+            }),
         ];
 
-        // This loop ensures correct placement based on column order
-        for (let i = 0; i < sortedColumns.length; i++) {
-            if (i === particularsColIndex) {
-                 cells.push(new DocxTableCell({
-                    children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: 24 })], alignment: AlignmentType.RIGHT })],
-                    verticalAlign: VerticalAlign.CENTER,
-                    borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  },
-                    margins: cellMargins,
-                }));
-            } else if (i === rateColIndex) {
-                 cells.push(new DocxTableCell({ // Rate column
-                    children: [new Paragraph('')],
-                    borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  },
-                    margins: cellMargins,
-                    verticalAlign: VerticalAlign.CENTER,
-                }));
-            } else if (i === amountColIndex) {
-                 cells.push(new DocxTableCell({
-                    children: [new Paragraph({ children: [new TextRun({ text: value, bold: true, size: 24 })], alignment: AlignmentType.RIGHT })],
-                    verticalAlign: VerticalAlign.CENTER,
-                    borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}  },
-                    margins: cellMargins,
-                }));
-            } else {
-                 cells.push(new DocxTableCell({
-                    children: [new Paragraph('')],
-                    borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE} },
-                    margins: cellMargins,
-                    verticalAlign: VerticalAlign.CENTER,
-                }));
-            }
-        }
-
-
-        return new DocxTableRow({
-            children: cells,
-        });
+        return new DocxTableRow({ children: cells });
     }
 
     const doc = new Document({
@@ -242,7 +230,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                                     children: [
                                         new Paragraph({ text: "To," }),
                                         new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true })] }),
-                                        new Paragraph({ children: createFormattedTextRuns(invoiceData.to.address, 20) }),
+                                        new Paragraph({ children: createFormattedTextRuns(invoiceData.to.address, settings.addressFontSize) }),
                                     ],
                                     margins: cellMargins,
                                     verticalAlign: VerticalAlign.CENTER
@@ -301,15 +289,16 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
                         }),
                         ...invoiceData.items.map((item, index) => new DocxTableRow({
                             children: [
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: (index + 1).toString(), size: 24 })], alignment: AlignmentType.CENTER })], borders: {...tableCellBorders, ...tableBottomBorder}, margins: cellMargins }),
+                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: (index + 1).toString(), size: settings.tableBodyFontSize ? settings.tableBodyFontSize * 2 : 22 })], alignment: AlignmentType.CENTER })], borders: {...tableCellBorders, ...tableBottomBorder}, margins: cellMargins }),
                                 ...sortedColumns.map(col => {
                                     let cellContent: string | number | undefined = item[col.id];
                                     const alignment = col.align === 'right' ? AlignmentType.RIGHT : col.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT;
+                                    const tableBodyFontSize = settings.tableBodyFontSize ? settings.tableBodyFontSize * 2 : 22;
 
                                     if (col.id === 'amount' && typeof item[col.id] === 'number') {
                                         return new DocxTableCell({
                                             verticalAlign: VerticalAlign.CENTER,
-                                            children: [new Paragraph({ children: [new TextRun({ text: `${Number(item[col.id]).toFixed(2)}/-`, size: 24 })], alignment })],
+                                            children: [new Paragraph({ children: [new TextRun({ text: `${Number(item[col.id]).toFixed(2)}/-`, size: tableBodyFontSize })], alignment })],
                                             borders: {...tableCellBorders, ...tableBottomBorder},
                                             margins: cellMargins
                                         });
@@ -317,7 +306,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
 
                                     return new DocxTableCell({
                                         verticalAlign: VerticalAlign.CENTER,
-                                        children: [new Paragraph({ children: createFormattedTextRuns(cellContent, 24), alignment })],
+                                        children: [new Paragraph({ children: createFormattedTextRuns(cellContent, settings.tableBodyFontSize), alignment })],
                                         borders: {...tableCellBorders, ...tableBottomBorder},
                                         margins: cellMargins
                                     });
