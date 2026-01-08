@@ -327,62 +327,62 @@ export default function ForkliftsPage() {
           </Card>
         </div>
         
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex w-full flex-1 items-center gap-2">
-            <Select value={searchField} onValueChange={(value) => setSearchField(value as SearchField)}>
-              <SelectTrigger className="w-auto px-3 border-r-0 rounded-r-none focus:ring-0 focus:ring-offset-0">
-                <ListFilter className="h-4 w-4 text-muted-foreground" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(searchFieldLabels).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="relative w-full sm:max-w-xs">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder={searchPlaceholder}
-                className="pl-8 rounded-l-none"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
+        <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center flex-1 w-full sm:w-auto sm:min-w-64">
+                <Select value={searchField} onValueChange={(value) => setSearchField(value as SearchField)}>
+                <SelectTrigger className="w-auto px-3 border-r-0 rounded-r-none focus:ring-0 focus:ring-offset-0">
+                    <ListFilter className="h-4 w-4 text-muted-foreground" />
+                </SelectTrigger>
+                <SelectContent>
+                    {Object.entries(searchFieldLabels).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                    ))}
+                </SelectContent>
+                </Select>
+                <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder={searchPlaceholder}
+                    className="pl-8 rounded-l-none w-full"
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                />
+                </div>
             </div>
-          </div>
-          <div className="flex w-full flex-col sm:flex-row items-center gap-2">
-            <Select value={locationFilter} onValueChange={setLocationFilter}>
-              <SelectTrigger className="w-full sm:w-[150px]">
-                <SelectValue placeholder="Filter by Location" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Locations</SelectItem>
-                <SelectItem value="Workshop">Workshop</SelectItem>
-                <SelectItem value="On-Site">On-Site</SelectItem>
-                <SelectItem value="Not Confirm">Not Confirmed</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
-              <SelectTrigger className="w-full sm:w-[150px]">
-                <SelectValue placeholder="Filter by Type" />
-              </SelectTrigger>
-              <SelectContent>
-                {equipmentTypes.map(type => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={capacityFilter} onValueChange={setCapacityFilter}>
-              <SelectTrigger className="w-full sm:w-[150px]">
-                <SelectValue placeholder="Filter by Capacity" />
-              </SelectTrigger>
-              <SelectContent>
-                {capacities.map(capacity => (
-                  <SelectItem key={capacity} value={capacity}>{capacity}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <Select value={locationFilter} onValueChange={setLocationFilter}>
+                <SelectTrigger className="w-full sm:w-auto min-w-[150px]">
+                    <SelectValue placeholder="Filter by Location" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="All">All Locations</SelectItem>
+                    <SelectItem value="Workshop">Workshop</SelectItem>
+                    <SelectItem value="On-Site">On-Site</SelectItem>
+                    <SelectItem value="Not Confirm">Not Confirmed</SelectItem>
+                </SelectContent>
+                </Select>
+                <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
+                <SelectTrigger className="w-full sm:w-auto min-w-[150px]">
+                    <SelectValue placeholder="Filter by Type" />
+                </SelectTrigger>
+                <SelectContent>
+                    {equipmentTypes.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                </SelectContent>
+                </Select>
+                <Select value={capacityFilter} onValueChange={setCapacityFilter}>
+                <SelectTrigger className="w-full sm:w-auto min-w-[150px]">
+                    <SelectValue placeholder="Filter by Capacity" />
+                </SelectTrigger>
+                <SelectContent>
+                    {capacities.map(capacity => (
+                    <SelectItem key={capacity} value={capacity}>{capacity}</SelectItem>
+                    ))}
+                </SelectContent>
+                </Select>
+            </div>
         </div>
 
         <Card>
