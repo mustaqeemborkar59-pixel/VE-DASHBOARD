@@ -279,7 +279,7 @@ export default function BillingPage() {
   };
   
   const amountInWords = useMemo(() => {
-    return toWords.convert(calculations.grandTotal);
+    return toWords.convert(calculations.grandTotal).toUpperCase();
   },[calculations.grandTotal, toWords]);
   
   
@@ -369,6 +369,9 @@ export default function BillingPage() {
           
           updateDocumentNonBlocking(invoiceDocRef, {
             ...updateData,
+            // Ensure client and my company details are NOT updated on edit
+            clientCompanyDetails: editingInvoice.clientCompanyDetails,
+            myCompanyDetails: editingInvoice.myCompanyDetails,
             downloadOptions: formDownloadOptions, // Make sure to save the updated options
           });
 

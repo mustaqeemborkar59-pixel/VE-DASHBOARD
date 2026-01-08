@@ -61,7 +61,7 @@ const generateInvoiceDataForWord = (invoice: Invoice, clientCompany: Company, my
         ignoreZeroCurrency: false,
       }
     });
-    const grandTotalInWords = words.convert(invoice.grandTotal);
+    const grandTotalInWords = words.convert(invoice.grandTotal).toUpperCase();
     
     return {
         to: {
