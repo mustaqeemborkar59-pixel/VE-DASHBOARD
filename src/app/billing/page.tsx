@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import AppLayout from "@/components/app-layout";
@@ -12,7 +11,7 @@ import { collection, query, orderBy, doc, setDoc } from 'firebase/firestore';
 import { Company, Invoice, CompanySettings, PageMargin } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Settings, Eye } from 'lucide-react';
+import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Settings, Eye, FileText } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -20,10 +19,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { generateAndDownloadInvoice, type PageSettings } from '@/lib/invoice-generator';
+import { generateAndDownloadInvoice, type PageSettings, type DownloadOptions } from '@/lib/invoice-generator';
 import { Textarea } from '@/components/ui/textarea';
 import { InvoicePreview } from '@/components/invoice-preview';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 const AutoHeightTextarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => {
@@ -83,7 +83,12 @@ export default function BillingPage() {
   
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [invoiceForPreview, setInvoiceForPreview] = useState<Invoice | null>(null);
-
+  
+  const [invoiceToDownload, setInvoiceToDownload] = useState<Invoice | null>(null);
+  const [downloadOptions, setDownloadOptions] = useState<DownloadOptions>({
+      myCompany: { showGstin: true, showPan: true, showBankDetails: true },
+      clientCompany: { showGstin: true, showBankDetails: true }
+  });
 
   // Queries
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
@@ -111,7 +116,7 @@ export default function BillingPage() {
   }, [myCompanyDetails, defaultPageSettings]);
 
   
-  const handleDownloadWord = async (invoice: Invoice) => {
+  const handleDownloadWord = async (invoice: Invoice, options: DownloadOptions) => {
     if (!invoice.clientCompanyDetails) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not find client company details for this invoice.' });
       return;
@@ -131,7 +136,8 @@ export default function BillingPage() {
     }
 
     try {
-        await generateAndDownloadInvoice(invoice, invoice.clientCompanyDetails, invoice.myCompanyDetails, pageSettingsToUse);
+        await generateAndDownloadInvoice(invoice, invoice.clientCompanyDetails, invoice.myCompanyDetails, pageSettingsToUse, undefined, options);
+        setInvoiceToDownload(null); // Close the dialog on success
     } catch (e) {
         toast({
             variant: 'destructive',
@@ -471,7 +477,7 @@ export default function BillingPage() {
                                                         <Eye className="mr-2 h-4 w-4" />
                                                         Preview
                                                     </Button>
-                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleDownloadWord(invoice)}>
+                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setInvoiceToDownload(invoice)}>
                                                         <Download className="mr-2 h-4 w-4" />
                                                         Download
                                                     </Button>
@@ -662,6 +668,53 @@ export default function BillingPage() {
                 <div className={cn("px-6 pb-6 overflow-y-auto max-h-[80vh]", "hide-scrollbar")}>
                    <InvoicePreview invoice={invoiceForPreview} company={invoiceForPreview?.clientCompanyDetails || null} myCompanyDetails={invoiceForPreview?.myCompanyDetails || null} />
                 </div>
+            </DialogContent>
+        </Dialog>
+        
+        <Dialog open={!!invoiceToDownload} onOpenChange={(isOpen) => !isOpen && setInvoiceToDownload(null)}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Download Options</DialogTitle>
+                    <DialogDescription>
+                        Select which details to include in the Word document for Bill No. {invoiceToDownload?.billNo}-MHE.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-6">
+                    <div className="space-y-4">
+                        <h4 className="font-semibold text-foreground">My Company Details</h4>
+                        <div className="flex items-center space-x-2">
+                            <Checkbox id="myGstin" checked={downloadOptions.myCompany.showGstin} onCheckedChange={(checked) => setDownloadOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showGstin: !!checked} }))} />
+                            <Label htmlFor="myGstin">Show GSTIN</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Checkbox id="myPan" checked={downloadOptions.myCompany.showPan} onCheckedChange={(checked) => setDownloadOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showPan: !!checked} }))} />
+                            <Label htmlFor="myPan">Show PAN Number</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Checkbox id="myBank" checked={downloadOptions.myCompany.showBankDetails} onCheckedChange={(checked) => setDownloadOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showBankDetails: !!checked} }))} />
+                            <Label htmlFor="myBank">Show Bank Details</Label>
+                        </div>
+                    </div>
+                     <Separator />
+                    <div className="space-y-4">
+                        <h4 className="font-semibold text-foreground">Client Company Details</h4>
+                        <div className="flex items-center space-x-2">
+                            <Checkbox id="clientGstin" checked={downloadOptions.clientCompany.showGstin} onCheckedChange={(checked) => setDownloadOptions(prev => ({ ...prev, clientCompany: {...prev.clientCompany, showGstin: !!checked} }))} />
+                            <Label htmlFor="clientGstin">Show GSTIN</Label>
+                        </div>
+                         <div className="flex items-center space-x-2">
+                            <Checkbox id="clientBank" checked={downloadOptions.clientCompany.showBankDetails} onCheckedChange={(checked) => setDownloadOptions(prev => ({ ...prev, clientCompany: {...prev.clientCompany, showBankDetails: !!checked} }))} />
+                            <Label htmlFor="clientBank">Show Bank Details</Label>
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setInvoiceToDownload(null)}>Cancel</Button>
+                    <Button onClick={() => invoiceToDownload && handleDownloadWord(invoiceToDownload, downloadOptions)}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Generate & Download
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
       </div>
