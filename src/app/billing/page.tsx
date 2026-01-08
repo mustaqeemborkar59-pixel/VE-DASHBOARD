@@ -193,8 +193,11 @@ export default function BillingPage() {
       acc[yearKey].push(invoice);
       return acc;
     }, {} as Record<string, Invoice[]>);
+    
+    const sortedYearKeys = Object.keys(groupedByYear).sort((a,b) => b.localeCompare(a));
 
-    return Object.entries(groupedByYear).map(([yearKey, yearInvoices]) => {
+    return sortedYearKeys.map((yearKey, index) => {
+      const yearInvoices = groupedByYear[yearKey];
       const [startYear] = yearKey.split('-').map(Number);
       const endYear = startYear + 1;
 
@@ -224,10 +227,10 @@ export default function BillingPage() {
 
       return {
         key: yearKey,
-        label: `FOLDER-INDEX.EX${Object.keys(groupedByYear).indexOf(yearKey) + 1} - April ${startYear} - March ${endYear} (Bill-${minBill} to ${maxBill})`,
+        label: `${index + 1}-April ${startYear}-March ${endYear} (Bill-${minBill} to ${maxBill})`,
         months: months.sort((a, b) => b.key.localeCompare(a.key)), // Sort months descending
       };
-    }).sort((a,b) => b.key.localeCompare(a.key)); // Sort years descending
+    });
 
   }, [allInvoices]);
 
@@ -319,6 +322,27 @@ export default function BillingPage() {
       }
       
       const itemsToSave = items.map(({ key, ...rest }) => rest);
+      
+      // Default settings for new invoices
+      const currentInvoiceSettings = editingInvoice 
+          ? {
+              pageSize: invoicePageSettings.size,
+              pageOrientation: invoicePageSettings.orientation,
+              pageMargins: invoicePageSettings.margin,
+              pageFontSize: invoicePageSettings.pageFontSize,
+              addressFontSize: invoicePageSettings.addressFontSize,
+              tableBodyFontSize: invoicePageSettings.tableBodyFontSize,
+            }
+          : {
+              pageSize: liveDefaultPageSettings.size,
+              pageOrientation: liveDefaultPageSettings.orientation,
+              pageMargins: liveDefaultPageSettings.margin,
+              pageFontSize: liveDefaultPageSettings.pageFontSize,
+              addressFontSize: liveDefaultPageSettings.addressFontSize,
+              tableBodyFontSize: liveDefaultPageSettings.tableBodyFontSize,
+            };
+
+      const currentDownloadOptions = editingInvoice ? formDownloadOptions : defaultDownloadOptions;
 
       const invoiceData: Omit<Invoice, 'id'> = {
         billNo: billNoToUse,
@@ -334,31 +358,18 @@ export default function BillingPage() {
         grandTotal: calculations.grandTotal,
         myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetails!,
         clientCompanyDetails: editingInvoice?.clientCompanyDetails || selectedCompanyForNewInvoice!,
-        pageSize: invoicePageSettings.size,
-        pageOrientation: invoicePageSettings.orientation,
-        pageMargins: invoicePageSettings.margin,
-        pageFontSize: invoicePageSettings.pageFontSize,
-        addressFontSize: invoicePageSettings.addressFontSize,
-        tableBodyFontSize: invoicePageSettings.tableBodyFontSize,
-        downloadOptions: formDownloadOptions,
+        ...currentInvoiceSettings,
+        downloadOptions: currentDownloadOptions,
       };
 
       try {
         if (editingInvoice) {
           const invoiceDocRef = doc(firestore, 'invoices', editingInvoice.id);
-          // When updating, we don't want to re-fetch and overwrite the snapshotted company details
           const { myCompanyDetails: _mc, clientCompanyDetails: _cc, ...updateData } = invoiceData;
           
           updateDocumentNonBlocking(invoiceDocRef, {
             ...updateData,
-            // Explicitly include the settings from the form state on edit
-            pageSize: invoicePageSettings.size,
-            pageOrientation: invoicePageSettings.orientation,
-            pageMargins: invoicePageSettings.margin,
-            pageFontSize: invoicePageSettings.pageFontSize,
-            addressFontSize: invoicePageSettings.addressFontSize,
-            tableBodyFontSize: invoicePageSettings.tableBodyFontSize,
-            downloadOptions: formDownloadOptions,
+            downloadOptions: formDownloadOptions, // Make sure to save the updated options
           });
 
           toast({
@@ -367,7 +378,6 @@ export default function BillingPage() {
           });
         } else {
           addDocumentNonBlocking(collection(firestore, 'invoices'), invoiceData);
-          // Update the next bill number in settings
           setDoc(settingsDocRef, { nextBillNo: billNoToUse + 1 }, { merge: true });
           toast({
               title: 'Invoice Saved',
@@ -395,7 +405,6 @@ export default function BillingPage() {
       setPoNumber(invoice.poNumber || 'AGREEMENT');
       setSite(invoice.site || '');
       setItems(invoice.items.map((item, index) => ({ ...item, key: `item-${Date.now()}-${index}` })));
-      // Set the page settings for the editing form
       setInvoicePageSettings({
           size: invoice.pageSize || liveDefaultPageSettings.size,
           orientation: invoice.pageOrientation || liveDefaultPageSettings.orientation,
@@ -878,3 +887,5 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
