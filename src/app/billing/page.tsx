@@ -191,8 +191,8 @@ export default function BillingPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not find company details.' });
       return;
     }
-    if (!myCompanyDetails) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Your company details are not set. Please go to Settings.' });
+    if (!invoice.myCompanyDetails) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Your company details were not saved with this invoice. Please go to Settings and ensure they are correct for future invoices.' });
       return;
     }
     
@@ -206,7 +206,7 @@ export default function BillingPage() {
     }
 
     try {
-        await generateAndDownloadInvoice(invoice, company, myCompanyDetails, pageSettingsToUse);
+        await generateAndDownloadInvoice(invoice, company, invoice.myCompanyDetails, pageSettingsToUse);
     } catch (e) {
         toast({
             variant: 'destructive',
@@ -241,6 +241,15 @@ export default function BillingPage() {
       return;
     }
     
+    if (!myCompanyDetails) {
+      toast({
+        variant: 'destructive',
+        title: 'Company Settings Missing',
+        description: 'Your company details are not set. Please go to the Settings page to add them before creating an invoice.',
+      });
+      return;
+    }
+
     if (firestore) {
       const currentStartNumber = parseInt(invoiceStartNumber, 10);
       let billNoToUse = editingInvoice ? editingInvoice.billNo : (currentStartNumber > maxBillNumber ? currentStartNumber : maxBillNumber + 1);
@@ -263,6 +272,7 @@ export default function BillingPage() {
         cgst: calculations.cgst,
         sgst: calculations.sgst,
         grandTotal: calculations.grandTotal,
+        myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetails, // Use existing snapshot on edit, or new one on create
         pageSize: defaultPageSettings.size,
         pageOrientation: defaultPageSettings.orientation,
         pageMargins: defaultPageSettings.margin,
@@ -688,7 +698,7 @@ export default function BillingPage() {
                     </DialogDescription>
                 </DialogHeader>
                 <div className={cn("px-6 pb-6 overflow-y-auto max-h-[80vh]", "hide-scrollbar")}>
-                   <InvoicePreview invoice={invoiceForPreview} company={companyForPreview} myCompanyDetails={myCompanyDetails} />
+                   <InvoicePreview invoice={invoiceForPreview} company={companyForPreview} myCompanyDetails={invoiceForPreview?.myCompanyDetails || null} />
                 </div>
             </DialogContent>
         </Dialog>

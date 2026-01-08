@@ -68,6 +68,20 @@ export type InvoiceItem = {
     amount: number;
 }
 
+export type CompanySettings = {
+    id?: string;
+    companyName: string;
+    pan: string;
+    gstin: string;
+    sacCode: string;
+    bankName: string;
+    accountNumber: string;
+    ifscCode: string;
+    bankBranch: string;
+    contactPerson: string;
+    contactNumber: string;
+};
+
 export type Invoice = {
     id: string;
     billNo: number;
@@ -81,6 +95,7 @@ export type Invoice = {
     cgst: number;
     sgst: number;
     grandTotal: number;
+    myCompanyDetails: CompanySettings; // Snapshot of company settings
     pageSize?: 'A4' | 'LETTER' | 'LEGAL';
     pageOrientation?: 'portrait' | 'landscape';
     pageMargins?: { top: number, right: number, bottom: number, left: number };
@@ -96,18 +111,4 @@ export type InvoiceTemplate = {
     align: 'left' | 'center' | 'right';
     order: number;
   }[];
-};
-
-export type CompanySettings = {
-    id?: string;
-    companyName: string;
-    pan: string;
-    gstin: string;
-    sacCode: string;
-    bankName: string;
-    accountNumber: string;
-    ifscCode: string;
-    bankBranch: string;
-    contactPerson: string;
-    contactNumber: string;
 };

@@ -29,7 +29,7 @@ export function InvoicePreview({ invoice, company, myCompanyDetails }: InvoicePr
   if (!invoice || !company || !myCompanyDetails) {
     return (
       <div className="p-10 text-center text-muted-foreground">
-        Select an invoice to see the preview.
+        Select an invoice to see the preview. If company details are missing, they may not have been saved with the invoice.
       </div>
     );
   }

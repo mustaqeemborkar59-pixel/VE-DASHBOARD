@@ -337,9 +337,13 @@
         "netTotal": { "type": "number" },
         "cgst": { "type": "number" },
         "sgst": { "type": "number" },
-        "grandTotal": { "type": "number" }
+        "grandTotal": { "type": "number" },
+        "myCompanyDetails": {
+          "$ref": "#/entities/CompanySettings",
+          "description": "A snapshot of the user's company details at the time of invoice creation."
+        }
       },
-      "required": ["billNo", "billDate", "companyId", "items", "grandTotal"]
+      "required": ["billNo", "billDate", "companyId", "items", "grandTotal", "myCompanyDetails"]
     },
     "CompanySettings": {
       "title": "CompanySettings",
