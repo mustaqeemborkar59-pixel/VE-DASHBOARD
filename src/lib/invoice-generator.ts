@@ -81,9 +81,9 @@ const generateInvoiceDataForWord = (invoice: Invoice, clientCompany: Company, my
         site: (invoice.site || '').toUpperCase(),
         items: invoice.items,
         columns: template?.columns || [
-            { id: 'particulars' as keyof InvoiceItem, label: 'Particulars', width: 66, align: 'left' as const, order: 1 },
-            { id: 'rate' as keyof InvoiceItem, label: 'Rate', width: 12, align: 'right' as const, order: 2 },
-            { id: 'amount' as keyof InvoiceItem, label: 'Amount', width: 12, align: 'right' as const, order: 3 },
+            { id: 'particulars' as keyof InvoiceItem, label: 'Particulars', width: 100, align: 'left' as const, order: 1 },
+            { id: 'rate' as keyof InvoiceItem, label: 'Rate', width: 0, align: 'right' as const, order: 2 },
+            { id: 'amount' as keyof InvoiceItem, label: 'Amount', width: 0, align: 'right' as const, order: 3 },
         ],
         netTotal: invoice.netTotal,
         cgst: invoice.cgst,
@@ -164,14 +164,18 @@ export const generateAndDownloadInvoice = async (
 
     const headerCells = [
         new DocxTableCell({
-            width: { size: 10, type: WidthType.PERCENTAGE },
+            width: { size: 1, type: WidthType.AUTO },
             children: [new Paragraph({ children: [new TextRun({ text: "Sr. No", bold: true, size: defaultFontSize * 2, font: "Calibri" })], alignment: AlignmentType.CENTER })],
             verticalAlign: VerticalAlign.CENTER,
             borders: tableHeaderBorders,
             margins: cellMargins
         }),
-        ...sortedColumns.map(column => new DocxTableCell({
-            width: { size: column.id === 'particulars' ? 66 : 12, type: WidthType.PERCENTAGE },
+        ...sortedColumns.map(column => {
+            const widthType = column.id === 'particulars' ? WidthType.PERCENTAGE : WidthType.AUTO;
+            const widthSize = column.id === 'particulars' ? 100 : 1;
+            
+            return new DocxTableCell({
+            width: { size: widthSize, type: widthType },
             children: [new Paragraph({ 
                 children: [new TextRun({ text: column.label, bold: true, size: defaultFontSize * 2, font: "Calibri" })], 
                 alignment: (column.label === 'Rate' || column.label === 'Amount') ? AlignmentType.CENTER : (column.align === 'right' ? AlignmentType.RIGHT : column.align === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT)
@@ -179,22 +183,24 @@ export const generateAndDownloadInvoice = async (
             verticalAlign: VerticalAlign.CENTER,
             borders: tableHeaderBorders,
             margins: cellMargins
-        }))
+        })})
     ];
     
-    const createTotalRow = (label: string, value: string) => {
+    const createTotalRow = (label: string, value: string, isGrandTotal = false) => {
         const totalRowsBorders = {
             top: { style: BorderStyle.SINGLE },
             bottom: { style: BorderStyle.SINGLE },
             left: { style: BorderStyle.SINGLE },
             right: { style: BorderStyle.SINGLE },
         };
-        const tableBodyFontSize = (settings.tableBodyFontSize || 12) * 2;
+        const tableBodyFontSize = (settings.tableBodyFontSize || 12);
+        const finalFontSize = isGrandTotal ? tableBodyFontSize * 2 : tableBodyFontSize * 2;
+
 
         const cells = [
              new DocxTableCell({
                 columnSpan: 2,
-                children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: tableBodyFontSize, font: "Calibri" })], alignment: AlignmentType.RIGHT })],
+                children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: finalFontSize, font: "Calibri" })], alignment: AlignmentType.RIGHT })],
                 verticalAlign: VerticalAlign.CENTER,
                 borders: { ...totalRowsBorders, right: {style: BorderStyle.NONE}  },
                 margins: cellMargins,
@@ -206,7 +212,7 @@ export const generateAndDownloadInvoice = async (
                 verticalAlign: VerticalAlign.CENTER,
             }),
             new DocxTableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: value, bold: true, size: tableBodyFontSize, font: "Calibri" })], alignment: AlignmentType.RIGHT })],
+                children: [new Paragraph({ children: [new TextRun({ text: value, bold: true, size: finalFontSize, font: "Calibri" })], alignment: AlignmentType.RIGHT })],
                 verticalAlign: VerticalAlign.CENTER,
                 borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}  },
                 margins: cellMargins,
@@ -343,7 +349,7 @@ export const generateAndDownloadInvoice = async (
                         createTotalRow('Net total=', `${formatCurrency(invoiceData.netTotal)}`),
                         createTotalRow('CGST@9%', `${formatCurrency(invoiceData.cgst)}`),
                         createTotalRow('SGST@9%', `${formatCurrency(invoiceData.sgst)}`),
-                        createTotalRow('TOTAL AMOUNT PAYABLE', `₹ ${formatCurrency(invoiceData.grandTotal)}`),
+                        createTotalRow('TOTAL AMOUNT PAYABLE', `₹ ${formatCurrency(invoiceData.grandTotal)}`, true),
                     ],
                 }),
 
