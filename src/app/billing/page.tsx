@@ -623,7 +623,7 @@ export default function BillingPage() {
                                         className="w-40"
                                     />
                                     <Input
-                                        type="number"
+                                        type="text"
                                         placeholder="Amount"
                                         value={item.amount || ''}
                                         onChange={(e) => handleItemChange(item.key, 'amount', e.target.value)}
@@ -705,5 +705,7 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
 
     
