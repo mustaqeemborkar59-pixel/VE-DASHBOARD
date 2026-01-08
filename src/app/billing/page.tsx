@@ -11,7 +11,7 @@ import { collection, query, orderBy, doc, setDoc } from 'firebase/firestore';
 import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Settings, Eye, FileText } from 'lucide-react';
+import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { InvoicePreview } from '@/components/invoice-preview';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
 const AutoHeightTextarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => {
@@ -90,6 +91,10 @@ export default function BillingPage() {
   
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [invoiceForPreview, setInvoiceForPreview] = useState<Invoice | null>(null);
+  
+  const [isSettingsPopoverOpen, setIsSettingsPopoverOpen] = useState(false);
+  const [globalPageSettings, setGlobalPageSettings] = useState<Partial<CompanySettings>>(defaultPageSettings);
+  const [isSubmittingSettings, setIsSubmittingSettings] = useState(false);
 
   // Queries
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
@@ -100,6 +105,12 @@ export default function BillingPage() {
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
   const { data: allInvoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(allInvoicesQuery);
   const { data: myCompanyDetails, isLoading: isLoadingSettings } = useDoc<CompanySettings>(settingsDocRef);
+  
+  useEffect(() => {
+    if (myCompanyDetails) {
+        setGlobalPageSettings(myCompanyDetails);
+    }
+  }, [myCompanyDetails]);
 
 
   const selectedCompanyForNewInvoice = useMemo(() => companies?.find(c => c.id === companyId), [companies, companyId]);
@@ -159,6 +170,65 @@ export default function BillingPage() {
     const nextCalculated = maxBillNumber + 1;
     return fromSettings && fromSettings > nextCalculated ? fromSettings : nextCalculated;
   }, [myCompanyDetails, maxBillNumber, isLoadingSettings]);
+
+  const organizedInvoices = useMemo(() => {
+    if (!allInvoices) return [];
+
+    const getFinancialYear = (date: Date) => {
+      const year = date.getFullYear();
+      const month = date.getMonth(); // 0-11
+      // Financial year starts in April (month 3)
+      return month >= 3 ? year : year - 1;
+    };
+
+    const groupedByYear = allInvoices.reduce((acc, invoice) => {
+      const billDate = parseISO(invoice.billDate);
+      const financialYearStart = getFinancialYear(billDate);
+      const yearKey = `${financialYearStart}-${financialYearStart + 1}`;
+      
+      if (!acc[yearKey]) {
+        acc[yearKey] = [];
+      }
+      acc[yearKey].push(invoice);
+      return acc;
+    }, {} as Record<string, Invoice[]>);
+
+    return Object.entries(groupedByYear).map(([yearKey, yearInvoices]) => {
+      const [startYear] = yearKey.split('-').map(Number);
+      const endYear = startYear + 1;
+
+      const minBill = Math.min(...yearInvoices.map(inv => inv.billNo));
+      const maxBill = Math.max(...yearInvoices.map(inv => inv.billNo));
+      
+      const groupedByMonth = yearInvoices.reduce((acc, invoice) => {
+        const monthKey = format(parseISO(invoice.billDate), 'yyyy-MM');
+        if (!acc[monthKey]) {
+          acc[monthKey] = [];
+        }
+        acc[monthKey].push(invoice);
+        return acc;
+      }, {} as Record<string, Invoice[]>);
+      
+      const months = Object.entries(groupedByMonth).map(([monthKey, monthInvoices]) => {
+        const monthMinBill = Math.min(...monthInvoices.map(inv => inv.billNo));
+        const monthMaxBill = Math.max(...monthInvoices.map(inv => inv.billNo));
+        const monthDate = parseISO(`${monthKey}-01`);
+        
+        return {
+          key: monthKey,
+          label: `${format(monthDate, 'MM-MMM yyyy').toUpperCase()} (BILL NO-${monthMinBill}-${monthMaxBill})`,
+          invoices: monthInvoices,
+        };
+      });
+
+      return {
+        key: yearKey,
+        label: `FOLDER-INDEX.EX${Object.keys(groupedByYear).indexOf(yearKey) + 1} - April ${startYear} - March ${endYear} (Bill-${minBill} to ${maxBill})`,
+        months: months.sort((a, b) => b.key.localeCompare(a.key)), // Sort months descending
+      };
+    }).sort((a,b) => b.key.localeCompare(a.key)); // Sort years descending
+
+  }, [allInvoices]);
 
 
   const calculations = useMemo(() => {
@@ -344,35 +414,54 @@ export default function BillingPage() {
     setInvoiceToDelete(null);
   };
   
-  const DocumentSettingsFields = ({ settings, setSettings }: { settings: PageSettings, setSettings: React.Dispatch<React.SetStateAction<PageSettings>> }) => {
-    
-    const handleSettingsChange = (field: keyof PageSettings, value: any) => {
-      setSettings(prev => ({ ...prev, [field]: value }));
-    }
-  
-    const handleMarginChange = (field: keyof PageSettings['margin'], value: string) => {
-        const numValue = parseFloat(value);
-        if (!isNaN(numValue) || value === '') {
-          setSettings(prev => ({
-              ...prev,
-              margin: { ...(prev.margin || {top:0,left:0,bottom:0,right:0}), [field]: value === '' ? '' : numValue }
-          }));
-        }
-    }
-  
-    const handleFontSizeChange = (field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', value: string) => {
-        const numValue = parseInt(value, 10);
-        if (!isNaN(numValue) || value === '') {
-          handleSettingsChange(field, value === '' ? '' : numValue);
-        }
-    }
+  const handleGlobalSettingsChange = (field: keyof CompanySettings, value: any) => {
+    setGlobalPageSettings(prev => ({ ...prev, [field]: value }));
+  };
 
+  const handleGlobalMarginChange = (field: keyof PageMargin, value: string) => {
+      const numValue = value === '' ? null : parseFloat(value);
+      if (numValue === null || !isNaN(numValue)) {
+        setGlobalPageSettings(prev => ({
+            ...prev,
+            pageMargins: { ...(prev.pageMargins || {top:0,left:0,bottom:0,right:0}), [field]: numValue }
+        }));
+      }
+  };
+
+  const handleGlobalFontSizeChange = (field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', value: string) => {
+      const numValue = value === '' ? null : parseInt(value, 10);
+      if (numValue === null || !isNaN(numValue)) {
+        handleGlobalSettingsChange(field, numValue);
+      }
+  };
+
+  const handleSaveDefaultSettings = async () => {
+    if (!firestore || !settingsDocRef) return;
+    setIsSubmittingSettings(true);
+    try {
+        await setDoc(settingsDocRef, globalPageSettings, { merge: true });
+        toast({ title: "Success", description: "Default settings updated." });
+        setIsSettingsPopoverOpen(false);
+    } catch (e) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not save default settings.' });
+    } finally {
+        setIsSubmittingSettings(false);
+    }
+  };
+  
+  const DocumentSettingsFields = ({ settings, onSettingsChange, onMarginChange, onFontSizeChange, prefix="page" }: { 
+    settings: Partial<CompanySettings>, 
+    onSettingsChange: (field: keyof CompanySettings, value: any) => void,
+    onMarginChange: (field: keyof PageMargin, value: string) => void,
+    onFontSizeChange: (field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', value: string) => void,
+    prefix?: string,
+  }) => {
     return (
       <div className="grid gap-4">
           <div className="grid grid-cols-3 items-center gap-4">
-              <Label htmlFor="pageSize">Page Size</Label>
-              <Select value={settings.size} onValueChange={(value) => handleSettingsChange('size', value)} >
-                  <SelectTrigger id="pageSize" className="col-span-2 h-8">
+              <Label htmlFor={`${prefix}Size`}>Page Size</Label>
+              <Select value={settings.pageSize} onValueChange={(value) => onSettingsChange('pageSize', value)} >
+                  <SelectTrigger id={`${prefix}Size`} className="col-span-2 h-8">
                       <SelectValue placeholder="Select page size" />
                   </SelectTrigger>
                   <SelectContent>
@@ -385,23 +474,23 @@ export default function BillingPage() {
           <div className="grid grid-cols-3 items-start gap-4">
               <Label>Margins (cm)</Label>
               <div className="col-span-2 grid grid-cols-2 gap-2">
-                  <Input type="number" placeholder="Top" value={settings.margin.top} onChange={(e) => handleMarginChange('top', e.target.value)} className="h-8"/>
-                  <Input type="number" placeholder="Bottom" value={settings.margin.bottom} onChange={(e) => handleMarginChange('bottom', e.target.value)} className="h-8"/>
-                  <Input type="number" placeholder="Left" value={settings.margin.left} onChange={(e) => handleMarginChange('left', e.target.value)} className="h-8"/>
-                  <Input type="number" placeholder="Right" value={settings.margin.right} onChange={(e) => handleMarginChange('right', e.target.value)} className="h-8"/>
+                  <Input type="number" placeholder="Top" value={settings.pageMargins?.top ?? ''} onChange={(e) => onMarginChange('top', e.target.value)} className="h-8"/>
+                  <Input type="number" placeholder="Bottom" value={settings.pageMargins?.bottom ?? ''} onChange={(e) => onMarginChange('bottom', e.target.value)} className="h-8"/>
+                  <Input type="number" placeholder="Left" value={settings.pageMargins?.left ?? ''} onChange={(e) => onMarginChange('left', e.target.value)} className="h-8"/>
+                  <Input type="number" placeholder="Right" value={settings.pageMargins?.right ?? ''} onChange={(e) => onMarginChange('right', e.target.value)} className="h-8"/>
               </div>
           </div>
           <div className="grid grid-cols-3 items-center gap-4">
-              <Label htmlFor="pageFontSize">Page Font</Label>
-              <Input id="pageFontSize" type="number" value={settings.pageFontSize} onChange={(e) => handleFontSizeChange('pageFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 11"/>
+              <Label htmlFor={`${prefix}FontSize`}>Page Font</Label>
+              <Input id={`${prefix}FontSize`} type="number" value={settings.pageFontSize ?? ''} onChange={(e) => onFontSizeChange('pageFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 11"/>
           </div>
           <div className="grid grid-cols-3 items-center gap-4">
-              <Label htmlFor="addressFontSize">Address Font</Label>
-              <Input id="addressFontSize" type="number" value={settings.addressFontSize} onChange={(e) => handleFontSizeChange('addressFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 10"/>
+              <Label htmlFor={`${prefix}AddressFontSize`}>Address Font</Label>
+              <Input id={`${prefix}AddressFontSize`} type="number" value={settings.addressFontSize ?? ''} onChange={(e) => onFontSizeChange('addressFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 10"/>
           </div>
           <div className="grid grid-cols-3 items-center gap-4">
-              <Label htmlFor="tableBodyFontSize">Table Font</Label>
-              <Input id="tableBodyFontSize" type="number" value={settings.tableBodyFontSize} onChange={(e) => handleFontSizeChange('tableBodyFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 11"/>
+              <Label htmlFor={`${prefix}TableBodyFontSize`}>Table Font</Label>
+              <Input id={`${prefix}TableBodyFontSize`} type="number" value={settings.tableBodyFontSize ?? ''} onChange={(e) => onFontSizeChange('tableBodyFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 11"/>
           </div>
       </div>
     );
@@ -447,9 +536,32 @@ export default function BillingPage() {
                 <div className="flex items-center justify-between">
                     <div>
                         <CardTitle>Invoices</CardTitle>
-                        <CardDescription>View, edit, and create new invoices.</CardDescription>
+                        <CardDescription>View, edit, and create new invoices organized by financial year.</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
+                        <Popover open={isSettingsPopoverOpen} onOpenChange={setIsSettingsPopoverOpen}>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" size="icon">
+                                    <Settings className="h-4 w-4" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-96">
+                                <div className="space-y-4">
+                                    <h4 className="font-medium leading-none">Default Document Settings</h4>
+                                    <p className="text-sm text-muted-foreground">Set the default layout for new invoices.</p>
+                                    <DocumentSettingsFields 
+                                        settings={globalPageSettings} 
+                                        onSettingsChange={handleGlobalSettingsChange}
+                                        onMarginChange={handleGlobalMarginChange}
+                                        onFontSizeChange={handleGlobalFontSizeChange}
+                                        prefix="global"
+                                    />
+                                    <Button onClick={handleSaveDefaultSettings} disabled={isSubmittingSettings} className="w-full">
+                                        {isSubmittingSettings ? 'Saving...' : 'Save Defaults'}
+                                    </Button>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
                         <Button onClick={() => handleOpenFormDialog(null)} size="sm">
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Add Invoice
@@ -465,66 +577,92 @@ export default function BillingPage() {
                     </div>
                 </div>
 
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Bill No.</TableHead>
-                            <TableHead>Company</TableHead>
-                            <TableHead>Bill Date</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                            <TableHead className="w-[100px] text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoadingInvoices || isLoadingCompanies ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="text-center">Loading invoices...</TableCell>
-                            </TableRow>
-                        ) : allInvoices && allInvoices.length > 0 ? (
-                           allInvoices.map((invoice) => (
-                                <TableRow key={invoice.id}>
-                                    <TableCell className="font-medium" onClick={() => handleOpenPreview(invoice)}>{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
-                                    <TableCell onClick={() => handleOpenPreview(invoice)}>{invoice.clientCompanyDetails?.name || 'Unknown'}</TableCell>
-                                    <TableCell onClick={() => handleOpenPreview(invoice)}>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
-                                    <TableCell className="text-right" onClick={() => handleOpenPreview(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
-                                                    <EllipsisVertical className="h-4 w-4" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-40">
-                                                <div className="grid gap-1">
-                                                     <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenPreview(invoice)}>
-                                                        <Eye className="mr-2 h-4 w-4" />
-                                                        Preview
-                                                    </Button>
-                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleDownloadWord(invoice)}>
-                                                        <Download className="mr-2 h-4 w-4" />
-                                                        Download
-                                                    </Button>
-                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenFormDialog(invoice)}>
-                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                        Edit
-                                                    </Button>
-                                                    <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => setInvoiceToDelete(invoice)}>
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Delete
-                                                    </Button>
-                                                </div>
-                                            </PopoverContent>
-                                        </Popover>
-                                    </TableCell>
-                                </TableRow>
-                           ))
-                        ) : (
-                             <TableRow>
-                                <TableCell colSpan={5} className="text-center h-24">No invoices found.</TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                {isLoadingInvoices ? (
+                    <div className="text-center py-10 text-muted-foreground">Loading invoices...</div>
+                ) : organizedInvoices.length > 0 ? (
+                    <Accordion type="multiple" className="w-full">
+                        {organizedInvoices.map((year, yearIndex) => (
+                             <AccordionItem value={`year-${year.key}`} key={year.key} className="mb-2 border-0">
+                                <AccordionTrigger className="px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-sm font-semibold">
+                                    <div className="flex items-center gap-3">
+                                      <Folder className="h-5 w-5 text-primary" />
+                                      <span>{year.label}</span>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-2 pl-4">
+                                     <Accordion type="multiple" className="w-full">
+                                        {year.months.map(month => (
+                                            <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-2 border-dashed border-border pl-4 py-1">
+                                                 <AccordionTrigger className="px-3 py-2 hover:bg-muted/50 rounded-md text-xs font-medium">
+                                                    <div className="flex items-center gap-2">
+                                                      <Folder className="h-4 w-4 text-secondary-foreground/60" />
+                                                      <span>{month.label}</span>
+                                                    </div>
+                                                </AccordionTrigger>
+                                                <AccordionContent className="pt-2">
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead>Bill No.</TableHead>
+                                                                <TableHead>Company</TableHead>
+                                                                <TableHead>Bill Date</TableHead>
+                                                                <TableHead className="text-right">Amount</TableHead>
+                                                                <TableHead className="w-[100px] text-right">Actions</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {month.invoices.map((invoice) => (
+                                                                <TableRow key={invoice.id}>
+                                                                    <TableCell className="font-medium" onClick={() => handleOpenPreview(invoice)}>{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
+                                                                    <TableCell onClick={() => handleOpenPreview(invoice)}>{invoice.clientCompanyDetails?.name || 'Unknown'}</TableCell>
+                                                                    <TableCell onClick={() => handleOpenPreview(invoice)}>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
+                                                                    <TableCell className="text-right" onClick={() => handleOpenPreview(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
+                                                                    <TableCell className="text-right">
+                                                                        <Popover>
+                                                                            <PopoverTrigger asChild>
+                                                                                <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                                                                                    <EllipsisVertical className="h-4 w-4" />
+                                                                                </Button>
+                                                                            </PopoverTrigger>
+                                                                            <PopoverContent className="w-40">
+                                                                                <div className="grid gap-1">
+                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenPreview(invoice)}>
+                                                                                        <Eye className="mr-2 h-4 w-4" />
+                                                                                        Preview
+                                                                                    </Button>
+                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleDownloadWord(invoice)}>
+                                                                                        <Download className="mr-2 h-4 w-4" />
+                                                                                        Download
+                                                                                    </Button>
+                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenFormDialog(invoice)}>
+                                                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                                                        Edit
+                                                                                    </Button>
+                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => setInvoiceToDelete(invoice)}>
+                                                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                                                        Delete
+                                                                                    </Button>
+                                                                                </div>
+                                                                            </PopoverContent>
+                                                                        </Popover>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                        ))}
+                                    </Accordion>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                ) : (
+                    <div className="text-center py-10 text-muted-foreground">
+                        No invoices found. Click "Add Invoice" to get started.
+                    </div>
+                )}
             </CardContent>
         </Card>
 
@@ -648,7 +786,25 @@ export default function BillingPage() {
                             </p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="p-4 border rounded-lg">
-                                  <DocumentSettingsFields settings={invoicePageSettings} setSettings={setInvoicePageSettings} />
+                                  <DocumentSettingsFields 
+                                     settings={invoicePageSettings} 
+                                     onSettingsChange={(field, value) => setInvoicePageSettings(prev => ({...prev, [field]:value}))}
+                                     onMarginChange={(field, value) => {
+                                        const numValue = parseFloat(value);
+                                        if (!isNaN(numValue) || value === '') {
+                                          setInvoicePageSettings(prev => ({
+                                              ...prev,
+                                              margin: { ...(prev.margin || {top:0,left:0,bottom:0,right:0}), [field]: value === '' ? '' : numValue }
+                                          }));
+                                        }
+                                     }}
+                                     onFontSizeChange={(field, value) => {
+                                         const numValue = parseInt(value, 10);
+                                          if (!isNaN(numValue) || value === '') {
+                                             setInvoicePageSettings(prev => ({...prev, [field]: value === '' ? '' : numValue}));
+                                          }
+                                     }}
+                                  />
                                 </div>
                                 <div className="p-4 border rounded-lg">
                                   <DownloadOptionsFields options={formDownloadOptions} setOptions={setFormDownloadOptions} />
