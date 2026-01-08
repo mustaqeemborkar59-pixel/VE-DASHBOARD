@@ -203,7 +203,13 @@ export default function BillingPage() {
   const handleItemChange = (key: string, field: keyof Omit<InvoiceItem, 'key'>, value: string | number) => {
     const newItems = items.map(item => {
         if(item.key === key) {
-            const parsedValue = field === 'amount' ? (parseFloat(value as string) || 0) : value;
+            let parsedValue;
+            if (field === 'amount') {
+                const numericString = String(value).replace(/,/g, '');
+                parsedValue = parseFloat(numericString) || 0;
+            } else {
+                parsedValue = value;
+            }
             return { ...item, [field]: parsedValue };
         }
         return item;
@@ -625,9 +631,9 @@ export default function BillingPage() {
                                     <Input
                                         type="text"
                                         placeholder="Amount"
-                                        value={item.amount || ''}
+                                        value={item.amount ? new Intl.NumberFormat('en-IN').format(item.amount) : ''}
                                         onChange={(e) => handleItemChange(item.key, 'amount', e.target.value)}
-                                        className="w-48"
+                                        className="w-48 text-right"
                                     />
                                     <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.key)} disabled={items.length === 1}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -705,7 +711,3 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-    
-
-    
