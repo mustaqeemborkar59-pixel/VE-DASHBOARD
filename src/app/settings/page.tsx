@@ -34,7 +34,14 @@ export default function SettingsPage() {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value, type } = e.target;
-        setSettings(prev => ({ ...prev, [id]: type === 'number' ? parseFloat(value) : value }));
+        if (type === 'number') {
+            const numValue = value === '' ? null : parseFloat(value);
+            if (numValue === null || !isNaN(numValue)) {
+                setSettings(prev => ({ ...prev, [id]: numValue }));
+            }
+        } else {
+            setSettings(prev => ({ ...prev, [id]: value }));
+        }
     };
 
     const handleSelectChange = (id: keyof CompanySettings, value: string) => {
@@ -42,13 +49,20 @@ export default function SettingsPage() {
     }
     
     const handleMarginChange = (field: keyof PageMargin, value: string) => {
-      const numValue = parseFloat(value);
-      if (!isNaN(numValue) || value === '') {
+      const numValue = value === '' ? null : parseFloat(value);
+       if (numValue === null || !isNaN(numValue)) {
         setSettings(prev => ({
             ...prev,
             pageMargins: { ...(prev.pageMargins || {top: 0, right: 0, bottom: 0, left: 0}), [field]: numValue }
         }));
       }
+    }
+    
+    const handleFontSizeChange = (field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', value: string) => {
+        const numValue = value === '' ? null : parseInt(value, 10);
+        if (numValue === null || !isNaN(numValue)) {
+            setSettings(p => ({...p, [field]: numValue}));
+        }
     }
 
     const handleSaveChanges = async () => {
@@ -168,7 +182,7 @@ export default function SettingsPage() {
                         <Separator />
 
                         <div className="space-y-6">
-                            <h3 className="text-lg font-medium">Invoice & Document Settings</h3>
+                            <h3 className="text-lg font-medium">Default Invoice & Document Settings</h3>
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="nextBillNo">Next Invoice Number</Label>
@@ -180,7 +194,7 @@ export default function SettingsPage() {
                                 <div className="p-4 border rounded-lg grid grid-cols-1 sm:grid-cols-2 gap-6">
                                      <div className="grid grid-cols-1 items-center gap-4">
                                         <Label>Page Size</Label>
-                                        <Select value={settings.pageSize} onValueChange={(value) => handleSelectChange('pageSize', value)} >
+                                        <Select value={settings.pageSize || 'A4'} onValueChange={(value) => handleSelectChange('pageSize', value)} >
                                             <SelectTrigger className="h-8">
                                                 <SelectValue placeholder="Select page size" />
                                             </SelectTrigger>
@@ -202,15 +216,15 @@ export default function SettingsPage() {
                                     </div>
                                     <div className="grid grid-cols-1 items-center gap-4">
                                         <Label>Page Font</Label>
-                                        <Input type="number" value={settings.pageFontSize ?? ''} onChange={e => setSettings(p => ({...p, pageFontSize: parseFloat(e.target.value)}))} className="h-8" placeholder="e.g., 11"/>
+                                        <Input type="number" value={settings.pageFontSize ?? ''} onChange={e => handleFontSizeChange('pageFontSize', e.target.value)} className="h-8" placeholder="e.g., 11"/>
                                     </div>
                                     <div className="grid grid-cols-1 items-center gap-4">
                                         <Label>Address Font</Label>
-                                        <Input type="number" value={settings.addressFontSize ?? ''} onChange={e => setSettings(p => ({...p, addressFontSize: parseFloat(e.target.value)}))} className="h-8" placeholder="e.g., 10"/>
+                                        <Input type="number" value={settings.addressFontSize ?? ''} onChange={e => handleFontSizeChange('addressFontSize', e.target.value)} className="h-8" placeholder="e.g., 10"/>
                                     </div>
                                     <div className="grid grid-cols-1 items-center gap-4">
                                         <Label>Table Font</Label>
-                                        <Input type="number" value={settings.tableBodyFontSize ?? ''} onChange={e => setSettings(p => ({...p, tableBodyFontSize: parseFloat(e.target.value)}))} className="h-8" placeholder="e.g., 11"/>
+                                        <Input type="number" value={settings.tableBodyFontSize ?? ''} onChange={e => handleFontSizeChange('tableBodyFontSize', e.target.value)} className="h-8" placeholder="e.g., 11"/>
                                     </div>
                                 </div>
                              </div>
@@ -227,3 +241,5 @@ export default function SettingsPage() {
         </AppLayout>
     );
 }
+
+    
