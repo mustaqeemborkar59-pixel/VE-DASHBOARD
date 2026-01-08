@@ -100,6 +100,7 @@ export type Invoice = {
     pageSize?: 'A4' | 'LETTER' | 'LEGAL';
     pageOrientation?: 'portrait' | 'landscape';
     pageMargins?: { top: number, right: number, bottom: number, left: number };
+    pageFontSize?: number;
     addressFontSize?: number;
     tableBodyFontSize?: number;
 }

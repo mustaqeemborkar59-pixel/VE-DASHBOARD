@@ -57,6 +57,7 @@ export default function BillingPage() {
         size: 'A4',
         orientation: 'portrait',
         margin: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 },
+        pageFontSize: 11,
         addressFontSize: 10,
         tableBodyFontSize: 11,
     };
@@ -135,6 +136,7 @@ export default function BillingPage() {
         size: invoice.pageSize as any || defaultPageSettings.size,
         orientation: invoice.pageOrientation as any || defaultPageSettings.orientation,
         margin: invoice.pageMargins || defaultPageSettings.margin,
+        pageFontSize: invoice.pageFontSize || defaultPageSettings.pageFontSize,
         addressFontSize: invoice.addressFontSize || defaultPageSettings.addressFontSize,
         tableBodyFontSize: invoice.tableBodyFontSize || defaultPageSettings.tableBodyFontSize,
     }
@@ -279,6 +281,7 @@ export default function BillingPage() {
         pageSize: defaultPageSettings.size,
         pageOrientation: defaultPageSettings.orientation,
         pageMargins: defaultPageSettings.margin,
+        pageFontSize: defaultPageSettings.pageFontSize,
         addressFontSize: defaultPageSettings.addressFontSize,
         tableBodyFontSize: defaultPageSettings.tableBodyFontSize,
       };
@@ -398,7 +401,7 @@ export default function BillingPage() {
       }
   }
 
-  const handleFontSizeChange = (field: 'addressFontSize' | 'tableBodyFontSize', value: string) => {
+  const handleFontSizeChange = (field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', value: string) => {
       const numValue = parseInt(value, 10);
       if (!isNaN(numValue) && numValue > 0) {
         handlePageSettingsChange(field, numValue);
@@ -453,6 +456,10 @@ export default function BillingPage() {
                                                 <Input type="number" placeholder="Left" value={defaultPageSettings.margin.left} onChange={(e) => handleMarginChange('left', e.target.value)} className="h-8"/>
                                                 <Input type="number" placeholder="Right" value={defaultPageSettings.margin.right} onChange={(e) => handleMarginChange('right', e.target.value)} className="h-8"/>
                                             </div>
+                                        </div>
+                                         <div className="grid grid-cols-3 items-center gap-4">
+                                            <Label htmlFor="pageFontSize">Page Font</Label>
+                                            <Input id="pageFontSize" type="number" value={defaultPageSettings.pageFontSize} onChange={(e) => handleFontSizeChange('pageFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 11"/>
                                         </div>
                                          <div className="grid grid-cols-3 items-center gap-4">
                                             <Label htmlFor="addressFontSize">Address Font</Label>
