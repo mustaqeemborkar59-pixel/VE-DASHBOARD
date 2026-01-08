@@ -506,7 +506,7 @@ export default function BillingPage() {
                            allInvoices.map((invoice) => (
                                 <TableRow key={invoice.id} onClick={() => handleOpenPreview(invoice)} className="cursor-pointer">
                                     <TableCell className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
-                                    <TableCell>{invoice.clientCompanyDetails.name || 'Unknown'}</TableCell>
+                                    <TableCell>{invoice.clientCompanyDetails?.name || 'Unknown'}</TableCell>
                                     <TableCell>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
                                     <TableCell className="text-right">{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
                                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -705,3 +705,5 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
