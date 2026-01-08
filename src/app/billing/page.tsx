@@ -345,8 +345,21 @@ export default function BillingPage() {
       try {
         if (editingInvoice) {
           const invoiceDocRef = doc(firestore, 'invoices', editingInvoice.id);
+          // When updating, we don't want to re-fetch and overwrite the snapshotted company details
           const { myCompanyDetails: _mc, clientCompanyDetails: _cc, ...updateData } = invoiceData;
-          updateDocumentNonBlocking(invoiceDocRef, updateData);
+          
+          updateDocumentNonBlocking(invoiceDocRef, {
+            ...updateData,
+            // Explicitly include the settings from the form state on edit
+            pageSize: invoicePageSettings.size,
+            pageOrientation: invoicePageSettings.orientation,
+            pageMargins: invoicePageSettings.margin,
+            pageFontSize: invoicePageSettings.pageFontSize,
+            addressFontSize: invoicePageSettings.addressFontSize,
+            tableBodyFontSize: invoicePageSettings.tableBodyFontSize,
+            downloadOptions: formDownloadOptions,
+          });
+
           toast({
               title: 'Invoice Updated',
               description: `Invoice No. ${invoiceData.billNo}-MHE has been updated.`,
@@ -419,8 +432,8 @@ export default function BillingPage() {
   };
 
   const handleGlobalMarginChange = (field: keyof PageMargin, value: string) => {
-      const numValue = value === '' ? null : parseFloat(value);
-      if (numValue === null || !isNaN(numValue)) {
+      const numValue = value === '' ? '' : parseFloat(value);
+      if (numValue === '' || !isNaN(numValue as number)) {
         setGlobalPageSettings(prev => ({
             ...prev,
             pageMargins: { ...(prev.pageMargins || {top:0,left:0,bottom:0,right:0}), [field]: numValue }
@@ -429,8 +442,8 @@ export default function BillingPage() {
   };
 
   const handleGlobalFontSizeChange = (field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', value: string) => {
-      const numValue = value === '' ? null : parseInt(value, 10);
-      if (numValue === null || !isNaN(numValue)) {
+      const numValue = value === '' ? '' : parseInt(value, 10);
+      if (numValue === '' || !isNaN(numValue as number)) {
         handleGlobalSettingsChange(field, numValue);
       }
   };
@@ -778,39 +791,43 @@ export default function BillingPage() {
                             </div>
                         </div>
 
-                        <Separator />
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-medium">Document Settings</h3>
-                            <p className="text-sm text-muted-foreground">
-                                Adjust layout and display options. These settings will be saved with the invoice.
-                            </p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="p-4 border rounded-lg">
-                                  <DocumentSettingsFields 
-                                     settings={invoicePageSettings} 
-                                     onSettingsChange={(field, value) => setInvoicePageSettings(prev => ({...prev, [field]:value}))}
-                                     onMarginChange={(field, value) => {
-                                        const numValue = parseFloat(value);
-                                        if (!isNaN(numValue) || value === '') {
-                                          setInvoicePageSettings(prev => ({
-                                              ...prev,
-                                              margin: { ...(prev.margin || {top:0,left:0,bottom:0,right:0}), [field]: value === '' ? '' : numValue }
-                                          }));
-                                        }
-                                     }}
-                                     onFontSizeChange={(field, value) => {
-                                         const numValue = parseInt(value, 10);
-                                          if (!isNaN(numValue) || value === '') {
-                                             setInvoicePageSettings(prev => ({...prev, [field]: value === '' ? '' : numValue}));
-                                          }
-                                     }}
-                                  />
-                                </div>
-                                <div className="p-4 border rounded-lg">
-                                  <DownloadOptionsFields options={formDownloadOptions} setOptions={setFormDownloadOptions} />
+                        {editingInvoice && (
+                          <>
+                            <Separator />
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-medium">Document Settings</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Adjust layout and display options. These settings will be saved with the invoice.
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="p-4 border rounded-lg">
+                                      <DocumentSettingsFields 
+                                         settings={invoicePageSettings} 
+                                         onSettingsChange={(field, value) => setInvoicePageSettings(prev => ({...prev, [field]:value}))}
+                                         onMarginChange={(field, value) => {
+                                            const numValue = parseFloat(value);
+                                            if (!isNaN(numValue) || value === '') {
+                                              setInvoicePageSettings(prev => ({
+                                                  ...prev,
+                                                  margin: { ...(prev.margin || {top:0,left:0,bottom:0,right:0}), [field]: value === '' ? '' : numValue }
+                                              }));
+                                            }
+                                         }}
+                                         onFontSizeChange={(field, value) => {
+                                             const numValue = parseInt(value, 10);
+                                              if (!isNaN(numValue) || value === '') {
+                                                 setInvoicePageSettings(prev => ({...prev, [field]: value === '' ? '' : numValue}));
+                                              }
+                                         }}
+                                      />
+                                    </div>
+                                    <div className="p-4 border rounded-lg">
+                                      <DownloadOptionsFields options={formDownloadOptions} setOptions={setFormDownloadOptions} />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                          </>
+                        )}
                     </div>
                 </div>
                 <DialogFooter className="p-6 pt-4 border-t">
