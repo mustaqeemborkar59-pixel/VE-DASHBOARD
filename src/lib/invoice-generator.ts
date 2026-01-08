@@ -38,7 +38,7 @@ const convertCmToTwip = (cm: number): number => {
 }
 
 
-const generateInvoiceDataForWord = (invoice: Invoice, company: Company, myCompanyDetails: CompanySettings, template?: InvoiceTemplate) => {
+const generateInvoiceDataForWord = (invoice: Invoice, clientCompany: Company, myCompanyDetails: CompanySettings, template?: InvoiceTemplate) => {
     const words = new ToWords({
       localeCode: 'en-IN',
       converterOptions: {
@@ -51,13 +51,13 @@ const generateInvoiceDataForWord = (invoice: Invoice, company: Company, myCompan
     
     return {
         to: {
-          name: company.name.toUpperCase(),
-          address: company.address.toUpperCase(),
-          gstin: company.gstin || '',
-          bankName: company.bankName || '',
-          accountNumber: company.accountNumber || '',
-          ifscCode: company.ifscCode || '',
-          bankBranch: company.bankBranch || '',
+          name: clientCompany.name.toUpperCase(),
+          address: clientCompany.address.toUpperCase(),
+          gstin: clientCompany.gstin || '',
+          bankName: clientCompany.bankName || '',
+          accountNumber: clientCompany.accountNumber || '',
+          ifscCode: clientCompany.ifscCode || '',
+          bankBranch: clientCompany.bankBranch || '',
         },
         myCompany: myCompanyDetails,
         billDate: format(parseISO(invoice.billDate), 'dd/MM/yyyy'),
@@ -104,7 +104,7 @@ const createFormattedTextRuns = (text: string | number | undefined, sizeInPoints
 };
 
 
-export const generateAndDownloadInvoice = async (invoice: Invoice, company: Company, myCompanyDetails: CompanySettings, pageSettings?: PageSettings, template?: InvoiceTemplate) => {
+export const generateAndDownloadInvoice = async (invoice: Invoice, clientCompany: Company, myCompanyDetails: CompanySettings, pageSettings?: PageSettings, template?: InvoiceTemplate) => {
     const settings: PageSettings = pageSettings || { 
         size: 'A4', 
         orientation: 'portrait', 
@@ -112,7 +112,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
         addressFontSize: 10,
         tableBodyFontSize: 11
     };
-    const invoiceData = generateInvoiceDataForWord(invoice, company, myCompanyDetails, template);
+    const invoiceData = generateInvoiceDataForWord(invoice, clientCompany, myCompanyDetails, template);
     const formatCurrency = (amount: number) => amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
     const sortedColumns = [...invoiceData.columns].sort((a, b) => a.order - b.order);
@@ -378,9 +378,9 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, company: Comp
         }],
     });
 
-    const companyName = company.name.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase();
+    const companyNameForFile = clientCompany.name.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase();
     const monthYear = format(parseISO(invoice.billDate), 'MMM-yy').toUpperCase();
-    const fileName = `Bill no.${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}-${companyName}-(${monthYear})-GST 18.docx`;
+    const fileName = `Bill no.${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}-${companyNameForFile}-(${monthYear})-GST 18.docx`;
 
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);

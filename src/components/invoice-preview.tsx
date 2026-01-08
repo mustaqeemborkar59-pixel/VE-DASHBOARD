@@ -9,7 +9,7 @@ import { Separator } from './ui/separator';
 
 interface InvoicePreviewProps {
   invoice: Invoice | null;
-  company: Company | null;
+  company: Company | null; // This is now the client company snapshot
   myCompanyDetails: CompanySettings | null;
 }
 

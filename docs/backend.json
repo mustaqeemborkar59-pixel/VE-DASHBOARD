@@ -341,9 +341,13 @@
         "myCompanyDetails": {
           "$ref": "#/entities/CompanySettings",
           "description": "A snapshot of the user's company details at the time of invoice creation."
+        },
+        "clientCompanyDetails": {
+           "$ref": "#/entities/Company",
+           "description": "A snapshot of the client company's details at the time of invoice creation."
         }
       },
-      "required": ["billNo", "billDate", "companyId", "items", "grandTotal", "myCompanyDetails"]
+      "required": ["billNo", "billDate", "companyId", "items", "grandTotal", "myCompanyDetails", "clientCompanyDetails"]
     },
     "CompanySettings": {
       "title": "CompanySettings",

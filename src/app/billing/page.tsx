@@ -118,13 +118,39 @@ export default function BillingPage() {
   const { data: myCompanyDetails, isLoading: isLoadingSettings } = useDoc<CompanySettings>(settingsDocRef);
 
 
-  const selectedCompany = useMemo(() => companies?.find(c => c.id === companyId), [companies, companyId]);
+  const selectedCompanyForNewInvoice = useMemo(() => companies?.find(c => c.id === companyId), [companies, companyId]);
   
-  const companyForPreview = useMemo(() => {
-    if (!invoiceForPreview || !companies) return null;
-    return companies.find(c => c.id === invoiceForPreview.companyId) || null;
-  }, [invoiceForPreview, companies]);
-  
+  const handleDownloadWord = async (invoice: Invoice) => {
+    if (!invoice.clientCompanyDetails) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not find client company details for this invoice.' });
+      return;
+    }
+    if (!invoice.myCompanyDetails) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Your company details were not saved with this invoice.' });
+      return;
+    }
+    
+    // Use invoice-specific settings if they exist, otherwise use default settings
+    const pageSettingsToUse: PageSettings = {
+        size: invoice.pageSize as any || defaultPageSettings.size,
+        orientation: invoice.pageOrientation as any || defaultPageSettings.orientation,
+        margin: invoice.pageMargins || defaultPageSettings.margin,
+        addressFontSize: invoice.addressFontSize || defaultPageSettings.addressFontSize,
+        tableBodyFontSize: invoice.tableBodyFontSize || defaultPageSettings.tableBodyFontSize,
+    }
+
+    try {
+        await generateAndDownloadInvoice(invoice, invoice.clientCompanyDetails, invoice.myCompanyDetails, pageSettingsToUse);
+    } catch (e) {
+        toast({
+            variant: 'destructive',
+            title: 'Download Error',
+            description: 'Could not generate Word document.',
+        });
+        console.error(e);
+    }
+  };
+
   const maxBillNumber = useMemo(() => {
     if (!allInvoices || allInvoices.length === 0) return 0;
     return Math.max(0, ...allInvoices.map(inv => inv.billNo));
@@ -185,38 +211,6 @@ export default function BillingPage() {
     setItems(newItems);
   };
   
-  const handleDownloadWord = async (invoice: Invoice) => {
-    const company = companies?.find(c => c.id === invoice.companyId);
-    if (!company) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not find company details.' });
-      return;
-    }
-    if (!invoice.myCompanyDetails) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Your company details were not saved with this invoice. Please go to Settings and ensure they are correct for future invoices.' });
-      return;
-    }
-    
-    // Use invoice-specific settings if they exist, otherwise use default settings
-    const pageSettingsToUse: PageSettings = {
-        size: invoice.pageSize as any || defaultPageSettings.size,
-        orientation: invoice.pageOrientation as any || defaultPageSettings.orientation,
-        margin: invoice.pageMargins || defaultPageSettings.margin,
-        addressFontSize: invoice.addressFontSize || defaultPageSettings.addressFontSize,
-        tableBodyFontSize: invoice.tableBodyFontSize || defaultPageSettings.tableBodyFontSize,
-    }
-
-    try {
-        await generateAndDownloadInvoice(invoice, company, invoice.myCompanyDetails, pageSettingsToUse);
-    } catch (e) {
-        toast({
-            variant: 'destructive',
-            title: 'Download Error',
-            description: 'Could not generate Word document.',
-        });
-        console.error(e);
-    }
-  };
-  
   const amountInWords = useMemo(() => {
     return toWords.convert(calculations.grandTotal);
   },[calculations.grandTotal, toWords]);
@@ -232,7 +226,7 @@ export default function BillingPage() {
   };
 
   const handleFormSubmit = async () => {
-    if (!companyId || !billDate || !selectedCompany || items.some(i => !i.particulars || i.amount <= 0)) {
+    if (!companyId || !billDate || items.some(i => !i.particulars || i.amount <= 0)) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
@@ -272,7 +266,10 @@ export default function BillingPage() {
         cgst: calculations.cgst,
         sgst: calculations.sgst,
         grandTotal: calculations.grandTotal,
-        myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetails!, // Use existing snapshot on edit, or new one on create
+        // For new invoices, create snapshots. For edits, these are already present.
+        myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetails!,
+        clientCompanyDetails: editingInvoice?.clientCompanyDetails || selectedCompanyForNewInvoice!,
+        // Save current page settings with the invoice
         pageSize: defaultPageSettings.size,
         pageOrientation: defaultPageSettings.orientation,
         pageMargins: defaultPageSettings.margin,
@@ -283,8 +280,8 @@ export default function BillingPage() {
       try {
         if (editingInvoice) {
           const invoiceDocRef = doc(firestore, 'invoices', editingInvoice.id);
-          // When editing, we should not update `myCompanyDetails`
-          const { myCompanyDetails: _, ...updateData } = invoiceData;
+          // When editing, we don't update snapshot details.
+          const { myCompanyDetails: _mc, clientCompanyDetails: _cc, ...updateData } = invoiceData;
           updateDocumentNonBlocking(invoiceDocRef, updateData);
           toast({
               title: 'Invoice Updated',
@@ -509,7 +506,7 @@ export default function BillingPage() {
                            allInvoices.map((invoice) => (
                                 <TableRow key={invoice.id} onClick={() => handleOpenPreview(invoice)} className="cursor-pointer">
                                     <TableCell className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
-                                    <TableCell>{companies?.find(c => c.id === invoice.companyId)?.name || 'Unknown'}</TableCell>
+                                    <TableCell>{invoice.clientCompanyDetails.name || 'Unknown'}</TableCell>
                                     <TableCell>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
                                     <TableCell className="text-right">{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
                                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -570,7 +567,7 @@ export default function BillingPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Label htmlFor="company">Bill To</Label>
-                                <Select value={companyId} onValueChange={setCompanyId} disabled={isLoadingCompanies}>
+                                <Select value={companyId} onValueChange={setCompanyId} disabled={isLoadingCompanies || !!editingInvoice}>
                                     <SelectTrigger id="company" className="w-full">
                                         <SelectValue placeholder="Select a company..." />
                                     </SelectTrigger>
@@ -700,7 +697,7 @@ export default function BillingPage() {
                     </DialogDescription>
                 </DialogHeader>
                 <div className={cn("px-6 pb-6 overflow-y-auto max-h-[80vh]", "hide-scrollbar")}>
-                   <InvoicePreview invoice={invoiceForPreview} company={companyForPreview} myCompanyDetails={invoiceForPreview?.myCompanyDetails || null} />
+                   <InvoicePreview invoice={invoiceForPreview} company={invoiceForPreview?.clientCompanyDetails || null} myCompanyDetails={invoiceForPreview?.myCompanyDetails || null} />
                 </div>
             </DialogContent>
         </Dialog>

@@ -95,7 +95,8 @@ export type Invoice = {
     cgst: number;
     sgst: number;
     grandTotal: number;
-    myCompanyDetails: CompanySettings; // Snapshot of company settings
+    myCompanyDetails: CompanySettings; // Snapshot of my company settings
+    clientCompanyDetails: Company; // Snapshot of client company details
     pageSize?: 'A4' | 'LETTER' | 'LEGAL';
     pageOrientation?: 'portrait' | 'landscape';
     pageMargins?: { top: number, right: number, bottom: number, left: number };
