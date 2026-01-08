@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { generateAndDownloadInvoice, type PageSettings } from '@/lib/invoice-generator';
 import { Textarea } from '@/components/ui/textarea';
 import { InvoicePreview } from '@/components/invoice-preview';
+import { Separator } from '@/components/ui/separator';
 
 
 const AutoHeightTextarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => {
@@ -52,22 +53,22 @@ export default function BillingPage() {
     return format(date, 'yyyy-MM-dd');
   }
   
+  const defaultSettings: PageSettings = {
+    size: 'A4',
+    orientation: 'portrait',
+    margin: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 },
+    pageFontSize: 11,
+    addressFontSize: 10,
+    tableBodyFontSize: 11,
+  };
+  
   const [defaultPageSettings, setDefaultPageSettings] = useState<PageSettings>(() => {
-    const defaultSettings: PageSettings = {
-        size: 'A4',
-        orientation: 'portrait',
-        margin: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 },
-        pageFontSize: 11,
-        addressFontSize: 10,
-        tableBodyFontSize: 11,
-    };
     if (typeof window === 'undefined') {
         return defaultSettings;
     }
     try {
         const savedSettings = localStorage.getItem('invoicePageSettings');
         if (savedSettings) {
-            // Merge saved settings with defaults to ensure new properties are added
             return { ...defaultSettings, ...JSON.parse(savedSettings) };
         }
     } catch (error) {
@@ -99,6 +100,7 @@ export default function BillingPage() {
   const [items, setItems] = useState<InvoiceItem[]>(initialFormState.items);
     
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [editingInvoiceSettings, setEditingInvoiceSettings] = useState<PageSettings>(defaultSettings);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   
@@ -231,6 +233,7 @@ export default function BillingPage() {
       setSite(initialFormState.site);
       setItems(initialFormState.items);
       setEditingInvoice(null);
+      setEditingInvoiceSettings(defaultSettings);
   };
 
   const handleFormSubmit = async () => {
@@ -274,24 +277,30 @@ export default function BillingPage() {
         cgst: calculations.cgst,
         sgst: calculations.sgst,
         grandTotal: calculations.grandTotal,
-        // For new invoices, create snapshots. For edits, these are already present.
         myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetails!,
         clientCompanyDetails: editingInvoice?.clientCompanyDetails || selectedCompanyForNewInvoice!,
-        // Save current page settings with the invoice
-        pageSize: defaultPageSettings.size,
-        pageOrientation: defaultPageSettings.orientation,
-        pageMargins: defaultPageSettings.margin,
-        pageFontSize: defaultPageSettings.pageFontSize,
-        addressFontSize: defaultPageSettings.addressFontSize,
-        tableBodyFontSize: defaultPageSettings.tableBodyFontSize,
+        pageSize: editingInvoice ? editingInvoiceSettings.size : defaultPageSettings.size,
+        pageOrientation: editingInvoice ? editingInvoiceSettings.orientation : defaultPageSettings.orientation,
+        pageMargins: editingInvoice ? editingInvoiceSettings.margin : defaultPageSettings.margin,
+        pageFontSize: editingInvoice ? editingInvoiceSettings.pageFontSize : defaultPageSettings.pageFontSize,
+        addressFontSize: editingInvoice ? editingInvoiceSettings.addressFontSize : defaultPageSettings.addressFontSize,
+        tableBodyFontSize: editingInvoice ? editingInvoiceSettings.tableBodyFontSize : defaultPageSettings.tableBodyFontSize,
       };
 
       try {
         if (editingInvoice) {
           const invoiceDocRef = doc(firestore, 'invoices', editingInvoice.id);
-          // When editing, we don't update snapshot details.
           const { myCompanyDetails: _mc, clientCompanyDetails: _cc, ...updateData } = invoiceData;
-          updateDocumentNonBlocking(invoiceDocRef, updateData);
+          updateDocumentNonBlocking(invoiceDocRef, {
+            ...updateData,
+            // also update the page settings for this specific invoice
+            pageSize: editingInvoiceSettings.size,
+            pageOrientation: editingInvoiceSettings.orientation,
+            pageMargins: editingInvoiceSettings.margin,
+            pageFontSize: editingInvoiceSettings.pageFontSize,
+            addressFontSize: editingInvoiceSettings.addressFontSize,
+            tableBodyFontSize: editingInvoiceSettings.tableBodyFontSize,
+          });
           toast({
               title: 'Invoice Updated',
               description: `Invoice No. ${invoiceData.billNo}-MHE has been updated.`,
@@ -327,13 +336,22 @@ export default function BillingPage() {
       setPoNumber(invoice.poNumber || 'AGREEMENT');
       setSite(invoice.site || '');
       setItems(invoice.items.map((item, index) => ({ ...item, key: `item-${Date.now()}-${index}` })));
+      // Set the page settings for the editing form
+      setEditingInvoiceSettings({
+          size: invoice.pageSize || defaultPageSettings.size,
+          orientation: invoice.pageOrientation || defaultPageSettings.orientation,
+          margin: invoice.pageMargins || defaultPageSettings.margin,
+          pageFontSize: invoice.pageFontSize || defaultPageSettings.pageFontSize,
+          addressFontSize: invoice.addressFontSize || defaultPageSettings.addressFontSize,
+          tableBodyFontSize: invoice.tableBodyFontSize || defaultPageSettings.tableBodyFontSize,
+      });
+
       setTimeout(() => {
         const mainEl = document.querySelector('main');
         if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
     } else {
       resetForm();
-      setEditingInvoice(null);
     }
     setIsFormDialogOpen(true);
   };
@@ -387,26 +405,81 @@ export default function BillingPage() {
       }
   }
 
-  const handlePageSettingsChange = (field: keyof PageSettings, value: any) => {
-      setDefaultPageSettings(prev => ({ ...prev, [field]: value }));
+  const handleSettingsChange = (
+    field: keyof PageSettings, 
+    value: any,
+    isEditing: boolean = false
+  ) => {
+      const setter = isEditing ? setEditingInvoiceSettings : setDefaultPageSettings;
+      setter(prev => ({ ...prev, [field]: value }));
   }
 
-  const handleMarginChange = (field: keyof PageSettings['margin'], value: string) => {
+  const handleMarginChange = (
+    field: keyof PageSettings['margin'], 
+    value: string,
+    isEditing: boolean = false
+  ) => {
       const numValue = parseFloat(value);
+      const setter = isEditing ? setEditingInvoiceSettings : setDefaultPageSettings;
       if (!isNaN(numValue) || value === '') {
-        setDefaultPageSettings(prev => ({
+        setter(prev => ({
             ...prev,
             margin: { ...prev.margin, [field]: value === '' ? '' : numValue }
         }));
       }
   }
 
-  const handleFontSizeChange = (field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', value: string) => {
+  const handleFontSizeChange = (
+    field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', 
+    value: string,
+    isEditing: boolean = false
+  ) => {
       const numValue = parseInt(value, 10);
+      const setter = isEditing ? setEditingInvoiceSettings : setDefaultPageSettings;
       if (!isNaN(numValue) && numValue > 0) {
-        handlePageSettingsChange(field, numValue);
+        handleSettingsChange(field, numValue, isEditing);
       }
   }
+
+  const DocumentSettingsFields = ({ settings, isEditing = false }: { settings: PageSettings, isEditing?: boolean }) => (
+    <div className="grid gap-4">
+        <div className="grid grid-cols-3 items-center gap-4">
+            <Label htmlFor="pageSize">Page Size</Label>
+            <Select value={settings.size} onValueChange={(value) => handleSettingsChange('size', value, isEditing)} >
+                <SelectTrigger id="pageSize" className="col-span-2 h-8">
+                    <SelectValue placeholder="Select page size" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="A4">A4</SelectItem>
+                    <SelectItem value="LETTER">Letter</SelectItem>
+                    <SelectItem value="LEGAL">Legal</SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
+        <div className="grid grid-cols-3 items-start gap-4">
+            <Label>Margins (cm)</Label>
+            <div className="col-span-2 grid grid-cols-2 gap-2">
+                <Input type="number" placeholder="Top" value={settings.margin.top} onChange={(e) => handleMarginChange('top', e.target.value, isEditing)} className="h-8"/>
+                <Input type="number" placeholder="Bottom" value={settings.margin.bottom} onChange={(e) => handleMarginChange('bottom', e.target.value, isEditing)} className="h-8"/>
+                <Input type="number" placeholder="Left" value={settings.margin.left} onChange={(e) => handleMarginChange('left', e.target.value, isEditing)} className="h-8"/>
+                <Input type="number" placeholder="Right" value={settings.margin.right} onChange={(e) => handleMarginChange('right', e.target.value, isEditing)} className="h-8"/>
+            </div>
+        </div>
+        <div className="grid grid-cols-3 items-center gap-4">
+            <Label htmlFor="pageFontSize">Page Font</Label>
+            <Input id="pageFontSize" type="number" value={settings.pageFontSize} onChange={(e) => handleFontSizeChange('pageFontSize', e.target.value, isEditing)} className="col-span-2 h-8" placeholder="e.g., 11"/>
+        </div>
+        <div className="grid grid-cols-3 items-center gap-4">
+            <Label htmlFor="addressFontSize">Address Font</Label>
+            <Input id="addressFontSize" type="number" value={settings.addressFontSize} onChange={(e) => handleFontSizeChange('addressFontSize', e.target.value, isEditing)} className="col-span-2 h-8" placeholder="e.g., 10"/>
+        </div>
+        <div className="grid grid-cols-3 items-center gap-4">
+            <Label htmlFor="tableBodyFontSize">Table Font</Label>
+            <Input id="tableBodyFontSize" type="number" value={settings.tableBodyFontSize} onChange={(e) => handleFontSizeChange('tableBodyFontSize', e.target.value, isEditing)} className="col-span-2 h-8" placeholder="e.g., 11"/>
+        </div>
+    </div>
+  );
+
 
   return (
     <AppLayout>
@@ -434,42 +507,7 @@ export default function BillingPage() {
                                             Set the default layout for new Word document invoices.
                                         </p>
                                     </div>
-                                    <div className="grid gap-4">
-                                        <div className="grid grid-cols-3 items-center gap-4">
-                                            <Label htmlFor="pageSize">Page Size</Label>
-                                            <Select value={defaultPageSettings.size} onValueChange={(value) => handlePageSettingsChange('size', value)} >
-                                                <SelectTrigger id="pageSize" className="col-span-2 h-8">
-                                                    <SelectValue placeholder="Select page size" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="A4">A4</SelectItem>
-                                                    <SelectItem value="LETTER">Letter</SelectItem>
-                                                    <SelectItem value="LEGAL">Legal</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="grid grid-cols-3 items-start gap-4">
-                                            <Label>Margins (cm)</Label>
-                                            <div className="col-span-2 grid grid-cols-2 gap-2">
-                                                <Input type="number" placeholder="Top" value={defaultPageSettings.margin.top} onChange={(e) => handleMarginChange('top', e.target.value)} className="h-8"/>
-                                                <Input type="number" placeholder="Bottom" value={defaultPageSettings.margin.bottom} onChange={(e) => handleMarginChange('bottom', e.target.value)} className="h-8"/>
-                                                <Input type="number" placeholder="Left" value={defaultPageSettings.margin.left} onChange={(e) => handleMarginChange('left', e.target.value)} className="h-8"/>
-                                                <Input type="number" placeholder="Right" value={defaultPageSettings.margin.right} onChange={(e) => handleMarginChange('right', e.target.value)} className="h-8"/>
-                                            </div>
-                                        </div>
-                                         <div className="grid grid-cols-3 items-center gap-4">
-                                            <Label htmlFor="pageFontSize">Page Font</Label>
-                                            <Input id="pageFontSize" type="number" value={defaultPageSettings.pageFontSize} onChange={(e) => handleFontSizeChange('pageFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 11"/>
-                                        </div>
-                                         <div className="grid grid-cols-3 items-center gap-4">
-                                            <Label htmlFor="addressFontSize">Address Font</Label>
-                                            <Input id="addressFontSize" type="number" value={defaultPageSettings.addressFontSize} onChange={(e) => handleFontSizeChange('addressFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 10"/>
-                                        </div>
-                                        <div className="grid grid-cols-3 items-center gap-4">
-                                            <Label htmlFor="tableBodyFontSize">Table Font</Label>
-                                            <Input id="tableBodyFontSize" type="number" value={defaultPageSettings.tableBodyFontSize} onChange={(e) => handleFontSizeChange('tableBodyFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 11"/>
-                                        </div>
-                                    </div>
+                                    <DocumentSettingsFields settings={defaultPageSettings} />
                                 </div>
                             </PopoverContent>
                         </Popover>
@@ -566,7 +604,6 @@ export default function BillingPage() {
         <Dialog open={isFormDialogOpen} onOpenChange={(isOpen) => {
             setIsFormDialogOpen(isOpen);
             if (!isOpen) {
-                setEditingInvoice(null);
                 resetForm();
             }
         }}>
@@ -675,6 +712,21 @@ export default function BillingPage() {
                                 </div>
                             </div>
                         </div>
+
+                         {editingInvoice && (
+                            <>
+                                <Separator />
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-medium">Document Settings</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        Adjust layout for this specific invoice. These settings will be saved with the invoice.
+                                    </p>
+                                    <div className="p-4 border rounded-lg">
+                                      <DocumentSettingsFields settings={editingInvoiceSettings} isEditing={true}/>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
                 <DialogFooter className="p-6 pt-4 border-t">
@@ -718,3 +770,5 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
