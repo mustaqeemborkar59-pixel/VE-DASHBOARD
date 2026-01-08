@@ -370,25 +370,16 @@ export default function BillingPage() {
       
       const itemsToSave = items.map(({ key, ...rest }) => rest);
       
-      const currentInvoiceSettings = editingInvoice 
-          ? {
-              pageSize: invoicePageSettings.size,
-              pageOrientation: invoicePageSettings.orientation,
-              pageMargins: invoicePageSettings.margin,
-              pageFontSize: invoicePageSettings.pageFontSize,
-              addressFontSize: invoicePageSettings.addressFontSize,
-              tableBodyFontSize: invoicePageSettings.tableBodyFontSize,
-            }
-          : {
-              pageSize: liveDefaultPageSettings.size,
-              pageOrientation: liveDefaultPageSettings.orientation,
-              pageMargins: liveDefaultPageSettings.margin,
-              pageFontSize: liveDefaultPageSettings.pageFontSize,
-              addressFontSize: liveDefaultPageSettings.addressFontSize,
-              tableBodyFontSize: liveDefaultPageSettings.tableBodyFontSize,
-            };
+      const currentInvoiceSettings = {
+          pageSize: invoicePageSettings.size,
+          pageOrientation: invoicePageSettings.orientation,
+          pageMargins: invoicePageSettings.margin,
+          pageFontSize: invoicePageSettings.pageFontSize,
+          addressFontSize: invoicePageSettings.addressFontSize,
+          tableBodyFontSize: invoicePageSettings.tableBodyFontSize,
+        };
 
-      const currentDownloadOptions = editingInvoice ? formDownloadOptions : defaultDownloadOptions;
+      const currentDownloadOptions = formDownloadOptions;
 
       const invoiceData: Omit<Invoice, 'id'> = {
         billNo: billNoToUse,
@@ -415,9 +406,10 @@ export default function BillingPage() {
           
           updateDocumentNonBlocking(invoiceDocRef, {
             ...updateData,
-            clientCompanyDetails: editingInvoice.clientCompanyDetails,
-            myCompanyDetails: editingInvoice.myCompanyDetails,
+            clientCompanyDetails: editingInvoice.clientCompanyDetails, // Preserve snapshot
+            myCompanyDetails: editingInvoice.myCompanyDetails, // Preserve snapshot
             downloadOptions: formDownloadOptions,
+            ...currentInvoiceSettings
           });
 
           toast({
@@ -630,7 +622,7 @@ export default function BillingPage() {
                     <Accordion type="multiple" className="w-full">
                         {organizedInvoices.map((year, yearIndex) => (
                              <AccordionItem value={`year-${year.key}`} key={year.key} className="mb-2 border-0">
-                                <AccordionTrigger className="px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-sm font-medium">
+                                <AccordionTrigger className="px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-sm font-medium hover:no-underline">
                                     <div className="flex items-center gap-3">
                                       <Folder className="h-5 w-5 text-primary" />
                                       <span>{year.label}</span>
@@ -640,7 +632,7 @@ export default function BillingPage() {
                                      <Accordion type="multiple" className="w-full">
                                         {year.months.map(month => (
                                             <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-2 border-dashed border-border pl-4 py-1">
-                                                 <AccordionTrigger className="px-3 py-2 hover:bg-muted/50 rounded-md text-xs font-medium">
+                                                 <AccordionTrigger className="px-3 py-2 hover:bg-muted/50 rounded-md text-xs font-medium hover:no-underline">
                                                     <div className="flex items-center gap-2">
                                                       <Folder className="h-4 w-4 text-secondary-foreground/60" />
                                                       <span>{month.label}</span>
@@ -898,9 +890,3 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-    
-
-    
-
-    
