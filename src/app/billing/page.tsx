@@ -241,7 +241,7 @@ export default function BillingPage() {
       return;
     }
     
-    if (!myCompanyDetails) {
+    if (!myCompanyDetails && !editingInvoice) {
       toast({
         variant: 'destructive',
         title: 'Company Settings Missing',
@@ -272,7 +272,7 @@ export default function BillingPage() {
         cgst: calculations.cgst,
         sgst: calculations.sgst,
         grandTotal: calculations.grandTotal,
-        myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetails, // Use existing snapshot on edit, or new one on create
+        myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetails!, // Use existing snapshot on edit, or new one on create
         pageSize: defaultPageSettings.size,
         pageOrientation: defaultPageSettings.orientation,
         pageMargins: defaultPageSettings.margin,
@@ -283,7 +283,9 @@ export default function BillingPage() {
       try {
         if (editingInvoice) {
           const invoiceDocRef = doc(firestore, 'invoices', editingInvoice.id);
-          updateDocumentNonBlocking(invoiceDocRef, invoiceData);
+          // When editing, we should not update `myCompanyDetails`
+          const { myCompanyDetails: _, ...updateData } = invoiceData;
+          updateDocumentNonBlocking(invoiceDocRef, updateData);
           toast({
               title: 'Invoice Updated',
               description: `Invoice No. ${invoiceData.billNo}-MHE has been updated.`,

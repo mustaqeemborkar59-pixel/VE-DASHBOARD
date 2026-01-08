@@ -11,21 +11,8 @@ import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { CompanySettings } from "@/lib/data";
 
-// Define the type for company settings, matching the Firestore document structure
-type CompanySettings = {
-    id?: string;
-    companyName: string;
-    pan: string;
-    gstin: string;
-    sacCode: string;
-    bankName: string;
-    accountNumber: string;
-    ifscCode: string;
-    bankBranch: string;
-    contactPerson: string;
-    contactNumber: string;
-};
 
 export default function SettingsPage() {
     const { firestore } = useFirebase();
