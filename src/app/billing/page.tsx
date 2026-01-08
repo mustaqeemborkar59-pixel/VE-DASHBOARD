@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc, setDoc } from 'firebase/firestore';
-import { Company, Invoice, CompanySettings, PageMargin } from '@/lib/data';
+import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Settings, Eye, FileText } from 'lucide-react';
@@ -19,7 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { generateAndDownloadInvoice, type PageSettings, type DownloadOptions } from '@/lib/invoice-generator';
+import { generateAndDownloadInvoice, type PageSettings } from '@/lib/invoice-generator';
 import { Textarea } from '@/components/ui/textarea';
 import { InvoicePreview } from '@/components/invoice-preview';
 import { Separator } from '@/components/ui/separator';
@@ -62,6 +62,11 @@ export default function BillingPage() {
     tableBodyFontSize: 11,
   };
   
+  const defaultDownloadOptions: DownloadOptions = {
+      myCompany: { showGstin: true, showPan: true, showBankDetails: true },
+      clientCompany: { showGstin: true, showBankDetails: true }
+  };
+  
   const initialFormState = {
     companyId: '',
     billDate: toISODateString(new Date()),
@@ -77,18 +82,14 @@ export default function BillingPage() {
   const [items, setItems] = useState<InvoiceItem[]>(initialFormState.items);
     
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
-  const [editingInvoiceSettings, setEditingInvoiceSettings] = useState<PageSettings>(defaultPageSettings);
+  const [invoicePageSettings, setInvoicePageSettings] = useState<PageSettings>(defaultPageSettings);
+  const [formDownloadOptions, setFormDownloadOptions] = useState<DownloadOptions>(defaultDownloadOptions);
+
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [invoiceForPreview, setInvoiceForPreview] = useState<Invoice | null>(null);
-  
-  const [invoiceToDownload, setInvoiceToDownload] = useState<Invoice | null>(null);
-  const [downloadOptions, setDownloadOptions] = useState<DownloadOptions>({
-      myCompany: { showGstin: true, showPan: true, showBankDetails: true },
-      clientCompany: { showGstin: true, showBankDetails: true }
-  });
 
   // Queries
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
@@ -113,10 +114,10 @@ export default function BillingPage() {
         addressFontSize: myCompanyDetails.addressFontSize || defaultPageSettings.addressFontSize,
         tableBodyFontSize: myCompanyDetails.tableBodyFontSize || defaultPageSettings.tableBodyFontSize,
     }
-  }, [myCompanyDetails, defaultPageSettings]);
+  }, [myCompanyDetails]);
 
   
-  const handleDownloadWord = async (invoice: Invoice, options: DownloadOptions) => {
+  const handleDownloadWord = async (invoice: Invoice) => {
     if (!invoice.clientCompanyDetails) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not find client company details for this invoice.' });
       return;
@@ -127,8 +128,8 @@ export default function BillingPage() {
     }
     
     const pageSettingsToUse: PageSettings = {
-        size: invoice.pageSize as any || liveDefaultPageSettings.size,
-        orientation: invoice.pageOrientation as any || liveDefaultPageSettings.orientation,
+        size: invoice.pageSize || liveDefaultPageSettings.size,
+        orientation: invoice.pageOrientation || liveDefaultPageSettings.orientation,
         margin: invoice.pageMargins || liveDefaultPageSettings.margin,
         pageFontSize: invoice.pageFontSize || liveDefaultPageSettings.pageFontSize,
         addressFontSize: invoice.addressFontSize || liveDefaultPageSettings.addressFontSize,
@@ -136,8 +137,7 @@ export default function BillingPage() {
     }
 
     try {
-        await generateAndDownloadInvoice(invoice, invoice.clientCompanyDetails, invoice.myCompanyDetails, pageSettingsToUse, undefined, options);
-        setInvoiceToDownload(null); // Close the dialog on success
+        await generateAndDownloadInvoice(invoice, invoice.clientCompanyDetails, invoice.myCompanyDetails, pageSettingsToUse, undefined, invoice.downloadOptions);
     } catch (e) {
         toast({
             variant: 'destructive',
@@ -216,7 +216,8 @@ export default function BillingPage() {
       setSite(initialFormState.site);
       setItems(initialFormState.items);
       setEditingInvoice(null);
-      setEditingInvoiceSettings(liveDefaultPageSettings);
+      setInvoicePageSettings(liveDefaultPageSettings);
+      setFormDownloadOptions(defaultDownloadOptions);
   };
 
   const handleFormSubmit = async () => {
@@ -262,27 +263,20 @@ export default function BillingPage() {
         grandTotal: calculations.grandTotal,
         myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetails!,
         clientCompanyDetails: editingInvoice?.clientCompanyDetails || selectedCompanyForNewInvoice!,
-        pageSize: editingInvoice ? editingInvoiceSettings.size : liveDefaultPageSettings.size,
-        pageOrientation: editingInvoice ? editingInvoiceSettings.orientation : liveDefaultPageSettings.orientation,
-        pageMargins: editingInvoice ? editingInvoiceSettings.margin : liveDefaultPageSettings.margin,
-        pageFontSize: editingInvoice ? editingInvoiceSettings.pageFontSize : liveDefaultPageSettings.pageFontSize,
-        addressFontSize: editingInvoice ? editingInvoiceSettings.addressFontSize : liveDefaultPageSettings.addressFontSize,
-        tableBodyFontSize: editingInvoice ? editingInvoiceSettings.tableBodyFontSize : liveDefaultPageSettings.tableBodyFontSize,
+        pageSize: invoicePageSettings.size,
+        pageOrientation: invoicePageSettings.orientation,
+        pageMargins: invoicePageSettings.margin,
+        pageFontSize: invoicePageSettings.pageFontSize,
+        addressFontSize: invoicePageSettings.addressFontSize,
+        tableBodyFontSize: invoicePageSettings.tableBodyFontSize,
+        downloadOptions: formDownloadOptions,
       };
 
       try {
         if (editingInvoice) {
           const invoiceDocRef = doc(firestore, 'invoices', editingInvoice.id);
           const { myCompanyDetails: _mc, clientCompanyDetails: _cc, ...updateData } = invoiceData;
-          updateDocumentNonBlocking(invoiceDocRef, {
-            ...updateData,
-            pageSize: editingInvoiceSettings.size,
-            pageOrientation: editingInvoiceSettings.orientation,
-            pageMargins: editingInvoiceSettings.margin,
-            pageFontSize: editingInvoiceSettings.pageFontSize,
-            addressFontSize: editingInvoiceSettings.addressFontSize,
-            tableBodyFontSize: editingInvoiceSettings.tableBodyFontSize,
-          });
+          updateDocumentNonBlocking(invoiceDocRef, updateData);
           toast({
               title: 'Invoice Updated',
               description: `Invoice No. ${invoiceData.billNo}-MHE has been updated.`,
@@ -318,7 +312,7 @@ export default function BillingPage() {
       setSite(invoice.site || '');
       setItems(invoice.items.map((item, index) => ({ ...item, key: `item-${Date.now()}-${index}` })));
       // Set the page settings for the editing form
-      setEditingInvoiceSettings({
+      setInvoicePageSettings({
           size: invoice.pageSize || liveDefaultPageSettings.size,
           orientation: invoice.pageOrientation || liveDefaultPageSettings.orientation,
           margin: invoice.pageMargins || liveDefaultPageSettings.margin,
@@ -326,11 +320,8 @@ export default function BillingPage() {
           addressFontSize: invoice.addressFontSize || liveDefaultPageSettings.addressFontSize,
           tableBodyFontSize: invoice.tableBodyFontSize || liveDefaultPageSettings.tableBodyFontSize,
       });
+      setFormDownloadOptions(invoice.downloadOptions || defaultDownloadOptions);
 
-      setTimeout(() => {
-        const mainEl = document.querySelector('main');
-        if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
     } else {
       resetForm();
     }
@@ -353,7 +344,7 @@ export default function BillingPage() {
     setInvoiceToDelete(null);
   };
   
-  const DocumentSettingsFields = ({ settings, setSettings, isEditing = false }: { settings: PageSettings, setSettings: React.Dispatch<React.SetStateAction<PageSettings>>, isEditing?: boolean }) => {
+  const DocumentSettingsFields = ({ settings, setSettings }: { settings: PageSettings, setSettings: React.Dispatch<React.SetStateAction<PageSettings>> }) => {
     
     const handleSettingsChange = (field: keyof PageSettings, value: any) => {
       setSettings(prev => ({ ...prev, [field]: value }));
@@ -416,6 +407,38 @@ export default function BillingPage() {
     );
   }
 
+  const DownloadOptionsFields = ({ options, setOptions }: { options: DownloadOptions, setOptions: React.Dispatch<React.SetStateAction<DownloadOptions>> }) => (
+    <div className="space-y-6">
+        <div className="space-y-4">
+            <h4 className="font-semibold text-foreground">My Company Details</h4>
+            <div className="flex items-center space-x-2">
+                <Checkbox id="myGstin" checked={options.myCompany.showGstin} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showGstin: !!checked} }))} />
+                <Label htmlFor="myGstin">Show GSTIN</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+                <Checkbox id="myPan" checked={options.myCompany.showPan} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showPan: !!checked} }))} />
+                <Label htmlFor="myPan">Show PAN Number</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+                <Checkbox id="myBank" checked={options.myCompany.showBankDetails} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showBankDetails: !!checked} }))} />
+                <Label htmlFor="myBank">Show Bank Details</Label>
+            </div>
+        </div>
+        <Separator />
+        <div className="space-y-4">
+            <h4 className="font-semibold text-foreground">Client Company Details</h4>
+            <div className="flex items-center space-x-2">
+                <Checkbox id="clientGstin" checked={options.clientCompany.showGstin} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, clientCompany: {...prev.clientCompany, showGstin: !!checked} }))} />
+                <Label htmlFor="clientGstin">Show GSTIN</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+                <Checkbox id="clientBank" checked={options.clientCompany.showBankDetails} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, clientCompany: {...prev.clientCompany, showBankDetails: !!checked} }))} />
+                <Label htmlFor="clientBank">Show Bank Details</Label>
+            </div>
+        </div>
+    </div>
+  );
+
   return (
     <AppLayout>
       <div className="flex flex-col gap-6">
@@ -459,12 +482,12 @@ export default function BillingPage() {
                             </TableRow>
                         ) : allInvoices && allInvoices.length > 0 ? (
                            allInvoices.map((invoice) => (
-                                <TableRow key={invoice.id} onClick={() => handleOpenPreview(invoice)} className="cursor-pointer">
-                                    <TableCell className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
-                                    <TableCell>{invoice.clientCompanyDetails?.name || 'Unknown'}</TableCell>
-                                    <TableCell>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
-                                    <TableCell className="text-right">{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
-                                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                <TableRow key={invoice.id}>
+                                    <TableCell className="font-medium" onClick={() => handleOpenPreview(invoice)}>{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
+                                    <TableCell onClick={() => handleOpenPreview(invoice)}>{invoice.clientCompanyDetails?.name || 'Unknown'}</TableCell>
+                                    <TableCell onClick={() => handleOpenPreview(invoice)}>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
+                                    <TableCell className="text-right" onClick={() => handleOpenPreview(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
+                                    <TableCell className="text-right">
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
@@ -477,7 +500,7 @@ export default function BillingPage() {
                                                         <Eye className="mr-2 h-4 w-4" />
                                                         Preview
                                                     </Button>
-                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setInvoiceToDownload(invoice)}>
+                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleDownloadWord(invoice)}>
                                                         <Download className="mr-2 h-4 w-4" />
                                                         Download
                                                     </Button>
@@ -617,20 +640,21 @@ export default function BillingPage() {
                             </div>
                         </div>
 
-                         {editingInvoice && (
-                            <>
-                                <Separator />
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-medium">Document Settings</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        Adjust layout for this specific invoice. These settings will be saved with the invoice.
-                                    </p>
-                                    <div className="p-4 border rounded-lg">
-                                      <DocumentSettingsFields settings={editingInvoiceSettings} setSettings={setEditingInvoiceSettings} isEditing={true}/>
-                                    </div>
+                        <Separator />
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-medium">Document Settings</h3>
+                            <p className="text-sm text-muted-foreground">
+                                Adjust layout and display options. These settings will be saved with the invoice.
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="p-4 border rounded-lg">
+                                  <DocumentSettingsFields settings={invoicePageSettings} setSettings={setInvoicePageSettings} />
                                 </div>
-                            </>
-                        )}
+                                <div className="p-4 border rounded-lg">
+                                  <DownloadOptionsFields options={formDownloadOptions} setOptions={setFormDownloadOptions} />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <DialogFooter className="p-6 pt-4 border-t">
@@ -666,57 +690,16 @@ export default function BillingPage() {
                     </DialogDescription>
                 </DialogHeader>
                 <div className={cn("px-6 pb-6 overflow-y-auto max-h-[80vh]", "hide-scrollbar")}>
-                   <InvoicePreview invoice={invoiceForPreview} company={invoiceForPreview?.clientCompanyDetails || null} myCompanyDetails={invoiceForPreview?.myCompanyDetails || null} />
+                   <InvoicePreview 
+                    invoice={invoiceForPreview} 
+                    company={invoiceForPreview?.clientCompanyDetails || null} 
+                    myCompanyDetails={invoiceForPreview?.myCompanyDetails || null}
+                    downloadOptions={invoiceForPreview?.downloadOptions || defaultDownloadOptions}
+                  />
                 </div>
             </DialogContent>
         </Dialog>
         
-        <Dialog open={!!invoiceToDownload} onOpenChange={(isOpen) => !isOpen && setInvoiceToDownload(null)}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Download Options</DialogTitle>
-                    <DialogDescription>
-                        Select which details to include in the Word document for Bill No. {invoiceToDownload?.billNo}-MHE.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4 space-y-6">
-                    <div className="space-y-4">
-                        <h4 className="font-semibold text-foreground">My Company Details</h4>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox id="myGstin" checked={downloadOptions.myCompany.showGstin} onCheckedChange={(checked) => setDownloadOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showGstin: !!checked} }))} />
-                            <Label htmlFor="myGstin">Show GSTIN</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox id="myPan" checked={downloadOptions.myCompany.showPan} onCheckedChange={(checked) => setDownloadOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showPan: !!checked} }))} />
-                            <Label htmlFor="myPan">Show PAN Number</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox id="myBank" checked={downloadOptions.myCompany.showBankDetails} onCheckedChange={(checked) => setDownloadOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showBankDetails: !!checked} }))} />
-                            <Label htmlFor="myBank">Show Bank Details</Label>
-                        </div>
-                    </div>
-                     <Separator />
-                    <div className="space-y-4">
-                        <h4 className="font-semibold text-foreground">Client Company Details</h4>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox id="clientGstin" checked={downloadOptions.clientCompany.showGstin} onCheckedChange={(checked) => setDownloadOptions(prev => ({ ...prev, clientCompany: {...prev.clientCompany, showGstin: !!checked} }))} />
-                            <Label htmlFor="clientGstin">Show GSTIN</Label>
-                        </div>
-                         <div className="flex items-center space-x-2">
-                            <Checkbox id="clientBank" checked={downloadOptions.clientCompany.showBankDetails} onCheckedChange={(checked) => setDownloadOptions(prev => ({ ...prev, clientCompany: {...prev.clientCompany, showBankDetails: !!checked} }))} />
-                            <Label htmlFor="clientBank">Show Bank Details</Label>
-                        </div>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setInvoiceToDownload(null)}>Cancel</Button>
-                    <Button onClick={() => invoiceToDownload && handleDownloadWord(invoiceToDownload, downloadOptions)}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        Generate & Download
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
       </div>
     </AppLayout>
   );

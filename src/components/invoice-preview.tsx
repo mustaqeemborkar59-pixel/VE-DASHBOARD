@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import type { Invoice, Company, CompanySettings } from '@/lib/data';
+import type { Invoice, Company, CompanySettings, DownloadOptions } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Separator } from './ui/separator';
@@ -11,6 +11,7 @@ interface InvoicePreviewProps {
   invoice: Invoice | null;
   company: Company | null; // This is now the client company snapshot
   myCompanyDetails: CompanySettings | null;
+  downloadOptions: DownloadOptions;
 }
 
 const toWords = new ToWords({
@@ -25,7 +26,7 @@ const toWords = new ToWords({
 const formatCurrency = (amount: number) => amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 });
 
 
-export function InvoicePreview({ invoice, company, myCompanyDetails }: InvoicePreviewProps) {
+export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOptions }: InvoicePreviewProps) {
   if (!invoice || !company || !myCompanyDetails) {
     return (
       <div className="p-10 text-center text-muted-foreground">
@@ -35,6 +36,7 @@ export function InvoicePreview({ invoice, company, myCompanyDetails }: InvoicePr
   }
   
   const amountInWords = toWords.convert(invoice.grandTotal);
+  const opts = downloadOptions;
 
   return (
     <div className="bg-white text-black p-8 rounded-lg shadow-lg max-w-4xl mx-auto font-['Calibri',_sans-serif] text-sm">
@@ -47,7 +49,7 @@ export function InvoicePreview({ invoice, company, myCompanyDetails }: InvoicePr
           <p>To,</p>
           <p className="font-bold text-base">{company.name}</p>
           <p className="whitespace-pre-wrap">{company.address}</p>
-          {company.gstin && <p>GSTIN: {company.gstin}</p>}
+          {opts.clientCompany.showGstin && company.gstin && <p>GSTIN: {company.gstin}</p>}
         </div>
         <div className="text-right">
           <p>
@@ -120,21 +122,26 @@ export function InvoicePreview({ invoice, company, myCompanyDetails }: InvoicePr
       <section className="grid grid-cols-2 gap-4 mb-8">
         <div>
             <p className="font-bold">{myCompanyDetails.companyName}</p>
-            <p><span className="font-bold">PAN CARD NO:</span> {myCompanyDetails.pan}</p>
-            <p><span className="font-bold">GSTIN:</span> {myCompanyDetails.gstin}</p>
+            {opts.myCompany.showPan && <p><span className="font-bold">PAN CARD NO:</span> {myCompanyDetails.pan}</p>}
+            {opts.myCompany.showGstin && <p><span className="font-bold">GSTIN:</span> {myCompanyDetails.gstin}</p>}
             <p><span className="font-bold">SAC code:</span> {myCompanyDetails.sacCode}</p>
-            <br/>
-            <p className="font-bold">Bank Details</p>
-            <p><span className="font-bold">Bank Name:</span> {myCompanyDetails.bankName}</p>
-            <p><span className="font-bold">A/C No:</span> {myCompanyDetails.accountNumber}</p>
-            <p><span className="font-bold">IFSC Code:</span> {myCompanyDetails.ifscCode}</p>
-            <p><span className="font-bold">Branch:</span> {myCompanyDetails.bankBranch}</p>
+            
+            {opts.myCompany.showBankDetails && (
+              <>
+                <br/>
+                <p className="font-bold">Bank Details</p>
+                <p><span className="font-bold">Bank Name:</span> {myCompanyDetails.bankName}</p>
+                <p><span className="font-bold">A/C No:</span> {myCompanyDetails.accountNumber}</p>
+                <p><span className="font-bold">IFSC Code:</span> {myCompanyDetails.ifscCode}</p>
+                <p><span className="font-bold">Branch:</span> {myCompanyDetails.bankBranch}</p>
+              </>
+            )}
         </div>
         <div className="border-l border-gray-400 pl-4">
             <p className="font-bold">{company.name}</p>
-            {company.gstin && <p><span className="font-bold">GSTIN:</span> {company.gstin}</p>}
+            {opts.clientCompany.showGstin && company.gstin && <p><span className="font-bold">GSTIN:</span> {company.gstin}</p>}
             
-            {(company.bankName || company.accountNumber || company.ifscCode || company.bankBranch) && (
+            {opts.clientCompany.showBankDetails && (company.bankName || company.accountNumber || company.ifscCode || company.bankBranch) && (
               <>
                 <br/>
                 <p className="font-bold">Bank Details</p>

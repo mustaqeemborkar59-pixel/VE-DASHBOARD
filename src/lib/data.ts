@@ -97,6 +97,18 @@ export type CompanySettings = {
     tableBodyFontSize?: number;
 };
 
+export type DownloadOptions = {
+    myCompany: {
+        showGstin: boolean;
+        showPan: boolean;
+        showBankDetails: boolean;
+    };
+    clientCompany: {
+        showGstin: boolean;
+        showBankDetails: boolean;
+    };
+};
+
 export type Invoice = {
     id: string;
     billNo: number;
@@ -118,6 +130,7 @@ export type Invoice = {
     pageFontSize?: number;
     addressFontSize?: number;
     tableBodyFontSize?: number;
+    downloadOptions?: DownloadOptions;
 }
 
 export type InvoiceTemplate = {
