@@ -8,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc } from 'firebase/firestore';
-import { Company, Invoice, CompanySettings } from '@/lib/data';
+import { collection, query, orderBy, doc, setDoc } from 'firebase/firestore';
+import { Company, Invoice, CompanySettings, PageMargin } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Settings, Eye } from 'lucide-react';
@@ -53,7 +53,7 @@ export default function BillingPage() {
     return format(date, 'yyyy-MM-dd');
   }
   
-  const defaultSettings: PageSettings = {
+  const defaultPageSettings: PageSettings = {
     size: 'A4',
     orientation: 'portrait',
     margin: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 },
@@ -62,29 +62,6 @@ export default function BillingPage() {
     tableBodyFontSize: 11,
   };
   
-  const [defaultPageSettings, setDefaultPageSettings] = useState<PageSettings>(() => {
-    if (typeof window === 'undefined') {
-        return defaultSettings;
-    }
-    try {
-        const savedSettings = localStorage.getItem('invoicePageSettings');
-        if (savedSettings) {
-            return { ...defaultSettings, ...JSON.parse(savedSettings) };
-        }
-    } catch (error) {
-        console.error("Failed to parse page settings from localStorage", error);
-    }
-    return defaultSettings;
-  });
-
-  useEffect(() => {
-    try {
-        localStorage.setItem('invoicePageSettings', JSON.stringify(defaultPageSettings));
-    } catch (error) {
-        console.error("Failed to save page settings to localStorage", error);
-    }
-  }, [defaultPageSettings]);
-
   const initialFormState = {
     companyId: '',
     billDate: toISODateString(new Date()),
@@ -100,11 +77,9 @@ export default function BillingPage() {
   const [items, setItems] = useState<InvoiceItem[]>(initialFormState.items);
     
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
-  const [editingInvoiceSettings, setEditingInvoiceSettings] = useState<PageSettings>(defaultSettings);
+  const [editingInvoiceSettings, setEditingInvoiceSettings] = useState<PageSettings>(defaultPageSettings);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
-  
-  const [invoiceStartNumber, setInvoiceStartNumber] = useState('');
   
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [invoiceForPreview, setInvoiceForPreview] = useState<Invoice | null>(null);
@@ -122,6 +97,19 @@ export default function BillingPage() {
 
 
   const selectedCompanyForNewInvoice = useMemo(() => companies?.find(c => c.id === companyId), [companies, companyId]);
+
+  const liveDefaultPageSettings = useMemo((): PageSettings => {
+    if (!myCompanyDetails) return defaultPageSettings;
+    return {
+        size: myCompanyDetails.pageSize || defaultPageSettings.size,
+        orientation: myCompanyDetails.pageOrientation || defaultPageSettings.orientation,
+        margin: myCompanyDetails.pageMargins || defaultPageSettings.margin,
+        pageFontSize: myCompanyDetails.pageFontSize || defaultPageSettings.pageFontSize,
+        addressFontSize: myCompanyDetails.addressFontSize || defaultPageSettings.addressFontSize,
+        tableBodyFontSize: myCompanyDetails.tableBodyFontSize || defaultPageSettings.tableBodyFontSize,
+    }
+  }, [myCompanyDetails, defaultPageSettings]);
+
   
   const handleDownloadWord = async (invoice: Invoice) => {
     if (!invoice.clientCompanyDetails) {
@@ -133,14 +121,13 @@ export default function BillingPage() {
       return;
     }
     
-    // Use invoice-specific settings if they exist, otherwise use default settings
     const pageSettingsToUse: PageSettings = {
-        size: invoice.pageSize as any || defaultPageSettings.size,
-        orientation: invoice.pageOrientation as any || defaultPageSettings.orientation,
-        margin: invoice.pageMargins || defaultPageSettings.margin,
-        pageFontSize: invoice.pageFontSize || defaultPageSettings.pageFontSize,
-        addressFontSize: invoice.addressFontSize || defaultPageSettings.addressFontSize,
-        tableBodyFontSize: invoice.tableBodyFontSize || defaultPageSettings.tableBodyFontSize,
+        size: invoice.pageSize as any || liveDefaultPageSettings.size,
+        orientation: invoice.pageOrientation as any || liveDefaultPageSettings.orientation,
+        margin: invoice.pageMargins || liveDefaultPageSettings.margin,
+        pageFontSize: invoice.pageFontSize || liveDefaultPageSettings.pageFontSize,
+        addressFontSize: invoice.addressFontSize || liveDefaultPageSettings.addressFontSize,
+        tableBodyFontSize: invoice.tableBodyFontSize || liveDefaultPageSettings.tableBodyFontSize,
     }
 
     try {
@@ -160,23 +147,13 @@ export default function BillingPage() {
     return Math.max(0, ...allInvoices.map(inv => inv.billNo));
   }, [allInvoices]);
   
-  useEffect(() => {
-    if (isLoadingInvoices) return;
+  const nextBillNumber = useMemo(() => {
+    if (isLoadingSettings) return null;
+    const fromSettings = myCompanyDetails?.nextBillNo;
+    const nextCalculated = maxBillNumber + 1;
+    return fromSettings && fromSettings > nextCalculated ? fromSettings : nextCalculated;
+  }, [myCompanyDetails, maxBillNumber, isLoadingSettings]);
 
-    let nextNumber = maxBillNumber + 1;
-    try {
-      const savedStartNumber = localStorage.getItem('invoiceStartNumber');
-      if (savedStartNumber) {
-        const parsedSavedNumber = parseInt(savedStartNumber, 10);
-        if (!isNaN(parsedSavedNumber) && parsedSavedNumber > nextNumber) {
-          nextNumber = parsedSavedNumber;
-        }
-      }
-    } catch (error) {
-      console.error("Failed to read invoice start number from localStorage", error);
-    }
-    setInvoiceStartNumber(nextNumber.toString());
-  }, [maxBillNumber, isLoadingInvoices]);
 
   const calculations = useMemo(() => {
     const netTotal = items.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
@@ -233,7 +210,7 @@ export default function BillingPage() {
       setSite(initialFormState.site);
       setItems(initialFormState.items);
       setEditingInvoice(null);
-      setEditingInvoiceSettings(defaultSettings);
+      setEditingInvoiceSettings(liveDefaultPageSettings);
   };
 
   const handleFormSubmit = async () => {
@@ -255,12 +232,12 @@ export default function BillingPage() {
       return;
     }
 
-    if (firestore) {
-      const currentStartNumber = parseInt(invoiceStartNumber, 10);
-      let billNoToUse = editingInvoice ? editingInvoice.billNo : (currentStartNumber > maxBillNumber ? currentStartNumber : maxBillNumber + 1);
+    if (firestore && settingsDocRef) {
+      const billNoToUse = editingInvoice ? editingInvoice.billNo : (nextBillNumber || maxBillNumber + 1);
 
       if (isNaN(billNoToUse)) {
-        billNoToUse = maxBillNumber + 1;
+        toast({ variant: 'destructive', title: 'Invalid Bill Number', description: 'Could not determine next bill number.' });
+        return;
       }
       
       const itemsToSave = items.map(({ key, ...rest }) => rest);
@@ -279,12 +256,12 @@ export default function BillingPage() {
         grandTotal: calculations.grandTotal,
         myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetails!,
         clientCompanyDetails: editingInvoice?.clientCompanyDetails || selectedCompanyForNewInvoice!,
-        pageSize: editingInvoice ? editingInvoiceSettings.size : defaultPageSettings.size,
-        pageOrientation: editingInvoice ? editingInvoiceSettings.orientation : defaultPageSettings.orientation,
-        pageMargins: editingInvoice ? editingInvoiceSettings.margin : defaultPageSettings.margin,
-        pageFontSize: editingInvoice ? editingInvoiceSettings.pageFontSize : defaultPageSettings.pageFontSize,
-        addressFontSize: editingInvoice ? editingInvoiceSettings.addressFontSize : defaultPageSettings.addressFontSize,
-        tableBodyFontSize: editingInvoice ? editingInvoiceSettings.tableBodyFontSize : defaultPageSettings.tableBodyFontSize,
+        pageSize: editingInvoice ? editingInvoiceSettings.size : liveDefaultPageSettings.size,
+        pageOrientation: editingInvoice ? editingInvoiceSettings.orientation : liveDefaultPageSettings.orientation,
+        pageMargins: editingInvoice ? editingInvoiceSettings.margin : liveDefaultPageSettings.margin,
+        pageFontSize: editingInvoice ? editingInvoiceSettings.pageFontSize : liveDefaultPageSettings.pageFontSize,
+        addressFontSize: editingInvoice ? editingInvoiceSettings.addressFontSize : liveDefaultPageSettings.addressFontSize,
+        tableBodyFontSize: editingInvoice ? editingInvoiceSettings.tableBodyFontSize : liveDefaultPageSettings.tableBodyFontSize,
       };
 
       try {
@@ -293,7 +270,6 @@ export default function BillingPage() {
           const { myCompanyDetails: _mc, clientCompanyDetails: _cc, ...updateData } = invoiceData;
           updateDocumentNonBlocking(invoiceDocRef, {
             ...updateData,
-            // also update the page settings for this specific invoice
             pageSize: editingInvoiceSettings.size,
             pageOrientation: editingInvoiceSettings.orientation,
             pageMargins: editingInvoiceSettings.margin,
@@ -307,9 +283,8 @@ export default function BillingPage() {
           });
         } else {
           addDocumentNonBlocking(collection(firestore, 'invoices'), invoiceData);
-          const nextNum = billNoToUse + 1;
-          setInvoiceStartNumber(nextNum.toString());
-          localStorage.setItem('invoiceStartNumber', nextNum.toString());
+          // Update the next bill number in settings
+          setDoc(settingsDocRef, { nextBillNo: billNoToUse + 1 }, { merge: true });
           toast({
               title: 'Invoice Saved',
               description: `Invoice No. ${billNoToUse}-MHE has been saved.`,
@@ -338,12 +313,12 @@ export default function BillingPage() {
       setItems(invoice.items.map((item, index) => ({ ...item, key: `item-${Date.now()}-${index}` })));
       // Set the page settings for the editing form
       setEditingInvoiceSettings({
-          size: invoice.pageSize || defaultPageSettings.size,
-          orientation: invoice.pageOrientation || defaultPageSettings.orientation,
-          margin: invoice.pageMargins || defaultPageSettings.margin,
-          pageFontSize: invoice.pageFontSize || defaultPageSettings.pageFontSize,
-          addressFontSize: invoice.addressFontSize || defaultPageSettings.addressFontSize,
-          tableBodyFontSize: invoice.tableBodyFontSize || defaultPageSettings.tableBodyFontSize,
+          size: invoice.pageSize || liveDefaultPageSettings.size,
+          orientation: invoice.pageOrientation || liveDefaultPageSettings.orientation,
+          margin: invoice.pageMargins || liveDefaultPageSettings.margin,
+          pageFontSize: invoice.pageFontSize || liveDefaultPageSettings.pageFontSize,
+          addressFontSize: invoice.addressFontSize || liveDefaultPageSettings.addressFontSize,
+          tableBodyFontSize: invoice.tableBodyFontSize || liveDefaultPageSettings.tableBodyFontSize,
       });
 
       setTimeout(() => {
@@ -372,114 +347,68 @@ export default function BillingPage() {
     setInvoiceToDelete(null);
   };
   
-  const handleStartNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (/^\d*$/.test(value)) { // only allow numbers
-        setInvoiceStartNumber(value);
+  const DocumentSettingsFields = ({ settings, setSettings, isEditing = false }: { settings: PageSettings, setSettings: React.Dispatch<React.SetStateAction<PageSettings>>, isEditing?: boolean }) => {
+    
+    const handleSettingsChange = (field: keyof PageSettings, value: any) => {
+      setSettings(prev => ({ ...prev, [field]: value }));
     }
-  };
   
-  const handleUpdateStartNumber = () => {
-      const num = parseInt(invoiceStartNumber, 10);
-      if (isNaN(num) || num <= maxBillNumber) {
-          toast({
-              variant: 'destructive',
-              title: 'Invalid Number',
-              description: `Start number must be a number greater than the current max bill no (${maxBillNumber}).`
-          })
-          setInvoiceStartNumber((maxBillNumber + 1).toString());
-      } else {
-          try {
-              localStorage.setItem('invoiceStartNumber', num.toString());
-              toast({
-                  title: 'Success',
-                  description: `Next invoice will start from ${num}.`
-              })
-          } catch(e) {
-              toast({
-                  variant: 'destructive',
-                  title: 'Error',
-                  description: `Could not save start number.`
-              })
-          }
-      }
+    const handleMarginChange = (field: keyof PageSettings['margin'], value: string) => {
+        const numValue = parseFloat(value);
+        if (!isNaN(numValue) || value === '') {
+          setSettings(prev => ({
+              ...prev,
+              margin: { ...(prev.margin || {top:0,left:0,bottom:0,right:0}), [field]: value === '' ? '' : numValue }
+          }));
+        }
+    }
+  
+    const handleFontSizeChange = (field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', value: string) => {
+        const numValue = parseInt(value, 10);
+        if (!isNaN(numValue) || value === '') {
+          handleSettingsChange(field, value === '' ? '' : numValue);
+        }
+    }
+
+    return (
+      <div className="grid gap-4">
+          <div className="grid grid-cols-3 items-center gap-4">
+              <Label htmlFor="pageSize">Page Size</Label>
+              <Select value={settings.size} onValueChange={(value) => handleSettingsChange('size', value)} >
+                  <SelectTrigger id="pageSize" className="col-span-2 h-8">
+                      <SelectValue placeholder="Select page size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="A4">A4</SelectItem>
+                      <SelectItem value="LETTER">Letter</SelectItem>
+                      <SelectItem value="LEGAL">Legal</SelectItem>
+                  </SelectContent>
+              </Select>
+          </div>
+          <div className="grid grid-cols-3 items-start gap-4">
+              <Label>Margins (cm)</Label>
+              <div className="col-span-2 grid grid-cols-2 gap-2">
+                  <Input type="number" placeholder="Top" value={settings.margin.top} onChange={(e) => handleMarginChange('top', e.target.value)} className="h-8"/>
+                  <Input type="number" placeholder="Bottom" value={settings.margin.bottom} onChange={(e) => handleMarginChange('bottom', e.target.value)} className="h-8"/>
+                  <Input type="number" placeholder="Left" value={settings.margin.left} onChange={(e) => handleMarginChange('left', e.target.value)} className="h-8"/>
+                  <Input type="number" placeholder="Right" value={settings.margin.right} onChange={(e) => handleMarginChange('right', e.target.value)} className="h-8"/>
+              </div>
+          </div>
+          <div className="grid grid-cols-3 items-center gap-4">
+              <Label htmlFor="pageFontSize">Page Font</Label>
+              <Input id="pageFontSize" type="number" value={settings.pageFontSize} onChange={(e) => handleFontSizeChange('pageFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 11"/>
+          </div>
+          <div className="grid grid-cols-3 items-center gap-4">
+              <Label htmlFor="addressFontSize">Address Font</Label>
+              <Input id="addressFontSize" type="number" value={settings.addressFontSize} onChange={(e) => handleFontSizeChange('addressFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 10"/>
+          </div>
+          <div className="grid grid-cols-3 items-center gap-4">
+              <Label htmlFor="tableBodyFontSize">Table Font</Label>
+              <Input id="tableBodyFontSize" type="number" value={settings.tableBodyFontSize} onChange={(e) => handleFontSizeChange('tableBodyFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 11"/>
+          </div>
+      </div>
+    );
   }
-
-  const handleSettingsChange = (
-    field: keyof PageSettings, 
-    value: any,
-    isEditing: boolean = false
-  ) => {
-      const setter = isEditing ? setEditingInvoiceSettings : setDefaultPageSettings;
-      setter(prev => ({ ...prev, [field]: value }));
-  }
-
-  const handleMarginChange = (
-    field: keyof PageSettings['margin'], 
-    value: string,
-    isEditing: boolean = false
-  ) => {
-      const numValue = parseFloat(value);
-      const setter = isEditing ? setEditingInvoiceSettings : setDefaultPageSettings;
-      if (!isNaN(numValue) || value === '') {
-        setter(prev => ({
-            ...prev,
-            margin: { ...prev.margin, [field]: value === '' ? '' : numValue }
-        }));
-      }
-  }
-
-  const handleFontSizeChange = (
-    field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', 
-    value: string,
-    isEditing: boolean = false
-  ) => {
-      const numValue = parseInt(value, 10);
-      const setter = isEditing ? setEditingInvoiceSettings : setDefaultPageSettings;
-      if (!isNaN(numValue) && numValue > 0) {
-        handleSettingsChange(field, numValue, isEditing);
-      }
-  }
-
-  const DocumentSettingsFields = ({ settings, isEditing = false }: { settings: PageSettings, isEditing?: boolean }) => (
-    <div className="grid gap-4">
-        <div className="grid grid-cols-3 items-center gap-4">
-            <Label htmlFor="pageSize">Page Size</Label>
-            <Select value={settings.size} onValueChange={(value) => handleSettingsChange('size', value, isEditing)} >
-                <SelectTrigger id="pageSize" className="col-span-2 h-8">
-                    <SelectValue placeholder="Select page size" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="A4">A4</SelectItem>
-                    <SelectItem value="LETTER">Letter</SelectItem>
-                    <SelectItem value="LEGAL">Legal</SelectItem>
-                </SelectContent>
-            </Select>
-        </div>
-        <div className="grid grid-cols-3 items-start gap-4">
-            <Label>Margins (cm)</Label>
-            <div className="col-span-2 grid grid-cols-2 gap-2">
-                <Input type="number" placeholder="Top" value={settings.margin.top} onChange={(e) => handleMarginChange('top', e.target.value, isEditing)} className="h-8"/>
-                <Input type="number" placeholder="Bottom" value={settings.margin.bottom} onChange={(e) => handleMarginChange('bottom', e.target.value, isEditing)} className="h-8"/>
-                <Input type="number" placeholder="Left" value={settings.margin.left} onChange={(e) => handleMarginChange('left', e.target.value, isEditing)} className="h-8"/>
-                <Input type="number" placeholder="Right" value={settings.margin.right} onChange={(e) => handleMarginChange('right', e.target.value, isEditing)} className="h-8"/>
-            </div>
-        </div>
-        <div className="grid grid-cols-3 items-center gap-4">
-            <Label htmlFor="pageFontSize">Page Font</Label>
-            <Input id="pageFontSize" type="number" value={settings.pageFontSize} onChange={(e) => handleFontSizeChange('pageFontSize', e.target.value, isEditing)} className="col-span-2 h-8" placeholder="e.g., 11"/>
-        </div>
-        <div className="grid grid-cols-3 items-center gap-4">
-            <Label htmlFor="addressFontSize">Address Font</Label>
-            <Input id="addressFontSize" type="number" value={settings.addressFontSize} onChange={(e) => handleFontSizeChange('addressFontSize', e.target.value, isEditing)} className="col-span-2 h-8" placeholder="e.g., 10"/>
-        </div>
-        <div className="grid grid-cols-3 items-center gap-4">
-            <Label htmlFor="tableBodyFontSize">Table Font</Label>
-            <Input id="tableBodyFontSize" type="number" value={settings.tableBodyFontSize} onChange={(e) => handleFontSizeChange('tableBodyFontSize', e.target.value, isEditing)} className="col-span-2 h-8" placeholder="e.g., 11"/>
-        </div>
-    </div>
-  );
-
 
   return (
     <AppLayout>
@@ -492,25 +421,6 @@ export default function BillingPage() {
                         <CardDescription>View, edit, and create new invoices.</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                    <Settings className="h-4 w-4" />
-                                    <span className="sr-only">Document Settings</span>
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80">
-                                <div className="grid gap-4">
-                                    <div className="space-y-2">
-                                        <h4 className="font-medium leading-none">Default Document Settings</h4>
-                                        <p className="text-sm text-muted-foreground">
-                                            Set the default layout for new Word document invoices.
-                                        </p>
-                                    </div>
-                                    <DocumentSettingsFields settings={defaultPageSettings} />
-                                </div>
-                            </PopoverContent>
-                        </Popover>
                         <Button onClick={() => handleOpenFormDialog(null)} size="sm">
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Add Invoice
@@ -522,19 +432,7 @@ export default function BillingPage() {
                 <div className="flex flex-col sm:flex-row items-center gap-4 mb-6 p-4 border rounded-lg bg-muted/40">
                     <div className="flex-1 w-full sm:w-auto">
                         <Label htmlFor="invoiceStart" className="text-sm font-medium">Next Invoice Number</Label>
-                        <p className="text-xs text-muted-foreground">Set the number for the next invoice to be generated.</p>
-                    </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <Input
-                            id="invoiceStart"
-                            type="text"
-                            value={invoiceStartNumber}
-                            onChange={handleStartNumberChange}
-                            className="w-full sm:w-32"
-                            disabled={isLoadingInvoices}
-                            placeholder={isLoadingInvoices ? "Loading..." : (maxBillNumber + 1).toString()}
-                        />
-                        <Button onClick={handleUpdateStartNumber} disabled={isLoadingInvoices}>Update</Button>
+                        <p className="text-xs text-muted-foreground">The next bill number will be <span className='font-bold'>{nextBillNumber || '...'}</span>. You can change this in Settings.</p>
                     </div>
                 </div>
 
@@ -722,7 +620,7 @@ export default function BillingPage() {
                                         Adjust layout for this specific invoice. These settings will be saved with the invoice.
                                     </p>
                                     <div className="p-4 border rounded-lg">
-                                      <DocumentSettingsFields settings={editingInvoiceSettings} isEditing={true}/>
+                                      <DocumentSettingsFields settings={editingInvoiceSettings} setSettings={setEditingInvoiceSettings} isEditing={true}/>
                                     </div>
                                 </div>
                             </>
@@ -770,5 +668,3 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-    

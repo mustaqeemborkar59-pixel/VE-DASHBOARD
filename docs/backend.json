@@ -383,6 +383,33 @@
         },
         "contactNumber": {
           "type": "string"
+        },
+        "nextBillNo": {
+            "type": "number"
+        },
+        "pageSize": {
+            "type": "string"
+        },
+        "pageOrientation": {
+            "type": "string"
+        },
+        "pageMargins": {
+            "type": "object",
+            "properties": {
+                "top": {"type": "number"},
+                "right": {"type": "number"},
+                "bottom": {"type": "number"},
+                "left": {"type": "number"}
+            }
+        },
+        "pageFontSize": {
+            "type": "number"
+        },
+        "addressFontSize": {
+            "type": "number"
+        },
+        "tableBodyFontSize": {
+            "type": "number"
         }
       }
     }

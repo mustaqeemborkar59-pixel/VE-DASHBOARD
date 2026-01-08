@@ -68,6 +68,13 @@ export type InvoiceItem = {
     amount: number;
 }
 
+export type PageMargin = {
+    top: number,
+    right: number,
+    bottom: number,
+    left: number,
+};
+
 export type CompanySettings = {
     id?: string;
     companyName: string;
@@ -80,6 +87,14 @@ export type CompanySettings = {
     bankBranch: string;
     contactPerson: string;
     contactNumber: string;
+    // New fields for invoice and document settings
+    nextBillNo?: number;
+    pageSize?: 'A4' | 'LETTER' | 'LEGAL';
+    pageOrientation?: 'portrait' | 'landscape';
+    pageMargins?: PageMargin;
+    pageFontSize?: number;
+    addressFontSize?: number;
+    tableBodyFontSize?: number;
 };
 
 export type Invoice = {
@@ -99,7 +114,7 @@ export type Invoice = {
     clientCompanyDetails: Company; // Snapshot of client company details
     pageSize?: 'A4' | 'LETTER' | 'LEGAL';
     pageOrientation?: 'portrait' | 'landscape';
-    pageMargins?: { top: number, right: number, bottom: number, left: number };
+    pageMargins?: PageMargin;
     pageFontSize?: number;
     addressFontSize?: number;
     tableBodyFontSize?: number;
