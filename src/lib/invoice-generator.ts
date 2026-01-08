@@ -349,7 +349,7 @@ export const generateAndDownloadInvoice = async (
                         createTotalRow('Net total=', `${formatCurrency(invoiceData.netTotal)}`),
                         createTotalRow('CGST@9%', `${formatCurrency(invoiceData.cgst)}`),
                         createTotalRow('SGST@9%', `${formatCurrency(invoiceData.sgst)}`),
-                        createTotalRow('TOTAL AMOUNT PAYABLE', `₹ ${formatCurrency(invoiceData.grandTotal)}`, true),
+                        createTotalRow('TOTAL AMOUNT PAYABLE', `${formatCurrency(invoiceData.grandTotal)}`, true),
                     ],
                 }),
 
