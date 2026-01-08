@@ -295,7 +295,7 @@ export const generateAndDownloadInvoice = async (invoice: Invoice, clientCompany
                                     if (col.id === 'amount' && typeof cellContent === 'number') {
                                         return new DocxTableCell({
                                             verticalAlign: VerticalAlign.CENTER,
-                                            children: [new Paragraph({ children: [new TextRun({ text: `${cellContent.toFixed(2)}/-`, size: tableBodyFontSize * 2, font: "Calibri" })], alignment })],
+                                            children: [new Paragraph({ children: [new TextRun({ text: `${cellContent.toLocaleString('en-IN')}/-`, size: tableBodyFontSize * 2, font: "Calibri" })], alignment })],
                                             borders: {...tableCellBorders, ...tableBottomBorder},
                                             margins: cellMargins
                                         });
