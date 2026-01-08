@@ -1,6 +1,6 @@
 
 'use client';
-import React, { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 import AppLayout from "@/components/app-layout";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +28,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
-const AutoHeightTextarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => {
+const AutoHeightTextarea = React.memo(forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => {
     const internalRef = useRef<HTMLTextAreaElement>(null);
     useImperativeHandle(ref, () => internalRef.current as HTMLTextAreaElement);
 
@@ -41,11 +41,58 @@ const AutoHeightTextarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAtt
     }, [props.value]);
 
     return <Textarea ref={internalRef} {...props} />;
-});
+}));
 AutoHeightTextarea.displayName = 'AutoHeightTextarea';
 
 type InvoiceItem = Omit<import('@/lib/data').InvoiceItem, 'id'> & { key: string };
 
+const DocumentSettingsFields = React.memo(({ settings, onSettingsChange, onMarginChange, onFontSizeChange, prefix="page" }: { 
+    settings: Partial<CompanySettings>, 
+    onSettingsChange: (field: keyof CompanySettings, value: any) => void,
+    onMarginChange: (field: keyof PageMargin, value: string) => void,
+    onFontSizeChange: (field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', value: string) => void,
+    prefix?: string,
+  }) => {
+    return (
+      <div className="grid gap-4">
+          <div className="grid grid-cols-3 items-center gap-4">
+              <Label htmlFor={`${prefix}Size`}>Page Size</Label>
+              <Select value={settings.pageSize} onValueChange={(value) => onSettingsChange('pageSize', value)} >
+                  <SelectTrigger id={`${prefix}Size`} className="col-span-2 h-8">
+                      <SelectValue placeholder="Select page size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="A4">A4</SelectItem>
+                      <SelectItem value="LETTER">Letter</SelectItem>
+                      <SelectItem value="LEGAL">Legal</SelectItem>
+                  </SelectContent>
+              </Select>
+          </div>
+          <div className="grid grid-cols-3 items-start gap-4">
+              <Label>Margins (cm)</Label>
+              <div className="col-span-2 grid grid-cols-2 gap-2">
+                  <Input type="number" placeholder="Top" value={settings.pageMargins?.top ?? ''} onChange={(e) => onMarginChange('top', e.target.value)} className="h-8"/>
+                  <Input type="number" placeholder="Bottom" value={settings.pageMargins?.bottom ?? ''} onChange={(e) => onMarginChange('bottom', e.target.value)} className="h-8"/>
+                  <Input type="number" placeholder="Left" value={settings.pageMargins?.left ?? ''} onChange={(e) => onMarginChange('left', e.target.value)} className="h-8"/>
+                  <Input type="number" placeholder="Right" value={settings.pageMargins?.right ?? ''} onChange={(e) => onMarginChange('right', e.target.value)} className="h-8"/>
+              </div>
+          </div>
+          <div className="grid grid-cols-3 items-center gap-4">
+              <Label htmlFor={`${prefix}FontSize`}>Page Font</Label>
+              <Input id={`${prefix}FontSize`} type="number" value={settings.pageFontSize ?? ''} onChange={(e) => onFontSizeChange('pageFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 11"/>
+          </div>
+          <div className="grid grid-cols-3 items-center gap-4">
+              <Label htmlFor={`${prefix}AddressFontSize`}>Address Font</Label>
+              <Input id={`${prefix}AddressFontSize`} type="number" value={settings.addressFontSize ?? ''} onChange={(e) => onFontSizeChange('addressFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 10"/>
+          </div>
+          <div className="grid grid-cols-3 items-center gap-4">
+              <Label htmlFor={`${prefix}TableBodyFontSize`}>Table Font</Label>
+              <Input id={`${prefix}TableBodyFontSize`} type="number" value={settings.tableBodyFontSize ?? ''} onChange={(e) => onFontSizeChange('tableBodyFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 11"/>
+          </div>
+      </div>
+    );
+});
+DocumentSettingsFields.displayName = 'DocumentSettingsFields';
 
 export default function BillingPage() {
   const { firestore } = useFirebase();
@@ -323,7 +370,6 @@ export default function BillingPage() {
       
       const itemsToSave = items.map(({ key, ...rest }) => rest);
       
-      // Default settings for new invoices
       const currentInvoiceSettings = editingInvoice 
           ? {
               pageSize: invoicePageSettings.size,
@@ -369,10 +415,9 @@ export default function BillingPage() {
           
           updateDocumentNonBlocking(invoiceDocRef, {
             ...updateData,
-            // Ensure client and my company details are NOT updated on edit
             clientCompanyDetails: editingInvoice.clientCompanyDetails,
             myCompanyDetails: editingInvoice.myCompanyDetails,
-            downloadOptions: formDownloadOptions, // Make sure to save the updated options
+            downloadOptions: formDownloadOptions,
           });
 
           toast({
@@ -475,52 +520,6 @@ export default function BillingPage() {
     }
   };
   
-  const DocumentSettingsFields = ({ settings, onSettingsChange, onMarginChange, onFontSizeChange, prefix="page" }: { 
-    settings: Partial<CompanySettings>, 
-    onSettingsChange: (field: keyof CompanySettings, value: any) => void,
-    onMarginChange: (field: keyof PageMargin, value: string) => void,
-    onFontSizeChange: (field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', value: string) => void,
-    prefix?: string,
-  }) => {
-    return (
-      <div className="grid gap-4">
-          <div className="grid grid-cols-3 items-center gap-4">
-              <Label htmlFor={`${prefix}Size`}>Page Size</Label>
-              <Select value={settings.pageSize} onValueChange={(value) => onSettingsChange('pageSize', value)} >
-                  <SelectTrigger id={`${prefix}Size`} className="col-span-2 h-8">
-                      <SelectValue placeholder="Select page size" />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="A4">A4</SelectItem>
-                      <SelectItem value="LETTER">Letter</SelectItem>
-                      <SelectItem value="LEGAL">Legal</SelectItem>
-                  </SelectContent>
-              </Select>
-          </div>
-          <div className="grid grid-cols-3 items-start gap-4">
-              <Label>Margins (cm)</Label>
-              <div className="col-span-2 grid grid-cols-2 gap-2">
-                  <Input type="number" placeholder="Top" value={settings.pageMargins?.top ?? ''} onChange={(e) => onMarginChange('top', e.target.value)} className="h-8"/>
-                  <Input type="number" placeholder="Bottom" value={settings.pageMargins?.bottom ?? ''} onChange={(e) => onMarginChange('bottom', e.target.value)} className="h-8"/>
-                  <Input type="number" placeholder="Left" value={settings.pageMargins?.left ?? ''} onChange={(e) => onMarginChange('left', e.target.value)} className="h-8"/>
-                  <Input type="number" placeholder="Right" value={settings.pageMargins?.right ?? ''} onChange={(e) => onMarginChange('right', e.target.value)} className="h-8"/>
-              </div>
-          </div>
-          <div className="grid grid-cols-3 items-center gap-4">
-              <Label htmlFor={`${prefix}FontSize`}>Page Font</Label>
-              <Input id={`${prefix}FontSize`} type="number" value={settings.pageFontSize ?? ''} onChange={(e) => onFontSizeChange('pageFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 11"/>
-          </div>
-          <div className="grid grid-cols-3 items-center gap-4">
-              <Label htmlFor={`${prefix}AddressFontSize`}>Address Font</Label>
-              <Input id={`${prefix}AddressFontSize`} type="number" value={settings.addressFontSize ?? ''} onChange={(e) => onFontSizeChange('addressFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 10"/>
-          </div>
-          <div className="grid grid-cols-3 items-center gap-4">
-              <Label htmlFor={`${prefix}TableBodyFontSize`}>Table Font</Label>
-              <Input id={`${prefix}TableBodyFontSize`} type="number" value={settings.tableBodyFontSize ?? ''} onChange={(e) => onFontSizeChange('tableBodyFontSize', e.target.value)} className="col-span-2 h-8" placeholder="e.g., 11"/>
-          </div>
-      </div>
-    );
-  }
 
   const DownloadOptionsFields = ({ options, setOptions }: { options: DownloadOptions, setOptions: React.Dispatch<React.SetStateAction<DownloadOptions>> }) => (
     <div className="space-y-6">
@@ -553,6 +552,28 @@ export default function BillingPage() {
         </div>
     </div>
   );
+
+  const handleDocSettingsChange = useCallback((field: keyof PageSettings, value: any) => {
+    setInvoicePageSettings(prev => ({...prev, [field]: value}));
+  }, []);
+
+  const handleDocMarginChange = useCallback((field: keyof PageMargin, value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) || value === '') {
+        setInvoicePageSettings(prev => ({
+            ...prev,
+            margin: { ...(prev.margin || {top:0,left:0,bottom:0,right:0}), [field]: value === '' ? 0 : numValue }
+        }));
+    }
+  }, []);
+
+  const handleDocFontSizeChange = useCallback((field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', value: string) => {
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) || value === '') {
+        setInvoicePageSettings(prev => ({...prev, [field]: value === '' ? 0 : numValue}));
+    }
+  }, []);
+
 
   return (
     <AppLayout>
@@ -816,22 +837,9 @@ export default function BillingPage() {
                                     <div className="p-4 border rounded-lg">
                                       <DocumentSettingsFields 
                                          settings={invoicePageSettings} 
-                                         onSettingsChange={(field, value) => setInvoicePageSettings(prev => ({...prev, [field]:value}))}
-                                         onMarginChange={(field, value) => {
-                                            const numValue = parseFloat(value);
-                                            if (!isNaN(numValue) || value === '') {
-                                              setInvoicePageSettings(prev => ({
-                                                  ...prev,
-                                                  margin: { ...(prev.margin || {top:0,left:0,bottom:0,right:0}), [field]: value === '' ? '' : numValue }
-                                              }));
-                                            }
-                                         }}
-                                         onFontSizeChange={(field, value) => {
-                                             const numValue = parseInt(value, 10);
-                                              if (!isNaN(numValue) || value === '') {
-                                                 setInvoicePageSettings(prev => ({...prev, [field]: value === '' ? '' : numValue}));
-                                              }
-                                         }}
+                                         onSettingsChange={handleDocSettingsChange}
+                                         onMarginChange={handleDocMarginChange}
+                                         onFontSizeChange={handleDocFontSizeChange}
                                       />
                                     </div>
                                     <div className="p-4 border rounded-lg">
@@ -890,5 +898,7 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
 
     
