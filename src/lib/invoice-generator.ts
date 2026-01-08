@@ -212,7 +212,7 @@ export const generateAndDownloadInvoice = async (
                 verticalAlign: VerticalAlign.CENTER,
             }),
             new DocxTableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: value, bold: true, size: finalFontSize, font: "Calibri" })], alignment: AlignmentType.RIGHT })],
+                children: [new Paragraph({ children: [new TextRun({ text: `${value}/-`, bold: true, size: finalFontSize, font: "Calibri" })], alignment: AlignmentType.RIGHT })],
                 verticalAlign: VerticalAlign.CENTER,
                 borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}  },
                 margins: cellMargins,
