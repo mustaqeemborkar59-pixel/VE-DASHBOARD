@@ -1,4 +1,5 @@
 
+
 export type Employee = {
   id: string;
   fullName: string;
@@ -95,4 +96,18 @@ export type InvoiceTemplate = {
     align: 'left' | 'center' | 'right';
     order: number;
   }[];
+};
+
+export type CompanySettings = {
+    id?: string;
+    companyName: string;
+    pan: string;
+    gstin: string;
+    sacCode: string;
+    bankName: string;
+    accountNumber: string;
+    ifscCode: string;
+    bankBranch: string;
+    contactPerson: string;
+    contactNumber: string;
 };

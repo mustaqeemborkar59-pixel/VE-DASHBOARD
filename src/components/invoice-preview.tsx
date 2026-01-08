@@ -2,15 +2,15 @@
 'use client';
 
 import React from 'react';
-import type { Invoice, Company } from '@/lib/data';
+import type { Invoice, Company, CompanySettings } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Separator } from './ui/separator';
-import myCompanyDetails from '@/lib/company-details.json';
 
 interface InvoicePreviewProps {
   invoice: Invoice | null;
   company: Company | null;
+  myCompanyDetails: CompanySettings | null;
 }
 
 const toWords = new ToWords({
@@ -25,8 +25,8 @@ const toWords = new ToWords({
 const formatCurrency = (amount: number) => amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 });
 
 
-export function InvoicePreview({ invoice, company }: InvoicePreviewProps) {
-  if (!invoice || !company) {
+export function InvoicePreview({ invoice, company, myCompanyDetails }: InvoicePreviewProps) {
+  if (!invoice || !company || !myCompanyDetails) {
     return (
       <div className="p-10 text-center text-muted-foreground">
         Select an invoice to see the preview.

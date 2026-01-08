@@ -7,9 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
-import { Company, Invoice } from '@/lib/data';
+import { Company, Invoice, CompanySettings } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Settings, Eye } from 'lucide-react';
@@ -110,10 +110,13 @@ export default function BillingPage() {
   // Queries
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
   const allInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billNo', 'desc')) : null, [firestore]);
+  const settingsDocRef = useMemoFirebase(() => firestore ? doc(firestore, 'companySettings', 'primary') : null, [firestore]);
 
   // Data
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
   const { data: allInvoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(allInvoicesQuery);
+  const { data: myCompanyDetails, isLoading: isLoadingSettings } = useDoc<CompanySettings>(settingsDocRef);
+
 
   const selectedCompany = useMemo(() => companies?.find(c => c.id === companyId), [companies, companyId]);
   
@@ -188,6 +191,10 @@ export default function BillingPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not find company details.' });
       return;
     }
+    if (!myCompanyDetails) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Your company details are not set. Please go to Settings.' });
+      return;
+    }
     
     // Use invoice-specific settings if they exist, otherwise use default settings
     const pageSettingsToUse: PageSettings = {
@@ -199,7 +206,7 @@ export default function BillingPage() {
     }
 
     try {
-        await generateAndDownloadInvoice(invoice, company, pageSettingsToUse);
+        await generateAndDownloadInvoice(invoice, company, myCompanyDetails, pageSettingsToUse);
     } catch (e) {
         toast({
             variant: 'destructive',
@@ -482,7 +489,7 @@ export default function BillingPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoadingInvoices ? (
+                        {isLoadingInvoices || isLoadingCompanies ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="text-center">Loading invoices...</TableCell>
                             </TableRow>
@@ -681,7 +688,7 @@ export default function BillingPage() {
                     </DialogDescription>
                 </DialogHeader>
                 <div className={cn("px-6 pb-6 overflow-y-auto max-h-[80vh]", "hide-scrollbar")}>
-                   <InvoicePreview invoice={invoiceForPreview} company={companyForPreview} />
+                   <InvoicePreview invoice={invoiceForPreview} company={companyForPreview} myCompanyDetails={myCompanyDetails} />
                 </div>
             </DialogContent>
         </Dialog>
