@@ -630,7 +630,7 @@ export default function BillingPage() {
                     <Accordion type="multiple" className="w-full">
                         {organizedInvoices.map((year, yearIndex) => (
                              <AccordionItem value={`year-${year.key}`} key={year.key} className="mb-2 border-0">
-                                <AccordionTrigger className="px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-sm font-semibold">
+                                <AccordionTrigger className="px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-sm font-medium">
                                     <div className="flex items-center gap-3">
                                       <Folder className="h-5 w-5 text-primary" />
                                       <span>{year.label}</span>
@@ -898,6 +898,8 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
 
     
 
