@@ -12,7 +12,7 @@ import { collection, query, orderBy, doc, setDoc } from 'firebase/firestore';
 import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder } from 'lucide-react';
+import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -135,6 +135,9 @@ export default function BillingPage() {
   const [formDownloadOptions, setFormDownloadOptions] = useState<DownloadOptions>(defaultDownloadOptions);
 
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
+  const [invoiceToDuplicate, setInvoiceToDuplicate] = useState<Invoice | null>(null);
+  const [newBillDateForDuplicate, setNewBillDateForDuplicate] = useState<string>(toISODateString(new Date()));
+
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -466,6 +469,36 @@ export default function BillingPage() {
     setIsPreviewOpen(true);
   };
 
+  const handleOpenDuplicateDialog = (invoice: Invoice) => {
+    setInvoiceToDuplicate(invoice);
+    setNewBillDateForDuplicate(toISODateString(new Date())); // Reset to today's date
+  };
+
+  const handleConfirmDuplicate = () => {
+    if (!invoiceToDuplicate || !firestore || !nextBillNumber || !settingsDocRef) {
+        toast({ variant: "destructive", title: "Error", description: "Could not duplicate invoice. Please try again." });
+        return;
+    }
+
+    const { id, billNo, billDate, ...restOfInvoice } = invoiceToDuplicate;
+
+    const duplicatedInvoiceData: Omit<Invoice, 'id'> = {
+        ...restOfInvoice,
+        billNo: nextBillNumber,
+        billDate: newBillDateForDuplicate,
+    };
+    
+    addDocumentNonBlocking(collection(firestore, 'invoices'), duplicatedInvoiceData);
+    setDoc(settingsDocRef, { nextBillNo: nextBillNumber + 1 }, { merge: true });
+
+    toast({
+        title: "Invoice Duplicated",
+        description: `New invoice No. ${nextBillNumber}-MHE created.`,
+    });
+    setInvoiceToDuplicate(null);
+  };
+
+
   const handleDeleteInvoice = () => {
     if (!firestore || !invoiceToDelete) return;
     const invoiceDocRef = doc(firestore, 'invoices', invoiceToDelete.id);
@@ -567,6 +600,16 @@ export default function BillingPage() {
   }, []);
 
 
+  const renderInvoiceActions = (invoice: Invoice) => (
+    <div className="grid gap-1">
+        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenPreview(invoice)}><Eye className="mr-2 h-4 w-4" />Preview</Button>
+        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleDownloadWord(invoice)}><Download className="mr-2 h-4 w-4" />Download</Button>
+        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenFormDialog(invoice)}><Pencil className="mr-2 h-4 w-4" />Edit</Button>
+        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenDuplicateDialog(invoice)}><FilePlus2 className="mr-2 h-4 w-4" />Duplicate</Button>
+        <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => setInvoiceToDelete(invoice)}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
+    </div>
+  );
+
   return (
     <AppLayout>
       <div className="flex flex-col gap-6">
@@ -655,12 +698,7 @@ export default function BillingPage() {
                                                                             </Button>
                                                                         </PopoverTrigger>
                                                                         <PopoverContent className="w-40">
-                                                                            <div className="grid gap-1">
-                                                                                <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenPreview(invoice)}><Eye className="mr-2 h-4 w-4" />Preview</Button>
-                                                                                <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleDownloadWord(invoice)}><Download className="mr-2 h-4 w-4" />Download</Button>
-                                                                                <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenFormDialog(invoice)}><Pencil className="mr-2 h-4 w-4" />Edit</Button>
-                                                                                <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => setInvoiceToDelete(invoice)}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
-                                                                            </div>
+                                                                            {renderInvoiceActions(invoice)}
                                                                         </PopoverContent>
                                                                     </Popover>
                                                                 </div>
@@ -699,12 +737,7 @@ export default function BillingPage() {
                                                                                 </Button>
                                                                             </PopoverTrigger>
                                                                             <PopoverContent className="w-40">
-                                                                                <div className="grid gap-1">
-                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenPreview(invoice)}><Eye className="mr-2 h-4 w-4" />Preview</Button>
-                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleDownloadWord(invoice)}><Download className="mr-2 h-4 w-4" />Download</Button>
-                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenFormDialog(invoice)}><Pencil className="mr-2 h-4 w-4" />Edit</Button>
-                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => setInvoiceToDelete(invoice)}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
-                                                                                </div>
+                                                                                 {renderInvoiceActions(invoice)}
                                                                             </PopoverContent>
                                                                         </Popover>
                                                                     </TableCell>
@@ -891,6 +924,31 @@ export default function BillingPage() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+
+        <AlertDialog open={!!invoiceToDuplicate} onOpenChange={(open) => !open && setInvoiceToDuplicate(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Duplicate Invoice</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Select a new bill date for the duplicated invoice. The next available bill number ({nextBillNumber}) will be used.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="py-4">
+                    <Label htmlFor="newBillDate">New Bill Date</Label>
+                    <Input
+                        id="newBillDate"
+                        type="date"
+                        value={newBillDateForDuplicate}
+                        onChange={(e) => setNewBillDateForDuplicate(e.target.value)}
+                        className="w-full mt-2"
+                    />
+                </div>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmDuplicate}>Duplicate</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
         
         <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
             <DialogContent className="max-w-4xl p-0">
@@ -915,3 +973,5 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
