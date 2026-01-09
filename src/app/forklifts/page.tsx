@@ -125,9 +125,9 @@ export default function ForkliftsPage() {
   }, [forklifts]);
   
   const locationOptions = useMemo(() => {
-    if (!forklifts) return ['All', 'Workshop', 'On-Site', 'Not Confirm'];
-    const sites = new Set(forklifts.map(f => f.siteCompany).filter(Boolean));
-    return ['All', 'Workshop', 'On-Site', 'Not Confirm', ...Array.from(sites)];
+      if (!forklifts) return ['All', 'Workshop', 'On-Site', 'Not Confirm'];
+      const sites = new Set(forklifts.map(f => f.siteCompany).filter(Boolean));
+      return ['All', 'Workshop', 'On-Site', 'Not Confirm', ...Array.from(sites)];
   }, [forklifts]);
 
 
@@ -480,9 +480,9 @@ export default function ForkliftsPage() {
                                 </TableCell>
                             </TableRow>
                             {expandedRow === forklift.id && (
-                                <TableRow className="bg-accent/50 hover:bg-accent/50">
-                                    <TableCell colSpan={7} className="p-2.5">
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border rounded-md bg-background/50">
+                                <TableRow className="hover:bg-transparent">
+                                    <TableCell colSpan={7} className="p-0 border-y border-x-2 border-accent bg-accent/20">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-background/50">
                                           <div className="flex flex-col gap-1">
                                             <Label className="text-xs text-muted-foreground">MFG Year</Label>
                                             <span className="font-medium">{forklift.year}</span>
