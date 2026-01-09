@@ -409,7 +409,7 @@ export const generateAndDownloadInvoice = async (
                 new Paragraph({ children: [new TextRun({text: "Thanking you,", font: "Calibri", size: defaultFontSize * 2})], spacing: { before: 400 } }),
                 new Paragraph({ children: [new TextRun({text: "Yours truly,", font: "Calibri", size: defaultFontSize * 2})] }),
                 new Paragraph({ children: [new TextRun({text: `For M/s ${invoiceData.myCompany.companyName}`, font: "Calibri", size: defaultFontSize * 2})] }),
-                new Paragraph({ text: "", spacing: { before: 800 } }),
+                new Paragraph({ text: "", spacing: { before: 400 } }),
                 new Paragraph({ children: [new TextRun({ text: invoiceData.myCompany.contactPerson, bold: true, font: "Calibri", size: defaultFontSize * 2 })] }),
                 new Paragraph({ children: [new TextRun({text: invoiceData.myCompany.contactNumber, font: "Calibri", size: defaultFontSize * 2})] }),
             ],
