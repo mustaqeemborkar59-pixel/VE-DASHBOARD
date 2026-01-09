@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, Truck, User, Phone, Wrench, ListFilter, Upload, AlertTriangle } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, Truck, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, Trash2 } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
@@ -126,7 +126,7 @@ export default function ForkliftsPage() {
   
   const locationOptions = useMemo(() => {
     if (!forklifts) return ['All', 'Workshop', 'On-Site', 'Not Confirm'];
-    const sites = new Set(forklifts.map(f => f.siteCompany).filter(Boolean));
+    const sites = new Set(forklifts.map(f => f.siteCompany).filter(f => f));
     return ['All', 'Workshop', 'On-Site', 'Not Confirm', ...Array.from(sites)];
   }, [forklifts]);
 
@@ -581,3 +581,4 @@ export default function ForkliftsPage() {
     </AppLayout>
   );
 }
+
