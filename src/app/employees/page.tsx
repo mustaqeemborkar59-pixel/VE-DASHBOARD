@@ -122,11 +122,53 @@ export default function EmployeesPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0 md:p-3 pt-0">
-          <Table>
+          <div className="md:hidden">
+            {isLoading ? (
+                <div className="text-center p-6 text-muted-foreground">Loading employees...</div>
+             ) : employees && employees.length > 0 ? (
+                <div className="space-y-4 p-4">
+                  {employees.map((employee) => (
+                    <div key={employee.id} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <div className="font-bold">{employee.fullName}</div>
+                            <div className="text-sm text-muted-foreground">{employee.specialization || 'N/A'}</div>
+                          </div>
+                           <Popover>
+                              <PopoverTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="-mt-2 -mr-2 h-8 w-8 p-0">
+                                      <EllipsisVertical className="h-4 w-4" />
+                                  </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-40">
+                                  <div className="grid gap-1">
+                                      <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => openAddEditDialog(employee)}>
+                                          <Pencil className="mr-2 h-4 w-4" />
+                                          Edit
+                                      </Button>
+                                      <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => openDeleteDialog(employee)}>
+                                          <Trash2 className="mr-2 h-4 w-4" />
+                                          Delete
+                                      </Button>
+                                  </div>
+                              </PopoverContent>
+                          </Popover>
+                        </div>
+                        <Badge variant={employee.availability ? 'outline' : 'secondary'} className={employee.availability ? 'border-green-600/40 text-green-700' : ''}>
+                          {employee.availability ? 'Available' : 'Unavailable'}
+                        </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-10 text-muted-foreground">No employees found.</div>
+              )}
+          </div>
+          <Table className="hidden md:table">
             <TableHeader>
               <TableRow>
                 <TableHead>Employee</TableHead>
-                <TableHead className="hidden md:table-cell">Role</TableHead>
+                <TableHead>Role</TableHead>
                 <TableHead>Availability</TableHead>
                 <TableHead><span className="sr-only">Actions</span></TableHead>
               </TableRow>
@@ -141,9 +183,9 @@ export default function EmployeesPage() {
                   <TableRow key={employee.id}>
                     <TableCell>
                       <div className="font-medium">{employee.fullName}</div>
-                      <div className="text-sm text-muted-foreground md:hidden">{employee.contactNumber || 'No contact'}</div>
+                      <div className="text-sm text-muted-foreground">{employee.contactNumber || 'No contact'}</div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{employee.specialization}</TableCell>
+                    <TableCell>{employee.specialization}</TableCell>
                     <TableCell>
                       <Badge variant={employee.availability ? 'outline' : 'secondary'} className={employee.availability ? 'border-green-600/40 text-green-700' : ''}>
                         {employee.availability ? 'Available' : 'Unavailable'}
@@ -216,5 +258,3 @@ export default function EmployeesPage() {
     </AppLayout>
   );
 }
-
-    

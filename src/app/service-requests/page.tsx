@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Card,
@@ -125,12 +126,72 @@ export default function ServiceRequestsPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0 md:p-3 pt-0">
-          <Table>
+          <div className="md:hidden">
+            {isLoading ? (
+                <div className="text-center p-6 text-muted-foreground">Loading requests...</div>
+             ) : serviceRequests && serviceRequests.length > 0 ? (
+                <div className="space-y-4 p-4">
+                  {serviceRequests.map((request) => (
+                    <div key={request.id} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <div className="font-bold">{getForkliftInfo(request.forkliftId).name}</div>
+                            <div className="text-sm text-muted-foreground">{getForkliftInfo(request.forkliftId).serial}</div>
+                          </div>
+                           <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="-mt-2 -mr-2 h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                 <DropdownMenuItem onSelect={() => handleViewDetails(request)}>
+                                    <Eye className="mr-2 h-4 w-4" /> View Details
+                                 </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>Assign Employee</DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent>
+                                    {employees?.map(tech => (
+                                      <DropdownMenuItem key={tech.id} onSelect={() => handleAssignTechnician(request.id, tech.id)}>
+                                        {tech.fullName}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>Update Status</DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent>
+                                      <DropdownMenuItem onSelect={() => handleUpdateStatus(request.id, 'Pending')}>Pending</DropdownMenuItem>
+                                      <DropdownMenuItem onSelect={() => handleUpdateStatus(request.id, 'In Progress')}>In Progress</DropdownMenuItem>
+                                      <DropdownMenuItem onSelect={() => handleUpdateStatus(request.id, 'Completed')}>Completed</DropdownMenuItem>
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                        <div className="flex flex-col space-y-2">
+                           <div>{getStatusBadge(request.status)}</div>
+                           <div className="text-sm">
+                             <span className="text-muted-foreground">Assigned: </span>
+                             <span className="font-medium">{getEmployeeName(request.assignedTechnicianId)}</span>
+                           </div>
+                        </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-10 text-muted-foreground">No service requests found.</div>
+              )}
+          </div>
+          <Table className="hidden md:table">
             <TableHeader>
               <TableRow>
                 <TableHead>Forklift</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Assigned To</TableHead>
+                <TableHead>Assigned To</TableHead>
                 <TableHead><span className="sr-only">Actions</span></TableHead>
               </TableRow>
             </TableHeader>
@@ -147,7 +208,7 @@ export default function ServiceRequestsPage() {
                       <div className="text-sm text-muted-foreground">{getForkliftInfo(request.forkliftId).serial}</div>
                     </TableCell>
                     <TableCell>{getStatusBadge(request.status)}</TableCell>
-                    <TableCell className="hidden md:table-cell">{getEmployeeName(request.assignedTechnicianId)}</TableCell>
+                    <TableCell>{getEmployeeName(request.assignedTechnicianId)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button variant="ghost" size="icon" onClick={() => handleViewDetails(request)} className="h-8 w-8">

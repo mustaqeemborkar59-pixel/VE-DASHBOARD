@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 import AppLayout from "@/components/app-layout";
@@ -627,10 +628,10 @@ export default function BillingPage() {
                                       <span>{year.label}</span>
                                     </div>
                                 </AccordionTrigger>
-                                <AccordionContent className="pt-2 pl-4">
+                                <AccordionContent className="pt-2 pl-0 md:pl-4">
                                      <Accordion type="multiple" className="w-full">
                                         {year.months.map(month => (
-                                            <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-2 border-dashed border-border pl-4 py-1">
+                                            <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
                                                  <AccordionTrigger className="px-3 py-2 hover:bg-muted/50 rounded-md text-xs font-medium hover:no-underline">
                                                     <div className="flex items-center gap-2">
                                                       <Folder className="h-4 w-4 text-secondary-foreground/60" />
@@ -638,12 +639,45 @@ export default function BillingPage() {
                                                     </div>
                                                 </AccordionTrigger>
                                                 <AccordionContent className="pt-2">
-                                                    <Table>
+                                                    <div className="md:hidden">
+                                                        <div className="space-y-4 p-4">
+                                                        {month.invoices.map((invoice) => (
+                                                            <div key={invoice.id} className="border rounded-lg p-4 space-y-3">
+                                                                <div className="flex justify-between items-start">
+                                                                    <div className="space-y-1 cursor-pointer" onClick={() => handleOpenPreview(invoice)}>
+                                                                        <div className="font-bold">Bill No: {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
+                                                                        <div className="text-sm text-muted-foreground">{invoice.clientCompanyDetails?.name || 'Unknown'}</div>
+                                                                    </div>
+                                                                    <Popover>
+                                                                        <PopoverTrigger asChild>
+                                                                            <Button variant="ghost" size="icon" className="-mt-2 -mr-2 h-8 w-8 p-0">
+                                                                                <EllipsisVertical className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </PopoverTrigger>
+                                                                        <PopoverContent className="w-40">
+                                                                            <div className="grid gap-1">
+                                                                                <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenPreview(invoice)}><Eye className="mr-2 h-4 w-4" />Preview</Button>
+                                                                                <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleDownloadWord(invoice)}><Download className="mr-2 h-4 w-4" />Download</Button>
+                                                                                <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenFormDialog(invoice)}><Pencil className="mr-2 h-4 w-4" />Edit</Button>
+                                                                                <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => setInvoiceToDelete(invoice)}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
+                                                                            </div>
+                                                                        </PopoverContent>
+                                                                    </Popover>
+                                                                </div>
+                                                                <div className="text-sm space-y-1" onClick={() => handleOpenPreview(invoice)}>
+                                                                    <div><span className="font-medium text-muted-foreground">Date: </span>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</div>
+                                                                    <div><span className="font-medium text-muted-foreground">Amount: </span>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        </div>
+                                                    </div>
+                                                    <Table className="hidden md:table">
                                                         <TableHeader>
                                                             <TableRow>
                                                                 <TableHead>Bill No.</TableHead>
-                                                                <TableHead className="hidden sm:table-cell">Company</TableHead>
-                                                                <TableHead className="hidden md:table-cell">Bill Date</TableHead>
+                                                                <TableHead>Company</TableHead>
+                                                                <TableHead>Bill Date</TableHead>
                                                                 <TableHead className="text-right">Amount</TableHead>
                                                                 <TableHead className="w-[100px] text-right"><span className="sr-only">Actions</span></TableHead>
                                                             </TableRow>
@@ -651,13 +685,12 @@ export default function BillingPage() {
                                                         <TableBody>
                                                             {month.invoices.map((invoice) => (
                                                                 <TableRow key={invoice.id}>
-                                                                    <TableCell className="font-medium" onClick={() => handleOpenPreview(invoice)}>
+                                                                    <TableCell className="font-medium cursor-pointer" onClick={() => handleOpenPreview(invoice)}>
                                                                         {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
-                                                                        <div className="text-muted-foreground text-xs sm:hidden">{invoice.clientCompanyDetails?.name || 'Unknown'}</div>
                                                                     </TableCell>
-                                                                    <TableCell onClick={() => handleOpenPreview(invoice)} className="hidden sm:table-cell">{invoice.clientCompanyDetails?.name || 'Unknown'}</TableCell>
-                                                                    <TableCell onClick={() => handleOpenPreview(invoice)} className="hidden md:table-cell">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
-                                                                    <TableCell className="text-right" onClick={() => handleOpenPreview(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
+                                                                    <TableCell onClick={() => handleOpenPreview(invoice)} className="cursor-pointer">{invoice.clientCompanyDetails?.name || 'Unknown'}</TableCell>
+                                                                    <TableCell onClick={() => handleOpenPreview(invoice)} className="cursor-pointer">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
+                                                                    <TableCell className="text-right cursor-pointer" onClick={() => handleOpenPreview(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
                                                                     <TableCell className="text-right">
                                                                         <Popover>
                                                                             <PopoverTrigger asChild>
@@ -667,22 +700,10 @@ export default function BillingPage() {
                                                                             </PopoverTrigger>
                                                                             <PopoverContent className="w-40">
                                                                                 <div className="grid gap-1">
-                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenPreview(invoice)}>
-                                                                                        <Eye className="mr-2 h-4 w-4" />
-                                                                                        Preview
-                                                                                    </Button>
-                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleDownloadWord(invoice)}>
-                                                                                        <Download className="mr-2 h-4 w-4" />
-                                                                                        Download
-                                                                                    </Button>
-                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenFormDialog(invoice)}>
-                                                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                                                        Edit
-                                                                                    </Button>
-                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => setInvoiceToDelete(invoice)}>
-                                                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                                                        Delete
-                                                                                    </Button>
+                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenPreview(invoice)}><Eye className="mr-2 h-4 w-4" />Preview</Button>
+                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleDownloadWord(invoice)}><Download className="mr-2 h-4 w-4" />Download</Button>
+                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenFormDialog(invoice)}><Pencil className="mr-2 h-4 w-4" />Edit</Button>
+                                                                                    <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => setInvoiceToDelete(invoice)}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
                                                                                 </div>
                                                                             </PopoverContent>
                                                                         </Popover>
