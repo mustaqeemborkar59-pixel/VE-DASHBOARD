@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Trash2, Warehouse, Truck, User, Phone, Wrench, ListFilter, Upload, AlertTriangle } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, Truck, User, Phone, Wrench, ListFilter, Upload, AlertTriangle } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
@@ -123,6 +123,12 @@ export default function ForkliftsPage() {
     const caps = new Set(forklifts.map(f => f.capacity).filter(Boolean));
     return ['All', ...Array.from(caps)];
   }, [forklifts]);
+  
+  const locationOptions = useMemo(() => {
+    if (!forklifts) return ['All', 'Workshop', 'On-Site', 'Not Confirm'];
+    const sites = new Set(forklifts.map(f => f.siteCompany).filter(Boolean));
+    return ['All', 'Workshop', 'On-Site', 'Not Confirm', ...Array.from(sites)];
+  }, [forklifts]);
 
 
   const filteredForklifts = useMemo(() => {
@@ -131,7 +137,15 @@ export default function ForkliftsPage() {
     return forklifts.filter(forklift => {
       const typeMatch = equipmentTypeFilter === 'All' ? true : forklift.equipmentType === equipmentTypeFilter;
       const capacityMatch = capacityFilter === 'All' ? true : forklift.capacity === capacityFilter;
-      const locationMatch = locationFilter === 'All' ? true : forklift.locationType === locationFilter;
+      
+      let locationMatch = true;
+      if (locationFilter !== 'All') {
+          if (['Workshop', 'On-Site', 'Not Confirm'].includes(locationFilter)) {
+              locationMatch = forklift.locationType === locationFilter;
+          } else {
+              locationMatch = forklift.siteCompany === locationFilter;
+          }
+      }
       
       if (!searchTerm) return typeMatch && capacityMatch && locationMatch;
 
@@ -346,7 +360,7 @@ export default function ForkliftsPage() {
                     placeholder={searchPlaceholder}
                     className="pl-8 rounded-l-none w-full"
                     value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
+                    onChange={e => setSearchTerm(e.target.value.toLowerCase())}
                 />
                 </div>
             </div>
@@ -356,10 +370,11 @@ export default function ForkliftsPage() {
                     <SelectValue placeholder="Filter by Location" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="All">All Locations</SelectItem>
-                    <SelectItem value="Workshop">Workshop</SelectItem>
-                    <SelectItem value="On-Site">On-Site</SelectItem>
-                    <SelectItem value="Not Confirm">Not Confirmed</SelectItem>
+                     {locationOptions.map(loc => (
+                      <SelectItem key={loc} value={loc}>
+                        {loc === 'All' ? 'All Locations' : loc}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
                 </Select>
                 <Select value={equipmentTypeFilter} onValueChange={setEquipmentTypeFilter}>
