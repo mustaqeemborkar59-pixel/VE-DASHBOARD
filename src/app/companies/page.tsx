@@ -138,7 +138,7 @@ export default function CompaniesPage() {
                 companies.map((company) => (
                   <TableRow key={company.id}>
                     <TableCell className="font-medium">{company.name}</TableCell>
-                    <TableCell className="hidden md:table-cell max-w-sm truncate">{company.address}</TableCell>
+                    <TableCell className="hidden md:table-cell max-w-xs sm:max-w-sm truncate">{company.address}</TableCell>
                     <TableCell className="hidden lg:table-cell font-mono">{company.gstin}</TableCell>
                     <TableCell className="text-right">
                        <Popover>

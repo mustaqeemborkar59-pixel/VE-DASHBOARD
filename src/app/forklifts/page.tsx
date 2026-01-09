@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
@@ -56,6 +56,8 @@ import { Separator } from "@/components/ui/separator";
 import { ForkliftIcon } from "@/components/icons/forklift-icon";
 import AppLayout from "@/components/app-layout";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Trash2 } from "lucide-react";
+
 
 type SearchField = 'All' | 'serialNumber' | 'make' | 'model' | 'siteCompany' | 'siteArea';
 const searchFieldLabels: Record<SearchField, string> = {
@@ -304,7 +306,7 @@ export default function ForkliftsPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">In Workshop</CardTitle>
@@ -347,7 +349,7 @@ export default function ForkliftsPage() {
           </Card>
         </div>
         
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4">
             <div className="flex items-center flex-1 w-full sm:w-auto sm:min-w-64">
                 <Select value={searchField} onValueChange={(value) => setSearchField(value as SearchField)}>
                 <SelectTrigger className="w-auto px-3 border-r-0 rounded-r-none focus:ring-0 focus:ring-offset-0">
@@ -370,7 +372,7 @@ export default function ForkliftsPage() {
                 />
                 </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row flex-wrap items-center gap-2 w-full sm:w-auto">
                 <Select value={locationFilter} onValueChange={setLocationFilter}>
                 <SelectTrigger className="w-full sm:w-auto min-w-[150px]">
                     <SelectValue placeholder="Filter by Location" />

@@ -60,8 +60,11 @@ export default function ServiceRequestsPage() {
 
   const getForkliftInfo = (id: string) => {
     const forklift = forklifts?.find(f => f.id === id);
-    if (!forklift) return 'Unknown Forklift';
-    return `${forklift.make} ${forklift.model}`;
+    if (!forklift) return { name: 'Unknown Forklift', serial: '' };
+    return {
+      name: `${forklift.make} ${forklift.model}`,
+      serial: forklift.serialNumber
+    }
   };
 
   const getEmployeeName = (id?: string) => {
@@ -125,74 +128,69 @@ export default function ServiceRequestsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50px] hidden sm:table-cell">Sr.</TableHead>
                 <TableHead>Forklift</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Assigned To</TableHead>
-                <TableHead className="hidden lg:table-cell">Date</TableHead>
-                <TableHead>Details</TableHead>
                 <TableHead><span className="sr-only">Actions</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center">Loading...</TableCell>
+                  <TableCell colSpan={4} className="text-center">Loading...</TableCell>
                 </TableRow>
               ) : serviceRequests && serviceRequests.length > 0 ? (
                 serviceRequests.map((request, index) => (
                   <TableRow key={request.id}>
-                    <TableCell className="font-medium hidden sm:table-cell">{index + 1}</TableCell>
                     <TableCell>
-                      <div className="font-medium">{getForkliftInfo(request.forkliftId)}</div>
-                      <div className="text-sm text-muted-foreground">{forklifts?.find(f => f.id === request.forkliftId)?.serialNumber}</div>
+                      <div className="font-medium">{getForkliftInfo(request.forkliftId).name}</div>
+                      <div className="text-sm text-muted-foreground">{getForkliftInfo(request.forkliftId).serial}</div>
                     </TableCell>
                     <TableCell>{getStatusBadge(request.status)}</TableCell>
                     <TableCell className="hidden md:table-cell">{getEmployeeName(request.assignedTechnicianId)}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{new Date(request.requestDate).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => handleViewDetails(request)}>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleViewDetails(request)} className="h-8 w-8">
                             <Eye className="h-4 w-4" />
                             <span className="sr-only">View Details</span>
                         </Button>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>Assign Employee</DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                              {employees?.map(tech => (
-                                <DropdownMenuItem key={tech.id} onSelect={() => handleAssignTechnician(request.id, tech.id)}>
-                                  {tech.fullName}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>Update Status</DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                                <DropdownMenuItem onSelect={() => handleUpdateStatus(request.id, 'Pending')}>Pending</DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => handleUpdateStatus(request.id, 'In Progress')}>In Progress</DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => handleUpdateStatus(request.id, 'Completed')}>Completed</DropdownMenuItem>
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>Assign Employee</DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                {employees?.map(tech => (
+                                  <DropdownMenuItem key={tech.id} onSelect={() => handleAssignTechnician(request.id, tech.id)}>
+                                    {tech.fullName}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>Update Status</DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                  <DropdownMenuItem onSelect={() => handleUpdateStatus(request.id, 'Pending')}>Pending</DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={() => handleUpdateStatus(request.id, 'In Progress')}>In Progress</DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={() => handleUpdateStatus(request.id, 'Completed')}>Completed</DropdownMenuItem>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">No service requests found.</TableCell>
+                  <TableCell colSpan={4} className="h-24 text-center">No service requests found.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -221,7 +219,7 @@ export default function ServiceRequestsPage() {
               </div>
               <div className="grid grid-cols-[120px_1fr] items-center gap-4">
                 <span className="text-sm font-medium text-muted-foreground">Forklift</span>
-                <span className="text-sm">{getForkliftInfo(selectedRequest.forkliftId)} ({forklifts?.find(f=>f.id === selectedRequest.forkliftId)?.serialNumber})</span>
+                <span className="text-sm">{getForkliftInfo(selectedRequest.forkliftId).name} ({getForkliftInfo(selectedRequest.forkliftId).serial})</span>
               </div>
               <div className="grid grid-cols-[120px_1fr] items-center gap-4">
                 <span className="text-sm font-medium text-muted-foreground">Assigned To</span>

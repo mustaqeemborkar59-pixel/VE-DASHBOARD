@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 import AppLayout from "@/components/app-layout";
@@ -572,12 +571,12 @@ export default function BillingPage() {
       <div className="flex flex-col gap-6">
         <Card>
             <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <CardTitle>Invoices</CardTitle>
                         <CardDescription>View, edit, and create new invoices organized by financial year.</CardDescription>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 self-start sm:self-center">
                         <Popover open={isSettingsPopoverOpen} onOpenChange={setIsSettingsPopoverOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" size="icon">
@@ -643,18 +642,21 @@ export default function BillingPage() {
                                                         <TableHeader>
                                                             <TableRow>
                                                                 <TableHead>Bill No.</TableHead>
-                                                                <TableHead>Company</TableHead>
-                                                                <TableHead>Bill Date</TableHead>
+                                                                <TableHead className="hidden sm:table-cell">Company</TableHead>
+                                                                <TableHead className="hidden md:table-cell">Bill Date</TableHead>
                                                                 <TableHead className="text-right">Amount</TableHead>
-                                                                <TableHead className="w-[100px] text-right">Actions</TableHead>
+                                                                <TableHead className="w-[100px] text-right"><span className="sr-only">Actions</span></TableHead>
                                                             </TableRow>
                                                         </TableHeader>
                                                         <TableBody>
                                                             {month.invoices.map((invoice) => (
                                                                 <TableRow key={invoice.id}>
-                                                                    <TableCell className="font-medium" onClick={() => handleOpenPreview(invoice)}>{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
-                                                                    <TableCell onClick={() => handleOpenPreview(invoice)}>{invoice.clientCompanyDetails?.name || 'Unknown'}</TableCell>
-                                                                    <TableCell onClick={() => handleOpenPreview(invoice)}>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
+                                                                    <TableCell className="font-medium" onClick={() => handleOpenPreview(invoice)}>
+                                                                        {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
+                                                                        <div className="text-muted-foreground text-xs sm:hidden">{invoice.clientCompanyDetails?.name || 'Unknown'}</div>
+                                                                    </TableCell>
+                                                                    <TableCell onClick={() => handleOpenPreview(invoice)} className="hidden sm:table-cell">{invoice.clientCompanyDetails?.name || 'Unknown'}</TableCell>
+                                                                    <TableCell onClick={() => handleOpenPreview(invoice)} className="hidden md:table-cell">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
                                                                     <TableCell className="text-right" onClick={() => handleOpenPreview(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
                                                                     <TableCell className="text-right">
                                                                         <Popover>
@@ -760,8 +762,8 @@ export default function BillingPage() {
 
                         <div className="space-y-4">
                             <Label>Particulars</Label>
-                            {items.map((item) => (
-                                <div key={item.key} className="flex items-center gap-2">
+                            {items.map((item, index) => (
+                                <div key={item.key} className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                                     <AutoHeightTextarea
                                         placeholder="Item description"
                                         value={item.particulars}
@@ -769,23 +771,25 @@ export default function BillingPage() {
                                         className="flex-grow resize-none overflow-hidden"
                                         rows={1}
                                     />
-                                    <Input
-                                        type="text"
-                                        placeholder="Rate (e.g., 500/hr)"
-                                        value={item.rate || ''}
-                                        onChange={(e) => handleItemChange(item.key, 'rate', e.target.value)}
-                                        className="w-40"
-                                    />
-                                    <Input
-                                        type="text"
-                                        placeholder="Amount"
-                                        value={item.amount ? new Intl.NumberFormat('en-IN').format(item.amount) : ''}
-                                        onChange={(e) => handleItemChange(item.key, 'amount', e.target.value)}
-                                        className="w-48 text-right"
-                                    />
-                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.key)} disabled={items.length === 1}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
+                                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                                        <Input
+                                            type="text"
+                                            placeholder="Rate (e.g., 500/hr)"
+                                            value={item.rate || ''}
+                                            onChange={(e) => handleItemChange(item.key, 'rate', e.target.value)}
+                                            className="w-full sm:w-40"
+                                        />
+                                        <Input
+                                            type="text"
+                                            placeholder="Amount"
+                                            value={item.amount ? new Intl.NumberFormat('en-IN').format(item.amount) : ''}
+                                            onChange={(e) => handleItemChange(item.key, 'amount', e.target.value)}
+                                            className="w-full sm:w-48 text-right"
+                                        />
+                                        <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.key)} disabled={items.length === 1}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </div>
                                 </div>
                             ))}
                             <Button variant="outline" size="sm" onClick={handleAddItem}>

@@ -125,10 +125,8 @@ export default function EmployeesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50px] hidden sm:table-cell">Sr.</TableHead>
-                <TableHead>Full Name</TableHead>
+                <TableHead>Employee</TableHead>
                 <TableHead className="hidden md:table-cell">Role</TableHead>
-                <TableHead className="hidden lg:table-cell">Contact Number</TableHead>
                 <TableHead>Availability</TableHead>
                 <TableHead><span className="sr-only">Actions</span></TableHead>
               </TableRow>
@@ -136,18 +134,16 @@ export default function EmployeesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                  <TableCell colSpan={4} className="text-center">Loading...</TableCell>
                 </TableRow>
               ) : employees && employees.length > 0 ? (
-                employees.map((employee, index) => (
+                employees.map((employee) => (
                   <TableRow key={employee.id}>
-                    <TableCell className="font-medium hidden sm:table-cell">{index + 1}</TableCell>
                     <TableCell>
                       <div className="font-medium">{employee.fullName}</div>
-                      <div className="text-sm text-muted-foreground md:hidden">{employee.specialization}</div>
+                      <div className="text-sm text-muted-foreground md:hidden">{employee.contactNumber || 'No contact'}</div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{employee.specialization}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{employee.contactNumber}</TableCell>
                     <TableCell>
                       <Badge variant={employee.availability ? 'outline' : 'secondary'} className={employee.availability ? 'border-green-600/40 text-green-700' : ''}>
                         {employee.availability ? 'Available' : 'Unavailable'}
@@ -178,7 +174,7 @@ export default function EmployeesPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">No employees found.</TableCell>
+                  <TableCell colSpan={4} className="h-24 text-center">No employees found.</TableCell>
                 </TableRow>
               )}
             </TableBody>
