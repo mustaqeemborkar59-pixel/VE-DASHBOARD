@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, Truck, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, Trash2 } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, Trash2 } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
@@ -244,7 +244,7 @@ export default function ForkliftsPage() {
       case 'Workshop':
         return <Warehouse className="mr-2 h-3.5 w-3.5" />;
       case 'On-Site':
-        return <Truck className="mr-2 h-3.5 w-3.5" />;
+        return <ForkliftIcon className="mr-2 h-3.5 w-3.5" />;
       case 'Not Confirm':
         return <AlertTriangle className="mr-2 h-3.5 w-3.5" />;
       default:
@@ -312,7 +312,7 @@ export default function ForkliftsPage() {
           <Card className={cn(cardClassName, "from-amber-500 to-orange-600 text-white shadow-amber-500/30")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">On-Site</CardTitle>
-              <Truck className="h-5 w-5 text-white/80" />
+              <ForkliftIcon className="h-5 w-5 text-white/80" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{isLoading ? '...' : stats.onSite}</div>
