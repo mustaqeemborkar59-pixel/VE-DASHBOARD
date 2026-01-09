@@ -147,18 +147,18 @@ export const generateAndDownloadInvoice = async (
     const sortedColumns = [...invoiceData.columns].sort((a, b) => a.order - b.order);
 
     const tableHeaderBorders = {
-        top: { style: BorderStyle.SINGLE },
-        bottom: { style: BorderStyle.SINGLE },
-        left: { style: BorderStyle.SINGLE },
-        right: { style: BorderStyle.SINGLE }
+        top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+        bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+        left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+        right: { style: BorderStyle.SINGLE, size: 6, color: "000000" }
     };
     
     const tableCellBorders = {
-        left: { style: BorderStyle.SINGLE },
-        right: { style: BorderStyle.SINGLE }
+        left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+        right: { style: BorderStyle.SINGLE, size: 6, color: "000000" }
     };
     
-    const tableBottomBorder = { bottom: { style: BorderStyle.SINGLE }};
+    const tableBottomBorder = { bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" }};
     
     const cellMargins = { top: 50, bottom: 50, left: 100, right: 100 };
 
@@ -188,10 +188,10 @@ export const generateAndDownloadInvoice = async (
     
     const createTotalRow = (label: string, value: string, isGrandTotal = false) => {
         const totalRowsBorders = {
-            top: { style: BorderStyle.SINGLE },
-            bottom: { style: BorderStyle.SINGLE },
-            left: { style: BorderStyle.SINGLE },
-            right: { style: BorderStyle.SINGLE },
+            top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+            bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+            left: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+            right: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
         };
         const tableBodyFontSize = (settings.tableBodyFontSize || 12);
         const finalFontSize = isGrandTotal ? tableBodyFontSize * 2 : tableBodyFontSize * 2;
@@ -207,7 +207,7 @@ export const generateAndDownloadInvoice = async (
             }),
             new DocxTableCell({
                 children: [new Paragraph({children: [new TextRun({text: '', font: "Calibri"})]})],
-                borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  },
+                borders: { top: { style: BorderStyle.SINGLE, size: 6, color: "000000" }, bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" }, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  },
                 margins: cellMargins,
                 verticalAlign: VerticalAlign.CENTER,
             }),
