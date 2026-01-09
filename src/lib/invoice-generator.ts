@@ -361,6 +361,20 @@ export const generateAndDownloadInvoice = async (
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
+                                    children: [new Paragraph({ text: "Your Company Details", alignment: AlignmentType.CENTER, children: [new TextRun({bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
+                                    borders: tableHeaderBorders,
+                                    margins: cellMargins,
+                                }),
+                                new DocxTableCell({
+                                    children: [new Paragraph({ text: "Client Company Details", alignment: AlignmentType.CENTER, children: [new TextRun({bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
+                                    borders: tableHeaderBorders,
+                                    margins: cellMargins,
+                                }),
+                            ],
+                        }),
+                        new DocxTableRow({
+                            children: [
+                                new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
@@ -378,7 +392,7 @@ export const generateAndDownloadInvoice = async (
                                             new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.bankBranch, font: "Calibri", size: defaultFontSize * 2})] }),
                                         ] : []),
                                     ],
-                                    borders: { ...tableHeaderBorders },
+                                    borders: tableHeaderBorders,
                                     margins: cellMargins
                                 }),
                                 new DocxTableCell({
@@ -398,7 +412,7 @@ export const generateAndDownloadInvoice = async (
                                         ...(downloadOpts.clientCompany.showBankDetails && invoiceData.to.ifscCode ? [new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.ifscCode, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                         ...(downloadOpts.clientCompany.showBankDetails && invoiceData.to.bankBranch ? [new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.bankBranch, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                     ],
-                                    borders: { ...tableHeaderBorders },
+                                    borders: tableHeaderBorders,
                                     margins: cellMargins
                                 }),
                             ],
@@ -406,7 +420,7 @@ export const generateAndDownloadInvoice = async (
                     ],
                 }),
 
-                new Paragraph({ children: [new TextRun({text: "Thanking you,", font: "Calibri", size: defaultFontSize * 2})], spacing: { before: 400 } }),
+                new Paragraph({ children: [new TextRun({text: "Thanking you,", font: "Calibri", size: defaultFontSize * 2})], spacing: { before: 200 } }),
                 new Paragraph({ children: [new TextRun({text: "Yours truly,", font: "Calibri", size: defaultFontSize * 2})] }),
                 new Paragraph({ children: [new TextRun({text: `For M/s ${invoiceData.myCompany.companyName}`, font: "Calibri", size: defaultFontSize * 2})] }),
                 new Paragraph({ text: "", spacing: { before: 400 } }),
