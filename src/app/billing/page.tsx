@@ -8,11 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, writeBatch } from 'firebase/firestore';
 import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2 } from 'lucide-react';
+import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -26,6 +26,7 @@ import { InvoicePreview } from '@/components/invoice-preview';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
 const AutoHeightTextarea = React.memo(forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => {
@@ -137,6 +138,11 @@ export default function BillingPage() {
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [invoiceToDuplicate, setInvoiceToDuplicate] = useState<Invoice | null>(null);
   const [newBillDateForDuplicate, setNewBillDateForDuplicate] = useState<string>(toISODateString(new Date()));
+  
+  const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
+  const [isBulkDuplicateDialogOpen, setIsBulkDuplicateDialogOpen] = useState(false);
+  const [newBillDateForBulk, setNewBillDateForBulk] = useState<string>(toISODateString(new Date()));
+
 
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   
@@ -497,6 +503,42 @@ export default function BillingPage() {
     });
     setInvoiceToDuplicate(null);
   };
+  
+  const handleConfirmBulkDuplicate = async () => {
+    if (!firestore || !nextBillNumber || !settingsDocRef || selectedInvoices.length === 0) {
+        toast({ variant: "destructive", title: "Error", description: "Could not duplicate invoices. Please try again." });
+        return;
+    }
+
+    const batch = writeBatch(firestore);
+    const invoicesToDuplicate = allInvoices?.filter(inv => selectedInvoices.includes(inv.id)) || [];
+    let currentBillNumber = nextBillNumber;
+
+    for (const invoice of invoicesToDuplicate) {
+        const { id, billNo, billDate, ...restOfInvoice } = invoice;
+        const newInvoiceRef = doc(collection(firestore, 'invoices'));
+        batch.set(newInvoiceRef, {
+            ...restOfInvoice,
+            billNo: currentBillNumber,
+            billDate: newBillDateForBulk,
+        });
+        currentBillNumber++;
+    }
+    
+    batch.set(settingsDocRef, { nextBillNo: currentBillNumber }, { merge: true });
+
+    try {
+        await batch.commit();
+        toast({
+            title: "Invoices Duplicated",
+            description: `${selectedInvoices.length} invoices have been duplicated with new bill numbers starting from ${nextBillNumber}.`,
+        });
+        setSelectedInvoices([]);
+        setIsBulkDuplicateDialogOpen(false);
+    } catch(e) {
+        toast({ variant: "destructive", title: "Error", description: "An error occurred during bulk duplication." });
+    }
+  };
 
 
   const handleDeleteInvoice = () => {
@@ -599,6 +641,23 @@ export default function BillingPage() {
     }
   }, []);
 
+  const handleSelectInvoice = (invoiceId: string, checked: boolean) => {
+    setSelectedInvoices(prev => {
+      if (checked) {
+        return [...prev, invoiceId];
+      } else {
+        return prev.filter(id => id !== invoiceId);
+      }
+    });
+  };
+
+  const handleSelectMonth = (monthInvoices: Invoice[], checked: boolean) => {
+    const monthInvoiceIds = monthInvoices.map(inv => inv.id);
+    setSelectedInvoices(prev => {
+        const otherIds = prev.filter(id => !monthInvoiceIds.includes(id));
+        return checked ? [...otherIds, ...monthInvoiceIds] : otherIds;
+    });
+  };
 
   const renderInvoiceActions = (invoice: Invoice) => (
     <div className="grid gap-1">
@@ -621,6 +680,26 @@ export default function BillingPage() {
                         <CardDescription>View, edit, and create new invoices organized by financial year.</CardDescription>
                     </div>
                     <div className="flex items-center gap-2 self-start sm:self-center">
+                        {selectedInvoices.length > 0 && (
+                            <div className="flex items-center gap-2">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm">
+                                            Bulk Actions ({selectedInvoices.length})
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuItem onSelect={() => setIsBulkDuplicateDialogOpen(true)}>
+                                            <Copy className="mr-2 h-4 w-4" />
+                                            Duplicate Selected
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                <Button variant="ghost" size="icon" onClick={() => setSelectedInvoices([])} className="h-9 w-9">
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        )}
                         <Popover open={isSettingsPopoverOpen} onOpenChange={setIsSettingsPopoverOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" size="icon">
@@ -673,10 +752,21 @@ export default function BillingPage() {
                                 </AccordionTrigger>
                                 <AccordionContent className="pt-2 pl-0 md:pl-4">
                                      <Accordion type="multiple" className="w-full">
-                                        {year.months.map(month => (
+                                        {year.months.map(month => {
+                                            const allInMonthSelected = month.invoices.every(inv => selectedInvoices.includes(inv.id));
+                                            const someInMonthSelected = month.invoices.some(inv => selectedInvoices.includes(inv.id));
+                                            return (
                                             <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
                                                  <AccordionTrigger className="px-3 py-2 hover:bg-muted/50 rounded-md text-xs font-medium hover:no-underline">
                                                     <div className="flex items-center gap-2">
+                                                      <Checkbox
+                                                        id={`select-month-${month.key}`}
+                                                        className="mr-2"
+                                                        checked={allInMonthSelected}
+                                                        onCheckedChange={(checked) => handleSelectMonth(month.invoices, !!checked)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        aria-label={`Select all invoices in ${month.label}`}
+                                                        />
                                                       <Folder className="h-4 w-4 text-secondary-foreground/60" />
                                                       <span>{month.label}</span>
                                                     </div>
@@ -687,9 +777,17 @@ export default function BillingPage() {
                                                         {month.invoices.map((invoice) => (
                                                             <div key={invoice.id} className="border rounded-lg p-4 space-y-3">
                                                                 <div className="flex justify-between items-start">
-                                                                    <div className="space-y-1 cursor-pointer" onClick={() => handleOpenPreview(invoice)}>
-                                                                        <div className="font-bold">Bill No: {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
-                                                                        <div className="text-sm text-muted-foreground">{invoice.clientCompanyDetails?.name || 'Unknown'}</div>
+                                                                    <div className="flex items-start gap-3">
+                                                                      <Checkbox 
+                                                                        id={`select-inv-mob-${invoice.id}`} 
+                                                                        className="mt-1"
+                                                                        checked={selectedInvoices.includes(invoice.id)}
+                                                                        onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
+                                                                      />
+                                                                      <div className="space-y-1 cursor-pointer" onClick={() => handleOpenPreview(invoice)}>
+                                                                          <div className="font-bold">Bill No: {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
+                                                                          <div className="text-sm text-muted-foreground">{invoice.clientCompanyDetails?.name || 'Unknown'}</div>
+                                                                      </div>
                                                                     </div>
                                                                     <Popover>
                                                                         <PopoverTrigger asChild>
@@ -713,6 +811,7 @@ export default function BillingPage() {
                                                     <Table className="hidden md:table">
                                                         <TableHeader>
                                                             <TableRow>
+                                                                <TableHead className="w-12 px-4"></TableHead>
                                                                 <TableHead>Bill No.</TableHead>
                                                                 <TableHead>Company</TableHead>
                                                                 <TableHead>Bill Date</TableHead>
@@ -722,7 +821,15 @@ export default function BillingPage() {
                                                         </TableHeader>
                                                         <TableBody>
                                                             {month.invoices.map((invoice) => (
-                                                                <TableRow key={invoice.id}>
+                                                                <TableRow key={invoice.id} data-state={selectedInvoices.includes(invoice.id) ? "selected" : ""}>
+                                                                    <TableCell className="px-4">
+                                                                        <Checkbox 
+                                                                          id={`select-inv-desk-${invoice.id}`}
+                                                                          checked={selectedInvoices.includes(invoice.id)}
+                                                                          onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
+                                                                          aria-label={`Select invoice ${invoice.billNo}`}
+                                                                        />
+                                                                    </TableCell>
                                                                     <TableCell className="font-medium cursor-pointer" onClick={() => handleOpenPreview(invoice)}>
                                                                         {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
                                                                     </TableCell>
@@ -747,7 +854,8 @@ export default function BillingPage() {
                                                     </Table>
                                                 </AccordionContent>
                                             </AccordionItem>
-                                        ))}
+                                            )
+                                        })}
                                     </Accordion>
                                 </AccordionContent>
                             </AccordionItem>
@@ -946,6 +1054,33 @@ export default function BillingPage() {
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={handleConfirmDuplicate}>Duplicate</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={isBulkDuplicateDialogOpen} onOpenChange={setIsBulkDuplicateDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Bulk Duplicate Invoices</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        You are about to duplicate <span className="font-bold">{selectedInvoices.length}</span> invoices. 
+                        The new invoices will be assigned bill numbers starting from <span className="font-bold">{nextBillNumber}</span>. 
+                        Please select a common bill date for all new invoices.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="py-4">
+                    <Label htmlFor="newBulkBillDate">New Bill Date</Label>
+                    <Input
+                        id="newBulkBillDate"
+                        type="date"
+                        value={newBillDateForBulk}
+                        onChange={(e) => setNewBillDateForBulk(e.target.value)}
+                        className="w-full mt-2"
+                    />
+                </div>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmBulkDuplicate}>Duplicate {selectedInvoices.length} Invoices</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
