@@ -360,7 +360,7 @@ export default function ForkliftsPage() {
                     placeholder={searchPlaceholder}
                     className="pl-8 rounded-l-none w-full"
                     value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value.toLowerCase())}
+                    onChange={e => setSearchTerm(e.target.value)}
                 />
                 </div>
             </div>
@@ -581,4 +581,3 @@ export default function ForkliftsPage() {
     </AppLayout>
   );
 }
-
