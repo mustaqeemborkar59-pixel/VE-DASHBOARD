@@ -126,7 +126,7 @@ export default function ForkliftsPage() {
   
   const locationOptions = useMemo(() => {
     if (!forklifts) return ['All', 'Workshop', 'On-Site', 'Not Confirm'];
-    const sites = new Set(forklifts.map(f => f.siteCompany).filter(f => f));
+    const sites = new Set(forklifts.map(f => f.siteCompany).filter(Boolean));
     return ['All', 'Workshop', 'On-Site', 'Not Confirm', ...Array.from(sites)];
   }, [forklifts]);
 
@@ -398,6 +398,10 @@ export default function ForkliftsPage() {
                 </SelectContent>
                 </Select>
             </div>
+        </div>
+
+        <div className="text-sm text-muted-foreground">
+          {isLoadingForklifts ? 'Loading...' : `Showing ${filteredForklifts.length} of ${forklifts?.length || 0} forklifts.`}
         </div>
 
         <Card>
