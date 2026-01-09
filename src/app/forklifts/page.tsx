@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, Trash2 } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy } from "firebase/firestore";
 import { useState, useMemo, Fragment } from "react";
@@ -149,8 +149,10 @@ export default function ForkliftsPage() {
       
       if (!searchTerm) return typeMatch && capacityMatch && locationMatch;
 
-      const searchInField = (field: keyof Forklift) => 
-          forklift[field]?.toString().toLowerCase().includes(lowercasedSearchTerm) ?? false;
+      const searchInField = (field: keyof Forklift) => {
+          const value = forklift[field];
+          return value ? value.toString().toLowerCase().includes(lowercasedSearchTerm) : false;
+      };
 
       let searchMatch = false;
       if (searchField === 'All') {
@@ -278,6 +280,10 @@ export default function ForkliftsPage() {
     }
   }
 
+  const hasActiveRequest = (forkliftId: string) => {
+      return activeServiceRequests?.some(req => req.forkliftId === forkliftId);
+  }
+
   return (
     <AppLayout>
       <div className="flex flex-col gap-6">
@@ -401,12 +407,12 @@ export default function ForkliftsPage() {
         </div>
 
         <div className="text-sm text-muted-foreground">
-          {isLoadingForklifts ? 'Loading...' : `Showing ${filteredForklifts.length} of ${forklifts?.length || 0} forklifts.`}
+          {isLoading ? 'Loading...' : `Showing ${filteredForklifts.length} of ${forklifts?.length || 0} forklifts.`}
         </div>
 
         <Card>
           <CardContent className="p-0 md:p-3 pt-0">
-          {isLoadingForklifts ? (
+          {isLoading ? (
             <div className="flex justify-center items-center h-64 p-3 pt-0">
               <p className="text-muted-foreground">Loading fleet...</p>
             </div>
@@ -416,6 +422,7 @@ export default function ForkliftsPage() {
                     <TableHeader className="sticky top-0 bg-card">
                         <TableRow>
                         <TableHead className="w-[50px] hidden sm:table-cell">Sr.</TableHead>
+                        <TableHead className="w-[40px] p-2"></TableHead>
                         <TableHead>Serial Number</TableHead>
                         <TableHead className="hidden md:table-cell">Make</TableHead>
                         <TableHead className="hidden md:table-cell">Model</TableHead>
@@ -428,8 +435,16 @@ export default function ForkliftsPage() {
                         <Fragment key={forklift.id}>
                             <TableRow onClick={() => toggleRow(forklift.id)} className={cn("cursor-pointer", expandedRow === forklift.id && "bg-accent hover:bg-accent")} data-state={expandedRow === forklift.id ? 'open' : 'closed'}>
                                 <TableCell className="font-medium hidden sm:table-cell">{forklift.srNumber}</TableCell>
+                                <TableCell className="p-2">
+                                  <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", expandedRow === forklift.id && "rotate-180")} />
+                                </TableCell>
                                 <TableCell>
-                                  <div className="font-medium">{forklift.serialNumber}</div>
+                                  <div className="flex items-center gap-2">
+                                      {hasActiveRequest(forklift.id) && (
+                                          <Wrench className="h-4 w-4 text-orange-500" title="Active Service Request" />
+                                      )}
+                                      <span className="font-medium">{forklift.serialNumber}</span>
+                                  </div>
                                   <div className="text-sm text-muted-foreground md:hidden">{forklift.make} {forklift.model}</div>
                                 </TableCell>
                                 <TableCell className="hidden md:table-cell">{forklift.make}</TableCell>
@@ -466,7 +481,7 @@ export default function ForkliftsPage() {
                             </TableRow>
                             {expandedRow === forklift.id && (
                                 <TableRow className="bg-accent/50 hover:bg-accent/50">
-                                    <TableCell colSpan={6} className="p-2.5">
+                                    <TableCell colSpan={7} className="p-2.5">
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border rounded-md bg-background/50">
                                           <div className="flex flex-col gap-1">
                                             <Label className="text-xs text-muted-foreground">MFG Year</Label>
@@ -585,3 +600,5 @@ export default function ForkliftsPage() {
     </AppLayout>
   );
 }
+
+    
