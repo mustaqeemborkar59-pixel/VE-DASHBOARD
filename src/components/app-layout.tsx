@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -135,7 +136,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </Sidebar>
       <SidebarInset>
         <header className={cn(
-          "sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-card/95 px-4 backdrop-blur-sm sm:px-6 lg:h-[60px]"
+          "sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-card/75 px-4 backdrop-blur-sm sm:px-6 lg:h-[60px]"
         )}>
           <SidebarTrigger className="md:hidden" />
           <div className="w-full flex-1">
