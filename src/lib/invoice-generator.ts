@@ -361,12 +361,12 @@ export const generateAndDownloadInvoice = async (
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    children: [new Paragraph({ text: "Your Company Details", alignment: AlignmentType.CENTER, children: [new TextRun({bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
+                                    children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: invoiceData.myCompany.companyName, bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
                                     borders: tableHeaderBorders,
                                     margins: cellMargins,
                                 }),
                                 new DocxTableCell({
-                                    children: [new Paragraph({ text: "Client Company Details", alignment: AlignmentType.CENTER, children: [new TextRun({bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
+                                    children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: invoiceData.to.name, bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
                                     borders: tableHeaderBorders,
                                     margins: cellMargins,
                                 }),
@@ -378,7 +378,6 @@ export const generateAndDownloadInvoice = async (
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
-                                        new Paragraph({ children: [new TextRun({ text: invoiceData.myCompany.companyName, bold: true, font: "Calibri", size: defaultFontSize * 2 })] }),
                                         ...(downloadOpts.myCompany.showPan ? [new Paragraph({ children: [new TextRun({ text: "PAN CARD NO: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.pan, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                         ...(downloadOpts.myCompany.showGstin ? [new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                         new Paragraph({ children: [new TextRun({ text: "SAC code: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.sacCode, font: "Calibri", size: defaultFontSize * 2})] }),
@@ -399,7 +398,6 @@ export const generateAndDownloadInvoice = async (
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
-                                        new Paragraph({ children: [new TextRun({ text: invoiceData.to.name, bold: true, font: "Calibri", size: defaultFontSize * 2 })] }),
                                         ...(downloadOpts.clientCompany.showGstin && invoiceData.to.gstin ? [new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                         
                                         ...(downloadOpts.clientCompany.showBankDetails && (invoiceData.to.bankName || invoiceData.to.accountNumber || invoiceData.to.ifscCode || invoiceData.to.bankBranch) ? [
