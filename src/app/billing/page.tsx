@@ -237,13 +237,13 @@ export default function BillingPage() {
 
   const openDeleteDialog = useCallback((invoice: Invoice) => {
     closeAllDialogs();
-    setInvoiceToDelete(invoice);
+    handleDelayedAction(() => setInvoiceToDelete(invoice));
   }, [closeAllDialogs]);
 
   const openDuplicateDialog = useCallback((invoice: Invoice) => {
     closeAllDialogs();
-    setInvoiceToDuplicate(invoice);
     setNewBillDateForDuplicate(toISODateString(new Date()));
+    handleDelayedAction(() => setInvoiceToDuplicate(invoice));
   }, [closeAllDialogs]);
   
   const openBulkDuplicateDialog = useCallback(() => {
@@ -320,7 +320,7 @@ export default function BillingPage() {
       return acc;
     }, {} as Record<string, Invoice[]>);
     
-    const sortedYearKeys = Object.keys(groupedByYear).sort((a, b) => b.localeCompare(a));
+    const sortedYearKeys = Object.keys(groupedByYear).sort((a, b) => a.localeCompare(b));
 
     return sortedYearKeys.map((yearKey, index) => {
       const yearInvoices = groupedByYear[yearKey];
@@ -344,15 +344,15 @@ export default function BillingPage() {
         const monthMaxBill = Math.max(...monthInvoices.map(inv => inv.billNo));
         const monthDate = parseISO(`${monthKey}-01`);
         
-        // Sort invoices within the month by bill number descending
-        const sortedMonthInvoices = monthInvoices.sort((a,b) => b.billNo - a.billNo);
+        // Sort invoices within the month by bill number ascending
+        const sortedMonthInvoices = monthInvoices.sort((a,b) => a.billNo - b.billNo);
 
         return {
           key: monthKey,
           label: `${format(monthDate, 'MM-MMM yyyy').toUpperCase()} (BILL NO-${monthMinBill}-${monthMaxBill})`,
           invoices: sortedMonthInvoices,
         };
-      }).sort((a, b) => b.key.localeCompare(a.key));
+      }).sort((a, b) => a.key.localeCompare(b.key));
 
       return {
         key: yearKey,
@@ -683,7 +683,7 @@ export default function BillingPage() {
   const renderInvoiceActions = (invoice: Invoice) => (
     <DropdownMenu onOpenChange={open => !open && closeAllDialogs()}>
         <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 p-0" onClick={closeAllDialogs}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
                 <EllipsisVertical className="h-4 w-4" />
             </Button>
         </DropdownMenuTrigger>
@@ -785,7 +785,7 @@ export default function BillingPage() {
                                         {year.months.map(month => {
                                             return (
                                             <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
-                                                <AccordionTrigger className="flex-1 text-xs font-medium hover:no-underline p-3 justify-between bg-muted/50 hover:bg-muted/80 rounded-md">
+                                                <AccordionTrigger className="flex items-center justify-between flex-1 text-xs font-medium hover:no-underline p-3 bg-muted/50 hover:bg-muted/80 rounded-md">
                                                      <div className="flex items-center gap-2">
                                                           <Folder className="h-4 w-4 text-amber-500 fill-amber-500/20" />
                                                           <span>{month.label}</span>
@@ -871,13 +871,7 @@ export default function BillingPage() {
             </CardContent>
         </Card>
 
-        <Dialog open={isFormDialogOpen} onOpenChange={(open) => {
-            if (!open) {
-                closeAllDialogs();
-            } else {
-                setIsFormDialogOpen(true);
-            }
-        }}>
+        <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pb-0">
                     <DialogTitle>{editingInvoice ? 'Edit Invoice' : 'Generate New Invoice'}</DialogTitle>
@@ -1021,7 +1015,7 @@ export default function BillingPage() {
             </DialogContent>
         </Dialog>
 
-        <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && closeAllDialogs()}>
+        <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && setInvoiceToDelete(null)}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -1031,12 +1025,12 @@ export default function BillingPage() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteInvoice} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDeleteInvoice(); }} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={!!invoiceToDuplicate} onOpenChange={(open) => !open && closeAllDialogs()}>
+        <AlertDialog open={!!invoiceToDuplicate} onOpenChange={(open) => !open && setInvoiceToDuplicate(null)}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Duplicate Invoice</AlertDialogTitle>
@@ -1061,13 +1055,7 @@ export default function BillingPage() {
             </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={isBulkDuplicateDialogOpen} onOpenChange={(open) => {
-            if (!open) {
-                closeAllDialogs();
-            } else {
-                setIsBulkDuplicateDialogOpen(true);
-            }
-        }}>
+        <AlertDialog open={isBulkDuplicateDialogOpen} onOpenChange={setIsBulkDuplicateDialogOpen}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Bulk Duplicate Invoices</AlertDialogTitle>
@@ -1094,13 +1082,7 @@ export default function BillingPage() {
             </AlertDialogContent>
         </AlertDialog>
         
-        <Dialog open={isPreviewOpen} onOpenChange={(open) => {
-            if (!open) {
-                closeAllDialogs();
-            } else {
-                setIsPreviewOpen(true);
-            }
-        }}>
+        <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
             <DialogContent className="max-w-4xl p-0">
                  <DialogHeader className="p-6 pb-2">
                     <DialogTitle>Invoice Preview</DialogTitle>
@@ -1123,3 +1105,5 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
