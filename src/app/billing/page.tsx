@@ -782,14 +782,14 @@ export default function BillingPage() {
                                             return (
                                             <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
                                                  <div className="flex items-center gap-2">
-                                                     <Checkbox
+                                                      <Checkbox
                                                         id={`select-month-${month.key}`}
                                                         checked={allInMonthSelected}
                                                         onCheckedChange={(checked) => handleSelectMonth(month.invoices, !!checked)}
                                                         aria-label={`Select all invoices in ${month.label}`}
                                                         className="ml-3"
                                                       />
-                                                    <AccordionTrigger className="flex-1 px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-xs font-medium hover:no-underline">
+                                                    <AccordionTrigger className="flex-1 px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-xs font-medium hover:no-underline justify-between">
                                                         <div className="flex items-center gap-2">
                                                             <Folder className="h-4 w-4 text-secondary-foreground/60" />
                                                             <span>{month.label}</span>
@@ -1129,3 +1129,5 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
