@@ -168,6 +168,14 @@ export default function BillingPage() {
         setGlobalPageSettings(myCompanyDetails);
     }
   }, [myCompanyDetails]);
+  
+  const closeAllDialogs = useCallback(() => {
+    setIsFormDialogOpen(false);
+    setInvoiceToDelete(null);
+    setInvoiceToDuplicate(null);
+    setIsBulkDuplicateDialogOpen(false);
+    setIsPreviewOpen(false);
+  }, []);
 
 
   const selectedCompanyForNewInvoice = useMemo(() => companies?.find(c => c.id === companyId), [companies, companyId]);
@@ -445,7 +453,8 @@ export default function BillingPage() {
     }
   };
   
-  const handleOpenFormDialog = (invoice: Invoice | null) => {
+  const handleOpenFormDialog = useCallback((invoice: Invoice | null) => {
+    closeAllDialogs();
     if (invoice) {
       setEditingInvoice(invoice);
       setCompanyId(invoice.companyId);
@@ -467,17 +476,29 @@ export default function BillingPage() {
       resetForm();
     }
     setIsFormDialogOpen(true);
-  };
-  
-  const handleOpenPreview = (invoice: Invoice) => {
+  }, [closeAllDialogs, liveDefaultPageSettings, defaultDownloadOptions]);
+
+  const handleOpenPreview = useCallback((invoice: Invoice) => {
+    closeAllDialogs();
     setInvoiceForPreview(invoice);
     setIsPreviewOpen(true);
-  };
+  }, [closeAllDialogs]);
+  
+  const handleOpenDeleteDialog = useCallback((invoice: Invoice) => {
+    closeAllDialogs();
+    setInvoiceToDelete(invoice);
+  }, [closeAllDialogs]);
 
-  const handleOpenDuplicateDialog = (invoice: Invoice) => {
+  const handleOpenDuplicateDialog = useCallback((invoice: Invoice) => {
+    closeAllDialogs();
     setInvoiceToDuplicate(invoice);
-    setNewBillDateForDuplicate(toISODateString(new Date())); // Reset to today's date
-  };
+    setNewBillDateForDuplicate(toISODateString(new Date()));
+  }, [closeAllDialogs]);
+  
+  const handleOpenBulkDuplicateDialog = useCallback(() => {
+    closeAllDialogs();
+    setIsBulkDuplicateDialogOpen(true);
+  }, [closeAllDialogs]);
 
   const handleConfirmDuplicate = () => {
     if (!invoiceToDuplicate || !firestore || !nextBillNumber || !settingsDocRef) {
@@ -672,7 +693,7 @@ export default function BillingPage() {
         <DropdownMenuItem onSelect={() => handleOpenDuplicateDialog(invoice)}>
             <FilePlus2 className="mr-2 h-4 w-4" />Duplicate
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => setInvoiceToDelete(invoice)} className="text-destructive">
+        <DropdownMenuItem onSelect={() => handleOpenDeleteDialog(invoice)} className="text-destructive">
             <Trash2 className="mr-2 h-4 w-4" />Delete
         </DropdownMenuItem>
     </DropdownMenuContent>
@@ -698,7 +719,7 @@ export default function BillingPage() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent>
-                                        <DropdownMenuItem onSelect={() => setIsBulkDuplicateDialogOpen(true)}>
+                                        <DropdownMenuItem onSelect={handleOpenBulkDuplicateDialog}>
                                             <Copy className="mr-2 h-4 w-4" />
                                             Duplicate Selected
                                         </DropdownMenuItem>
@@ -1112,5 +1133,7 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
 
     
