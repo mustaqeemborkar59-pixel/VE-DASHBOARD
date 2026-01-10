@@ -786,6 +786,7 @@ export default function BillingPage() {
                                                         id={`select-month-${month.key}`}
                                                         checked={allInMonthSelected}
                                                         onCheckedChange={(checked) => handleSelectMonth(month.invoices, !!checked)}
+                                                        onClick={(e) => e.stopPropagation()}
                                                         aria-label={`Select all invoices in ${month.label}`}
                                                         className="ml-3"
                                                       />
@@ -1129,5 +1130,3 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-    
