@@ -10,7 +10,6 @@ import type { Forklift } from "@/lib/data";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "./ui/textarea";
-import { cn } from "@/lib/utils";
 
 export type ForkliftFormData = {
   serialNumber: string;
@@ -39,20 +38,20 @@ interface ForkliftFormProps {
 export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: ForkliftFormProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState<ForkliftFormData>({
-    serialNumber: '',
-    make: '',
-    model: '',
-    year: '',
-    capacity: '',
-    equipmentType: '',
-    voltage: '',
-    mastHeight: '',
-    locationType: 'Workshop',
-    siteCompany: '',
-    siteArea: '',
-    siteContactPerson: '',
-    siteContactNumber: '',
-    remarks: '',
+    serialNumber: initialData?.serialNumber || '',
+    make: initialData?.make || '',
+    model: initialData?.model || '',
+    year: initialData?.year.toString() || '',
+    capacity: initialData?.capacity || '',
+    equipmentType: initialData?.equipmentType || '',
+    voltage: initialData?.voltage || '',
+    mastHeight: initialData?.mastHeight || '',
+    locationType: initialData?.locationType || 'Workshop',
+    siteCompany: initialData?.siteCompany || '',
+    siteArea: initialData?.siteArea || '',
+    siteContactPerson: initialData?.siteContactPerson || '',
+    siteContactNumber: initialData?.siteContactNumber || '',
+    remarks: initialData?.remarks || '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -74,7 +73,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
         siteContactNumber: initialData.siteContactNumber || '',
         remarks: initialData.remarks || '',
       });
-    } else {
+    } else if (mode === 'add') {
         setFormData({
             serialNumber: '',
             make: '',
@@ -114,7 +113,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
       return;
     }
     
-    if (formData.locationType === 'On-Site' && !formData.siteCompany) {
+    if (formData.locationType !== 'Workshop' && !formData.siteCompany) {
       toast({
         variant: "destructive",
         title: "Missing Information",
