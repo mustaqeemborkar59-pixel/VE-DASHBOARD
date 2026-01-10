@@ -766,7 +766,7 @@ export default function BillingPage() {
                              <AccordionItem value={`year-${year.key}`} key={year.key} className="mb-2 border-0">
                                 <AccordionTrigger className="px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-sm font-medium hover:no-underline">
                                     <div className="flex items-center gap-3">
-                                      <Folder className="h-5 w-5 text-primary" />
+                                      <Folder className="h-5 w-5 text-amber-500 fill-amber-500/20" />
                                       <span>{year.label}</span>
                                     </div>
                                 </AccordionTrigger>
@@ -777,7 +777,7 @@ export default function BillingPage() {
                                             <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
                                                 <AccordionTrigger className="flex-1 text-xs font-medium hover:no-underline p-3 justify-between bg-muted/50 hover:bg-muted/80 rounded-md">
                                                     <div className="flex items-center gap-2">
-                                                        <Folder className="h-4 w-4 text-secondary-foreground/60" />
+                                                        <Folder className="h-4 w-4 text-amber-500 fill-amber-500/20" />
                                                         <span>{month.label}</span>
                                                     </div>
                                                 </AccordionTrigger>
