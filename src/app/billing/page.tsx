@@ -609,37 +609,39 @@ export default function BillingPage() {
   };
   
 
-  const DownloadOptionsFields = ({ options, setOptions }: { options: DownloadOptions, setOptions: React.Dispatch<React.SetStateAction<DownloadOptions>> }) => (
-    <div className="space-y-6">
-        <div className="space-y-4">
-            <h4 className="font-semibold text-foreground">My Company Details</h4>
-            <div className="flex items-center space-x-2">
-                <Checkbox id="myGstin" checked={options.myCompany.showGstin} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showGstin: !!checked} }))} />
-                <Label htmlFor="myGstin">Show GSTIN</Label>
+  const DownloadOptionsFields = ({ options, setOptions }: { options: DownloadOptions, setOptions: React.Dispatch<React.SetStateAction<DownloadOptions>> }) => {
+    return (
+        <div className="space-y-6">
+            <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">My Company Details</h4>
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="myGstin" checked={options.myCompany.showGstin} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showGstin: !!checked} }))} />
+                    <Label htmlFor="myGstin">Show GSTIN</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="myPan" checked={options.myCompany.showPan} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showPan: !!checked} }))} />
+                    <Label htmlFor="myPan">Show PAN Number</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="myBank" checked={options.myCompany.showBankDetails} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showBankDetails: !!checked} }))} />
+                    <Label htmlFor="myBank">Show Bank Details</Label>
+                </div>
             </div>
-            <div className="flex items-center space-x-2">
-                <Checkbox id="myPan" checked={options.myCompany.showPan} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showPan: !!checked} }))} />
-                <Label htmlFor="myPan">Show PAN Number</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-                <Checkbox id="myBank" checked={options.myCompany.showBankDetails} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showBankDetails: !!checked} }))} />
-                <Label htmlFor="myBank">Show Bank Details</Label>
+            <Separator />
+            <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">Client Company Details</h4>
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="clientGstin" checked={options.clientCompany.showGstin} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, clientCompany: {...prev.clientCompany, showGstin: !!checked} }))} />
+                    <Label htmlFor="clientGstin">Show GSTIN</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="clientBank" checked={options.clientCompany.showBankDetails} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, clientCompany: {...prev.clientCompany, showBankDetails: !!checked} }))} />
+                    <Label htmlFor="clientBank">Show Bank Details</Label>
+                </div>
             </div>
         </div>
-        <Separator />
-        <div className="space-y-4">
-            <h4 className="font-semibold text-foreground">Client Company Details</h4>
-            <div className="flex items-center space-x-2">
-                <Checkbox id="clientGstin" checked={options.clientCompany.showGstin} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, clientCompany: {...prev.clientCompany, showGstin: !!checked} }))} />
-                <Label htmlFor="clientGstin">Show GSTIN</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-                <Checkbox id="clientBank" checked={options.clientCompany.showBankDetails} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, clientCompany: {...prev.clientCompany, showBankDetails: !!checked} }))} />
-                <Label htmlFor="clientBank">Show Bank Details</Label>
-            </div>
-        </div>
-    </div>
-  );
+    );
+  };
 
   const handleDocSettingsChange = useCallback((field: keyof PageSettings, value: any) => {
     setInvoicePageSettings(prev => ({...prev, [field]: value}));
@@ -779,17 +781,20 @@ export default function BillingPage() {
                                             const allInMonthSelected = month.invoices.every(inv => selectedInvoices.includes(inv.id));
                                             return (
                                             <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
-                                                 <div className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 rounded-md">
+                                                 <div className="flex items-center gap-2">
                                                      <Checkbox
                                                         id={`select-month-${month.key}`}
                                                         checked={allInMonthSelected}
                                                         onCheckedChange={(checked) => handleSelectMonth(month.invoices, !!checked)}
                                                         aria-label={`Select all invoices in ${month.label}`}
+                                                        className="ml-3"
                                                       />
-                                                    <AccordionTrigger className="flex-1 p-0 text-xs font-medium hover:no-underline">
-                                                        <div className="flex items-center gap-2">
-                                                            <Folder className="h-4 w-4 text-secondary-foreground/60" />
-                                                            <span>{month.label}</span>
+                                                    <AccordionTrigger className="flex-1 p-3 text-xs font-medium hover:no-underline hover:bg-muted/50 rounded-md">
+                                                        <div className="flex items-center justify-between w-full">
+                                                            <div className="flex items-center gap-2">
+                                                                <Folder className="h-4 w-4 text-secondary-foreground/60" />
+                                                                <span>{month.label}</span>
+                                                            </div>
                                                         </div>
                                                     </AccordionTrigger>
                                                  </div>
