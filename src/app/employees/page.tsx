@@ -52,19 +52,21 @@ export default function EmployeesPage() {
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+
 
   const employeesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'employees'), orderBy('createdAt', 'asc')) : null, [firestore]);
   const { data: employees, isLoading } = useCollection<Employee>(employeesQuery);
 
   const openAddEditDialog = (employee: Employee | null) => {
+    setOpenPopoverId(null);
     setSelectedEmployee(employee);
     setEmployeeToDelete(null);
     setIsAddEditDialogOpen(true);
   };
   
   const openDeleteDialog = (employee: Employee) => {
-    setSelectedEmployee(null);
-    setIsAddEditDialogOpen(false);
+    setOpenPopoverId(null);
     setEmployeeToDelete(employee);
   };
 
@@ -134,7 +136,7 @@ export default function EmployeesPage() {
                             <div className="font-bold">{employee.fullName}</div>
                             <div className="text-sm text-muted-foreground">{employee.specialization || 'N/A'}</div>
                           </div>
-                           <Popover>
+                           <Popover open={openPopoverId === employee.id} onOpenChange={(isOpen) => setOpenPopoverId(isOpen ? employee.id : null)}>
                               <PopoverTrigger asChild>
                                   <Button variant="ghost" size="icon" className="-mt-2 -mr-2 h-8 w-8 p-0">
                                       <EllipsisVertical className="h-4 w-4" />
@@ -192,7 +194,7 @@ export default function EmployeesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                       <Popover>
+                       <Popover open={openPopoverId === employee.id} onOpenChange={(isOpen) => setOpenPopoverId(isOpen ? employee.id : null)}>
                           <PopoverTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
                                   <EllipsisVertical className="h-4 w-4" />
@@ -241,7 +243,7 @@ export default function EmployeesPage() {
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!employeeToDelete} onOpenChange={setEmployeeToDelete}>
+      <AlertDialog open={!!employeeToDelete} onOpenChange={(isOpen) => !isOpen && setEmployeeToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to delete this employee?</AlertDialogTitle>

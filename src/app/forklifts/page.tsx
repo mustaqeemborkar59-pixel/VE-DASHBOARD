@@ -77,6 +77,7 @@ export default function ForkliftsPage() {
   const [forkliftToDelete, setForkliftToDelete] = useState<Forklift | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedForklift, setSelectedForklift] = useState<Forklift | null>(null);
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
   const [locationFilter, setLocationFilter] = useState('All');
   const [equipmentTypeFilter, setEquipmentTypeFilter] = useState('All');
@@ -103,14 +104,14 @@ export default function ForkliftsPage() {
 
 
   const openAddEditDialog = (forklift: Forklift | null) => {
+    setOpenPopoverId(null);
     setSelectedForklift(forklift);
     setForkliftToDelete(null);
     setIsAddEditDialogOpen(true);
   };
 
   const openDeleteDialog = (forklift: Forklift) => {
-    setSelectedForklift(null);
-    setIsAddEditDialogOpen(false);
+    setOpenPopoverId(null);
     setForkliftToDelete(forklift);
   };
 
@@ -460,7 +461,7 @@ export default function ForkliftsPage() {
                                   </Button>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Popover>
+                                    <Popover open={openPopoverId === forklift.id} onOpenChange={(isOpen) => setOpenPopoverId(isOpen ? forklift.id : null)}>
                                       <PopoverTrigger asChild>
                                           <Button variant="ghost" size="icon" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
                                               <EllipsisVertical className="h-4 w-4" />
@@ -578,7 +579,7 @@ export default function ForkliftsPage() {
           </DialogContent>
         </Dialog>
         
-        <AlertDialog open={!!forkliftToDelete} onOpenChange={setForkliftToDelete}>
+        <AlertDialog open={!!forkliftToDelete} onOpenChange={(isOpen) => !isOpen && setForkliftToDelete(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure you want to delete this forklift?</AlertDialogTitle>

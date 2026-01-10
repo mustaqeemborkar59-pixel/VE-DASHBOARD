@@ -51,19 +51,21 @@ export default function CompaniesPage() {
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+
 
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('createdAt', 'desc')) : null, [firestore]);
   const { data: companies, isLoading } = useCollection<Company>(companiesQuery);
   
   const openAddEditDialog = (company: Company | null) => {
+    setOpenPopoverId(null);
     setSelectedCompany(company);
     setCompanyToDelete(null);
     setIsAddEditDialogOpen(true);
   };
 
   const openDeleteDialog = (company: Company) => {
-    setSelectedCompany(null);
-    setIsAddEditDialogOpen(false);
+    setOpenPopoverId(null);
     setCompanyToDelete(company);
   };
 
@@ -132,7 +134,7 @@ export default function CompaniesPage() {
                             <div className="font-bold">{company.name}</div>
                             <div className="text-sm text-muted-foreground break-all">{company.address}</div>
                           </div>
-                           <Popover>
+                           <Popover open={openPopoverId === company.id} onOpenChange={(isOpen) => setOpenPopoverId(isOpen ? company.id : null)}>
                               <PopoverTrigger asChild>
                                   <Button variant="ghost" size="icon" className="-mt-2 -mr-2 h-8 w-8 p-0">
                                       <EllipsisVertical className="h-4 w-4" />
@@ -186,7 +188,7 @@ export default function CompaniesPage() {
                     <TableCell className="max-w-xs sm:max-w-sm truncate">{company.address}</TableCell>
                     <TableCell className="font-mono">{company.gstin}</TableCell>
                     <TableCell className="text-right">
-                       <Popover>
+                       <Popover open={openPopoverId === company.id} onOpenChange={(isOpen) => setOpenPopoverId(isOpen ? company.id : null)}>
                           <PopoverTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
                                   <EllipsisVertical className="h-4 w-4" />
@@ -235,7 +237,7 @@ export default function CompaniesPage() {
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!companyToDelete} onOpenChange={setCompanyToDelete}>
+      <AlertDialog open={!!companyToDelete} onOpenChange={(isOpen) => !isOpen && setCompanyToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
