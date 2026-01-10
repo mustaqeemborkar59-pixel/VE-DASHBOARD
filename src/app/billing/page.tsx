@@ -888,10 +888,10 @@ export default function BillingPage() {
         </Card>
 
         <Dialog open={isFormDialogOpen} onOpenChange={(isOpen) => {
-            setIsFormDialogOpen(isOpen);
             if (!isOpen) {
                 resetForm();
             }
+            setIsFormDialogOpen(isOpen);
         }}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pb-0">
@@ -1109,7 +1109,7 @@ export default function BillingPage() {
                     <DialogTitle>Invoice Preview</DialogTitle>
                     <DialogDescription>
                         A preview of Invoice No. {invoiceForPreview?.billNo}-{invoiceForPreview?.billNoSuffix || 'MHE'}.
-                    </DialogDescription>
+                    </Description>
                 </DialogHeader>
                 <div className={cn("px-6 pb-6 overflow-y-auto max-h-[80vh]", "hide-scrollbar")}>
                    <InvoicePreview 
@@ -1126,9 +1126,3 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-    
-
-    
-
-    
