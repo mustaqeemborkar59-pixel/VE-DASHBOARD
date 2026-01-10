@@ -30,6 +30,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
@@ -107,11 +108,11 @@ export default function ForkliftsPage() {
 
   const openAddEditDialog = useCallback((forklift: Forklift | null) => {
     setSelectedForklift(forklift);
-    setIsAddEditDialogOpen(true);
+    handleDelayedAction(() => setIsAddEditDialogOpen(true));
   }, []);
 
   const openDeleteDialog = useCallback((forklift: Forklift) => {
-    setForkliftToDelete(forklift);
+    handleDelayedAction(() => setForkliftToDelete(forklift));
   }, []);
 
   const equipmentTypes = useMemo(() => {
@@ -289,11 +290,11 @@ export default function ForkliftsPage() {
               </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-40" onMouseLeave={(e) => (e.currentTarget as HTMLElement).blur()}>
-              <DropdownMenuItem onSelect={() => handleDelayedAction(() => openAddEditDialog(forklift))}>
+              <DropdownMenuItem onSelect={() => openAddEditDialog(forklift)}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => handleDelayedAction(() => openDeleteDialog(forklift))} className="text-destructive hover:text-destructive">
+              <DropdownMenuItem onSelect={() => openDeleteDialog(forklift)} className="text-destructive hover:text-destructive">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete
               </DropdownMenuItem>
@@ -467,7 +468,7 @@ export default function ForkliftsPage() {
                                 <TableCell className="hidden md:table-cell">{forklift.make}</TableCell>
                                 <TableCell className="hidden md:table-cell">{forklift.model}</TableCell>
                                 <TableCell>
-                                  <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={(e) => { e.stopPropagation(); handleDelayedAction(() => openAddEditDialog(forklift)); }}>
+                                  <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={(e) => { e.stopPropagation(); openAddEditDialog(forklift); }}>
                                     <Badge variant={'outline'} className={cn('font-medium pointer-events-none', getLocationBadgeClass(forklift.locationType))}>
                                       {getLocationIcon(forklift.locationType)}
                                       {getLocationText(forklift)}
@@ -559,19 +560,29 @@ export default function ForkliftsPage() {
         </Card>
 
         <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
-          <DialogContent className="sm:max-w-2xl">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
+            <DialogHeader className="p-6 pb-0">
               <DialogTitle>{selectedForklift ? 'Edit Forklift' : 'Add New Forklift'}</DialogTitle>
               <DialogDescription>
                 {selectedForklift ? 'Update the details of your forklift.' : 'Fill out the form to add a new forklift.'}
               </DialogDescription>
             </DialogHeader>
-            <ForkliftForm
-              onSubmit={handleFormSubmit}
-              onCancel={() => { setIsAddEditDialogOpen(false); setSelectedForklift(null);}}
-              initialData={selectedForklift || undefined}
-              mode={selectedForklift ? 'edit' : 'add'}
-            />
+            <div className='flex-grow overflow-y-auto px-6'>
+                <ForkliftForm
+                  onSubmit={handleFormSubmit}
+                  onCancel={() => { setIsAddEditDialogOpen(false); setSelectedForklift(null);}}
+                  initialData={selectedForklift || undefined}
+                  mode={selectedForklift ? 'edit' : 'add'}
+                />
+            </div>
+            <DialogFooter className="p-6 pt-4 border-t">
+                 <Button variant="outline" type="button" onClick={() => { setIsAddEditDialogOpen(false); setSelectedForklift(null);}}>
+                    Cancel
+                </Button>
+                <Button type="submit" form="forklift-form">
+                  {selectedForklift ? 'Update Forklift' : 'Add Forklift'}
+                </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
         

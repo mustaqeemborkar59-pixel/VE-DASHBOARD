@@ -53,7 +53,6 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     siteContactNumber: initialData?.siteContactNumber || '',
     remarks: initialData?.remarks || '',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (mode === 'edit' && initialData) {
@@ -121,8 +120,6 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
       });
       return;
     }
-
-    setIsSubmitting(true);
     
     const dataToSubmit: Partial<ForkliftFormData> = {
       ...formData,
@@ -140,7 +137,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-6 py-4">
+    <form id="forklift-form" onSubmit={handleSubmit} className="grid gap-6">
         <div className="grid gap-2">
             <Label htmlFor="serialNumber">Serial Number</Label>
             <Input id="serialNumber" value={formData.serialNumber} onChange={handleInputChange} placeholder="e.g., F12345" required />
@@ -232,16 +229,6 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
             <Label htmlFor="remarks">Remarks</Label>
             <Textarea id="remarks" value={formData.remarks} onChange={handleInputChange} placeholder="Add any extra notes or remarks here..." />
         </div>
-
-
-      <div className="flex justify-end gap-2 pt-4">
-        <Button variant="outline" type="button" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (mode === 'add' ? 'Adding...' : 'Updating...') : (mode === 'add' ? 'Add Forklift' : 'Update Forklift')}
-        </Button>
-      </div>
     </form>
   );
 }
