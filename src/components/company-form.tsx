@@ -1,6 +1,6 @@
+
 'use client';
 import { useState, useEffect } from 'react';
-import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
@@ -20,12 +20,11 @@ export type CompanyFormData = {
 
 interface CompanyFormProps {
   onSubmit: (data: CompanyFormData) => void;
-  onCancel: () => void;
   initialData?: Company;
   mode: 'add' | 'edit';
 }
 
-export function CompanyForm({ onSubmit, onCancel, initialData, mode }: CompanyFormProps) {
+export function CompanyForm({ onSubmit, initialData, mode }: CompanyFormProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState<CompanyFormData>({
     name: '',
@@ -80,7 +79,7 @@ export function CompanyForm({ onSubmit, onCancel, initialData, mode }: CompanyFo
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-6 py-4">
+    <form id="company-form" onSubmit={handleSubmit} className="grid gap-6 py-4">
       <div className="grid gap-2">
         <Label htmlFor="name">Company Name</Label>
         <Input id="name" value={formData.name} onChange={handleInputChange} placeholder="e.g., Bisleri International Pvt. Ltd." required />
@@ -118,15 +117,6 @@ export function CompanyForm({ onSubmit, onCancel, initialData, mode }: CompanyFo
                 <Input id="ifscCode" value={formData.ifscCode} onChange={handleInputChange} placeholder="e.g., HDFC0000001" />
               </div>
           </div>
-      </div>
-
-      <div className="flex justify-end gap-2 pt-4">
-        <Button variant="outline" type="button" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">
-          {mode === 'add' ? 'Add Company' : 'Update Company'}
-        </Button>
       </div>
     </form>
   );

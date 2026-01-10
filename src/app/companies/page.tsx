@@ -32,6 +32,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { EllipsisVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
@@ -56,18 +57,25 @@ export default function CompaniesPage() {
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('createdAt', 'desc')) : null, [firestore]);
   const { data: companies, isLoading } = useCollection<Company>(companiesQuery);
   
+  const closeAllDialogs = useCallback(() => {
+    setIsAddEditDialogOpen(false);
+    setCompanyToDelete(null);
+  }, []);
+  
   const handleDelayedAction = (action: () => void) => {
     setTimeout(action, 100);
   };
   
   const openAddEditDialog = useCallback((company: Company | null) => {
+    closeAllDialogs();
     setSelectedCompany(company);
-    setIsAddEditDialogOpen(true);
-  }, []);
+    handleDelayedAction(() => setIsAddEditDialogOpen(true));
+  }, [closeAllDialogs]);
 
   const openDeleteDialog = useCallback((company: Company) => {
-    setCompanyToDelete(company);
-  }, []);
+    closeAllDialogs();
+    handleDelayedAction(() => setCompanyToDelete(company));
+  }, [closeAllDialogs]);
 
   const handleFormSubmit = (formData: CompanyFormData) => {
     if (!firestore) return;
@@ -103,18 +111,18 @@ export default function CompaniesPage() {
   };
 
   const renderActions = (company: Company) => (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={open => !open && closeAllDialogs()}>
         <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
                 <EllipsisVertical className="h-4 w-4" />
             </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-40" onMouseLeave={(e) => (e.currentTarget as HTMLElement).blur()}>
-            <DropdownMenuItem onSelect={() => handleDelayedAction(() => openAddEditDialog(company))}>
+        <DropdownMenuContent className="w-40">
+            <DropdownMenuItem onSelect={() => openAddEditDialog(company)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => handleDelayedAction(() => openDeleteDialog(company))} className="text-destructive hover:text-destructive">
+            <DropdownMenuItem onSelect={() => openDeleteDialog(company)} className="text-destructive">
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete
             </DropdownMenuItem>
@@ -201,19 +209,28 @@ export default function CompaniesPage() {
       </Card>
 
       <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-6 pb-0">
             <DialogTitle>{selectedCompany ? 'Edit Company' : 'Add New Company'}</DialogTitle>
             <DialogDescription>
               {selectedCompany ? 'Update the details of the company.' : 'Fill out the form to add a new company.'}
             </DialogDescription>
           </DialogHeader>
-          <CompanyForm 
-            onSubmit={handleFormSubmit}
-            onCancel={() => setIsAddEditDialogOpen(false)}
-            initialData={selectedCompany || undefined}
-            mode={selectedCompany ? 'edit' : 'add'}
-          />
+          <div className="flex-grow overflow-y-auto px-6">
+            <CompanyForm 
+              onSubmit={handleFormSubmit}
+              initialData={selectedCompany || undefined}
+              mode={selectedCompany ? 'edit' : 'add'}
+            />
+          </div>
+           <DialogFooter className="p-6 pt-4 border-t">
+              <Button variant="outline" type="button" onClick={() => setIsAddEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" form="company-form">
+                {selectedCompany ? 'Update Company' : 'Add Company'}
+              </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
