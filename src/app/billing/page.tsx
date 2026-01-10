@@ -172,8 +172,40 @@ export default function BillingPage() {
   const handleDelayedAction = (action: () => void) => {
     setTimeout(action, 100);
   };
+  
+  const closeAllDialogs = useCallback(() => {
+    setIsFormDialogOpen(false);
+    setInvoiceToDelete(null);
+    setInvoiceToDuplicate(null);
+    setIsBulkDuplicateDialogOpen(false);
+    setIsPreviewOpen(false);
+  }, []);
+  
+  const liveDefaultPageSettings = useMemo((): PageSettings => {
+    if (!myCompanyDetails) return defaultPageSettings;
+    return {
+        size: myCompanyDetails.pageSize || defaultPageSettings.size,
+        orientation: myCompanyDetails.pageOrientation || defaultPageSettings.orientation,
+        margin: myCompanyDetails.pageMargins || defaultPageSettings.margin,
+        pageFontSize: myCompanyDetails.pageFontSize || defaultPageSettings.pageFontSize,
+        addressFontSize: myCompanyDetails.addressFontSize || defaultPageSettings.addressFontSize,
+        tableBodyFontSize: myCompanyDetails.tableBodyFontSize || defaultPageSettings.tableBodyFontSize,
+    }
+  }, [myCompanyDetails]);
+
+  const resetForm = useCallback(() => {
+      setCompanyId(initialFormState.companyId);
+      setBillDate(initialFormState.billDate);
+      setPoNumber(initialFormState.poNumber);
+      setSite(initialFormState.site);
+      setItems(initialFormState.items);
+      setEditingInvoice(null);
+      setInvoicePageSettings(liveDefaultPageSettings);
+      setFormDownloadOptions(defaultDownloadOptions);
+  }, [initialFormState, liveDefaultPageSettings, defaultDownloadOptions]);
 
   const openFormDialog = useCallback((invoice: Invoice | null) => {
+    closeAllDialogs();
     if (invoice) {
       setEditingInvoice(invoice);
       setCompanyId(invoice.companyId);
@@ -193,42 +225,34 @@ export default function BillingPage() {
     } else {
       resetForm();
     }
-    setIsFormDialogOpen(true);
-  }, [ liveDefaultPageSettings, defaultDownloadOptions ]);
+    handleDelayedAction(() => setIsFormDialogOpen(true));
+  }, [ liveDefaultPageSettings, defaultDownloadOptions, closeAllDialogs, resetForm ]);
 
 
   const openPreviewDialog = useCallback((invoice: Invoice) => {
+    closeAllDialogs();
     setInvoiceForPreview(invoice);
-    setIsPreviewOpen(true);
-  }, []);
+    handleDelayedAction(() => setIsPreviewOpen(true));
+  }, [closeAllDialogs]);
 
   const openDeleteDialog = useCallback((invoice: Invoice) => {
+    closeAllDialogs();
     setInvoiceToDelete(invoice);
-  }, []);
+  }, [closeAllDialogs]);
 
   const openDuplicateDialog = useCallback((invoice: Invoice) => {
+    closeAllDialogs();
     setInvoiceToDuplicate(invoice);
     setNewBillDateForDuplicate(toISODateString(new Date()));
-  }, []);
+  }, [closeAllDialogs]);
   
   const openBulkDuplicateDialog = useCallback(() => {
-    setIsBulkDuplicateDialogOpen(true);
-  }, []);
+    closeAllDialogs();
+    handleDelayedAction(() => setIsBulkDuplicateDialogOpen(true));
+  }, [closeAllDialogs]);
 
 
   const selectedCompanyForNewInvoice = useMemo(() => companies?.find(c => c.id === companyId), [companies, companyId]);
-
-  const liveDefaultPageSettings = useMemo((): PageSettings => {
-    if (!myCompanyDetails) return defaultPageSettings;
-    return {
-        size: myCompanyDetails.pageSize || defaultPageSettings.size,
-        orientation: myCompanyDetails.pageOrientation || defaultPageSettings.orientation,
-        margin: myCompanyDetails.pageMargins || defaultPageSettings.margin,
-        pageFontSize: myCompanyDetails.pageFontSize || defaultPageSettings.pageFontSize,
-        addressFontSize: myCompanyDetails.addressFontSize || defaultPageSettings.addressFontSize,
-        tableBodyFontSize: myCompanyDetails.tableBodyFontSize || defaultPageSettings.tableBodyFontSize,
-    }
-  }, [myCompanyDetails]);
 
   
   const handleDownloadWord = async (invoice: Invoice) => {
@@ -388,17 +412,6 @@ export default function BillingPage() {
   },[calculations.grandTotal, toWords]);
   
   
-  const resetForm = useCallback(() => {
-      setCompanyId(initialFormState.companyId);
-      setBillDate(initialFormState.billDate);
-      setPoNumber(initialFormState.poNumber);
-      setSite(initialFormState.site);
-      setItems(initialFormState.items);
-      setEditingInvoice(null);
-      setInvoicePageSettings(liveDefaultPageSettings);
-      setFormDownloadOptions(defaultDownloadOptions);
-  }, [initialFormState, liveDefaultPageSettings, defaultDownloadOptions]);
-
   const handleFormSubmit = async () => {
     if (!companyId || !billDate || items.some(i => !i.particulars || i.amount <= 0)) {
       toast({
@@ -668,23 +681,30 @@ export default function BillingPage() {
   };
 
   const renderInvoiceActions = (invoice: Invoice) => (
-    <DropdownMenuContent className="w-40" onMouseLeave={(e) => (e.currentTarget as HTMLElement).blur()}>
-        <DropdownMenuItem onSelect={() => handleDelayedAction(() => openPreviewDialog(invoice))}>
-            <Eye className="mr-2 h-4 w-4" />Preview
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => handleDownloadWord(invoice)}>
-            <Download className="mr-2 h-4 w-4" />Download
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => handleDelayedAction(() => openFormDialog(invoice))}>
-            <Pencil className="mr-2 h-4 w-4" />Edit
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => handleDelayedAction(() => openDuplicateDialog(invoice))}>
-            <FilePlus2 className="mr-2 h-4 w-4" />Duplicate
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => handleDelayedAction(() => openDeleteDialog(invoice))} className="text-destructive">
-            <Trash2 className="mr-2 h-4 w-4" />Delete
-        </DropdownMenuItem>
-    </DropdownMenuContent>
+    <DropdownMenu onOpenChange={open => !open && closeAllDialogs()}>
+        <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 p-0" onClick={closeAllDialogs}>
+                <EllipsisVertical className="h-4 w-4" />
+            </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-40">
+            <DropdownMenuItem onSelect={() => openPreviewDialog(invoice)}>
+                <Eye className="mr-2 h-4 w-4" />Preview
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => handleDownloadWord(invoice)}>
+                <Download className="mr-2 h-4 w-4" />Download
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => openFormDialog(invoice)}>
+                <Pencil className="mr-2 h-4 w-4" />Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => openDuplicateDialog(invoice)}>
+                <FilePlus2 className="mr-2 h-4 w-4" />Duplicate
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => openDeleteDialog(invoice)} className="text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" />Delete
+            </DropdownMenuItem>
+        </DropdownMenuContent>
+    </DropdownMenu>
   );
 
   return (
@@ -789,14 +809,7 @@ export default function BillingPage() {
                                                                           <div className="text-sm text-muted-foreground">{invoice.clientCompanyDetails?.name || 'Unknown'}</div>
                                                                       </div>
                                                                     </div>
-                                                                    <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild>
-                                                                            <Button variant="ghost" size="icon" className="-mt-2 -mr-2 h-8 w-8 p-0">
-                                                                                <EllipsisVertical className="h-4 w-4" />
-                                                                            </Button>
-                                                                        </DropdownMenuTrigger>
-                                                                        {renderInvoiceActions(invoice)}
-                                                                    </DropdownMenu>
+                                                                    {renderInvoiceActions(invoice)}
                                                                 </div>
                                                                 <div className="text-sm space-y-1" onClick={() => openPreviewDialog(invoice)}>
                                                                     <div><span className="font-medium text-muted-foreground">Date: </span>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</div>
@@ -835,14 +848,7 @@ export default function BillingPage() {
                                                                     <TableCell onClick={() => openPreviewDialog(invoice)} className="cursor-pointer">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
                                                                     <TableCell className="text-right cursor-pointer" onClick={() => openPreviewDialog(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
                                                                     <TableCell className="text-right">
-                                                                        <DropdownMenu>
-                                                                            <DropdownMenuTrigger asChild>
-                                                                                <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
-                                                                                    <EllipsisVertical className="h-4 w-4" />
-                                                                                </Button>
-                                                                            </DropdownMenuTrigger>
-                                                                            {renderInvoiceActions(invoice)}
-                                                                        </DropdownMenu>
+                                                                        {renderInvoiceActions(invoice)}
                                                                     </TableCell>
                                                                 </TableRow>
                                                             ))}
@@ -865,7 +871,13 @@ export default function BillingPage() {
             </CardContent>
         </Card>
 
-        <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
+        <Dialog open={isFormDialogOpen} onOpenChange={(open) => {
+            if (!open) {
+                closeAllDialogs();
+            } else {
+                setIsFormDialogOpen(true);
+            }
+        }}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pb-0">
                     <DialogTitle>{editingInvoice ? 'Edit Invoice' : 'Generate New Invoice'}</DialogTitle>
@@ -1009,7 +1021,7 @@ export default function BillingPage() {
             </DialogContent>
         </Dialog>
 
-        <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && setInvoiceToDelete(null)}>
+        <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && closeAllDialogs()}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -1024,7 +1036,7 @@ export default function BillingPage() {
             </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={!!invoiceToDuplicate} onOpenChange={(open) => !open && setInvoiceToDuplicate(null)}>
+        <AlertDialog open={!!invoiceToDuplicate} onOpenChange={(open) => !open && closeAllDialogs()}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Duplicate Invoice</AlertDialogTitle>
@@ -1049,7 +1061,13 @@ export default function BillingPage() {
             </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={isBulkDuplicateDialogOpen} onOpenChange={setIsBulkDuplicateDialogOpen}>
+        <AlertDialog open={isBulkDuplicateDialogOpen} onOpenChange={(open) => {
+            if (!open) {
+                closeAllDialogs();
+            } else {
+                setIsBulkDuplicateDialogOpen(true);
+            }
+        }}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Bulk Duplicate Invoices</AlertDialogTitle>
@@ -1076,7 +1094,13 @@ export default function BillingPage() {
             </AlertDialogContent>
         </AlertDialog>
         
-        <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <Dialog open={isPreviewOpen} onOpenChange={(open) => {
+            if (!open) {
+                closeAllDialogs();
+            } else {
+                setIsPreviewOpen(true);
+            }
+        }}>
             <DialogContent className="max-w-4xl p-0">
                  <DialogHeader className="p-6 pb-2">
                     <DialogTitle>Invoice Preview</DialogTitle>
