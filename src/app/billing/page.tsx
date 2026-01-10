@@ -789,12 +789,10 @@ export default function BillingPage() {
                                                         aria-label={`Select all invoices in ${month.label}`}
                                                         className="ml-3"
                                                       />
-                                                    <AccordionTrigger className="flex-1 p-3 text-xs font-medium hover:no-underline hover:bg-muted/50 rounded-md">
-                                                        <div className="flex items-center justify-between w-full">
-                                                            <div className="flex items-center gap-2">
-                                                                <Folder className="h-4 w-4 text-secondary-foreground/60" />
-                                                                <span>{month.label}</span>
-                                                            </div>
+                                                    <AccordionTrigger className="flex-1 px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-xs font-medium hover:no-underline">
+                                                        <div className="flex items-center gap-2">
+                                                            <Folder className="h-4 w-4 text-secondary-foreground/60" />
+                                                            <span>{month.label}</span>
                                                         </div>
                                                     </AccordionTrigger>
                                                  </div>
