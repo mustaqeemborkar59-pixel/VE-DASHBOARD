@@ -1109,7 +1109,7 @@ export default function BillingPage() {
                     <DialogTitle>Invoice Preview</DialogTitle>
                     <DialogDescription>
                         A preview of Invoice No. {invoiceForPreview?.billNo}-{invoiceForPreview?.billNoSuffix || 'MHE'}.
-                    </Description>
+                    </DialogDescription>
                 </DialogHeader>
                 <div className={cn("px-6 pb-6 overflow-y-auto max-h-[80vh]", "hide-scrollbar")}>
                    <InvoicePreview 
