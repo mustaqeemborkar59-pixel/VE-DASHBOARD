@@ -20,19 +20,28 @@ interface ForkliftImportDialogProps {
   onImportComplete: (count: number) => void;
 }
 
-const requiredFields = [
-  'serialNumber', 'make', 'model', 'year', 'locationType'
-];
+// User-defined header to internal field mapping
+const columnMapping: Record<string, keyof Forklift> = {
+  'SR.NO': 'srNumber',
+  'Equipment Type': 'equipmentType',
+  'Company Make': 'make',
+  'Model No.': 'model',
+  'Serial No.': 'serialNumber',
+  'Mfg': 'year',
+  'Voltage': 'voltage',
+  'Capacity (TON)': 'capacity',
+  'Mast Height': 'mastHeight',
+  'Site': 'siteCompany',
+  'AREA': 'siteArea',
+  'Company Contact Person': 'siteContactPerson',
+  'Mobile': 'siteContactNumber',
+};
 
-const allFields = [
-  'Sr', 'serialNumber', 'make', 'model', 'year', 'locationType', 'capacity', 'equipmentType', 'voltage', 'mastHeight',
-  'siteCompany', 'siteArea', 'siteContactPerson', 'siteContactNumber', 'remarks', 'poPiNumber'
-];
+const userVisibleHeaders = Object.keys(columnMapping);
+const internalFields = Object.values(columnMapping);
+const requiredFields: (keyof Forklift)[] = ['serialNumber', 'make', 'model', 'year'];
+const requiredHeaders = userVisibleHeaders.filter(header => requiredFields.includes(columnMapping[header]));
 
-const forkliftDataFields = [
-  'srNumber', ...requiredFields, 'capacity', 'equipmentType', 'voltage', 'mastHeight',
-  'siteCompany', 'siteArea', 'siteContactPerson', 'siteContactNumber', 'remarks', 'poPiNumber'
-];
 
 export function ForkliftImportDialog({ isOpen, onClose, onImportComplete }: ForkliftImportDialogProps) {
   const { firestore } = useFirebase();
@@ -77,7 +86,7 @@ export function ForkliftImportDialog({ isOpen, onClose, onImportComplete }: Fork
         }
         
         const headers = Object.keys(json[0]);
-        const missingHeaders = requiredFields.filter(field => !headers.includes(field));
+        const missingHeaders = requiredHeaders.filter(header => !headers.includes(header));
 
         if (missingHeaders.length > 0) {
           toast({
@@ -96,18 +105,14 @@ export function ForkliftImportDialog({ isOpen, onClose, onImportComplete }: Fork
           const record = json[i];
           const newForklift: Partial<Forklift> = {};
           
-          // Map "Sr" to "srNumber"
-          if (record.Sr !== undefined) {
-              record.srNumber = record.Sr;
-              delete record.Sr;
+          for (const header of userVisibleHeaders) {
+              if (record[header] !== undefined && record[header] !== null) {
+                  const internalField = columnMapping[header];
+                  if(internalField) {
+                    (newForklift as any)[internalField] = record[header];
+                  }
+              }
           }
-
-          // Sanitize and map data
-          forkliftDataFields.forEach(field => {
-            if (record[field] !== undefined && record[field] !== null) {
-              (newForklift as any)[field] = record[field];
-            }
-          });
           
           if(newForklift.year && typeof newForklift.year === 'string') {
             newForklift.year = parseInt(newForklift.year, 10);
@@ -115,8 +120,10 @@ export function ForkliftImportDialog({ isOpen, onClose, onImportComplete }: Fork
              newForklift.year = new Date().getFullYear();
           }
 
-          if (newForklift.locationType !== 'On-Site') {
-            newForklift.locationType = 'Workshop';
+          if (newForklift.siteCompany) {
+            newForklift.locationType = 'On-Site';
+          } else {
+             newForklift.locationType = 'Workshop';
           }
           
           await addDocumentNonBlocking(collection(firestore, 'forklifts'), newForklift);
@@ -149,7 +156,7 @@ export function ForkliftImportDialog({ isOpen, onClose, onImportComplete }: Fork
   }
 
   const handleDownloadSample = () => {
-    const csvContent = allFields.join(',') + '\n';
+    const csvContent = userVisibleHeaders.join(',') + '\n';
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-s8;' });
     const link = document.createElement('a');
     if (link.href) {
@@ -208,7 +215,7 @@ export function ForkliftImportDialog({ isOpen, onClose, onImportComplete }: Fork
                     <ListChecks className="h-4 w-4" />
                     <AlertTitle>Required Columns</AlertTitle>
                     <AlertDescription className="flex flex-wrap gap-x-2 text-xs">
-                        {requiredFields.map(field => <code key={field} className="font-mono bg-muted/60 px-1.5 py-0.5 rounded">{field}</code>)}
+                        {requiredHeaders.map(field => <code key={field} className="font-mono bg-muted/60 px-1.5 py-0.5 rounded">{field}</code>)}
                     </AlertDescription>
                 </Alert>
                 </>
