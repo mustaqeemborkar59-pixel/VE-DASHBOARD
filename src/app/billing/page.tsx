@@ -155,7 +155,7 @@ export default function BillingPage() {
 
   // Queries
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
-  const allInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billNo', 'desc')) : null, [firestore]);
+  const allInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billNo', 'asc')) : null, [firestore]);
   const settingsDocRef = useMemoFirebase(() => firestore ? doc(firestore, 'companySettings', 'primary') : null, [firestore]);
 
   // Data
@@ -259,7 +259,7 @@ export default function BillingPage() {
       return acc;
     }, {} as Record<string, Invoice[]>);
     
-    const sortedYearKeys = Object.keys(groupedByYear).sort((a,b) => b.localeCompare(a));
+    const sortedYearKeys = Object.keys(groupedByYear).sort((a,b) => a.localeCompare(b));
 
     return sortedYearKeys.map((yearKey, index) => {
       const yearInvoices = groupedByYear[yearKey];
@@ -283,17 +283,20 @@ export default function BillingPage() {
         const monthMaxBill = Math.max(...monthInvoices.map(inv => inv.billNo));
         const monthDate = parseISO(`${monthKey}-01`);
         
+        // Sort invoices within the month by bill number ascending
+        const sortedMonthInvoices = monthInvoices.sort((a,b) => a.billNo - b.billNo);
+
         return {
           key: monthKey,
           label: `${format(monthDate, 'MM-MMM yyyy').toUpperCase()} (BILL NO-${monthMinBill}-${monthMaxBill})`,
-          invoices: monthInvoices,
+          invoices: sortedMonthInvoices,
         };
       });
 
       return {
         key: yearKey,
         label: `${index + 1}-April ${startYear}-March ${endYear} (Bill-${minBill} to ${maxBill})`,
-        months: months.sort((a, b) => b.key.localeCompare(a.key)), // Sort months descending
+        months: months.sort((a, b) => a.key.localeCompare(b.key)),
       };
     });
 
@@ -674,14 +677,6 @@ export default function BillingPage() {
     });
   };
 
-  const handleSelectMonth = (monthInvoices: Invoice[], checked: boolean) => {
-    const monthInvoiceIds = monthInvoices.map(inv => inv.id);
-    setSelectedInvoices(prev => {
-        const otherIds = prev.filter(id => !monthInvoiceIds.includes(id));
-        return checked ? [...otherIds, ...monthInvoiceIds] : otherIds;
-    });
-  };
-
   const renderInvoiceActions = (invoice: Invoice) => (
     <DropdownMenuContent className="w-40">
         <DropdownMenuItem onSelect={() => handleOpenPreview(invoice)}>
@@ -778,7 +773,6 @@ export default function BillingPage() {
                                 <AccordionContent className="pt-2 pl-0 md:pl-4">
                                      <Accordion type="multiple" className="w-full">
                                         {year.months.map(month => {
-                                            const allInMonthSelected = month.invoices.every(inv => selectedInvoices.includes(inv.id));
                                             return (
                                             <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
                                                 <AccordionTrigger className="flex-1 text-xs font-medium hover:no-underline p-3 justify-between bg-muted/50 hover:bg-muted/80 rounded-md">
