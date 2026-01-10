@@ -21,7 +21,6 @@ export type ForkliftFormData = {
   equipmentType: string;
   voltage: string;
   mastHeight: string;
-  poPiNumber: string;
   locationType: 'Workshop' | 'On-Site' | 'Not Confirm';
   siteCompany: string;
   siteArea: string;
@@ -48,7 +47,6 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     equipmentType: '',
     voltage: '',
     mastHeight: '',
-    poPiNumber: '',
     locationType: 'Workshop',
     siteCompany: '',
     siteArea: '',
@@ -69,7 +67,6 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
         equipmentType: initialData.equipmentType || '',
         voltage: initialData.voltage || '',
         mastHeight: initialData.mastHeight || '',
-        poPiNumber: initialData.poPiNumber || '',
         locationType: initialData.locationType || 'Workshop',
         siteCompany: initialData.siteCompany || '',
         siteArea: initialData.siteArea || '',
@@ -87,7 +84,6 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
             equipmentType: '',
             voltage: '',
             mastHeight: '',
-            poPiNumber: '',
             locationType: 'Workshop',
             siteCompany: '',
             siteArea: '',
@@ -134,7 +130,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
       year: formData.year,
     };
 
-    if (formData.locationType === 'Workshop' || formData.locationType === 'Not Confirm') {
+    if (formData.locationType === 'Workshop') {
       dataToSubmit.siteCompany = '';
       dataToSubmit.siteArea = '';
       dataToSubmit.siteContactPerson = '';
@@ -185,10 +181,6 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
               <Label htmlFor="equipmentType">Equipment Type</Label>
               <Input id="equipmentType" value={formData.equipmentType} onChange={handleInputChange} placeholder="e.g., Reach Truck" />
           </div>
-          <div className="grid gap-2">
-              <Label htmlFor="poPiNumber">PO/PI No.</Label>
-              <Input id="poPiNumber" value={formData.poPiNumber} onChange={handleInputChange} placeholder="Enter PO/PI No." />
-          </div>
         </div>
         
         <Separator />
@@ -209,7 +201,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
               </Select>
            </div>
 
-          {formData.locationType === 'On-Site' && (
+          {formData.locationType !== 'Workshop' && (
             <div className="grid gap-4 mt-2 border-l-2 border-primary pl-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    <div className="grid gap-2 col-span-2 sm:col-span-1">

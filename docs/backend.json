@@ -76,10 +76,6 @@
           "type": "string",
           "description": "The mast height of the forklift (e.g., '189 inches')."
         },
-        "poPiNumber": {
-          "type": "string",
-          "description": "Purchase Order / Proforma Invoice number related to the forklift."
-        },
         "locationType": {
           "type": "string",
           "enum": [
