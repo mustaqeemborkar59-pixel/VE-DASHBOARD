@@ -152,7 +152,7 @@ export default function ForkliftsPage() {
       if (!searchTerm) return typeMatch && capacityMatch && locationMatch;
 
       const searchInField = (field: keyof Forklift) => {
-          const value = forklift[field];
+          const value = forklift[field as keyof Forklift];
           return value ? value.toString().toLowerCase().includes(lowercasedSearchTerm) : false;
       };
 
@@ -165,7 +165,7 @@ export default function ForkliftsPage() {
           searchInField('siteCompany') ||
           searchInField('siteArea');
       } else {
-        searchMatch = searchInField(searchField);
+        searchMatch = searchInField(searchField as keyof Forklift);
       }
 
       return typeMatch && capacityMatch && locationMatch && searchMatch;
@@ -506,8 +506,8 @@ export default function ForkliftsPage() {
                                             <span className="font-medium">{forklift.mastHeight || 'N/A'}</span>
                                           </div>
                                            <div className="flex flex-col gap-1">
-                                            <Label className="text-xs text-muted-foreground">POPPONS</Label>
-                                            <span className="font-medium">{forklift.poppons || 'N/A'}</span>
+                                            <Label className="text-xs text-muted-foreground">PO/PI No.</Label>
+                                            <span className="font-medium">{forklift.poPiNumber || 'N/A'}</span>
                                           </div>
                                           
                                           {forklift.locationType === 'On-Site' && (
@@ -602,5 +602,3 @@ export default function ForkliftsPage() {
     </AppLayout>
   );
 }
-
-    

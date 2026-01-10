@@ -21,7 +21,7 @@ export type ForkliftFormData = {
   equipmentType: string;
   voltage: string;
   mastHeight: string;
-  poppons: string;
+  poPiNumber: string;
   locationType: 'Workshop' | 'On-Site' | 'Not Confirm';
   siteCompany: string;
   siteArea: string;
@@ -48,7 +48,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     equipmentType: '',
     voltage: '',
     mastHeight: '',
-    poppons: '',
+    poPiNumber: '',
     locationType: 'Workshop',
     siteCompany: '',
     siteArea: '',
@@ -69,7 +69,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
         equipmentType: initialData.equipmentType || '',
         voltage: initialData.voltage || '',
         mastHeight: initialData.mastHeight || '',
-        poppons: initialData.poppons || '',
+        poPiNumber: initialData.poPiNumber || '',
         locationType: initialData.locationType || 'Workshop',
         siteCompany: initialData.siteCompany || '',
         siteArea: initialData.siteArea || '',
@@ -87,7 +87,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
             equipmentType: '',
             voltage: '',
             mastHeight: '',
-            poppons: '',
+            poPiNumber: '',
             locationType: 'Workshop',
             siteCompany: '',
             siteArea: '',
@@ -186,8 +186,8 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
               <Input id="equipmentType" value={formData.equipmentType} onChange={handleInputChange} placeholder="e.g., Reach Truck" />
           </div>
           <div className="grid gap-2">
-              <Label htmlFor="poppons">POPPONS</Label>
-              <Input id="poppons" value={formData.poppons} onChange={handleInputChange} placeholder="Enter POPPONS" />
+              <Label htmlFor="poPiNumber">PO/PI No.</Label>
+              <Input id="poPiNumber" value={formData.poPiNumber} onChange={handleInputChange} placeholder="Enter PO/PI No." />
           </div>
         </div>
         
