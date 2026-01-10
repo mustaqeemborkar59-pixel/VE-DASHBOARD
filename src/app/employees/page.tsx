@@ -37,13 +37,13 @@ import { Employee } from "@/lib/data";
 import { EllipsisVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { EmployeeForm, EmployeeFormData } from "@/components/employee-form";
 import { Badge } from "@/components/ui/badge";
 import AppLayout from "@/components/app-layout";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export default function EmployeesPage() {
   const { firestore } = useFirebase();
@@ -52,27 +52,22 @@ export default function EmployeesPage() {
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
-
 
   const employeesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'employees'), orderBy('createdAt', 'asc')) : null, [firestore]);
   const { data: employees, isLoading } = useCollection<Employee>(employeesQuery);
 
-  const openAddEditDialog = (employee: Employee | null) => {
-    setOpenPopoverId(null);
-    setSelectedEmployee(employee);
-    setEmployeeToDelete(null);
-    setIsAddEditDialogOpen(true);
+  const handleDelayedAction = (action: () => void) => {
+    setTimeout(action, 100);
   };
   
-  const openDeleteDialog = (employee: Employee) => {
-    setOpenPopoverId(null);
+  const openAddEditDialog = useCallback((employee: Employee | null) => {
+    setSelectedEmployee(employee);
+    setIsAddEditDialogOpen(true);
+  }, []);
+  
+  const openDeleteDialog = useCallback((employee: Employee) => {
     setEmployeeToDelete(employee);
-  };
-
-  const handleCancelDelete = () => {
-    setEmployeeToDelete(null);
-  };
+  }, []);
 
   const handleDelete = () => {
     if (!firestore || !employeeToDelete) return;
@@ -107,6 +102,26 @@ export default function EmployeesPage() {
     setIsAddEditDialogOpen(false);
     setSelectedEmployee(null);
   };
+  
+  const renderActions = (employee: Employee) => (
+      <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                  <EllipsisVertical className="h-4 w-4" />
+              </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-40" onMouseLeave={(e) => (e.currentTarget as HTMLElement).blur()}>
+              <DropdownMenuItem onSelect={() => handleDelayedAction(() => openAddEditDialog(employee))}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleDelayedAction(() => openDeleteDialog(employee))} className="text-destructive hover:text-destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+              </DropdownMenuItem>
+          </DropdownMenuContent>
+      </DropdownMenu>
+  );
 
   return (
     <AppLayout>
@@ -136,25 +151,7 @@ export default function EmployeesPage() {
                             <div className="font-bold">{employee.fullName}</div>
                             <div className="text-sm text-muted-foreground">{employee.specialization || 'N/A'}</div>
                           </div>
-                           <Popover open={openPopoverId === employee.id} onOpenChange={(isOpen) => setOpenPopoverId(isOpen ? employee.id : null)}>
-                              <PopoverTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="-mt-2 -mr-2 h-8 w-8 p-0">
-                                      <EllipsisVertical className="h-4 w-4" />
-                                  </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-40">
-                                  <div className="grid gap-1">
-                                      <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => openAddEditDialog(employee)}>
-                                          <Pencil className="mr-2 h-4 w-4" />
-                                          Edit
-                                      </Button>
-                                      <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => openDeleteDialog(employee)}>
-                                          <Trash2 className="mr-2 h-4 w-4" />
-                                          Delete
-                                      </Button>
-                                  </div>
-                              </PopoverContent>
-                          </Popover>
+                           {renderActions(employee)}
                         </div>
                         <Badge variant={employee.availability ? 'outline' : 'secondary'} className={employee.availability ? 'border-green-600/40 text-green-700' : ''}>
                           {employee.availability ? 'Available' : 'Unavailable'}
@@ -194,25 +191,7 @@ export default function EmployeesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                       <Popover open={openPopoverId === employee.id} onOpenChange={(isOpen) => setOpenPopoverId(isOpen ? employee.id : null)}>
-                          <PopoverTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
-                                  <EllipsisVertical className="h-4 w-4" />
-                              </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-40">
-                              <div className="grid gap-1">
-                                  <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => openAddEditDialog(employee)}>
-                                      <Pencil className="mr-2 h-4 w-4" />
-                                      Edit
-                                  </Button>
-                                  <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => openDeleteDialog(employee)}>
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      Delete
-                                  </Button>
-                              </div>
-                          </PopoverContent>
-                      </Popover>
+                       {renderActions(employee)}
                     </TableCell>
                   </TableRow>
                 ))
@@ -243,7 +222,7 @@ export default function EmployeesPage() {
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!employeeToDelete} onOpenChange={(isOpen) => !isOpen && setEmployeeToDelete(null)}>
+      <AlertDialog open={!!employeeToDelete} onOpenChange={(open) => !open && setEmployeeToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to delete this employee?</AlertDialogTitle>
@@ -252,7 +231,7 @@ export default function EmployeesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

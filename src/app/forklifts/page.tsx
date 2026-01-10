@@ -36,7 +36,7 @@ import { Forklift, ServiceRequest } from "@/lib/data";
 import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy } from "firebase/firestore";
-import { useState, useMemo, Fragment } from "react";
+import { useState, useMemo, Fragment, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ForkliftForm, ForkliftFormData } from "@/components/forklift-form";
 import { ForkliftImportDialog } from "@/components/forklift-import-dialog";
@@ -55,7 +55,7 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { ForkliftIcon } from "@/components/icons/forklift-icon";
 import AppLayout from "@/components/app-layout";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Trash2 } from "lucide-react";
 
 
@@ -77,7 +77,6 @@ export default function ForkliftsPage() {
   const [forkliftToDelete, setForkliftToDelete] = useState<Forklift | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedForklift, setSelectedForklift] = useState<Forklift | null>(null);
-  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
   const [locationFilter, setLocationFilter] = useState('All');
   const [equipmentTypeFilter, setEquipmentTypeFilter] = useState('All');
@@ -102,18 +101,18 @@ export default function ForkliftsPage() {
     return { total, inWorkshop, onSite, notConfirmed };
   }, [forklifts]);
 
+  const handleDelayedAction = (action: () => void) => {
+    setTimeout(action, 100);
+  };
 
-  const openAddEditDialog = (forklift: Forklift | null) => {
-    setOpenPopoverId(null);
+  const openAddEditDialog = useCallback((forklift: Forklift | null) => {
     setSelectedForklift(forklift);
-    setForkliftToDelete(null);
     setIsAddEditDialogOpen(true);
-  };
+  }, []);
 
-  const openDeleteDialog = (forklift: Forklift) => {
-    setOpenPopoverId(null);
+  const openDeleteDialog = useCallback((forklift: Forklift) => {
     setForkliftToDelete(forklift);
-  };
+  }, []);
 
   const equipmentTypes = useMemo(() => {
     if (!forklifts) return [];
@@ -179,11 +178,6 @@ export default function ForkliftsPage() {
     }
     return `Search by ${searchFieldLabels[searchField]}...`;
   }, [searchField]);
-
-  const handleCancelDelete = () => {
-    setForkliftToDelete(null);
-  };
-
 
   const handleDelete = () => {
     if (!firestore || !forkliftToDelete) return;
@@ -286,6 +280,26 @@ export default function ForkliftsPage() {
   const hasActiveRequest = (forkliftId: string) => {
       return activeServiceRequests?.some(req => req.forkliftId === forkliftId);
   }
+  
+  const renderActions = (forklift: Forklift) => (
+      <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                  <EllipsisVertical className="h-4 w-4" />
+              </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-40" onMouseLeave={(e) => (e.currentTarget as HTMLElement).blur()}>
+              <DropdownMenuItem onSelect={() => handleDelayedAction(() => openAddEditDialog(forklift))}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleDelayedAction(() => openDeleteDialog(forklift))} className="text-destructive hover:text-destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+              </DropdownMenuItem>
+          </DropdownMenuContent>
+      </DropdownMenu>
+  );
 
   return (
     <AppLayout>
@@ -453,7 +467,7 @@ export default function ForkliftsPage() {
                                 <TableCell className="hidden md:table-cell">{forklift.make}</TableCell>
                                 <TableCell className="hidden md:table-cell">{forklift.model}</TableCell>
                                 <TableCell>
-                                  <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={(e) => { e.stopPropagation(); openAddEditDialog(forklift); }}>
+                                  <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={(e) => { e.stopPropagation(); handleDelayedAction(() => openAddEditDialog(forklift)); }}>
                                     <Badge variant={'outline'} className={cn('font-medium pointer-events-none', getLocationBadgeClass(forklift.locationType))}>
                                       {getLocationIcon(forklift.locationType)}
                                       {getLocationText(forklift)}
@@ -461,25 +475,7 @@ export default function ForkliftsPage() {
                                   </Button>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Popover open={openPopoverId === forklift.id} onOpenChange={(isOpen) => setOpenPopoverId(isOpen ? forklift.id : null)}>
-                                      <PopoverTrigger asChild>
-                                          <Button variant="ghost" size="icon" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
-                                              <EllipsisVertical className="h-4 w-4" />
-                                          </Button>
-                                      </PopoverTrigger>
-                                      <PopoverContent className="w-40">
-                                          <div className="grid gap-1">
-                                              <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => openAddEditDialog(forklift)}>
-                                                  <Pencil className="mr-2 h-4 w-4" />
-                                                  Edit
-                                              </Button>
-                                              <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => openDeleteDialog(forklift)}>
-                                                  <Trash2 className="mr-2 h-4 w-4" />
-                                                  Delete
-                                              </Button>
-                                          </div>
-                                      </PopoverContent>
-                                  </Popover>
+                                    {renderActions(forklift)}
                                 </TableCell>
                             </TableRow>
                             {expandedRow === forklift.id && (
@@ -579,7 +575,7 @@ export default function ForkliftsPage() {
           </DialogContent>
         </Dialog>
         
-        <AlertDialog open={!!forkliftToDelete} onOpenChange={(isOpen) => !isOpen && setForkliftToDelete(null)}>
+        <AlertDialog open={!!forkliftToDelete} onOpenChange={(open) => !open && setForkliftToDelete(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure you want to delete this forklift?</AlertDialogTitle>
@@ -588,7 +584,7 @@ export default function ForkliftsPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
