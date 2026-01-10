@@ -176,6 +176,7 @@ export default function BillingPage() {
     setIsBulkDuplicateDialogOpen(false);
     setIsPreviewOpen(false);
     setInvoiceForPreview(null);
+    // No need to close popover here as it has its own onOpenChange
   }, []);
 
 
@@ -876,10 +877,8 @@ export default function BillingPage() {
         </Card>
 
         <Dialog open={isFormDialogOpen} onOpenChange={(isOpen) => {
-            if (!isOpen) {
-                resetForm();
-            }
-            setIsFormDialogOpen(isOpen);
+            if (!isOpen) closeAllDialogs();
+            else setIsFormDialogOpen(true);
         }}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pb-0">
@@ -1024,7 +1023,7 @@ export default function BillingPage() {
             </DialogContent>
         </Dialog>
 
-        <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && setInvoiceToDelete(null)}>
+        <AlertDialog open={!!invoiceToDelete} onOpenChange={(isOpen) => !isOpen && closeAllDialogs()}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -1039,7 +1038,7 @@ export default function BillingPage() {
             </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={!!invoiceToDuplicate} onOpenChange={(open) => !open && setInvoiceToDuplicate(null)}>
+        <AlertDialog open={!!invoiceToDuplicate} onOpenChange={(isOpen) => !isOpen && closeAllDialogs()}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Duplicate Invoice</AlertDialogTitle>
@@ -1064,7 +1063,7 @@ export default function BillingPage() {
             </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={isBulkDuplicateDialogOpen} onOpenChange={setIsBulkDuplicateDialogOpen}>
+        <AlertDialog open={isBulkDuplicateDialogOpen} onOpenChange={(isOpen) => !isOpen && closeAllDialogs()}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Bulk Duplicate Invoices</AlertDialogTitle>
@@ -1091,7 +1090,10 @@ export default function BillingPage() {
             </AlertDialogContent>
         </AlertDialog>
         
-        <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <Dialog open={isPreviewOpen} onOpenChange={(isOpen) => {
+            if (!isOpen) closeAllDialogs();
+            else setIsPreviewOpen(true);
+        }}>
             <DialogContent className="max-w-4xl p-0">
                  <DialogHeader className="p-6 pb-2">
                     <DialogTitle>Invoice Preview</DialogTitle>
@@ -1114,6 +1116,8 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
 
     
 
