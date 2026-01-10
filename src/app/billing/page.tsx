@@ -446,7 +446,6 @@ export default function BillingPage() {
   };
   
   const handleOpenFormDialog = (invoice: Invoice | null) => {
-    setInvoiceToDelete(null);
     if (invoice) {
       setEditingInvoice(invoice);
       setCompanyId(invoice.companyId);
@@ -1107,7 +1106,5 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-    
 
     
