@@ -659,13 +659,23 @@ export default function BillingPage() {
   };
 
   const renderInvoiceActions = (invoice: Invoice) => (
-    <div className="grid gap-1">
-        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenPreview(invoice)}><Eye className="mr-2 h-4 w-4" />Preview</Button>
-        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleDownloadWord(invoice)}><Download className="mr-2 h-4 w-4" />Download</Button>
-        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenFormDialog(invoice)}><Pencil className="mr-2 h-4 w-4" />Edit</Button>
-        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => handleOpenDuplicateDialog(invoice)}><FilePlus2 className="mr-2 h-4 w-4" />Duplicate</Button>
-        <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => setInvoiceToDelete(invoice)}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
-    </div>
+    <DropdownMenuContent className="w-40">
+        <DropdownMenuItem onSelect={() => handleOpenPreview(invoice)}>
+            <Eye className="mr-2 h-4 w-4" />Preview
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => handleDownloadWord(invoice)}>
+            <Download className="mr-2 h-4 w-4" />Download
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => handleOpenFormDialog(invoice)}>
+            <Pencil className="mr-2 h-4 w-4" />Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => handleOpenDuplicateDialog(invoice)}>
+            <FilePlus2 className="mr-2 h-4 w-4" />Duplicate
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => setInvoiceToDelete(invoice)} className="text-destructive">
+            <Trash2 className="mr-2 h-4 w-4" />Delete
+        </DropdownMenuItem>
+    </DropdownMenuContent>
   );
 
   return (
@@ -756,12 +766,12 @@ export default function BillingPage() {
                                             return (
                                             <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
                                                  <div className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 rounded-md">
-                                                    <Checkbox
+                                                     <Checkbox
                                                         id={`select-month-${month.key}`}
                                                         checked={allInMonthSelected}
                                                         onCheckedChange={(checked) => handleSelectMonth(month.invoices, !!checked)}
                                                         aria-label={`Select all invoices in ${month.label}`}
-                                                        />
+                                                      />
                                                     <AccordionTrigger className="flex-1 p-0 text-xs font-medium hover:no-underline">
                                                         <div className="flex items-center gap-2">
                                                             <Folder className="h-4 w-4 text-secondary-foreground/60" />
@@ -787,16 +797,14 @@ export default function BillingPage() {
                                                                           <div className="text-sm text-muted-foreground">{invoice.clientCompanyDetails?.name || 'Unknown'}</div>
                                                                       </div>
                                                                     </div>
-                                                                    <Popover>
-                                                                        <PopoverTrigger asChild>
+                                                                    <DropdownMenu>
+                                                                        <DropdownMenuTrigger asChild>
                                                                             <Button variant="ghost" size="icon" className="-mt-2 -mr-2 h-8 w-8 p-0">
                                                                                 <EllipsisVertical className="h-4 w-4" />
                                                                             </Button>
-                                                                        </PopoverTrigger>
-                                                                        <PopoverContent className="w-40">
-                                                                            {renderInvoiceActions(invoice)}
-                                                                        </PopoverContent>
-                                                                    </Popover>
+                                                                        </DropdownMenuTrigger>
+                                                                        {renderInvoiceActions(invoice)}
+                                                                    </DropdownMenu>
                                                                 </div>
                                                                 <div className="text-sm space-y-1" onClick={() => handleOpenPreview(invoice)}>
                                                                     <div><span className="font-medium text-muted-foreground">Date: </span>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</div>
@@ -835,16 +843,14 @@ export default function BillingPage() {
                                                                     <TableCell onClick={() => handleOpenPreview(invoice)} className="cursor-pointer">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
                                                                     <TableCell className="text-right cursor-pointer" onClick={() => handleOpenPreview(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
                                                                     <TableCell className="text-right">
-                                                                        <Popover>
-                                                                            <PopoverTrigger asChild>
+                                                                        <DropdownMenu>
+                                                                            <DropdownMenuTrigger asChild>
                                                                                 <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
                                                                                     <EllipsisVertical className="h-4 w-4" />
                                                                                 </Button>
-                                                                            </PopoverTrigger>
-                                                                            <PopoverContent className="w-40">
-                                                                                 {renderInvoiceActions(invoice)}
-                                                                            </PopoverContent>
-                                                                        </Popover>
+                                                                            </DropdownMenuTrigger>
+                                                                            {renderInvoiceActions(invoice)}
+                                                                        </DropdownMenu>
                                                                     </TableCell>
                                                                 </TableRow>
                                                             ))}
