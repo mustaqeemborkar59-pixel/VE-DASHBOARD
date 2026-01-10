@@ -754,23 +754,22 @@ export default function BillingPage() {
                                      <Accordion type="multiple" className="w-full">
                                         {year.months.map(month => {
                                             const allInMonthSelected = month.invoices.every(inv => selectedInvoices.includes(inv.id));
-                                            const someInMonthSelected = month.invoices.some(inv => selectedInvoices.includes(inv.id));
                                             return (
                                             <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
-                                                 <AccordionTrigger className="px-3 py-2 hover:bg-muted/50 rounded-md text-xs font-medium hover:no-underline">
-                                                    <div className="flex items-center gap-2">
-                                                      <Checkbox
+                                                 <div className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 rounded-md">
+                                                    <Checkbox
                                                         id={`select-month-${month.key}`}
-                                                        className="mr-2"
                                                         checked={allInMonthSelected}
                                                         onCheckedChange={(checked) => handleSelectMonth(month.invoices, !!checked)}
-                                                        onClick={(e) => e.stopPropagation()}
                                                         aria-label={`Select all invoices in ${month.label}`}
                                                         />
-                                                      <Folder className="h-4 w-4 text-secondary-foreground/60" />
-                                                      <span>{month.label}</span>
-                                                    </div>
-                                                </AccordionTrigger>
+                                                    <AccordionTrigger className="flex-1 p-0 text-xs font-medium hover:no-underline">
+                                                        <div className="flex items-center gap-2">
+                                                            <Folder className="h-4 w-4 text-secondary-foreground/60" />
+                                                            <span>{month.label}</span>
+                                                        </div>
+                                                    </AccordionTrigger>
+                                                 </div>
                                                 <AccordionContent className="pt-2">
                                                     <div className="md:hidden">
                                                         <div className="space-y-4 p-4">
@@ -1108,5 +1107,7 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
 
     
