@@ -175,6 +175,7 @@ export default function BillingPage() {
     setInvoiceToDuplicate(null);
     setIsBulkDuplicateDialogOpen(false);
     setIsPreviewOpen(false);
+    setInvoiceForPreview(null);
   }, []);
 
 
@@ -347,7 +348,7 @@ export default function BillingPage() {
   },[calculations.grandTotal, toWords]);
   
   
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
       setCompanyId(initialFormState.companyId);
       setBillDate(initialFormState.billDate);
       setPoNumber(initialFormState.poNumber);
@@ -356,7 +357,7 @@ export default function BillingPage() {
       setEditingInvoice(null);
       setInvoicePageSettings(liveDefaultPageSettings);
       setFormDownloadOptions(defaultDownloadOptions);
-  };
+  }, [initialFormState, liveDefaultPageSettings, defaultDownloadOptions]);
 
   const handleFormSubmit = async () => {
     if (!companyId || !billDate || items.some(i => !i.particulars || i.amount <= 0)) {
@@ -476,7 +477,7 @@ export default function BillingPage() {
       resetForm();
     }
     setIsFormDialogOpen(true);
-  }, [closeAllDialogs, liveDefaultPageSettings, defaultDownloadOptions]);
+  }, [closeAllDialogs, liveDefaultPageSettings, defaultDownloadOptions, resetForm]);
 
   const handleOpenPreview = useCallback((invoice: Invoice) => {
     closeAllDialogs();
@@ -712,21 +713,13 @@ export default function BillingPage() {
                     <div className="flex items-center gap-2 self-start sm:self-center">
                         {selectedInvoices.length > 0 && (
                             <div className="flex items-center gap-2">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" size="sm">
-                                            Bulk Actions ({selectedInvoices.length})
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        <DropdownMenuItem onSelect={handleOpenBulkDuplicateDialog}>
-                                            <Copy className="mr-2 h-4 w-4" />
-                                            Duplicate Selected
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                <Button variant="outline" size="sm" onClick={handleOpenBulkDuplicateDialog}>
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    Duplicate ({selectedInvoices.length})
+                                </Button>
                                 <Button variant="ghost" size="icon" onClick={() => setSelectedInvoices([])} className="h-9 w-9">
                                     <X className="h-4 w-4" />
+                                    <span className="sr-only">Clear selection</span>
                                 </Button>
                             </div>
                         )}
@@ -1133,6 +1126,8 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
 
     
 
