@@ -113,7 +113,7 @@ export default function BillingPage() {
   };
   
   const defaultDownloadOptions: DownloadOptions = {
-      myCompany: { showGstin: true, showPan: true, showBankDetails: true },
+      myCompany: { showGstin: true, showPan: true, showBankDetails: true, showSacCode: true, showServiceTaxCode: true },
       clientCompany: { showGstin: true },
       includeSiteInFilename: false,
   };
@@ -652,6 +652,14 @@ export default function BillingPage() {
                 <div className="flex items-center space-x-2">
                     <Checkbox id="myBank" checked={options.myCompany.showBankDetails} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showBankDetails: !!checked} }))} />
                     <Label htmlFor="myBank">Show Bank Details</Label>
+                </div>
+                 <div className="flex items-center space-x-2">
+                    <Checkbox id="mySac" checked={options.myCompany.showSacCode} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showSacCode: !!checked} }))} />
+                    <Label htmlFor="mySac">Show SAC Code</Label>
+                </div>
+                 <div className="flex items-center space-x-2">
+                    <Checkbox id="myServiceTax" checked={options.myCompany.showServiceTaxCode} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showServiceTaxCode: !!checked} }))} />
+                    <Label htmlFor="myServiceTax">Show Service Tax Code</Label>
                 </div>
             </div>
             <Separator />

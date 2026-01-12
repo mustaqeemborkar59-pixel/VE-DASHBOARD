@@ -104,6 +104,8 @@ export type DownloadOptions = {
         showGstin: boolean;
         showPan: boolean;
         showBankDetails: boolean;
+        showSacCode: boolean;
+        showServiceTaxCode: boolean;
     };
     clientCompany: {
         showGstin: boolean;

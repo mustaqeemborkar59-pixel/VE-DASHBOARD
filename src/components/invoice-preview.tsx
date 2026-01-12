@@ -125,7 +125,8 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
             <p className="font-bold">{myCompanyDetails.companyName}</p>
             {opts.myCompany.showPan && <p><span className="font-bold">PAN CARD NO:</span> {myCompanyDetails.pan}</p>}
             {opts.myCompany.showGstin && <p><span className="font-bold">GSTIN:</span> {myCompanyDetails.gstin}</p>}
-            <p><span className="font-bold">SAC code:</span> {myCompanyDetails.sacCode}</p>
+            {opts.myCompany.showSacCode && <p><span className="font-bold">SAC code:</span> {myCompanyDetails.sacCode}</p>}
+            {opts.myCompany.showServiceTaxCode && myCompanyDetails.serviceTaxCode && <p><span className="font-bold">SERVICE TAX CODE:</span> {myCompanyDetails.serviceTaxCode}</p>}
             
             {opts.myCompany.showBankDetails && selectedBank && (
               <>

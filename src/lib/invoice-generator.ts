@@ -25,6 +25,8 @@ export type DownloadOptions = {
         showGstin: boolean;
         showPan: boolean;
         showBankDetails: boolean;
+        showSacCode: boolean;
+        showServiceTaxCode: boolean;
     };
     clientCompany: {
         showGstin: boolean;
@@ -134,7 +136,7 @@ export const generateAndDownloadInvoice = async (
     const defaultFontSize = (settings.pageFontSize || 11);
 
     const downloadOpts: DownloadOptions = options || {
-        myCompany: { showGstin: true, showPan: true, showBankDetails: true },
+        myCompany: { showGstin: true, showPan: true, showBankDetails: true, showSacCode: true, showServiceTaxCode: true },
         clientCompany: { showGstin: true },
         includeSiteInFilename: false,
     };
@@ -378,7 +380,8 @@ export const generateAndDownloadInvoice = async (
                                     children: [
                                         ...(downloadOpts.myCompany.showPan ? [new Paragraph({ children: [new TextRun({ text: "PAN CARD NO: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.pan, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                         ...(downloadOpts.myCompany.showGstin ? [new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
-                                        new Paragraph({ children: [new TextRun({ text: "SAC code: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.sacCode, font: "Calibri", size: defaultFontSize * 2})] }),
+                                        ...(downloadOpts.myCompany.showSacCode ? [new Paragraph({ children: [new TextRun({ text: "SAC code: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.sacCode, font: "Calibri", size: defaultFontSize * 2})] })] : []),
+                                        ...(downloadOpts.myCompany.showServiceTaxCode && invoiceData.myCompany.serviceTaxCode ? [new Paragraph({ children: [new TextRun({ text: "SERVICE TAX CODE: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.serviceTaxCode, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                         
                                         ...(downloadOpts.myCompany.showBankDetails && invoiceData.selectedBank ? [
                                             new Paragraph({ text: " ", spacing: { before: 100 } }),
