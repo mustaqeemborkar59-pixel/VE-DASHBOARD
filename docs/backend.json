@@ -275,7 +275,10 @@
           "format": "date-time"
         }
       },
-      "required": ["name", "address"]
+      "required": [
+        "name",
+        "address"
+      ]
     },
     "Invoice": {
       "title": "Invoice",
@@ -287,8 +290,8 @@
           "description": "The sequential invoice number."
         },
         "billNoSuffix": {
-            "type": "string",
-            "description": "The suffix for the bill number, e.g., 'MHE'"
+          "type": "string",
+          "description": "The suffix for the bill number, e.g., 'MHE'"
         },
         "billDate": {
           "type": "string",
@@ -311,24 +314,45 @@
           "items": {
             "type": "object",
             "properties": {
-              "particulars": { "type": "string" },
-              "rate": { "type": "string" },
-              "amount": { "type": "number" }
+              "particulars": {
+                "type": "string"
+              },
+              "rate": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "number"
+              }
             },
-            "required": ["particulars", "amount"]
+            "required": [
+              "particulars",
+              "amount"
+            ]
           }
         },
-        "netTotal": { "type": "number" },
-        "cgst": { "type": "number" },
-        "sgst": { "type": "number" },
-        "grandTotal": { "type": "number" },
+        "netTotal": {
+          "type": "number"
+        },
+        "cgst": {
+          "type": "number"
+        },
+        "sgst": {
+          "type": "number"
+        },
+        "grandTotal": {
+          "type": "number"
+        },
         "myCompanyDetails": {
           "$ref": "#/entities/CompanySettings",
           "description": "A snapshot of the user's company details at the time of invoice creation."
         },
         "clientCompanyDetails": {
-           "$ref": "#/entities/Company",
-           "description": "A snapshot of the client company's details at the time of invoice creation."
+          "$ref": "#/entities/Company",
+          "description": "A snapshot of the client company's details at the time of invoice creation."
+        },
+        "selectedBankAccount": {
+          "$ref": "#/entities/BankAccount",
+          "description": "A snapshot of the bank account selected for this invoice."
         },
         "downloadOptions": {
           "type": "object",
@@ -336,22 +360,70 @@
             "myCompany": {
               "type": "object",
               "properties": {
-                "showGstin": {"type": "boolean"},
-                "showPan": {"type": "boolean"},
-                "showBankDetails": {"type": "boolean"}
+                "showGstin": {
+                  "type": "boolean"
+                },
+                "showPan": {
+                  "type": "boolean"
+                },
+                "showBankDetails": {
+                  "type": "boolean"
+                }
               }
             },
             "clientCompany": {
               "type": "object",
               "properties": {
-                "showGstin": {"type": "boolean"}
+                "showGstin": {
+                  "type": "boolean"
+                }
               }
             },
-            "includeSiteInFilename": {"type": "boolean"}
+            "includeSiteInFilename": {
+              "type": "boolean"
+            }
           }
         }
       },
-      "required": ["billNo", "billDate", "companyId", "items", "grandTotal", "myCompanyDetails", "clientCompanyDetails"]
+      "required": [
+        "billNo",
+        "billDate",
+        "companyId",
+        "items",
+        "grandTotal",
+        "myCompanyDetails",
+        "clientCompanyDetails",
+        "selectedBankAccount"
+      ]
+    },
+    "BankAccount": {
+      "title": "BankAccount",
+      "description": "Represents one of the user's company's bank accounts.",
+      "type": "object",
+      "properties": {
+        "nickname": {
+          "type": "string",
+          "description": "A short, memorable name for the account (e.g., 'HDFC Main')."
+        },
+        "bankName": {
+          "type": "string"
+        },
+        "accountNumber": {
+          "type": "string"
+        },
+        "ifscCode": {
+          "type": "string"
+        },
+        "bankBranch": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "nickname",
+        "bankName",
+        "accountNumber",
+        "ifscCode"
+      ]
     },
     "CompanySettings": {
       "title": "CompanySettings",
@@ -370,18 +442,6 @@
         "sacCode": {
           "type": "string"
         },
-        "bankName": {
-          "type": "string"
-        },
-        "accountNumber": {
-          "type": "string"
-        },
-        "ifscCode": {
-          "type": "string"
-        },
-        "bankBranch": {
-          "type": "string"
-        },
         "contactPerson": {
           "type": "string"
         },
@@ -389,31 +449,39 @@
           "type": "string"
         },
         "nextBillNo": {
-            "type": "number"
+          "type": "number"
         },
         "pageSize": {
-            "type": "string"
+          "type": "string"
         },
         "pageOrientation": {
-            "type": "string"
+          "type": "string"
         },
         "pageMargins": {
-            "type": "object",
-            "properties": {
-                "top": {"type": "number"},
-                "right": {"type": "number"},
-                "bottom": {"type": "number"},
-                "left": {"type": "number"}
+          "type": "object",
+          "properties": {
+            "top": {
+              "type": "number"
+            },
+            "right": {
+              "type": "number"
+            },
+            "bottom": {
+              "type": "number"
+            },
+            "left": {
+              "type": "number"
             }
+          }
         },
         "pageFontSize": {
-            "type": "number"
+          "type": "number"
         },
         "addressFontSize": {
-            "type": "number"
+          "type": "number"
         },
         "tableBodyFontSize": {
-            "type": "number"
+          "type": "number"
         }
       }
     }
@@ -477,6 +545,12 @@
         "$ref": "#/entities/CompanySettings"
       },
       "description": "Stores the user's own company details. Should only contain one document."
+    },
+    "/companySettings/primary/bankAccounts/{accountId}": {
+      "schema": {
+        "$ref": "#/entities/BankAccount"
+      },
+      "description": "Stores individual bank accounts for the user's company."
     }
   }
 }

@@ -1,18 +1,25 @@
 
 'use client';
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AppLayout from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { useFirebase, useDoc, useMemoFirebase, useCollection } from "@/firebase";
+import { collection, doc, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { CompanySettings, PageMargin } from "@/lib/data";
+import type { CompanySettings, PageMargin, BankAccount } from "@/lib/data";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { BankAccountForm, BankAccountFormData } from "@/components/bank-account-form";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
+import { EllipsisVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 
 export default function SettingsPage() {
@@ -20,11 +27,19 @@ export default function SettingsPage() {
     const { toast } = useToast();
     
     const settingsDocRef = useMemoFirebase(() => firestore ? doc(firestore, "companySettings", "primary") : null, [firestore]);
+    const bankAccountsQuery = useMemoFirebase(() => firestore ? collection(firestore, "companySettings", "primary", "bankAccounts") : null, [firestore]);
     
-    const { data: initialSettings, isLoading } = useDoc<CompanySettings>(settingsDocRef);
+    const { data: initialSettings, isLoading: isLoadingSettings } = useDoc<CompanySettings>(settingsDocRef);
+    const { data: bankAccounts, isLoading: isLoadingBankAccounts } = useCollection<BankAccount>(bankAccountsQuery);
 
     const [settings, setSettings] = useState<Partial<CompanySettings>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const [isBankAccountDialogOpen, setIsBankAccountDialogOpen] = useState(false);
+    const [selectedBankAccount, setSelectedBankAccount] = useState<BankAccount | null>(null);
+    const [bankAccountToDelete, setBankAccountToDelete] = useState<BankAccount | null>(null);
+
+    const isLoading = isLoadingSettings || isLoadingBankAccounts;
 
     useEffect(() => {
         if (initialSettings) {
@@ -66,12 +81,11 @@ export default function SettingsPage() {
     }
 
     const handleSaveChanges = async () => {
-        if (!firestore) {
+        if (!firestore || !settingsDocRef) {
             toast({ variant: "destructive", title: "Error", description: "Could not connect to database." });
             return;
         }
-        if (!settingsDocRef) return;
-
+        
         setIsSubmitting(true);
         try {
             await setDoc(settingsDocRef, settings, { merge: true });
@@ -83,6 +97,37 @@ export default function SettingsPage() {
             setIsSubmitting(false);
         }
     };
+    
+    const openBankAccountDialog = useCallback((bankAccount: BankAccount | null) => {
+        setSelectedBankAccount(bankAccount);
+        setIsBankAccountDialogOpen(true);
+    }, []);
+
+    const handleBankAccountFormSubmit = (formData: BankAccountFormData) => {
+        if (!bankAccountsQuery) return;
+        
+        if (selectedBankAccount) { // Edit mode
+            const accountDocRef = doc(bankAccountsQuery.firestore, bankAccountsQuery.path, selectedBankAccount.id);
+            updateDocumentNonBlocking(accountDocRef, formData);
+            toast({ title: "Success", description: "Bank account updated." });
+        } else { // Add mode
+            addDocumentNonBlocking(bankAccountsQuery, formData);
+            toast({ title: "Success", description: "Bank account added." });
+        }
+        setIsBankAccountDialogOpen(false);
+    };
+    
+    const openDeleteDialog = useCallback((bankAccount: BankAccount) => {
+        setBankAccountToDelete(bankAccount);
+    }, []);
+    
+    const handleDeleteBankAccount = () => {
+        if (!bankAccountsQuery || !bankAccountToDelete) return;
+        const accountDocRef = doc(bankAccountsQuery.firestore, bankAccountsQuery.path, bankAccountToDelete.id);
+        deleteDocumentNonBlocking(accountDocRef);
+        toast({ title: "Bank Account Deleted", description: `${bankAccountToDelete.nickname} has been removed.` });
+        setBankAccountToDelete(null);
+    }
     
     if (isLoading) {
         return (
@@ -135,30 +180,6 @@ export default function SettingsPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="gstin">GSTIN</Label>
                                     <Input id="gstin" value={settings.gstin || ''} onChange={handleInputChange} />
-                                </div>
-                            </div>
-                        </div>
-
-                        <Separator />
-
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-medium">Bank Details</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="bankName">Bank Name</Label>
-                                    <Input id="bankName" value={settings.bankName || ''} onChange={handleInputChange} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="bankBranch">Branch</Label>
-                                    <Input id="bankBranch" value={settings.bankBranch || ''} onChange={handleInputChange} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="accountNumber">Account Number</Label>
-                                    <Input id="accountNumber" value={settings.accountNumber || ''} onChange={handleInputChange} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="ifscCode">IFSC Code</Label>
-                                    <Input id="ifscCode" value={settings.ifscCode || ''} onChange={handleInputChange} />
                                 </div>
                             </div>
                         </div>
@@ -237,9 +258,99 @@ export default function SettingsPage() {
                         </div>
                     </CardContent>
                 </Card>
+
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle>Bank Accounts</CardTitle>
+                                <CardDescription>Manage your company's bank accounts for invoices.</CardDescription>
+                            </div>
+                            <Button onClick={() => openBankAccountDialog(null)} size="sm">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Add Bank Account
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Nickname</TableHead>
+                                    <TableHead>Bank</TableHead>
+                                    <TableHead>Account Number</TableHead>
+                                    <TableHead><span className="sr-only">Actions</span></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoadingBankAccounts ? (
+                                    <TableRow><TableCell colSpan={4} className="text-center">Loading...</TableCell></TableRow>
+                                ) : bankAccounts && bankAccounts.length > 0 ? (
+                                    bankAccounts.map(account => (
+                                        <TableRow key={account.id}>
+                                            <TableCell className="font-medium">{account.nickname}</TableCell>
+                                            <TableCell>{account.bankName}</TableCell>
+                                            <TableCell>{account.accountNumber}</TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                                                            <EllipsisVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent>
+                                                        <DropdownMenuItem onSelect={() => openBankAccountDialog(account)}>
+                                                            <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => openDeleteDialog(account)} className="text-destructive">
+                                                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow><TableCell colSpan={4} className="text-center h-24">No bank accounts added yet.</TableCell></TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
             </div>
+            
+            <Dialog open={isBankAccountDialogOpen} onOpenChange={setIsBankAccountDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{selectedBankAccount ? 'Edit Bank Account' : 'Add New Bank Account'}</DialogTitle>
+                        <DialogDescription>
+                            {selectedBankAccount ? 'Update the details for this bank account.' : 'Fill in the details for the new bank account.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <BankAccountForm 
+                        onSubmit={handleBankAccountFormSubmit}
+                        onCancel={() => setIsBankAccountDialogOpen(false)}
+                        initialData={selectedBankAccount || undefined}
+                        mode={selectedBankAccount ? 'edit' : 'add'}
+                    />
+                </DialogContent>
+            </Dialog>
+
+            <AlertDialog open={!!bankAccountToDelete} onOpenChange={(open) => !open && setBankAccountToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the bank account: <span className="font-bold">{bankAccountToDelete?.nickname}</span>.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteBankAccount}>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
         </AppLayout>
     );
 }
-
-    

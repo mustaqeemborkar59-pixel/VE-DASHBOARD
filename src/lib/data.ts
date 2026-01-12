@@ -71,16 +71,21 @@ export type PageMargin = {
     left: number,
 };
 
+export type BankAccount = {
+    id: string;
+    nickname: string;
+    bankName: string;
+    accountNumber: string;
+    ifscCode: string;
+    bankBranch: string;
+}
+
 export type CompanySettings = {
     id?: string;
     companyName: string;
     pan: string;
     gstin: string;
     sacCode: string;
-    bankName: string;
-    accountNumber: string;
-    ifscCode: string;
-    bankBranch: string;
     contactPerson: string;
     contactNumber: string;
     // New fields for invoice and document settings
@@ -120,6 +125,7 @@ export type Invoice = {
     grandTotal: number;
     myCompanyDetails: CompanySettings; // Snapshot of my company settings
     clientCompanyDetails: Company; // Snapshot of client company details
+    selectedBankAccount?: BankAccount; // Snapshot of selected bank account
     pageSize?: 'A4' | 'LETTER' | 'LEGAL';
     pageOrientation?: 'portrait' | 'landscape';
     pageMargins?: PageMargin;
@@ -138,5 +144,3 @@ export type InvoiceTemplate = {
     order: number;
   }[];
 };
-
-    
