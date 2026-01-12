@@ -199,22 +199,27 @@ export const generateAndDownloadInvoice = async (
 
         const cells = [
              new DocxTableCell({
-                columnSpan: 2,
+                children: [new Paragraph({ text: "" })],
+                verticalAlign: VerticalAlign.CENTER,
+                borders: totalRowsBorders,
+                margins: cellMargins,
+            }),
+            new DocxTableCell({
                 children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: finalFontSize, font: "Calibri" })], alignment: AlignmentType.RIGHT })],
                 verticalAlign: VerticalAlign.CENTER,
-                borders: { ...totalRowsBorders, right: {style: BorderStyle.NONE}  },
+                borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE} },
                 margins: cellMargins,
             }),
             new DocxTableCell({
                 children: [new Paragraph({children: [new TextRun({text: '', font: "Calibri"})]})],
-                borders: { top: { style: BorderStyle.SINGLE, size: 6, color: "000000" }, bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" }, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE}  },
+                borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}, right: {style: BorderStyle.NONE} },
                 margins: cellMargins,
                 verticalAlign: VerticalAlign.CENTER,
             }),
             new DocxTableCell({
                 children: [new Paragraph({ children: [new TextRun({ text: `${value}/-`, bold: true, size: finalFontSize, font: "Calibri" })], alignment: AlignmentType.RIGHT })],
                 verticalAlign: VerticalAlign.CENTER,
-                borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE}  },
+                borders: { ...totalRowsBorders, left: {style: BorderStyle.NONE} },
                 margins: cellMargins,
             }),
         ];
@@ -357,19 +362,16 @@ export const generateAndDownloadInvoice = async (
                 
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
-                    columnWidths: [50, 50],
                     borders: tableHeaderBorders,
                     rows: [
                        new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: invoiceData.myCompany.companyName, bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
                                     margins: cellMargins,
                                     borders: { right: { style: BorderStyle.SINGLE, size: 6, color: "000000" }, bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
                                 }),
                                 new DocxTableCell({
-                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: 'Bank Details', bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
                                     margins: cellMargins,
                                     borders: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
@@ -379,7 +381,6 @@ export const generateAndDownloadInvoice = async (
                        new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
                                         ...(downloadOpts.myCompany.showPan ? [new Paragraph({ children: [new TextRun({ text: "PAN CARD NO: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.pan, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                         ...(downloadOpts.myCompany.showGstin ? [new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
@@ -391,7 +392,6 @@ export const generateAndDownloadInvoice = async (
                                     borders: { right: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
                                 }),
                                 new DocxTableCell({
-                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
                                         ...(downloadOpts.myCompany.showBankDetails && invoiceData.selectedBank ? [
                                             new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.bankName, font: "Calibri", size: defaultFontSize * 2})] }),
@@ -409,23 +409,20 @@ export const generateAndDownloadInvoice = async (
                     ]
                 }),
 
-                new Paragraph({ text: "", spacing: { before: 10 } }),
+                new Paragraph({ text: "", spacing: { before: 200 } }),
 
                 new DocxTable({
                      width: { size: 100, type: WidthType.PERCENTAGE },
                      borders: tableHeaderBorders,
-                     columnWidths: [50, 50],
                      rows: [
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({text: invoiceData.to.name, bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
                                     margins: cellMargins,
                                     borders: { ...tableHeaderBorders, right: { style: BorderStyle.NONE } }
                                 }),
                                  new DocxTableCell({
-                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
                                         ...(downloadOpts.clientCompany.showGstin && invoiceData.to.gstin ? [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
