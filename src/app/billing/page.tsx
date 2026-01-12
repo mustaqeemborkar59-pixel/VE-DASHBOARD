@@ -114,7 +114,8 @@ export default function BillingPage() {
   
   const defaultDownloadOptions: DownloadOptions = {
       myCompany: { showGstin: true, showPan: true, showBankDetails: true },
-      clientCompany: { showGstin: true }
+      clientCompany: { showGstin: true },
+      includeSiteInFilename: false,
   };
   
   const initialFormState = {
@@ -641,6 +642,14 @@ export default function BillingPage() {
                     <Label htmlFor="clientGstin">Show GSTIN</Label>
                 </div>
             </div>
+            <Separator />
+            <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">Filename Options</h4>
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="includeSite" checked={options.includeSiteInFilename} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, includeSiteInFilename: !!checked }))} />
+                    <Label htmlFor="includeSite">Include Site in Filename</Label>
+                </div>
+            </div>
         </div>
     );
   };
@@ -1101,5 +1110,3 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-    

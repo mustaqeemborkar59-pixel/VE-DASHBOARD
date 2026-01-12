@@ -13,7 +13,7 @@ export type Employee = {
 export type Technician = Employee;
 
 export type Forklift = {
-  id: string;
+  id:string;
   serialNumber: string;
   make: string;
   model: string;
@@ -29,6 +29,7 @@ export type Forklift = {
   siteContactPerson?: string;
   siteContactNumber?: string;
   remarks?: string;
+  poPiNumber?: string;
 };
 
 export type ServiceRequest = {
@@ -101,6 +102,7 @@ export type DownloadOptions = {
     clientCompany: {
         showGstin: boolean;
     };
+    includeSiteInFilename?: boolean;
 };
 
 export type Invoice = {

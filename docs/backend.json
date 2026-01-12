@@ -104,6 +104,10 @@
         "remarks": {
           "type": "string",
           "description": "Extra remarks or notes about the forklift."
+        },
+        "poPiNumber": {
+          "type": "string",
+          "description": "PO/PI Number for the forklift."
         }
       },
       "required": [
@@ -325,6 +329,26 @@
         "clientCompanyDetails": {
            "$ref": "#/entities/Company",
            "description": "A snapshot of the client company's details at the time of invoice creation."
+        },
+        "downloadOptions": {
+          "type": "object",
+          "properties": {
+            "myCompany": {
+              "type": "object",
+              "properties": {
+                "showGstin": {"type": "boolean"},
+                "showPan": {"type": "boolean"},
+                "showBankDetails": {"type": "boolean"}
+              }
+            },
+            "clientCompany": {
+              "type": "object",
+              "properties": {
+                "showGstin": {"type": "boolean"}
+              }
+            },
+            "includeSiteInFilename": {"type": "boolean"}
+          }
         }
       },
       "required": ["billNo", "billDate", "companyId", "items", "grandTotal", "myCompanyDetails", "clientCompanyDetails"]
@@ -456,5 +480,3 @@
     }
   }
 }
-
-    

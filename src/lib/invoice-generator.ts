@@ -29,6 +29,7 @@ export type DownloadOptions = {
     clientCompany: {
         showGstin: boolean;
     };
+    includeSiteInFilename?: boolean;
 };
 
 
@@ -134,6 +135,7 @@ export const generateAndDownloadInvoice = async (
     const downloadOpts: DownloadOptions = options || {
         myCompany: { showGstin: true, showPan: true, showBankDetails: true },
         clientCompany: { showGstin: true },
+        includeSiteInFilename: false,
     };
 
     const invoiceData = generateInvoiceDataForWord(invoice, clientCompany, myCompanyDetails, template);
@@ -414,7 +416,7 @@ export const generateAndDownloadInvoice = async (
     });
 
     const companyNameForFile = clientCompany.name.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase();
-    const siteForFile = invoice.site ? `(${invoice.site.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase()})` : '';
+    const siteForFile = (invoice.site && downloadOpts.includeSiteInFilename) ? `(${invoice.site.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase()})` : '';
     const monthYear = format(parseISO(invoice.billDate), 'MMM-yy').toUpperCase();
     
     // Bill no.1-MHE-BISLERI-INTERNATIONAL-PVT-LTD-(THANE-DEPOT)-(APR-24)-GST 18
@@ -423,5 +425,3 @@ export const generateAndDownloadInvoice = async (
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);
 }
-
-    
