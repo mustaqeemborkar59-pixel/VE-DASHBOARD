@@ -363,6 +363,7 @@ export const generateAndDownloadInvoice = async (
                        new DocxTableRow({
                             children: [
                                 new DocxTableCell({
+                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
                                         new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: invoiceData.myCompany.companyName, bold: true, size: defaultFontSize * 2, font: "Calibri"})] }),
                                          ...(downloadOpts.myCompany.showPan ? [new Paragraph({ children: [new TextRun({ text: "PAN CARD NO: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.pan, font: "Calibri", size: defaultFontSize * 2})] })] : []),
@@ -372,9 +373,10 @@ export const generateAndDownloadInvoice = async (
                                     ],
                                     verticalAlign: VerticalAlign.TOP,
                                     margins: cellMargins,
-                                    borders: { right: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
+                                    borders: { ...tableHeaderBorders, right: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
                                 }),
                                 new DocxTableCell({
+                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
                                         new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: 'Bank Details', bold: true, size: defaultFontSize * 2, font: "Calibri"})] }),
                                          ...(downloadOpts.myCompany.showBankDetails && invoiceData.selectedBank ? [
@@ -386,7 +388,7 @@ export const generateAndDownloadInvoice = async (
                                     ],
                                     verticalAlign: VerticalAlign.TOP,
                                     margins: cellMargins,
-                                    borders: { left: { style: BorderStyle.NONE } }
+                                    borders: { ...tableHeaderBorders, left: { style: BorderStyle.NONE } }
                                 }),
                             ]
                        })
@@ -398,6 +400,7 @@ export const generateAndDownloadInvoice = async (
                 new DocxTable({
                      width: { size: 100, type: WidthType.PERCENTAGE },
                      borders: tableHeaderBorders,
+                     columnWidths: [50, 50],
                      rows: [
                         new DocxTableRow({
                             children: [
@@ -405,7 +408,7 @@ export const generateAndDownloadInvoice = async (
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({text: invoiceData.to.name, bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
                                     margins: cellMargins,
-                                    borders: { right: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
+                                    borders: { ...tableHeaderBorders, right: { style: BorderStyle.NONE } }
                                 }),
                                  new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
@@ -414,7 +417,7 @@ export const generateAndDownloadInvoice = async (
                                         ...(downloadOpts.clientCompany.showGstin && invoiceData.to.gstin ? [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                     ],
                                     margins: cellMargins,
-                                    borders: { left: { style: BorderStyle.NONE } }
+                                    borders: { ...tableHeaderBorders, left: { style: BorderStyle.NONE } }
                                 }),
                             ]
                         })
