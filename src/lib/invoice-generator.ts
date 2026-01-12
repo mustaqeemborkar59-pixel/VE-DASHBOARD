@@ -399,14 +399,14 @@ export const generateAndDownloadInvoice = async (
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: invoiceData.to.name, bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
+                                    children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({text: invoiceData.to.name, bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
                                     margins: cellMargins,
                                     borders: { right: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
                                 }),
                                  new DocxTableCell({
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
-                                        ...(downloadOpts.clientCompany.showGstin && invoiceData.to.gstin ? [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
+                                        ...(downloadOpts.clientCompany.showGstin && invoiceData.to.gstin ? [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                     ],
                                     margins: cellMargins,
                                 }),
@@ -426,7 +426,7 @@ export const generateAndDownloadInvoice = async (
     });
 
     const companyNameForFile = clientCompany.name.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase();
-    const siteForFile = (invoice.site && downloadOpts.includeSiteInFilename) ? `(${invoice.site.replace(/[^a-zA-Z0.9]/g, '-').toUpperCase()})` : '';
+    const siteForFile = (invoice.site && downloadOpts.includeSiteInFilename) ? `(${invoice.site.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase()})` : '';
     const monthYear = format(parseISO(invoice.billDate), 'MMM-yy').toUpperCase();
     
     // Bill no.1-MHE-BISLERI-INTERNATIONAL-PVT-LTD-(THANE-DEPOT)-(APR-24)-GST 18
