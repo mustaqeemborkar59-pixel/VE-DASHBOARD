@@ -685,6 +685,14 @@ export default function BillingPage() {
     });
   };
 
+  const getCompanyDisplay = (invoice: Invoice) => {
+    const companyName = invoice.clientCompanyDetails?.name || 'Unknown';
+    if (invoice.site && invoice.downloadOptions?.includeSiteInFilename) {
+      return `${companyName} - ${invoice.site}`;
+    }
+    return companyName;
+  }
+
   const renderInvoiceActions = (invoice: Invoice) => (
     <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -692,7 +700,7 @@ export default function BillingPage() {
                 <EllipsisVertical className="h-4 w-4" />
             </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-40" onCloseAutoFocus={(e) => e.preventDefault()}>
+        <DropdownMenuContent className="w-40">
             <DropdownMenuItem onSelect={() => openPreviewDialog(invoice)}>
                 <Eye className="mr-2 h-4 w-4" />Preview
             </DropdownMenuItem>
@@ -741,7 +749,7 @@ export default function BillingPage() {
                                     <Settings className="h-4 w-4" />
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-96" onCloseAutoFocus={(e) => e.preventDefault()}>
+                            <PopoverContent className="w-96">
                                 <div className="space-y-4">
                                     <h4 className="font-medium leading-none">Default Document Settings</h4>
                                     <p className="text-sm text-muted-foreground">Set the default layout for new invoices.</p>
@@ -811,7 +819,7 @@ export default function BillingPage() {
                                                                       />
                                                                       <div className="space-y-1 cursor-pointer" onClick={() => openPreviewDialog(invoice)}>
                                                                           <div className="font-bold">Bill No: {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
-                                                                          <div className="text-sm text-muted-foreground">{invoice.clientCompanyDetails?.name || 'Unknown'}</div>
+                                                                          <div className="text-sm text-muted-foreground">{getCompanyDisplay(invoice)}</div>
                                                                       </div>
                                                                     </div>
                                                                     {renderInvoiceActions(invoice)}
@@ -849,7 +857,7 @@ export default function BillingPage() {
                                                                     <TableCell className="font-medium cursor-pointer" onClick={() => openPreviewDialog(invoice)}>
                                                                         {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
                                                                     </TableCell>
-                                                                    <TableCell onClick={() => openPreviewDialog(invoice)} className="cursor-pointer">{invoice.clientCompanyDetails?.name || 'Unknown'}</TableCell>
+                                                                    <TableCell onClick={() => openPreviewDialog(invoice)} className="cursor-pointer">{getCompanyDisplay(invoice)}</TableCell>
                                                                     <TableCell onClick={() => openPreviewDialog(invoice)} className="cursor-pointer">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
                                                                     <TableCell className="text-right cursor-pointer" onClick={() => openPreviewDialog(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
                                                                     <TableCell className="text-right">
@@ -1110,3 +1118,5 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
