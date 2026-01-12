@@ -176,8 +176,7 @@ export default function CompaniesPage() {
           <Table className="hidden md:table">
             <TableHeader>
               <TableRow>
-                <TableHead>Company Name</TableHead>
-                <TableHead>Address</TableHead>
+                <TableHead>Company</TableHead>
                 <TableHead>GSTIN</TableHead>
                 <TableHead><span className="sr-only">Actions</span></TableHead>
               </TableRow>
@@ -185,13 +184,15 @@ export default function CompaniesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">Loading companies...</TableCell>
+                  <TableCell colSpan={3} className="text-center">Loading companies...</TableCell>
                 </TableRow>
               ) : companies && companies.length > 0 ? (
                 companies.map((company) => (
                   <TableRow key={company.id}>
-                    <TableCell className="font-medium">{company.name}</TableCell>
-                    <TableCell className="max-w-xs sm:max-w-sm truncate">{company.address}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{company.name}</div>
+                      <div className="text-sm text-muted-foreground max-w-xs truncate">{company.address}</div>
+                    </TableCell>
                     <TableCell className="font-mono">{company.gstin}</TableCell>
                     <TableCell className="text-right">
                        {renderActions(company)}
@@ -200,7 +201,7 @@ export default function CompaniesPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center h-24">No companies found.</TableCell>
+                  <TableCell colSpan={3} className="text-center h-24">No companies found.</TableCell>
                 </TableRow>
               )}
             </TableBody>
