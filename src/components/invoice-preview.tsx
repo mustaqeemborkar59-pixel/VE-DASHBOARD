@@ -117,31 +117,35 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
       <p className="mb-6">
         <span className="font-bold">In words:</span> {amountInWords}
       </p>
-
-      <Separator className="my-4 bg-gray-400" />
       
-      <section className="grid grid-cols-2 gap-4 mb-8">
-        <div>
-            <p className="font-bold">{myCompanyDetails.companyName}</p>
-            {opts.myCompany.showPan && <p><span className="font-bold">PAN CARD NO:</span> {myCompanyDetails.pan}</p>}
-            {opts.myCompany.showGstin && <p><span className="font-bold">GSTIN:</span> {myCompanyDetails.gstin}</p>}
-            {opts.myCompany.showSacCode && <p><span className="font-bold">SAC code:</span> {myCompanyDetails.sacCode}</p>}
-            {opts.myCompany.showServiceTaxCode && myCompanyDetails.serviceTaxCode && <p><span className="font-bold">SERVICE TAX CODE:</span> {myCompanyDetails.serviceTaxCode}</p>}
-            
-            {opts.myCompany.showBankDetails && selectedBank && (
-              <>
-                <br/>
-                <p className="font-bold">Bank Details</p>
-                <p><span className="font-bold">Bank Name:</span> {selectedBank.bankName}</p>
-                <p><span className="font-bold">A/C No:</span> {selectedBank.accountNumber}</p>
-                <p><span className="font-bold">IFSC Code:</span> {selectedBank.ifscCode}</p>
-                <p><span className="font-bold">Branch:</span> {selectedBank.bankBranch}</p>
-              </>
-            )}
+      <section className="space-y-4">
+        <div className="grid grid-cols-2 gap-4 border p-4">
+            <div>
+                <p className="font-bold">{myCompanyDetails.companyName}</p>
+                {opts.myCompany.showPan && <p><span className="font-bold">PAN CARD NO:</span> {myCompanyDetails.pan}</p>}
+                {opts.myCompany.showGstin && <p><span className="font-bold">GSTIN:</span> {myCompanyDetails.gstin}</p>}
+                {opts.myCompany.showSacCode && <p><span className="font-bold">SAC code:</span> {myCompanyDetails.sacCode}</p>}
+                {opts.myCompany.showServiceTaxCode && myCompanyDetails.serviceTaxCode && <p><span className="font-bold">SERVICE TAX CODE:</span> {myCompanyDetails.serviceTaxCode}</p>}
+            </div>
+            <div>
+                {opts.myCompany.showBankDetails && selectedBank && (
+                <>
+                    <p className="font-bold">Bank Details</p>
+                    <p><span className="font-bold">Bank Name:</span> {selectedBank.bankName}</p>
+                    <p><span className="font-bold">A/C No:</span> {selectedBank.accountNumber}</p>
+                    <p><span className="font-bold">IFSC Code:</span> {selectedBank.ifscCode}</p>
+                    <p><span className="font-bold">Branch:</span> {selectedBank.bankBranch}</p>
+                </>
+                )}
+            </div>
         </div>
-        <div className="border-l border-gray-400 pl-4">
-            <p className="font-bold">{company.name}</p>
-            {opts.clientCompany.showGstin && company.gstin && <p><span className="font-bold">GSTIN:</span> {company.gstin}</p>}
+        <div className="grid grid-cols-2 gap-4 border p-4">
+            <div>
+                <p className="font-bold">{company.name}</p>
+            </div>
+            <div>
+                 {opts.clientCompany.showGstin && company.gstin && <p><span className="font-bold">GSTIN:</span> {company.gstin}</p>}
+            </div>
         </div>
       </section>
 
