@@ -70,6 +70,7 @@ const generateInvoiceDataForWord = (invoice: Invoice, clientCompany: Company, my
           gstin: clientCompany.gstin || '',
         },
         myCompany: myCompanyDetails,
+        selectedBank: invoice.selectedBankAccount,
         billDate: format(parseISO(invoice.billDate), 'dd/MM/yyyy'),
         billNo: `${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}`.toUpperCase(),
         poNo: (invoice.poNumber || 'AGREEMENT').toUpperCase(),
@@ -379,13 +380,13 @@ export const generateAndDownloadInvoice = async (
                                         ...(downloadOpts.myCompany.showGstin ? [new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                         new Paragraph({ children: [new TextRun({ text: "SAC code: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.sacCode, font: "Calibri", size: defaultFontSize * 2})] }),
                                         
-                                        ...(downloadOpts.myCompany.showBankDetails ? [
+                                        ...(downloadOpts.myCompany.showBankDetails && invoiceData.selectedBank ? [
                                             new Paragraph({ text: " ", spacing: { before: 100 } }),
                                             new Paragraph({ children: [new TextRun({ text: "Bank Details", bold: true, font: "Calibri", size: defaultFontSize * 2 })] }),
-                                            new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.bankName, font: "Calibri", size: defaultFontSize * 2})] }),
-                                            new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.accountNumber, font: "Calibri", size: defaultFontSize * 2})] }),
-                                            new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.ifscCode, font: "Calibri", size: defaultFontSize * 2})] }),
-                                            new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.bankBranch, font: "Calibri", size: defaultFontSize * 2})] }),
+                                            new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.bankName, font: "Calibri", size: defaultFontSize * 2})] }),
+                                            new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.accountNumber, font: "Calibri", size: defaultFontSize * 2})] }),
+                                            new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.ifscCode, font: "Calibri", size: defaultFontSize * 2})] }),
+                                            new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.bankBranch, font: "Calibri", size: defaultFontSize * 2})] }),
                                         ] : []),
                                     ],
                                     borders: tableHeaderBorders,
@@ -425,3 +426,5 @@ export const generateAndDownloadInvoice = async (
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);
 }
+
+    

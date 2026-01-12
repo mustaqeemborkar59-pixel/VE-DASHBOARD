@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc, setDoc, writeBatch } from 'firebase/firestore';
-import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions } from '@/lib/data';
+import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions, BankAccount } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X } from 'lucide-react';
@@ -124,6 +124,7 @@ export default function BillingPage() {
     poNumber: 'AGREEMENT',
     site: '',
     items: [{ key: `item-${Date.now()}`, particulars: '', rate: '', amount: 0 }],
+    selectedBankAccountId: '',
   };
 
   const [companyId, setCompanyId] = useState<string>('');
@@ -131,6 +132,8 @@ export default function BillingPage() {
   const [poNumber, setPoNumber] = useState('AGREEMENT');
   const [site, setSite] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>(initialFormState.items);
+  const [selectedBankAccountId, setSelectedBankAccountId] = useState('');
+
     
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [invoicePageSettings, setInvoicePageSettings] = useState<PageSettings>(defaultPageSettings);
@@ -158,11 +161,15 @@ export default function BillingPage() {
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
   const allInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billNo', 'desc')) : null, [firestore]);
   const settingsDocRef = useMemoFirebase(() => firestore ? doc(firestore, 'companySettings', 'primary') : null, [firestore]);
+  const bankAccountsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companySettings', 'primary', 'bankAccounts'), orderBy('nickname')) : null, [firestore]);
+
 
   // Data
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
   const { data: allInvoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(allInvoicesQuery);
   const { data: myCompanyDetails, isLoading: isLoadingSettings } = useDoc<CompanySettings>(settingsDocRef);
+  const { data: bankAccounts, isLoading: isLoadingBankAccounts } = useCollection<BankAccount>(bankAccountsQuery);
+
   
   useEffect(() => {
     if (myCompanyDetails) {
@@ -200,10 +207,11 @@ export default function BillingPage() {
       setPoNumber(initialFormState.poNumber);
       setSite(initialFormState.site);
       setItems(initialFormState.items);
+      setSelectedBankAccountId(initialFormState.selectedBankAccountId);
       setEditingInvoice(null);
       setInvoicePageSettings(liveDefaultPageSettings);
       setFormDownloadOptions(defaultDownloadOptions);
-  }, [initialFormState, liveDefaultPageSettings, defaultDownloadOptions]);
+  }, [initialFormState, liveDefaultPageSettings]);
 
   const openFormDialog = useCallback((invoice: Invoice | null) => {
     closeAllDialogs();
@@ -214,6 +222,7 @@ export default function BillingPage() {
       setPoNumber(invoice.poNumber || 'AGREEMENT');
       setSite(invoice.site || '');
       setItems(invoice.items.map((item, index) => ({ ...item, key: `item-${Date.now()}-${index}` })));
+      setSelectedBankAccountId(invoice.selectedBankAccount?.id || '');
       setInvoicePageSettings({
           size: invoice.pageSize || liveDefaultPageSettings.size,
           orientation: invoice.pageOrientation || liveDefaultPageSettings.orientation,
@@ -263,6 +272,10 @@ export default function BillingPage() {
     }
     if (!invoice.myCompanyDetails) {
       toast({ variant: 'destructive', title: 'Error', description: 'Your company details were not saved with this invoice.' });
+      return;
+    }
+     if (!invoice.selectedBankAccount) {
+      toast({ variant: 'destructive', title: 'Error', description: 'No bank account was saved with this invoice.' });
       return;
     }
     
@@ -414,11 +427,11 @@ export default function BillingPage() {
   
   
   const handleFormSubmit = async () => {
-    if (!companyId || !billDate || items.some(i => !i.particulars || i.amount <= 0)) {
+    if (!companyId || !billDate || !selectedBankAccountId || items.some(i => !i.particulars || i.amount <= 0)) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
-        description: 'Please select a company, date, and fill all invoice items with an amount.',
+        description: 'Please select a company, bank account, date, and fill all invoice items.',
       });
       return;
     }
@@ -430,6 +443,12 @@ export default function BillingPage() {
         description: 'Your company details are not set. Please go to the Settings page to add them before creating an invoice.',
       });
       return;
+    }
+    
+    const selectedBankAccount = bankAccounts?.find(b => b.id === selectedBankAccountId);
+    if (!selectedBankAccount) {
+        toast({ variant: 'destructive', title: 'Bank Account Error', description: 'Could not find the selected bank account.' });
+        return;
     }
 
     if (firestore && settingsDocRef) {
@@ -467,6 +486,7 @@ export default function BillingPage() {
         grandTotal: calculations.grandTotal,
         myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetails!,
         clientCompanyDetails: editingInvoice?.clientCompanyDetails || selectedCompanyForNewInvoice!,
+        selectedBankAccount: selectedBankAccount,
         ...currentInvoiceSettings,
         downloadOptions: currentDownloadOptions,
       };
@@ -922,13 +942,30 @@ export default function BillingPage() {
                                     className="w-full"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="site">Site</Label>
-                                <Input id="site" value={site} onChange={e => setSite(e.target.value)} placeholder="e.g., THANE DEPOT" />
+                             <div className="space-y-2">
+                                <Label htmlFor="bankAccount">Bank Account</Label>
+                                <Select value={selectedBankAccountId} onValueChange={setSelectedBankAccountId} disabled={isLoadingBankAccounts}>
+                                    <SelectTrigger id="bankAccount">
+                                        <SelectValue placeholder="Select bank account" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {isLoadingBankAccounts ? (
+                                            <SelectItem value="loading" disabled>Loading accounts...</SelectItem>
+                                        ) : (
+                                            bankAccounts?.map(account => (
+                                                <SelectItem key={account.id} value={account.id}>{account.nickname}</SelectItem>
+                                            ))
+                                        )}
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="poNumber">PO.NO</Label>
                                 <Input id="poNumber" value={poNumber} onChange={e => setPoNumber(e.target.value)} />
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="site">Site</Label>
+                                <Input id="site" value={site} onChange={e => setSite(e.target.value)} placeholder="e.g., THANE DEPOT" />
                             </div>
                         </div>
 
@@ -1038,7 +1075,7 @@ export default function BillingPage() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDeleteInvoice(); }} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDeleteInvoice(); }}>Delete</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
@@ -1118,5 +1155,7 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
 
     
