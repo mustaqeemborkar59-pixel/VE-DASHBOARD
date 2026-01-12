@@ -81,21 +81,22 @@ export default function CompaniesPage() {
     if (!firestore || !companies) return;
 
     const newName = formData.name.trim().toLowerCase();
+    const newAddress = formData.address.trim().toLowerCase();
 
-    // Check for duplicates
+    // Check for duplicates based on both name and address
     const isDuplicate = companies.some(company => {
       // If we are editing, we should exclude the current company from the check
       if (selectedCompany && company.id === selectedCompany.id) {
         return false;
       }
-      return company.name.trim().toLowerCase() === newName;
+      return company.name.trim().toLowerCase() === newName && company.address.trim().toLowerCase() === newAddress;
     });
 
     if (isDuplicate) {
       toast({
         variant: "destructive",
         title: "Duplicate Company",
-        description: "A company with this name already exists. Please use a different name.",
+        description: "A company with the same name and address already exists.",
       });
       return; // Stop the submission
     }
