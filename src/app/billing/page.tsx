@@ -114,7 +114,7 @@ export default function BillingPage() {
   
   const defaultDownloadOptions: DownloadOptions = {
       myCompany: { showGstin: true, showPan: true, showBankDetails: true },
-      clientCompany: { showGstin: true, showBankDetails: true }
+      clientCompany: { showGstin: true }
   };
   
   const initialFormState = {
@@ -169,17 +169,17 @@ export default function BillingPage() {
     }
   }, [myCompanyDetails]);
   
-  const handleDelayedAction = (action: () => void) => {
-    setTimeout(action, 100);
-  };
-  
   const closeAllDialogs = useCallback(() => {
-    setIsFormDialogOpen(false);
     setInvoiceToDelete(null);
     setInvoiceToDuplicate(null);
     setIsBulkDuplicateDialogOpen(false);
+    setIsFormDialogOpen(false);
     setIsPreviewOpen(false);
   }, []);
+
+  const handleDelayedAction = (action: () => void) => {
+    setTimeout(action, 100);
+  };
   
   const liveDefaultPageSettings = useMemo((): PageSettings => {
     if (!myCompanyDetails) return defaultPageSettings;
@@ -320,7 +320,7 @@ export default function BillingPage() {
       return acc;
     }, {} as Record<string, Invoice[]>);
     
-    const sortedYearKeys = Object.keys(groupedByYear).sort((a, b) => a.localeCompare(b));
+    const sortedYearKeys = Object.keys(groupedByYear).sort((a, b) => b.localeCompare(a));
 
     return sortedYearKeys.map((yearKey, index) => {
       const yearInvoices = groupedByYear[yearKey];
@@ -344,15 +344,15 @@ export default function BillingPage() {
         const monthMaxBill = Math.max(...monthInvoices.map(inv => inv.billNo));
         const monthDate = parseISO(`${monthKey}-01`);
         
-        // Sort invoices within the month by bill number ascending
-        const sortedMonthInvoices = monthInvoices.sort((a,b) => a.billNo - b.billNo);
+        // Sort invoices within the month by bill number descending
+        const sortedMonthInvoices = monthInvoices.sort((a,b) => b.billNo - a.billNo);
 
         return {
           key: monthKey,
           label: `${format(monthDate, 'MM-MMM yyyy').toUpperCase()} (BILL NO-${monthMinBill}-${monthMaxBill})`,
           invoices: sortedMonthInvoices,
         };
-      }).sort((a, b) => a.key.localeCompare(b.key));
+      }).sort((a, b) => b.key.localeCompare(a.key));
 
       return {
         key: yearKey,
@@ -640,10 +640,6 @@ export default function BillingPage() {
                     <Checkbox id="clientGstin" checked={options.clientCompany.showGstin} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, clientCompany: {...prev.clientCompany, showGstin: !!checked} }))} />
                     <Label htmlFor="clientGstin">Show GSTIN</Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                    <Checkbox id="clientBank" checked={options.clientCompany.showBankDetails} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, clientCompany: {...prev.clientCompany, showBankDetails: !!checked} }))} />
-                    <Label htmlFor="clientBank">Show Bank Details</Label>
-                </div>
             </div>
         </div>
     );
@@ -681,13 +677,13 @@ export default function BillingPage() {
   };
 
   const renderInvoiceActions = (invoice: Invoice) => (
-    <DropdownMenu onOpenChange={open => !open && closeAllDialogs()}>
+    <DropdownMenu>
         <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
                 <EllipsisVertical className="h-4 w-4" />
             </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-40">
+        <DropdownMenuContent className="w-40" onCloseAutoFocus={(e) => e.preventDefault()}>
             <DropdownMenuItem onSelect={() => openPreviewDialog(invoice)}>
                 <Eye className="mr-2 h-4 w-4" />Preview
             </DropdownMenuItem>
@@ -720,7 +716,7 @@ export default function BillingPage() {
                     <div className="flex items-center gap-2 self-start sm:self-center">
                         {selectedInvoices.length > 0 && (
                             <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" onClick={() => openBulkDuplicateDialog()}>
+                                <Button variant="outline" size="sm" onClick={openBulkDuplicateDialog}>
                                     <Copy className="mr-2 h-4 w-4" />
                                     Duplicate ({selectedInvoices.length})
                                 </Button>
@@ -736,7 +732,7 @@ export default function BillingPage() {
                                     <Settings className="h-4 w-4" />
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-96">
+                            <PopoverContent className="w-96" onCloseAutoFocus={(e) => e.preventDefault()}>
                                 <div className="space-y-4">
                                     <h4 className="font-medium leading-none">Default Document Settings</h4>
                                     <p className="text-sm text-muted-foreground">Set the default layout for new invoices.</p>
@@ -871,7 +867,7 @@ export default function BillingPage() {
             </CardContent>
         </Card>
 
-        <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
+        <Dialog open={isFormDialogOpen} onOpenChange={(open) => {if(!open) closeAllDialogs(); else setIsFormDialogOpen(true); }}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pb-0">
                     <DialogTitle>{editingInvoice ? 'Edit Invoice' : 'Generate New Invoice'}</DialogTitle>
@@ -1015,7 +1011,7 @@ export default function BillingPage() {
             </DialogContent>
         </Dialog>
 
-        <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && setInvoiceToDelete(null)}>
+        <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && closeAllDialogs()}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -1025,12 +1021,12 @@ export default function BillingPage() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDeleteInvoice(); }} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                <AlertDialogAction onClick={handleDeleteInvoice} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={!!invoiceToDuplicate} onOpenChange={(open) => !open && setInvoiceToDuplicate(null)}>
+        <AlertDialog open={!!invoiceToDuplicate} onOpenChange={(open) => !open && closeAllDialogs()}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Duplicate Invoice</AlertDialogTitle>
@@ -1055,7 +1051,7 @@ export default function BillingPage() {
             </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={isBulkDuplicateDialogOpen} onOpenChange={setIsBulkDuplicateDialogOpen}>
+        <AlertDialog open={isBulkDuplicateDialogOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Bulk Duplicate Invoices</AlertDialogTitle>
@@ -1082,7 +1078,7 @@ export default function BillingPage() {
             </AlertDialogContent>
         </AlertDialog>
         
-        <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <Dialog open={isPreviewOpen} onOpenChange={(open) => {if(!open) closeAllDialogs(); else setIsPreviewOpen(true); }}>
             <DialogContent className="max-w-4xl p-0">
                  <DialogHeader className="p-6 pb-2">
                     <DialogTitle>Invoice Preview</DialogTitle>

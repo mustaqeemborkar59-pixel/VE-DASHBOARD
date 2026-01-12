@@ -28,7 +28,6 @@ export type DownloadOptions = {
     };
     clientCompany: {
         showGstin: boolean;
-        showBankDetails: boolean;
     };
 };
 
@@ -68,10 +67,6 @@ const generateInvoiceDataForWord = (invoice: Invoice, clientCompany: Company, my
           name: clientCompany.name.toUpperCase(),
           address: clientCompany.address.toUpperCase(),
           gstin: clientCompany.gstin || '',
-          bankName: clientCompany.bankName || '',
-          accountNumber: clientCompany.accountNumber || '',
-          ifscCode: clientCompany.ifscCode || '',
-          bankBranch: clientCompany.bankBranch || '',
         },
         myCompany: myCompanyDetails,
         billDate: format(parseISO(invoice.billDate), 'dd/MM/yyyy'),
@@ -138,7 +133,7 @@ export const generateAndDownloadInvoice = async (
 
     const downloadOpts: DownloadOptions = options || {
         myCompany: { showGstin: true, showPan: true, showBankDetails: true },
-        clientCompany: { showGstin: true, showBankDetails: true },
+        clientCompany: { showGstin: true },
     };
 
     const invoiceData = generateInvoiceDataForWord(invoice, clientCompany, myCompanyDetails, template);
@@ -399,16 +394,6 @@ export const generateAndDownloadInvoice = async (
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
                                         ...(downloadOpts.clientCompany.showGstin && invoiceData.to.gstin ? [new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
-                                        
-                                        ...(downloadOpts.clientCompany.showBankDetails && (invoiceData.to.bankName || invoiceData.to.accountNumber || invoiceData.to.ifscCode || invoiceData.to.bankBranch) ? [
-                                            new Paragraph({ text: " ", spacing: { before: 100 } }),
-                                            new Paragraph({ children: [new TextRun({ text: "Bank Details", bold: true, font: "Calibri", size: defaultFontSize * 2 })] })
-                                        ] : []),
-                                        
-                                        ...(downloadOpts.clientCompany.showBankDetails && invoiceData.to.bankName ? [new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.bankName, font: "Calibri", size: defaultFontSize * 2})] })] : []),
-                                        ...(downloadOpts.clientCompany.showBankDetails && invoiceData.to.accountNumber ? [new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.accountNumber, font: "Calibri", size: defaultFontSize * 2})] })] : []),
-                                        ...(downloadOpts.clientCompany.showBankDetails && invoiceData.to.ifscCode ? [new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.ifscCode, font: "Calibri", size: defaultFontSize * 2})] })] : []),
-                                        ...(downloadOpts.clientCompany.showBankDetails && invoiceData.to.bankBranch ? [new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.bankBranch, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                     ],
                                     borders: tableHeaderBorders,
                                     margins: cellMargins
@@ -435,3 +420,5 @@ export const generateAndDownloadInvoice = async (
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);
 }
+
+    

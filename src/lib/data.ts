@@ -54,10 +54,6 @@ export type Company = {
     name: string;
     address: string;
     gstin?: string;
-    bankName?: string;
-    accountNumber?: string;
-    ifscCode?: string;
-    bankBranch?: string;
     createdAt: string;
 }
 
@@ -104,7 +100,6 @@ export type DownloadOptions = {
     };
     clientCompany: {
         showGstin: boolean;
-        showBankDetails: boolean;
     };
 };
 
@@ -141,3 +136,5 @@ export type InvoiceTemplate = {
     order: number;
   }[];
 };
+
+    

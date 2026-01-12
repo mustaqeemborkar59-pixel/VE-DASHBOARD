@@ -140,17 +140,6 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
         <div className="border-l border-gray-400 pl-4">
             <p className="font-bold">{company.name}</p>
             {opts.clientCompany.showGstin && company.gstin && <p><span className="font-bold">GSTIN:</span> {company.gstin}</p>}
-            
-            {opts.clientCompany.showBankDetails && (company.bankName || company.accountNumber || company.ifscCode || company.bankBranch) && (
-              <>
-                <br/>
-                <p className="font-bold">Bank Details</p>
-                {company.bankName && <p><span className="font-bold">Bank Name:</span> {company.bankName}</p>}
-                {company.accountNumber && <p><span className="font-bold">A/C No:</span> {company.accountNumber}</p>}
-                {company.ifscCode && <p><span className="font-bold">IFSC Code:</span> {company.ifscCode}</p>}
-                {company.bankBranch && <p><span className="font-bold">Branch:</span> {company.bankBranch}</p>}
-              </>
-            )}
         </div>
       </section>
 
@@ -166,3 +155,5 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
     </div>
   );
 }
+
+    

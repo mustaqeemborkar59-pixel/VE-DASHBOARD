@@ -12,10 +12,6 @@ export type CompanyFormData = {
   name: string;
   address: string;
   gstin: string;
-  bankName: string;
-  accountNumber: string;
-  ifscCode: string;
-  bankBranch: string;
 };
 
 interface CompanyFormProps {
@@ -30,10 +26,6 @@ export function CompanyForm({ onSubmit, initialData, mode }: CompanyFormProps) {
     name: '',
     address: '',
     gstin: '',
-    bankName: '',
-    accountNumber: '',
-    ifscCode: '',
-    bankBranch: '',
   });
 
   useEffect(() => {
@@ -42,20 +34,12 @@ export function CompanyForm({ onSubmit, initialData, mode }: CompanyFormProps) {
         name: initialData.name,
         address: initialData.address,
         gstin: initialData.gstin || '',
-        bankName: initialData.bankName || '',
-        accountNumber: initialData.accountNumber || '',
-        ifscCode: initialData.ifscCode || '',
-        bankBranch: initialData.bankBranch || '',
       });
     } else {
       setFormData({
         name: '',
         address: '',
         gstin: '',
-        bankName: '',
-        accountNumber: '',
-        ifscCode: '',
-        bankBranch: '',
       });
     }
   }, [initialData, mode]);
@@ -92,32 +76,8 @@ export function CompanyForm({ onSubmit, initialData, mode }: CompanyFormProps) {
         <Label htmlFor="gstin">GSTIN</Label>
         <Input id="gstin" value={formData.gstin} onChange={handleInputChange} placeholder="e.g., 27AACCA4355K1ZL" />
       </div>
-      
-      <Separator />
-      
-      <div className="space-y-4">
-          <h3 className="text-lg font-medium">Bank Details (Optional)</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="bankName">Bank Name</Label>
-              <Input id="bankName" value={formData.bankName} onChange={handleInputChange} placeholder="e.g., HDFC Bank" />
-            </div>
-             <div className="grid gap-2">
-              <Label htmlFor="bankBranch">Bank Branch</Label>
-              <Input id="bankBranch" value={formData.bankBranch} onChange={handleInputChange} placeholder="e.g., Thane West" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="accountNumber">Account Number</Label>
-                <Input id="accountNumber" value={formData.accountNumber} onChange={handleInputChange} placeholder="e.g., 50200012345678" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="ifscCode">IFSC Code</Label>
-                <Input id="ifscCode" value={formData.ifscCode} onChange={handleInputChange} placeholder="e.g., HDFC0000001" />
-              </div>
-          </div>
-      </div>
     </form>
   );
 }
+
+    
