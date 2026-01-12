@@ -397,17 +397,18 @@ export const generateAndDownloadInvoice = async (
 
                 new DocxTable({
                      width: { size: 100, type: WidthType.PERCENTAGE },
-                     columnWidths: [50, 50],
                      borders: tableHeaderBorders,
                      rows: [
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
+                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({text: invoiceData.to.name, bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
                                     margins: cellMargins,
                                     borders: { right: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
                                 }),
                                  new DocxTableCell({
+                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
                                         ...(downloadOpts.clientCompany.showGstin && invoiceData.to.gstin ? [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
