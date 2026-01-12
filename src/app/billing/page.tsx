@@ -169,17 +169,17 @@ export default function BillingPage() {
     }
   }, [myCompanyDetails]);
   
-  const closeAllDialogs = useCallback(() => {
-    setInvoiceToDelete(null);
-    setInvoiceToDuplicate(null);
-    setIsBulkDuplicateDialogOpen(false);
-    setIsFormDialogOpen(false);
-    setIsPreviewOpen(false);
-  }, []);
-
   const handleDelayedAction = (action: () => void) => {
     setTimeout(action, 100);
   };
+  
+  const closeAllDialogs = useCallback(() => {
+    setIsFormDialogOpen(false);
+    setInvoiceToDelete(null);
+    setInvoiceToDuplicate(null);
+    setIsBulkDuplicateDialogOpen(false);
+    setIsPreviewOpen(false);
+  }, []);
   
   const liveDefaultPageSettings = useMemo((): PageSettings => {
     if (!myCompanyDetails) return defaultPageSettings;
@@ -1021,7 +1021,7 @@ export default function BillingPage() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteInvoice} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDeleteInvoice(); }} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
