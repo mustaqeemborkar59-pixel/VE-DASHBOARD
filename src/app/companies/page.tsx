@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -56,6 +56,8 @@ export default function CompaniesPage() {
 
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('createdAt', 'desc')) : null, [firestore]);
   const { data: companies, isLoading } = useCollection<Company>(companiesQuery);
+
+  const companiesCount = useMemo(() => companies?.length, [companies]);
   
   const closeAllDialogs = useCallback(() => {
     setIsAddEditDialogOpen(false);
@@ -132,7 +134,7 @@ export default function CompaniesPage() {
   };
 
   const renderActions = (company: Company) => (
-    <DropdownMenu onOpenChange={(open) => { if (!open) closeAllDialogs(); }}>
+    <DropdownMenu>
         <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
                 <EllipsisVertical className="h-4 w-4" />
@@ -158,7 +160,9 @@ export default function CompaniesPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Companies</CardTitle>
-              <CardDescription>Manage your client companies.</CardDescription>
+               <CardDescription>
+                Manage your client companies. You currently have {isLoading ? '...' : companiesCount} registered companies.
+              </CardDescription>
             </div>
             <Button onClick={() => openAddEditDialog(null)} size="sm">
               <PlusCircle className="mr-2 h-4 w-4" />
