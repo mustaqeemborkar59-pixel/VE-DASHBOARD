@@ -386,11 +386,15 @@ export const generateAndDownloadInvoice = async (
                                     ],
                                     verticalAlign: VerticalAlign.TOP,
                                     margins: cellMargins,
+                                    borders: { left: { style: BorderStyle.NONE } }
                                 }),
                             ]
                        })
                     ]
                 }),
+
+                new Paragraph({ text: "", spacing: { before: 10 } }),
+
                 new DocxTable({
                      width: { size: 100, type: WidthType.PERCENTAGE },
                      columnWidths: [50, 50],
@@ -409,6 +413,7 @@ export const generateAndDownloadInvoice = async (
                                         ...(downloadOpts.clientCompany.showGstin && invoiceData.to.gstin ? [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                     ],
                                     margins: cellMargins,
+                                    borders: { left: { style: BorderStyle.NONE } }
                                 }),
                             ]
                         })
