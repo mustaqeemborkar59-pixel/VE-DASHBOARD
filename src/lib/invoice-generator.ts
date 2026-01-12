@@ -160,7 +160,7 @@ export const generateAndDownloadInvoice = async (
     
     const tableBottomBorder = { bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" }};
     
-    const cellMargins = { top: 50, bottom: 50, left: 100, right: 100 };
+    const cellMargins = { top: 40, bottom: 40, left: 100, right: 100 };
 
     const headerCells = [
         new DocxTableCell({
