@@ -169,10 +169,6 @@ export default function SettingsPage() {
                                     <Label htmlFor="companyName">Company Name</Label>
                                     <Input id="companyName" value={settings.companyName || ''} onChange={handleInputChange} />
                                 </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="sacCode">SAC Code</Label>
-                                    <Input id="sacCode" value={settings.sacCode || ''} onChange={handleInputChange} />
-                                </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="pan">PAN Number</Label>
                                     <Input id="pan" value={settings.pan || ''} onChange={handleInputChange} />
@@ -180,6 +176,14 @@ export default function SettingsPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="gstin">GSTIN</Label>
                                     <Input id="gstin" value={settings.gstin || ''} onChange={handleInputChange} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="sacCode">SAC Code</Label>
+                                    <Input id="sacCode" value={settings.sacCode || ''} onChange={handleInputChange} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="serviceTaxCode">Service Tax Code No</Label>
+                                    <Input id="serviceTaxCode" value={settings.serviceTaxCode || ''} onChange={handleInputChange} />
                                 </div>
                             </div>
                         </div>

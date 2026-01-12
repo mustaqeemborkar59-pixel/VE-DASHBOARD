@@ -86,6 +86,7 @@ export type CompanySettings = {
     pan: string;
     gstin: string;
     sacCode: string;
+    serviceTaxCode?: string;
     contactPerson: string;
     contactNumber: string;
     // New fields for invoice and document settings

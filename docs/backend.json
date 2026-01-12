@@ -442,6 +442,9 @@
         "sacCode": {
           "type": "string"
         },
+        "serviceTaxCode": {
+          "type": "string"
+        },
         "contactPerson": {
           "type": "string"
         },
