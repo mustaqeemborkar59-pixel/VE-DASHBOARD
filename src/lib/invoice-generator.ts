@@ -364,22 +364,36 @@ export const generateAndDownloadInvoice = async (
                             children: [
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
+                                    children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: invoiceData.myCompany.companyName, bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
+                                    margins: cellMargins,
+                                    borders: { right: { style: BorderStyle.SINGLE, size: 6, color: "000000" }, bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
+                                }),
+                                new DocxTableCell({
+                                    width: { size: 50, type: WidthType.PERCENTAGE },
+                                    children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: 'Bank Details', bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
+                                    margins: cellMargins,
+                                    borders: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
+                                }),
+                            ]
+                       }),
+                       new DocxTableRow({
+                            children: [
+                                new DocxTableCell({
+                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
-                                        new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: invoiceData.myCompany.companyName, bold: true, size: defaultFontSize * 2, font: "Calibri"})] }),
-                                         ...(downloadOpts.myCompany.showPan ? [new Paragraph({ children: [new TextRun({ text: "PAN CARD NO: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.pan, font: "Calibri", size: defaultFontSize * 2})] })] : []),
+                                        ...(downloadOpts.myCompany.showPan ? [new Paragraph({ children: [new TextRun({ text: "PAN CARD NO: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.pan, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                         ...(downloadOpts.myCompany.showGstin ? [new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                         ...(downloadOpts.myCompany.showSacCode ? [new Paragraph({ children: [new TextRun({ text: "SAC code: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.sacCode, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                         ...(downloadOpts.myCompany.showServiceTaxCode && invoiceData.myCompany.serviceTaxCode ? [new Paragraph({ children: [new TextRun({ text: "SERVICE TAX CODE: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.serviceTaxCode, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                     ],
                                     verticalAlign: VerticalAlign.TOP,
                                     margins: cellMargins,
-                                    borders: { ...tableHeaderBorders, right: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
+                                    borders: { right: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
                                 }),
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
-                                        new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: 'Bank Details', bold: true, size: defaultFontSize * 2, font: "Calibri"})] }),
-                                         ...(downloadOpts.myCompany.showBankDetails && invoiceData.selectedBank ? [
+                                        ...(downloadOpts.myCompany.showBankDetails && invoiceData.selectedBank ? [
                                             new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.bankName, font: "Calibri", size: defaultFontSize * 2})] }),
                                             new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.accountNumber, font: "Calibri", size: defaultFontSize * 2})] }),
                                             new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.ifscCode, font: "Calibri", size: defaultFontSize * 2})] }),
@@ -388,7 +402,7 @@ export const generateAndDownloadInvoice = async (
                                     ],
                                     verticalAlign: VerticalAlign.TOP,
                                     margins: cellMargins,
-                                    borders: { ...tableHeaderBorders, left: { style: BorderStyle.NONE } }
+                                    borders: {}
                                 }),
                             ]
                        })
