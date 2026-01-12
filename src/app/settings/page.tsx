@@ -51,7 +51,7 @@ export default function SettingsPage() {
         const { id, value, type } = e.target;
         if (type === 'number') {
             const numValue = value === '' ? null : parseFloat(value);
-            if (numValue === null || !isNaN(numValue)) {
+            if (numValue === null || !isNaN(numValue as number)) {
                 setSettings(prev => ({ ...prev, [id]: numValue }));
             }
         } else {
@@ -65,7 +65,7 @@ export default function SettingsPage() {
     
     const handleMarginChange = (field: keyof PageMargin, value: string) => {
       const numValue = value === '' ? null : parseFloat(value);
-       if (numValue === null || !isNaN(numValue)) {
+       if (numValue === null || !isNaN(numValue as number)) {
         setSettings(prev => ({
             ...prev,
             pageMargins: { ...(prev.pageMargins || {top: 0, right: 0, bottom: 0, left: 0}), [field]: numValue }
@@ -75,7 +75,7 @@ export default function SettingsPage() {
     
     const handleFontSizeChange = (field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', value: string) => {
         const numValue = value === '' ? null : parseInt(value, 10);
-        if (numValue === null || !isNaN(numValue)) {
+        if (numValue === null || !isNaN(numValue as number)) {
             setSettings(p => ({...p, [field]: numValue}));
         }
     }
@@ -97,11 +97,21 @@ export default function SettingsPage() {
             setIsSubmitting(false);
         }
     };
+
+    const closeAllDialogs = useCallback(() => {
+        setIsBankAccountDialogOpen(false);
+        setBankAccountToDelete(null);
+    }, []);
+
+    const handleDelayedAction = (action: () => void) => {
+        setTimeout(action, 100);
+    };
     
     const openBankAccountDialog = useCallback((bankAccount: BankAccount | null) => {
+        closeAllDialogs();
         setSelectedBankAccount(bankAccount);
-        setIsBankAccountDialogOpen(true);
-    }, []);
+        handleDelayedAction(() => setIsBankAccountDialogOpen(true));
+    }, [closeAllDialogs]);
 
     const handleBankAccountFormSubmit = (formData: BankAccountFormData) => {
         if (!bankAccountsQuery) return;
@@ -118,8 +128,9 @@ export default function SettingsPage() {
     };
     
     const openDeleteDialog = useCallback((bankAccount: BankAccount) => {
-        setBankAccountToDelete(bankAccount);
-    }, []);
+        closeAllDialogs();
+        handleDelayedAction(() => setBankAccountToDelete(bankAccount));
+    }, [closeAllDialogs]);
     
     const handleDeleteBankAccount = () => {
         if (!bankAccountsQuery || !bankAccountToDelete) return;
@@ -323,7 +334,7 @@ export default function SettingsPage() {
                 </Card>
             </div>
             
-            <Dialog open={isBankAccountDialogOpen} onOpenChange={setIsBankAccountDialogOpen}>
+            <Dialog open={isBankAccountDialogOpen} onOpenChange={(open) => {if(!open) closeAllDialogs(); else setIsBankAccountDialogOpen(true); }}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{selectedBankAccount ? 'Edit Bank Account' : 'Add New Bank Account'}</DialogTitle>
@@ -340,7 +351,7 @@ export default function SettingsPage() {
                 </DialogContent>
             </Dialog>
 
-            <AlertDialog open={!!bankAccountToDelete} onOpenChange={(open) => !open && setBankAccountToDelete(null)}>
+            <AlertDialog open={!!bankAccountToDelete} onOpenChange={(open) => !open && closeAllDialogs()}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
