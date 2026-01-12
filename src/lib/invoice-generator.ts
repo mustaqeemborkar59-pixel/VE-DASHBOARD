@@ -357,11 +357,17 @@ export const generateAndDownloadInvoice = async (
 
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
+                    columnWidths: [33, 34, 33],
                     rows: [
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
                                     children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: invoiceData.myCompany.companyName, bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
+                                    borders: tableHeaderBorders,
+                                    margins: cellMargins,
+                                }),
+                                new DocxTableCell({
+                                    children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: 'Bank Details', bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
                                     borders: tableHeaderBorders,
                                     margins: cellMargins,
                                 }),
@@ -375,28 +381,30 @@ export const generateAndDownloadInvoice = async (
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
                                         ...(downloadOpts.myCompany.showPan ? [new Paragraph({ children: [new TextRun({ text: "PAN CARD NO: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.pan, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                         ...(downloadOpts.myCompany.showGstin ? [new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                         ...(downloadOpts.myCompany.showSacCode ? [new Paragraph({ children: [new TextRun({ text: "SAC code: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.sacCode, font: "Calibri", size: defaultFontSize * 2})] })] : []),
                                         ...(downloadOpts.myCompany.showServiceTaxCode && invoiceData.myCompany.serviceTaxCode ? [new Paragraph({ children: [new TextRun({ text: "SERVICE TAX CODE: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.myCompany.serviceTaxCode, font: "Calibri", size: defaultFontSize * 2})] })] : []),
-                                        
-                                        ...(downloadOpts.myCompany.showBankDetails && invoiceData.selectedBank ? [
-                                            new Paragraph({ text: " ", spacing: { before: 100 } }),
-                                            new Paragraph({ children: [new TextRun({ text: "Bank Details", bold: true, font: "Calibri", size: defaultFontSize * 2 })] }),
-                                            new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.bankName, font: "Calibri", size: defaultFontSize * 2})] }),
-                                            new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.accountNumber, font: "Calibri", size: defaultFontSize * 2})] }),
-                                            new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.ifscCode, font: "Calibri", size: defaultFontSize * 2})] }),
-                                            new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.bankBranch, font: "Calibri", size: defaultFontSize * 2})] }),
-                                        ] : []),
                                     ],
                                     borders: tableHeaderBorders,
                                     margins: cellMargins
                                 }),
                                 new DocxTableCell({
-                                    width: { size: 50, type: WidthType.PERCENTAGE },
+                                    verticalAlign: VerticalAlign.TOP,
+                                    children: [
+                                        ...(downloadOpts.myCompany.showBankDetails && invoiceData.selectedBank ? [
+                                            new Paragraph({ children: [new TextRun({ text: "Bank Name: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.bankName, font: "Calibri", size: defaultFontSize * 2})] }),
+                                            new Paragraph({ children: [new TextRun({ text: "A/C No: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.accountNumber, font: "Calibri", size: defaultFontSize * 2})] }),
+                                            new Paragraph({ children: [new TextRun({ text: "IFSC Code: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.ifscCode, font: "Calibri", size: defaultFontSize * 2})] }),
+                                            new Paragraph({ children: [new TextRun({ text: "Branch: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.selectedBank.bankBranch, font: "Calibri", size: defaultFontSize * 2})] }),
+                                        ] : [new Paragraph({text: ""})]),
+                                    ],
+                                    borders: tableHeaderBorders,
+                                    margins: cellMargins
+                                }),
+                                new DocxTableCell({
                                     verticalAlign: VerticalAlign.TOP,
                                     children: [
                                         ...(downloadOpts.clientCompany.showGstin && invoiceData.to.gstin ? [new Paragraph({ children: [new TextRun({ text: "GSTIN: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({text: invoiceData.to.gstin, font: "Calibri", size: defaultFontSize * 2})] })] : []),
@@ -420,7 +428,7 @@ export const generateAndDownloadInvoice = async (
     });
 
     const companyNameForFile = clientCompany.name.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase();
-    const siteForFile = (invoice.site && downloadOpts.includeSiteInFilename) ? `(${invoice.site.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase()})` : '';
+    const siteForFile = (invoice.site && downloadOpts.includeSiteInFilename) ? `(${invoice.site.replace(/[^a-zA-Z0.9]/g, '-').toUpperCase()})` : '';
     const monthYear = format(parseISO(invoice.billDate), 'MMM-yy').toUpperCase();
     
     // Bill no.1-MHE-BISLERI-INTERNATIONAL-PVT-LTD-(THANE-DEPOT)-(APR-24)-GST 18
@@ -429,5 +437,3 @@ export const generateAndDownloadInvoice = async (
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);
 }
-
-    
