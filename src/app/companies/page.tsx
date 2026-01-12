@@ -78,7 +78,27 @@ export default function CompaniesPage() {
   }, [closeAllDialogs]);
 
   const handleFormSubmit = (formData: CompanyFormData) => {
-    if (!firestore) return;
+    if (!firestore || !companies) return;
+
+    const newName = formData.name.trim().toLowerCase();
+
+    // Check for duplicates
+    const isDuplicate = companies.some(company => {
+      // If we are editing, we should exclude the current company from the check
+      if (selectedCompany && company.id === selectedCompany.id) {
+        return false;
+      }
+      return company.name.trim().toLowerCase() === newName;
+    });
+
+    if (isDuplicate) {
+      toast({
+        variant: "destructive",
+        title: "Duplicate Company",
+        description: "A company with this name already exists. Please use a different name.",
+      });
+      return; // Stop the submission
+    }
     
     if (selectedCompany) { // Edit mode
       const companyDocRef = doc(firestore, 'companies', selectedCompany.id);
@@ -111,7 +131,7 @@ export default function CompaniesPage() {
   };
 
   const renderActions = (company: Company) => (
-    <DropdownMenu onOpenChange={open => !open && closeAllDialogs()}>
+    <DropdownMenu onOpenChange={(open) => { if (!open) closeAllDialogs(); }}>
         <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
                 <EllipsisVertical className="h-4 w-4" />
@@ -209,7 +229,7 @@ export default function CompaniesPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
+      <Dialog open={isAddEditDialogOpen} onOpenChange={(open) => {if(!open) closeAllDialogs(); else setIsAddEditDialogOpen(true);}}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-6 pb-0">
             <DialogTitle>{selectedCompany ? 'Edit Company' : 'Add New Company'}</DialogTitle>
@@ -235,7 +255,7 @@ export default function CompaniesPage() {
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!companyToDelete} onOpenChange={(open) => !open && setCompanyToDelete(null)}>
+      <AlertDialog open={!!companyToDelete} onOpenChange={(open) => { if (!open) closeAllDialogs(); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
