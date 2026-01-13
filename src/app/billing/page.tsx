@@ -216,7 +216,7 @@ export default function BillingPage() {
   
   const liveDefaultTemplate = useMemo((): InvoiceTemplate => {
       return myCompanyDetails?.template || defaultTemplate;
-  }, [myCompanyDetails, defaultTemplate]);
+  }, [myCompanyDetails]);
 
   const resetForm = useCallback(() => {
       setCompanyId(initialFormState.companyId);
@@ -229,7 +229,7 @@ export default function BillingPage() {
       setInvoicePageSettings(liveDefaultPageSettings);
       setFormDownloadOptions(defaultDownloadOptions);
       setFormTemplate(liveDefaultTemplate);
-  }, [initialFormState, liveDefaultPageSettings, liveDefaultTemplate, defaultDownloadOptions]);
+  }, [initialFormState, liveDefaultPageSettings, liveDefaultTemplate]);
 
   const openFormDialog = useCallback((invoice: Invoice | null) => {
     closeAllDialogs();
@@ -317,6 +317,28 @@ export default function BillingPage() {
         });
         console.error(e);
     }
+  };
+
+  const handleBulkDownload = async () => {
+    if (selectedInvoices.length === 0 || !allInvoices) {
+      toast({ variant: "destructive", title: "No Invoices Selected", description: "Please select invoices to download." });
+      return;
+    }
+
+    const invoicesToDownload = allInvoices.filter(inv => selectedInvoices.includes(inv.id));
+    toast({ title: "Download Started", description: `Downloading ${invoicesToDownload.length} invoices.` });
+
+    for (const invoice of invoicesToDownload) {
+      try {
+        await handleDownloadWord(invoice);
+        // Add a small delay between downloads to avoid browser issues
+        await new Promise(resolve => setTimeout(resolve, 300));
+      } catch (error) {
+        toast({ variant: "destructive", title: `Error Downloading Bill No. ${invoice.billNo}`, description: "This invoice might be missing required details." });
+      }
+    }
+    
+    setSelectedInvoices([]);
   };
 
   const maxBillNumber = useMemo(() => {
@@ -698,7 +720,7 @@ export default function BillingPage() {
     }));
   };
 
-  const ColumnAlignmentFields = ({ template, onTemplateChange }: { template: InvoiceTemplate, onTemplateChange: typeof handleTemplateChange}) => {
+  const ColumnAlignmentFields = ({ template, onTemplateChange }: { template: InvoiceTemplate, onTemplateChange: typeof handleTemplateChange }) => {
     const hasRateColumn = useMemo(() => items.some(item => item.rate && String(item.rate).trim() !== ''), [items]);
     const columnsToShow = useMemo(() => template.columns.filter(col => hasRateColumn || col.id !== 'rate'), [template.columns, hasRateColumn]);
     
@@ -855,6 +877,10 @@ export default function BillingPage() {
                     <div className="flex items-center gap-2 self-start sm:self-center">
                         {selectedInvoices.length > 0 && (
                             <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" onClick={handleBulkDownload}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Download ({selectedInvoices.length})
+                                </Button>
                                 <Button variant="outline" size="sm" onClick={openBulkDuplicateDialog}>
                                     <Copy className="mr-2 h-4 w-4" />
                                     Duplicate ({selectedInvoices.length})
@@ -1289,5 +1315,6 @@ export default function BillingPage() {
 }
 
     
+
 
 
