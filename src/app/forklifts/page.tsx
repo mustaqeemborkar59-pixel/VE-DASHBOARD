@@ -452,7 +452,7 @@ export default function ForkliftsPage() {
                         {filteredForklifts.map((forklift) => (
                         <Fragment key={forklift.id}>
                             <TableRow onClick={() => toggleRow(forklift.id)} className={cn("cursor-pointer", expandedRow === forklift.id && "bg-accent hover:bg-accent")} data-state={expandedRow === forklift.id ? 'open' : 'closed'}>
-                                <TableCell className="font-medium hidden sm:table-cell">{forklift.srNumber}</TableCell>
+                                <TableCell className="font-medium hidden sm:table-cell">{forklift.srNumber || ''}</TableCell>
                                 <TableCell className="p-2">
                                   <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", expandedRow === forklift.id && "rotate-180")} />
                                 </TableCell>
