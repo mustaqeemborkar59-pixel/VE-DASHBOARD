@@ -172,7 +172,7 @@ export default function BillingPage() {
 
   // Queries
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
-  const allInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billNo', 'desc')) : null, [firestore]);
+  const allInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billNo', 'asc')) : null, [firestore]);
   const settingsDocRef = useMemoFirebase(() => firestore ? doc(firestore, 'companySettings', 'primary') : null, [firestore]);
   const bankAccountsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companySettings', 'primary', 'bankAccounts'), orderBy('nickname')) : null, [firestore]);
 
@@ -399,8 +399,8 @@ export default function BillingPage() {
         const monthMaxBill = Math.max(...monthInvoices.map(inv => inv.billNo));
         const monthDate = parseISO(`${monthKey}-01`);
         
-        // Sort invoices within the month by bill number descending
-        const sortedMonthInvoices = monthInvoices.sort((a,b) => b.billNo - a.billNo);
+        // Sort invoices within the month by bill number ascending
+        const sortedMonthInvoices = monthInvoices.sort((a,b) => a.billNo - b.billNo);
 
         return {
           key: monthKey,
@@ -503,11 +503,11 @@ export default function BillingPage() {
   
   
   const handleFormSubmit = async () => {
-    if (!companyId || !billDate || !selectedBankAccountId || items.some(i => !i.particulars)) {
+    if (!companyId || !billDate || !selectedBankAccountId || items.some(i => !i.particulars || i.amount < 0)) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
-        description: 'Please select a company, bank account, date, and fill all invoice items.',
+        description: 'Please select a company, bank account, date, and fill all invoice items. Amount cannot be negative.',
       });
       return;
     }
@@ -1318,3 +1318,6 @@ export default function BillingPage() {
 
 
 
+
+
+    
