@@ -407,7 +407,7 @@ export default function BillingPage() {
           label: `${format(monthDate, 'MM-MMM yyyy').toUpperCase()} (BILL NO-${monthMinBill}-${monthMaxBill})`,
           invoices: sortedMonthInvoices,
         };
-      }).sort((a, b) => b.key.localeCompare(a.key));
+      }).sort((a, b) => a.key.localeCompare(b.key));
 
       return {
         key: yearKey,
@@ -503,11 +503,11 @@ export default function BillingPage() {
   
   
   const handleFormSubmit = async () => {
-    if (!companyId || !billDate || !selectedBankAccountId || items.some(i => !i.particulars || i.amount < 0)) {
+    if (!companyId || !billDate || !selectedBankAccountId || items.some(i => !i.particulars)) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
-        description: 'Please select a company, bank account, date, and fill all invoice items. Amount cannot be negative.',
+        description: 'Please select a company, bank account, date, and fill all invoice items.',
       });
       return;
     }
@@ -1319,5 +1319,7 @@ export default function BillingPage() {
 
 
 
+
+    
 
     
