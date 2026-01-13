@@ -93,40 +93,45 @@ const generateInvoiceDataForWord = (invoice: Invoice, clientCompany: Company, my
 }
 
 const createFormattedTextRuns = (text: string | number | undefined, defaultSizeInPoints: number = 11): TextRun[] => {
-    if (text === undefined || text === null) return [new TextRun({text: "", font: "Calibri"})];
-    
+    if (text === undefined || text === null) return [new TextRun({ text: "", font: "Calibri" })];
+
+    function processText(subText: string, isBold: boolean, sizeInPoints: number): TextRun[] {
+        const regex = /(\*\*.*?\*\*|<s:\d+>.*?<\/s:\d+>)/g;
+        const parts = subText.split(regex).filter(part => part);
+        
+        return parts.flatMap(part => {
+            // Handle nested bold
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return processText(part.slice(2, -2), true, sizeInPoints);
+            }
+
+            // Handle nested font size
+            const sizeMatch = part.match(/^<s:(\d+)>(.*?)<\/s:\d+>$/s);
+            if (sizeMatch) {
+                const customSize = parseInt(sizeMatch[1], 10);
+                const content = sizeMatch[2];
+                return processText(content, isBold, customSize);
+            }
+            
+            // Default text with current styles
+            return new TextRun({ 
+                text: part, 
+                bold: isBold, 
+                size: sizeInPoints * 2, // docx uses half-points
+                font: "Calibri" 
+            });
+        });
+    }
+
     const textAsString = String(text);
     const lines = textAsString.split('\n');
 
     return lines.flatMap((line, lineIndex) => {
-        // Regex to split by bold (**) and font size (<s:SIZE>...</s:SIZE>) tags
-        const parts = line.split(/(\*\*.*?\*\*|<s:\d+>.*?<\/s:\d+>)/g).filter(part => part); 
-        
-        const textRuns = parts.map(part => {
-            const defaultSize = defaultSizeInPoints * 2; // docx library uses half-points
-
-            // Handle bolding
-            if (part.startsWith('**') && part.endsWith('**')) {
-                return new TextRun({ text: part.slice(2, -2), bold: true, size: defaultSize, font: "Calibri" });
-            }
-
-            // Handle font size
-            const sizeMatch = part.match(/^<s:(\d+)>(.*?)<\/s:\d+>$/);
-            if (sizeMatch) {
-                const customSize = parseInt(sizeMatch[1], 10);
-                const content = sizeMatch[2];
-                return new TextRun({ text: content, size: customSize * 2, font: "Calibri" });
-            }
-
-            // Default text
-            return new TextRun({ text: part, size: defaultSize, font: "Calibri" });
-        });
-
+        const runsForLine = processText(line, false, defaultSizeInPoints);
         if (lineIndex < lines.length - 1) {
-            textRuns.push(new TextRun({ break: 1, size: defaultSizeInPoints * 2, font: "Calibri" }));
+            runsForLine.push(new TextRun({ break: 1, size: defaultSizeInPoints * 2, font: "Calibri" }));
         }
-
-        return textRuns;
+        return runsForLine;
     });
 };
 
@@ -399,16 +404,14 @@ export const generateAndDownloadInvoice = async (
                        new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: invoiceData.myCompany.companyName, bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
                                     margins: cellMargins,
-                                    borders: { ...tableHeaderBorders, right: { style: BorderStyle.SINGLE, size: 6, color: "000000" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } }
+                                    borders: { ...tableHeaderBorders, right: { style: BorderStyle.SINGLE, size: 6, color: "000000" }, bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
                                 }),
                                 new DocxTableCell({
-                                    width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: 'Bank Details', bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
                                     margins: cellMargins,
-                                    borders: { ...tableHeaderBorders, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } }
+                                    borders: { ...tableHeaderBorders, bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
                                 }),
                             ]
                        }),
