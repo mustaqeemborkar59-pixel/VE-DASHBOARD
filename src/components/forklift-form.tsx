@@ -112,7 +112,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
       return;
     }
     
-    if (formData.locationType !== 'Workshop' && !formData.siteCompany) {
+    if (formData.locationType === 'On-Site' && !formData.siteCompany) {
       toast({
         variant: "destructive",
         title: "Missing Information",
@@ -126,7 +126,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
       year: formData.year,
     };
 
-    if (formData.locationType === 'Workshop') {
+    if (formData.locationType === 'Workshop' || formData.locationType === 'Not Confirm') {
       dataToSubmit.siteCompany = '';
       dataToSubmit.siteArea = '';
       dataToSubmit.siteContactPerson = '';
@@ -197,7 +197,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
               </Select>
            </div>
 
-          {formData.locationType !== 'Workshop' && (
+          {formData.locationType === 'On-Site' && (
             <div className="grid gap-4 mt-2 border-l-2 border-primary pl-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    <div className="grid gap-2 col-span-2 sm:col-span-1">
