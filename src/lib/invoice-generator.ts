@@ -487,12 +487,11 @@ export const generateAndDownloadInvoice = async (
         }],
     });
 
-    const companyNameForFile = clientCompany.name.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase();
-    const siteForFile = (invoice.site && downloadOpts.includeSiteInFilename) ? `(${invoice.site.replace(/[^a-zA-Z0-9]/g, '-').toUpperCase()})` : '';
+    const companyNameForFile = clientCompany.name.replace(/[^a-zA-Z0-9\s]/g, '').toUpperCase();
+    const siteForFile = (invoice.site && downloadOpts.includeSiteInFilename) ? `(${invoice.site.replace(/[^a-zA-Z0-9\s]/g, '').toUpperCase()})` : '';
     const monthYear = format(parseISO(invoice.billDate), 'MMM-yy').toUpperCase();
     
-    // Bill no.1-MHE-BISLERI-INTERNATIONAL-PVT-LTD-(THANE-DEPOT)-(APR-24)-GST 18
-    const fileName = `Bill no.${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}-${companyNameForFile}${siteForFile ? `-${siteForFile}` : ''}-(${monthYear})-GST 18.docx`;
+    const fileName = `Bill no ${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}-${companyNameForFile}${siteForFile ? `-${siteForFile}` : ''}-(${monthYear})-GST 18.docx`;
 
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);
