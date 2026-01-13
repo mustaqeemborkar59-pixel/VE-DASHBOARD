@@ -343,7 +343,7 @@ export const generateAndDownloadInvoice = async (
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [
                                         new Paragraph({ children: [new TextRun({ text: "PO.NO: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({ text: invoiceData.poNo, font: "Calibri", size: defaultFontSize * 2 })], alignment: AlignmentType.RIGHT }),
-                                        new Paragraph({ children: [new TextRun({ text: "Site: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({ text: invoiceData.site, font: "Calibri", size: defaultFontSize * 2 })], alignment: AlignmentType.RIGHT }),
+                                        ...(invoiceData.site ? [new Paragraph({ children: [new TextRun({ text: "Site: ", bold: true, font: "Calibri", size: defaultFontSize * 2 }), new TextRun({ text: invoiceData.site, font: "Calibri", size: defaultFontSize * 2 })], alignment: AlignmentType.RIGHT })] : []),
                                     ],
                                     margins: cellMargins,
                                     verticalAlign: VerticalAlign.CENTER
@@ -488,7 +488,7 @@ export const generateAndDownloadInvoice = async (
     });
 
     const companyNameForFile = clientCompany.name.replace(/[^a-zA-Z0-9\s]/g, '').toUpperCase();
-    const siteForFile = (invoice.site && downloadOpts.includeSiteInFilename) ? `(${invoice.site.replace(/[^a-zA-Z0-9\s]/g, '').toUpperCase()})` : '';
+    const siteForFile = (invoice.site && downloadOpts.includeSiteInFilename) ? `(${invoice.site.replace(/[^a-zA-Z0-9\s]/g, '')})` : '';
     const monthYear = format(parseISO(invoice.billDate), 'MMM-yy').toUpperCase();
     
     const fileName = `Bill no ${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}-${companyNameForFile}${siteForFile ? `-${siteForFile}` : ''}-(${monthYear})-GST 18.docx`;
