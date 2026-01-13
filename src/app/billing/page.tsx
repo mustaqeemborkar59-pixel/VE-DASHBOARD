@@ -46,74 +46,8 @@ const AutoHeightTextarea = React.memo(forwardRef<HTMLTextAreaElement, React.Text
 AutoHeightTextarea.displayName = 'AutoHeightTextarea';
 
 
-const RichTextarea = ({ value, onChange, placeholder }: { value: string, onChange: (value: string) => void, placeholder?: string }) => {
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-    const applyMarkdown = (markdown: 'bold' | 'size', size?: number) => {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const selectedText = value.substring(start, end);
-
-        if (!selectedText) return;
-
-        let newText;
-        if (markdown === 'bold') {
-            newText = `${value.substring(0, start)}**${selectedText}**${value.substring(end)}`;
-        } else if (markdown === 'size' && size) {
-            newText = `${value.substring(0, start)}<s:${size}>${selectedText}</s:${size}>${value.substring(end)}`;
-        } else {
-            return;
-        }
-
-        onChange(newText);
-        
-        // After state update, re-focus and select the text
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(start, end + (markdown === 'bold' ? 4 : 7 + String(size).length * 2 + 3));
-        }, 0);
-    };
-
-    return (
-        <div className="flex-grow">
-            <div className="flex items-center gap-1 border border-b-0 rounded-t-md p-1 bg-muted/50">
-                 <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => applyMarkdown('bold')}>
-                    <Bold className="h-4 w-4" />
-                </Button>
-
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                         <Button type="button" variant="outline" className="h-7 px-2 text-xs">
-                            <Pilcrow className="h-4 w-4 mr-1" />
-                            Font Size
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuRadioGroup onValueChange={(size) => applyMarkdown('size', parseInt(size, 10))}>
-                            {[9, 10, 11, 12, 14].map(s => (
-                                <DropdownMenuRadioItem key={s} value={String(s)}>{s} pt</DropdownMenuRadioItem>
-                            ))}
-                        </DropdownMenuRadioGroup>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-            <AutoHeightTextarea
-                ref={textareaRef}
-                placeholder={placeholder}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="flex-grow resize-none overflow-hidden rounded-t-none"
-                rows={1}
-            />
-        </div>
-    );
-};
-
-
 type InvoiceItem = Omit<import('@/lib/data').InvoiceItem, 'id'> & { key: string };
+type ActiveInput = { key: string; field: 'particulars' | 'rate' } | null;
 
 const DocumentSettingsFields = React.memo(({ settings, onSettingsChange, onMarginChange, onFontSizeChange, prefix="page" }: { 
     settings: Partial<CompanySettings>, 
@@ -210,6 +144,7 @@ export default function BillingPage() {
   const [site, setSite] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>(initialFormState.items);
   const [selectedBankAccountId, setSelectedBankAccountId] = useState('');
+  const [activeInput, setActiveInput] = useState<ActiveInput>(null);
 
     
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
@@ -500,6 +435,41 @@ export default function BillingPage() {
     });
     setItems(newItems);
   };
+
+  const applyMarkdown = (markdown: 'bold' | 'size', size?: number) => {
+    if (!activeInput) return;
+
+    const { key, field } = activeInput;
+    const itemToUpdate = items.find(item => item.key === key);
+    if (!itemToUpdate) return;
+    
+    const textarea = document.getElementById(`${field}-${key}`) as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const value = textarea.value;
+    const selectedText = value.substring(start, end);
+
+    if (!selectedText) return;
+
+    let newText;
+    if (markdown === 'bold') {
+        newText = `${value.substring(0, start)}**${selectedText}**${value.substring(end)}`;
+    } else if (markdown === 'size' && size) {
+        newText = `${value.substring(0, start)}<s:${size}>${selectedText}</s:${size}>${value.substring(end)}`;
+    } else {
+        return;
+    }
+
+    handleItemChange(key, field, newText);
+    
+    setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start, end + (markdown === 'bold' ? 4 : 7 + String(size).length * 2 + 3));
+    }, 0);
+  };
+
   
   const amountInWords = useMemo(() => {
     return toWords.convert(calculations.grandTotal).toUpperCase();
@@ -1098,22 +1068,51 @@ export default function BillingPage() {
                         </div>
 
                         <div className="space-y-4">
-                            <Label>Particulars</Label>
+                            <div className="flex justify-between items-center">
+                                <Label>Particulars</Label>
+                                <div className="flex items-center gap-1 border rounded-md p-1 bg-muted/50">
+                                    <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => applyMarkdown('bold')}>
+                                        <Bold className="h-4 w-4" />
+                                    </Button>
+
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button type="button" variant="outline" className="h-7 px-2 text-xs">
+                                                <Pilcrow className="h-4 w-4 mr-1" />
+                                                Font Size
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent>
+                                            <DropdownMenuRadioGroup onValueChange={(size) => applyMarkdown('size', parseInt(size, 10))}>
+                                                {[9, 10, 11, 12, 14].map(s => (
+                                                    <DropdownMenuRadioItem key={s} value={String(s)}>{s} pt</DropdownMenuRadioItem>
+                                                ))}
+                                            </DropdownMenuRadioGroup>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </div>
                             {items.map((item, index) => (
                                 <div key={item.key} className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                                    <RichTextarea
+                                    <AutoHeightTextarea
+                                        id={`particulars-${item.key}`}
                                         value={item.particulars}
-                                        onChange={(newVal) => handleItemChange(item.key, 'particulars', newVal)}
+                                        onChange={(e) => handleItemChange(item.key, 'particulars', e.target.value)}
+                                        onFocus={() => setActiveInput({ key: item.key, field: 'particulars' })}
                                         placeholder="Item description"
+                                        className="flex-grow resize-none overflow-hidden"
+                                        rows={1}
                                     />
                                     <div className="flex items-center gap-2 w-full sm:w-auto">
-                                        <div className="w-full sm:w-40">
-                                            <RichTextarea
-                                                value={item.rate || ''}
-                                                onChange={(newVal) => handleItemChange(item.key, 'rate', newVal)}
-                                                placeholder="Rate"
-                                            />
-                                        </div>
+                                        <AutoHeightTextarea
+                                            id={`rate-${item.key}`}
+                                            value={item.rate || ''}
+                                            onChange={(e) => handleItemChange(item.key, 'rate', e.target.value)}
+                                            onFocus={() => setActiveInput({ key: item.key, field: 'rate' })}
+                                            placeholder="Rate"
+                                            className="w-full sm:w-40 resize-none overflow-hidden"
+                                            rows={1}
+                                        />
                                         <Input
                                             type="text"
                                             placeholder="Amount"
@@ -1284,5 +1283,3 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-    
