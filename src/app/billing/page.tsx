@@ -9,10 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc, setDoc, writeBatch } from 'firebase/firestore';
-import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions, BankAccount } from '@/lib/data';
+import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions, BankAccount, InvoiceTemplate } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow } from 'lucide-react';
+import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -73,7 +73,7 @@ const RichTextarea = ({ value, onChange }: { value: string, onChange: (value: st
         // After state update, re-focus and select the text
         setTimeout(() => {
             textarea.focus();
-            textarea.setSelectionRange(start, end + (markdown === 'bold' ? 4 : 7 + String(size).length));
+            textarea.setSelectionRange(start, end + (markdown === 'bold' ? 4 : 7 + String(size).length * 2 + 3));
         }, 0);
     };
 
@@ -185,6 +185,15 @@ export default function BillingPage() {
       clientCompany: { showGstin: true },
       includeSiteInFilename: false,
   };
+
+  const defaultTemplate: InvoiceTemplate = {
+      columns: [
+          { id: 'sr_no', label: 'Sr. No', align: 'center' },
+          { id: 'particulars', label: 'Particulars', align: 'left' },
+          { id: 'rate', label: 'Rate', align: 'right' },
+          { id: 'amount', label: 'Amount', align: 'right' },
+      ],
+  };
   
   const initialFormState = {
     companyId: '',
@@ -206,6 +215,7 @@ export default function BillingPage() {
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [invoicePageSettings, setInvoicePageSettings] = useState<PageSettings>(defaultPageSettings);
   const [formDownloadOptions, setFormDownloadOptions] = useState<DownloadOptions>(defaultDownloadOptions);
+  const [formTemplate, setFormTemplate] = useState<InvoiceTemplate>(defaultTemplate);
 
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [invoiceToDuplicate, setInvoiceToDuplicate] = useState<Invoice | null>(null);
@@ -279,6 +289,7 @@ export default function BillingPage() {
       setEditingInvoice(null);
       setInvoicePageSettings(liveDefaultPageSettings);
       setFormDownloadOptions(defaultDownloadOptions);
+      setFormTemplate(defaultTemplate);
   }, [initialFormState, liveDefaultPageSettings]);
 
   const openFormDialog = useCallback((invoice: Invoice | null) => {
@@ -300,11 +311,12 @@ export default function BillingPage() {
           tableBodyFontSize: invoice.tableBodyFontSize || liveDefaultPageSettings.tableBodyFontSize,
       });
       setFormDownloadOptions(invoice.downloadOptions || defaultDownloadOptions);
+      setFormTemplate(invoice.template || defaultTemplate);
     } else {
       resetForm();
     }
     handleDelayedAction(() => setIsFormDialogOpen(true));
-  }, [ liveDefaultPageSettings, defaultDownloadOptions, closeAllDialogs, resetForm ]);
+  }, [ liveDefaultPageSettings, defaultDownloadOptions, defaultTemplate, closeAllDialogs, resetForm ]);
 
 
   const openPreviewDialog = useCallback((invoice: Invoice) => {
@@ -357,7 +369,7 @@ export default function BillingPage() {
     }
 
     try {
-        await generateAndDownloadInvoice(invoice, invoice.clientCompanyDetails, invoice.myCompanyDetails, pageSettingsToUse, undefined, invoice.downloadOptions);
+        await generateAndDownloadInvoice(invoice, invoice.clientCompanyDetails, invoice.myCompanyDetails, pageSettingsToUse, invoice.template, invoice.downloadOptions);
     } catch (e) {
         toast({
             variant: 'destructive',
@@ -557,6 +569,7 @@ export default function BillingPage() {
         selectedBankAccount: selectedBankAccount,
         ...currentInvoiceSettings,
         downloadOptions: currentDownloadOptions,
+        template: formTemplate,
       };
 
       try {
@@ -569,7 +582,8 @@ export default function BillingPage() {
             clientCompanyDetails: editingInvoice.clientCompanyDetails, // Preserve snapshot
             myCompanyDetails: editingInvoice.myCompanyDetails, // Preserve snapshot
             downloadOptions: formDownloadOptions,
-            ...currentInvoiceSettings
+            ...currentInvoiceSettings,
+            template: formTemplate,
           });
 
           toast({
@@ -703,6 +717,44 @@ export default function BillingPage() {
     }
   };
   
+  const handleTemplateChange = (id: 'sr_no' | 'particulars' | 'rate' | 'amount', align: 'left' | 'center' | 'right') => {
+    setFormTemplate(prev => ({
+        ...prev,
+        columns: prev.columns.map(col => col.id === id ? { ...col, align } : col)
+    }));
+  };
+
+  const ColumnAlignmentFields = ({ template, onTemplateChange }: { template: InvoiceTemplate, onTemplateChange: typeof handleTemplateChange}) => {
+    const hasRateColumn = useMemo(() => items.some(item => item.rate && String(item.rate).trim() !== ''), [items]);
+    const columnsToShow = useMemo(() => template.columns.filter(col => hasRateColumn || col.id !== 'rate'), [template.columns, hasRateColumn]);
+    
+    return (
+        <div className="space-y-4">
+             <h4 className="font-semibold text-foreground">Column Alignment</h4>
+             {columnsToShow.map(col => (
+                <div key={col.id} className="grid grid-cols-3 items-center gap-4">
+                    <Label>{col.label}</Label>
+                    <div className="col-span-2 flex items-center justify-between p-1 bg-muted rounded-md">
+                        {(['left', 'center', 'right'] as const).map(align => (
+                            <Button 
+                                key={align} 
+                                type="button" 
+                                variant={col.align === align ? 'default' : 'ghost'} 
+                                size="icon" 
+                                className="h-7 w-7 flex-1"
+                                onClick={() => onTemplateChange(col.id, align)}
+                            >
+                                {align === 'left' && <AlignLeft className="h-4 w-4" />}
+                                {align === 'center' && <AlignCenter className="h-4 w-4" />}
+                                {align === 'right' && <AlignRight className="h-4 w-4" />}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+             ))}
+        </div>
+    );
+  }
 
   const DownloadOptionsFields = ({ options, setOptions }: { options: DownloadOptions, setOptions: React.Dispatch<React.SetStateAction<DownloadOptions>> }) => {
     return (
@@ -1111,7 +1163,7 @@ export default function BillingPage() {
                                 <p className="text-sm text-muted-foreground">
                                     Adjust layout and display options. These settings will be saved with the invoice.
                                 </p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                     <div className="p-4 border rounded-lg">
                                       <DocumentSettingsFields 
                                          settings={invoicePageSettings} 
@@ -1122,6 +1174,9 @@ export default function BillingPage() {
                                     </div>
                                     <div className="p-4 border rounded-lg">
                                       <DownloadOptionsFields options={formDownloadOptions} setOptions={setFormDownloadOptions} />
+                                    </div>
+                                     <div className="p-4 border rounded-lg">
+                                      <ColumnAlignmentFields template={formTemplate} onTemplateChange={handleTemplateChange} />
                                     </div>
                                 </div>
                             </div>

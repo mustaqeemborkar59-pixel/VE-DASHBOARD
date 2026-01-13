@@ -113,6 +113,14 @@ export type DownloadOptions = {
     includeSiteInFilename?: boolean;
 };
 
+export type InvoiceTemplate = {
+  columns: {
+    id: 'sr_no' | keyof InvoiceItem;
+    label: string;
+    align: 'left' | 'center' | 'right';
+  }[];
+};
+
 export type Invoice = {
     id: string;
     billNo: number;
@@ -136,14 +144,5 @@ export type Invoice = {
     addressFontSize?: number;
     tableBodyFontSize?: number;
     downloadOptions?: DownloadOptions;
+    template?: InvoiceTemplate;
 }
-
-export type InvoiceTemplate = {
-  columns: {
-    id: keyof InvoiceItem;
-    label: string;
-    width: number;
-    align: 'left' | 'center' | 'right';
-    order: number;
-  }[];
-};
