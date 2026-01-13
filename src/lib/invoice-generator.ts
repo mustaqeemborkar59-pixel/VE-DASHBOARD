@@ -92,7 +92,7 @@ const createFormattedTextRuns = (text: string | number | undefined, defaultSizeI
     if (text === undefined || text === null) return [new TextRun({ text: "", font: "Calibri" })];
 
     function processText(subText: string, isBold: boolean, sizeInPoints: number): TextRun[] {
-        const regex = /(\*\*.*?\*\*|<s:\d+>.*?<\/s:\d+>)/g;
+        const regex = /(\*\*.*?\*\*|<s:\d+>.*?<\/s:\d+>)/gs;
         const parts = subText.split(regex).filter(part => part);
         
         return parts.flatMap(part => {
@@ -110,25 +110,24 @@ const createFormattedTextRuns = (text: string | number | undefined, defaultSizeI
             }
             
             // Default text with current styles
-            return new TextRun({ 
-                text: part, 
-                bold: isBold, 
-                size: sizeInPoints * 2, // docx uses half-points
-                font: "Calibri" 
+            const lines = part.split('\n');
+            return lines.flatMap((line, index) => {
+                const runs: TextRun[] = [new TextRun({ 
+                    text: line, 
+                    bold: isBold, 
+                    size: sizeInPoints * 2, // docx uses half-points
+                    font: "Calibri" 
+                })];
+                if (index < lines.length - 1) {
+                    runs.push(new TextRun({ break: 1, size: sizeInPoints * 2, font: "Calibri" }));
+                }
+                return runs;
             });
         });
     }
 
     const textAsString = String(text);
-    const lines = textAsString.split('\n');
-
-    return lines.flatMap((line, lineIndex) => {
-        const runsForLine = processText(line, false, defaultSizeInPoints);
-        if (lineIndex < lines.length - 1) {
-            runsForLine.push(new TextRun({ break: 1, size: defaultSizeInPoints * 2, font: "Calibri" }));
-        }
-        return runsForLine;
-    });
+    return processText(textAsString, false, defaultSizeInPoints);
 };
 
 
