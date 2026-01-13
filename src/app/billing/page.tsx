@@ -481,11 +481,11 @@ export default function BillingPage() {
   
   
   const handleFormSubmit = async () => {
-    if (!companyId || !billDate || !selectedBankAccountId || items.some(i => !i.particulars || (i.amount < 0))) {
+    if (!companyId || !billDate || !selectedBankAccountId || items.some(i => !i.particulars)) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
-        description: 'Please select a company, bank account, date, and fill all invoice items. Amount cannot be negative.',
+        description: 'Please select a company, bank account, date, and fill all invoice items.',
       });
       return;
     }
@@ -1289,4 +1289,5 @@ export default function BillingPage() {
 }
 
     
+
 
