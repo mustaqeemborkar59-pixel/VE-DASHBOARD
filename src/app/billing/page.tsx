@@ -477,11 +477,11 @@ export default function BillingPage() {
   
   
   const handleFormSubmit = async () => {
-    if (!companyId || !billDate || !selectedBankAccountId || items.some(i => !i.particulars || i.amount <= 0)) {
+    if (!companyId || !billDate || !selectedBankAccountId || items.some(i => !i.particulars || (i.amount < 0))) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
-        description: 'Please select a company, bank account, date, and fill all invoice items.',
+        description: 'Please select a company, bank account, date, and fill all invoice items. Amount cannot be negative.',
       });
       return;
     }
@@ -1116,7 +1116,7 @@ export default function BillingPage() {
                                         <Input
                                             type="text"
                                             placeholder="Amount"
-                                            value={item.amount ? new Intl.NumberFormat('en-IN').format(item.amount) : ''}
+                                            value={item.amount ? new Intl.NumberFormat('en-IN').format(item.amount) : (item.amount === 0 ? '0' : '')}
                                             onChange={(e) => handleItemChange(item.key, 'amount', e.target.value)}
                                             className="w-full sm:w-48 text-right"
                                         />
@@ -1283,3 +1283,5 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
