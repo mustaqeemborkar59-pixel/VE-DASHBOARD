@@ -401,7 +401,7 @@ export default function BillingPage() {
     const netTotal = items.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
     const cgst = netTotal * 0.09;
     const sgst = netTotal * 0.09;
-    const grandTotal = netTotal + cgst + sgst;
+    const grandTotal = Math.round(netTotal + cgst + sgst);
     return { netTotal, cgst, sgst, grandTotal };
   }, [items]);
   
@@ -1289,3 +1289,4 @@ export default function BillingPage() {
 }
 
     
+
