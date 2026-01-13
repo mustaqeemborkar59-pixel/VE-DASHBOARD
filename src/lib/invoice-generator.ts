@@ -375,10 +375,9 @@ export const generateAndDownloadInvoice = async (
                             ];
 
                             if (hasRateColumn) {
-                                const rateContent = item.rate || '';
                                 itemCells.push(new DocxTableCell({
                                     verticalAlign: VerticalAlign.CENTER,
-                                    children: [new Paragraph({ children: [new TextRun({ text: String(rateContent), size: (settings.tableBodyFontSize || 11) * 2, font: "Calibri" })], alignment: getAlignment('rate') })],
+                                    children: [new Paragraph({ children: createFormattedTextRuns(item.rate, settings.tableBodyFontSize), alignment: getAlignment('rate') })],
                                     borders: {...tableCellBorders, ...tableBottomBorder},
                                     margins: cellMargins
                                 }));
