@@ -46,7 +46,7 @@ const AutoHeightTextarea = React.memo(forwardRef<HTMLTextAreaElement, React.Text
 AutoHeightTextarea.displayName = 'AutoHeightTextarea';
 
 
-const RichTextarea = ({ value, onChange }: { value: string, onChange: (value: string) => void }) => {
+const RichTextarea = ({ value, onChange, placeholder }: { value: string, onChange: (value: string) => void, placeholder?: string }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const applyMarkdown = (markdown: 'bold' | 'size', size?: number) => {
@@ -102,7 +102,7 @@ const RichTextarea = ({ value, onChange }: { value: string, onChange: (value: st
             </div>
             <AutoHeightTextarea
                 ref={textareaRef}
-                placeholder="Item description"
+                placeholder={placeholder}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 className="flex-grow resize-none overflow-hidden rounded-t-none"
@@ -1104,15 +1104,16 @@ export default function BillingPage() {
                                     <RichTextarea
                                         value={item.particulars}
                                         onChange={(newVal) => handleItemChange(item.key, 'particulars', newVal)}
+                                        placeholder="Item description"
                                     />
                                     <div className="flex items-center gap-2 w-full sm:w-auto">
-                                        <Input
-                                            type="text"
-                                            placeholder="Rate (e.g., 500/hr)"
-                                            value={item.rate || ''}
-                                            onChange={(e) => handleItemChange(item.key, 'rate', e.target.value)}
-                                            className="w-full sm:w-40"
-                                        />
+                                        <div className="w-full sm:w-40">
+                                            <RichTextarea
+                                                value={item.rate || ''}
+                                                onChange={(newVal) => handleItemChange(item.key, 'rate', newVal)}
+                                                placeholder="Rate"
+                                            />
+                                        </div>
                                         <Input
                                             type="text"
                                             placeholder="Amount"
@@ -1283,3 +1284,5 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
