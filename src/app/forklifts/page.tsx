@@ -485,7 +485,7 @@ export default function ForkliftsPage() {
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-background/50">
                                           <div className="flex flex-col gap-1">
                                             <Label className="text-xs text-muted-foreground">MFG Year</Label>
-                                            <span className="font-medium">{forklift.year}</span>
+                                            <span className="font-medium">{forklift.year || ''}</span>
                                           </div>
                                           <div className="flex flex-col gap-1">
                                             <Label className="text-xs text-muted-foreground">Capacity</Label>
