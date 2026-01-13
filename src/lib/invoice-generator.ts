@@ -381,7 +381,6 @@ export const generateAndDownloadInvoice = async (
                 
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
-                    columnWidths: [50, 50],
                     rows: [
                        new DocxTableRow({
                             children: [
@@ -389,13 +388,13 @@ export const generateAndDownloadInvoice = async (
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: invoiceData.myCompany.companyName, bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
                                     margins: cellMargins,
-                                    borders: { ...tableHeaderBorders, right: BorderStyle.NONE, bottom: BorderStyle.NONE }
+                                    borders: { ...tableHeaderBorders, right: { style: BorderStyle.SINGLE, size: 6, color: "000000" }, bottom: BorderStyle.NONE }
                                 }),
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({text: 'Bank Details', bold: true, size: defaultFontSize * 2, font: "Calibri"})] })],
                                     margins: cellMargins,
-                                    borders: { ...tableHeaderBorders, left: BorderStyle.NONE, bottom: BorderStyle.NONE }
+                                    borders: { ...tableHeaderBorders, bottom: BorderStyle.NONE }
                                 }),
                             ]
                        }),
@@ -411,7 +410,7 @@ export const generateAndDownloadInvoice = async (
                                     ],
                                     verticalAlign: VerticalAlign.TOP,
                                     margins: cellMargins,
-                                    borders: { right: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
+                                    borders: { right: { style: BorderStyle.SINGLE, size: 6, color: "000000" }, bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" } }
                                 }),
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
@@ -425,7 +424,7 @@ export const generateAndDownloadInvoice = async (
                                     ],
                                     verticalAlign: VerticalAlign.TOP,
                                     margins: cellMargins,
-                                    borders: {}
+                                    borders: {bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" }}
                                 }),
                             ]
                        })
@@ -437,7 +436,6 @@ export const generateAndDownloadInvoice = async (
                 new DocxTable({
                      width: { size: 100, type: WidthType.PERCENTAGE },
                      borders: tableHeaderBorders,
-                     columnWidths: [50, 50],
                      rows: [
                         new DocxTableRow({
                             children: [
