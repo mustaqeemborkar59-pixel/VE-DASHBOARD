@@ -26,6 +26,7 @@ export type ForkliftFormData = {
   siteContactPerson: string;
   siteContactNumber: string;
   remarks: string;
+  poPiNumber: string;
 };
 
 interface ForkliftFormProps {
@@ -38,20 +39,21 @@ interface ForkliftFormProps {
 export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: ForkliftFormProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState<ForkliftFormData>({
-    serialNumber: initialData?.serialNumber || '',
-    make: initialData?.make || '',
-    model: initialData?.model || '',
-    year: initialData?.year.toString() || '',
-    capacity: initialData?.capacity || '',
-    equipmentType: initialData?.equipmentType || '',
-    voltage: initialData?.voltage || '',
-    mastHeight: initialData?.mastHeight || '',
-    locationType: initialData?.locationType || 'Workshop',
-    siteCompany: initialData?.siteCompany || '',
-    siteArea: initialData?.siteArea || '',
-    siteContactPerson: initialData?.siteContactPerson || '',
-    siteContactNumber: initialData?.siteContactNumber || '',
-    remarks: initialData?.remarks || '',
+    serialNumber: '',
+    make: '',
+    model: '',
+    year: '',
+    capacity: '',
+    equipmentType: '',
+    voltage: '',
+    mastHeight: '',
+    locationType: 'Workshop',
+    siteCompany: '',
+    siteArea: '',
+    siteContactPerson: '',
+    siteContactNumber: '',
+    remarks: '',
+    poPiNumber: '',
   });
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
         serialNumber: initialData.serialNumber,
         make: initialData.make,
         model: initialData.model,
-        year: initialData.year.toString(),
+        year: initialData.year?.toString() || '',
         capacity: initialData.capacity || '',
         equipmentType: initialData.equipmentType || '',
         voltage: initialData.voltage || '',
@@ -71,6 +73,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
         siteContactPerson: initialData.siteContactPerson || '',
         siteContactNumber: initialData.siteContactNumber || '',
         remarks: initialData.remarks || '',
+        poPiNumber: initialData.poPiNumber || '',
       });
     } else if (mode === 'add') {
         setFormData({
@@ -88,6 +91,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
             siteContactPerson: '',
             siteContactNumber: '',
             remarks: '',
+            poPiNumber: '',
         });
     }
   }, [initialData, mode]);
@@ -138,9 +142,15 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
 
   return (
     <form id="forklift-form" onSubmit={handleSubmit} className="grid gap-6">
-        <div className="grid gap-2">
-            <Label htmlFor="serialNumber">Serial Number</Label>
-            <Input id="serialNumber" value={formData.serialNumber} onChange={handleInputChange} placeholder="e.g., F12345" required />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid gap-2">
+                <Label htmlFor="serialNumber">Serial Number</Label>
+                <Input id="serialNumber" value={formData.serialNumber} onChange={handleInputChange} placeholder="e.g., F12345" required />
+            </div>
+            <div className="grid gap-2">
+                <Label htmlFor="poPiNumber">PO/PI Number</Label>
+                <Input id="poPiNumber" value={formData.poPiNumber} onChange={handleInputChange} placeholder="e.g., PO-789" />
+            </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="grid gap-2">
