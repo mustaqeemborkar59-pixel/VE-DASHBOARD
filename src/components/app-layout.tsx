@@ -76,11 +76,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <Sidebar variant='inset' collapsible='icon'>
         <SidebarHeader>
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <ForkliftIcon className="h-6 w-6" />
-            </div>
             <div className="flex flex-col">
-              <h2 className="text-lg font-semibold tracking-tight">ForkliftFlow</h2>
+              <h2 className="text-lg font-semibold tracking-tight">Vithal Enterprises</h2>
             </div>
           </div>
         </SidebarHeader>
