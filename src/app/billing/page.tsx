@@ -12,7 +12,7 @@ import { collection, query, orderBy, doc, setDoc, writeBatch } from 'firebase/fi
 import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions, BankAccount } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X } from 'lucide-react';
+import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -26,7 +26,7 @@ import { InvoicePreview } from '@/components/invoice-preview';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 
 
 const AutoHeightTextarea = React.memo(forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => {
@@ -44,6 +44,74 @@ const AutoHeightTextarea = React.memo(forwardRef<HTMLTextAreaElement, React.Text
     return <Textarea ref={internalRef} {...props} />;
 }));
 AutoHeightTextarea.displayName = 'AutoHeightTextarea';
+
+
+const RichTextarea = ({ value, onChange }: { value: string, onChange: (value: string) => void }) => {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    const applyMarkdown = (markdown: 'bold' | 'size', size?: number) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = value.substring(start, end);
+
+        if (!selectedText) return;
+
+        let newText;
+        if (markdown === 'bold') {
+            newText = `${value.substring(0, start)}**${selectedText}**${value.substring(end)}`;
+        } else if (markdown === 'size' && size) {
+            newText = `${value.substring(0, start)}<s:${size}>${selectedText}</s:${size}>${value.substring(end)}`;
+        } else {
+            return;
+        }
+
+        onChange(newText);
+        
+        // After state update, re-focus and select the text
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start, end + (markdown === 'bold' ? 4 : 7 + String(size).length));
+        }, 0);
+    };
+
+    return (
+        <div className="flex-grow">
+            <div className="flex items-center gap-1 border border-b-0 rounded-t-md p-1 bg-muted/50">
+                 <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => applyMarkdown('bold')}>
+                    <Bold className="h-4 w-4" />
+                </Button>
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                         <Button type="button" variant="outline" className="h-7 px-2 text-xs">
+                            <Pilcrow className="h-4 w-4 mr-1" />
+                            Font Size
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuRadioGroup onValueChange={(size) => applyMarkdown('size', parseInt(size, 10))}>
+                            {[9, 10, 11, 12, 14].map(s => (
+                                <DropdownMenuRadioItem key={s} value={String(s)}>{s} pt</DropdownMenuRadioItem>
+                            ))}
+                        </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+            <AutoHeightTextarea
+                ref={textareaRef}
+                placeholder="Item description"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="flex-grow resize-none overflow-hidden rounded-t-none"
+                rows={1}
+            />
+        </div>
+    );
+};
+
 
 type InvoiceItem = Omit<import('@/lib/data').InvoiceItem, 'id'> & { key: string };
 
@@ -981,12 +1049,9 @@ export default function BillingPage() {
                             <Label>Particulars</Label>
                             {items.map((item, index) => (
                                 <div key={item.key} className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                                    <AutoHeightTextarea
-                                        placeholder="Item description"
+                                    <RichTextarea
                                         value={item.particulars}
-                                        onChange={(e) => handleItemChange(item.key, 'particulars', e.target.value)}
-                                        className="flex-grow resize-none overflow-hidden"
-                                        rows={1}
+                                        onChange={(newVal) => handleItemChange(item.key, 'particulars', newVal)}
                                     />
                                     <div className="flex items-center gap-2 w-full sm:w-auto">
                                         <Input
@@ -1163,7 +1228,3 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-    
-
-    
