@@ -80,6 +80,14 @@ export type BankAccount = {
     bankBranch: string;
 }
 
+export type InvoiceTemplate = {
+  columns: {
+    id: 'sr_no' | keyof InvoiceItem;
+    label: string;
+    align: 'left' | 'center' | 'right';
+  }[];
+};
+
 export type CompanySettings = {
     id?: string;
     companyName: string;
@@ -97,6 +105,7 @@ export type CompanySettings = {
     pageFontSize?: number;
     addressFontSize?: number;
     tableBodyFontSize?: number;
+    template?: InvoiceTemplate;
 };
 
 export type DownloadOptions = {
@@ -113,13 +122,7 @@ export type DownloadOptions = {
     includeSiteInFilename?: boolean;
 };
 
-export type InvoiceTemplate = {
-  columns: {
-    id: 'sr_no' | keyof InvoiceItem;
-    label: string;
-    align: 'left' | 'center' | 'right';
-  }[];
-};
+
 
 export type Invoice = {
     id: string;

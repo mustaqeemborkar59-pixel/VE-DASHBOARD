@@ -213,6 +213,10 @@ export default function BillingPage() {
         tableBodyFontSize: myCompanyDetails.tableBodyFontSize || defaultPageSettings.tableBodyFontSize,
     }
   }, [myCompanyDetails]);
+  
+  const liveDefaultTemplate = useMemo((): InvoiceTemplate => {
+      return myCompanyDetails?.template || defaultTemplate;
+  }, [myCompanyDetails, defaultTemplate]);
 
   const resetForm = useCallback(() => {
       setCompanyId(initialFormState.companyId);
@@ -224,8 +228,8 @@ export default function BillingPage() {
       setEditingInvoice(null);
       setInvoicePageSettings(liveDefaultPageSettings);
       setFormDownloadOptions(defaultDownloadOptions);
-      setFormTemplate(defaultTemplate);
-  }, [initialFormState, liveDefaultPageSettings]);
+      setFormTemplate(liveDefaultTemplate);
+  }, [initialFormState, liveDefaultPageSettings, liveDefaultTemplate, defaultDownloadOptions]);
 
   const openFormDialog = useCallback((invoice: Invoice | null) => {
     closeAllDialogs();
@@ -246,12 +250,12 @@ export default function BillingPage() {
           tableBodyFontSize: invoice.tableBodyFontSize || liveDefaultPageSettings.tableBodyFontSize,
       });
       setFormDownloadOptions(invoice.downloadOptions || defaultDownloadOptions);
-      setFormTemplate(invoice.template || defaultTemplate);
+      setFormTemplate(invoice.template || liveDefaultTemplate);
     } else {
       resetForm();
     }
     handleDelayedAction(() => setIsFormDialogOpen(true));
-  }, [ liveDefaultPageSettings, defaultDownloadOptions, defaultTemplate, closeAllDialogs, resetForm ]);
+  }, [ liveDefaultPageSettings, defaultDownloadOptions, liveDefaultTemplate, closeAllDialogs, resetForm ]);
 
 
   const openPreviewDialog = useCallback((invoice: Invoice) => {

@@ -1,6 +1,6 @@
 
 'use client';
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import AppLayout from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,15 +11,47 @@ import { useFirebase, useDoc, useMemoFirebase, useCollection } from "@/firebase"
 import { collection, doc, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { CompanySettings, PageMargin, BankAccount } from "@/lib/data";
+import type { CompanySettings, PageMargin, BankAccount, InvoiceTemplate } from "@/lib/data";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BankAccountForm, BankAccountFormData } from "@/components/bank-account-form";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { EllipsisVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Trash2, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+
+
+const ColumnAlignmentFields = ({ template, onTemplateChange }: { template: InvoiceTemplate, onTemplateChange: (id: 'sr_no' | 'particulars' | 'rate' | 'amount', align: 'left' | 'center' | 'right') => void }) => {
+    return (
+        <div className="space-y-4">
+            <h4 className="font-semibold text-foreground">Default Column Alignment</h4>
+            <div className="space-y-2">
+                {template.columns.map(col => (
+                    <div key={col.id} className="grid grid-cols-3 items-center gap-4">
+                        <Label>{col.label}</Label>
+                        <div className="col-span-2 flex items-center justify-between p-1 bg-muted rounded-md">
+                            {(['left', 'center', 'right'] as const).map(align => (
+                                <Button
+                                    key={align}
+                                    type="button"
+                                    variant={col.align === align ? 'default' : 'ghost'}
+                                    size="icon"
+                                    className="h-7 w-7 flex-1"
+                                    onClick={() => onTemplateChange(col.id, align)}
+                                >
+                                    {align === 'left' && <AlignLeft className="h-4 w-4" />}
+                                    {align === 'center' && <AlignCenter className="h-4 w-4" />}
+                                    {align === 'right' && <AlignRight className="h-4 w-4" />}
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
 
 
 export default function SettingsPage() {
@@ -31,6 +63,15 @@ export default function SettingsPage() {
     
     const { data: initialSettings, isLoading: isLoadingSettings } = useDoc<CompanySettings>(settingsDocRef);
     const { data: bankAccounts, isLoading: isLoadingBankAccounts } = useCollection<BankAccount>(bankAccountsQuery);
+    
+    const defaultTemplate: InvoiceTemplate = {
+      columns: [
+          { id: 'sr_no', label: 'Sr. No', align: 'center' },
+          { id: 'particulars', label: 'Particulars', align: 'left' },
+          { id: 'rate', label: 'Rate', align: 'right' },
+          { id: 'amount', label: 'Amount', align: 'right' },
+      ],
+    };
 
     const [settings, setSettings] = useState<Partial<CompanySettings>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,6 +81,13 @@ export default function SettingsPage() {
     const [bankAccountToDelete, setBankAccountToDelete] = useState<BankAccount | null>(null);
 
     const isLoading = isLoadingSettings || isLoadingBankAccounts;
+    
+    const settingsWithTemplate = useMemo(() => {
+        return {
+            ...settings,
+            template: settings.template || defaultTemplate
+        }
+    }, [settings, defaultTemplate]);
 
     useEffect(() => {
         if (initialSettings) {
@@ -79,6 +127,18 @@ export default function SettingsPage() {
             setSettings(p => ({...p, [field]: numValue}));
         }
     }
+
+    const handleTemplateChange = (id: 'sr_no' | 'particulars' | 'rate' | 'amount', align: 'left' | 'center' | 'right') => {
+        setSettings(prev => ({
+            ...prev,
+            template: {
+                ...(prev.template || defaultTemplate),
+                columns: (prev.template?.columns || defaultTemplate.columns).map(col =>
+                    col.id === id ? { ...col, align } : col
+                ),
+            },
+        }));
+    };
 
     const handleSaveChanges = async () => {
         if (!firestore || !settingsDocRef) {
@@ -227,7 +287,7 @@ export default function SettingsPage() {
                              </div>
                              <div className="space-y-4 pt-2">
                                 <Label>Default Document Layout</Label>
-                                <div className="p-4 border rounded-lg grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="p-4 border rounded-lg grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                      <div className="grid grid-cols-1 items-center gap-4">
                                         <Label>Page Size</Label>
                                         <Select value={settings.pageSize || 'A4'} onValueChange={(value) => handleSelectChange('pageSize', value)} >
@@ -261,6 +321,10 @@ export default function SettingsPage() {
                                     <div className="grid grid-cols-1 items-center gap-4">
                                         <Label>Table Font</Label>
                                         <Input type="number" value={settings.tableBodyFontSize ?? ''} onChange={e => handleFontSizeChange('tableBodyFontSize', e.target.value)} className="h-8" placeholder="e.g., 11"/>
+                                    </div>
+                                    <div className="lg:col-span-3">
+                                      <Separator className="my-4"/>
+                                      <ColumnAlignmentFields template={settingsWithTemplate.template} onTemplateChange={handleTemplateChange} />
                                     </div>
                                 </div>
                              </div>
