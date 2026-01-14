@@ -7,9 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type { Forklift } from "@/lib/data";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "./ui/textarea";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 export type ForkliftFormData = {
   serialNumber: string;
@@ -195,16 +195,24 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
           <h3 className="text-lg font-medium">Location Details</h3>
            <div className="grid gap-2">
               <Label htmlFor="locationType">Location</Label>
-              <Select onValueChange={handleLocationChange} value={formData.locationType}>
-                  <SelectTrigger id="locationType">
-                      <SelectValue placeholder="Select location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="Workshop">Workshop</SelectItem>
-                      <SelectItem value="On-Site">On-Site</SelectItem>
-                      <SelectItem value="Not Confirm" className="text-destructive focus:text-destructive">Location Not Confirmed</SelectItem>
-                  </SelectContent>
-              </Select>
+                <RadioGroup
+                    value={formData.locationType}
+                    onValueChange={handleLocationChange}
+                    className="flex items-center space-x-4"
+                    >
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Workshop" id="Workshop" />
+                        <Label htmlFor="Workshop">Workshop</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="On-Site" id="On-Site" />
+                        <Label htmlFor="On-Site">On-Site</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Not Confirm" id="Not Confirm" className="text-destructive"/>
+                        <Label htmlFor="Not Confirm">Not Confirmed</Label>
+                    </div>
+                </RadioGroup>
            </div>
 
           {formData.locationType === 'On-Site' && (
