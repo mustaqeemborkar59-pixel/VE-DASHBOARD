@@ -38,13 +38,15 @@ import { Button } from "@/components/ui/button";
 import { EllipsisVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, orderBy } from 'firebase/firestore';
+import { collection, doc, query, orderBy, OrderByDirection } from 'firebase/firestore';
 import { Company } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { CompanyForm, CompanyFormData } from '@/components/company-form';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc';
 
 export default function CompaniesPage() {
   const { firestore } = useFirebase();
@@ -53,8 +55,34 @@ export default function CompaniesPage() {
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOption>('date-desc');
 
-  const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('createdAt', 'desc')) : null, [firestore]);
+  const companiesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    
+    let field: string, direction: OrderByDirection;
+    switch (sortOrder) {
+        case 'name-asc':
+            field = 'name';
+            direction = 'asc';
+            break;
+        case 'name-desc':
+            field = 'name';
+            direction = 'desc';
+            break;
+        case 'date-asc':
+            field = 'createdAt';
+            direction = 'asc';
+            break;
+        case 'date-desc':
+        default:
+            field = 'createdAt';
+            direction = 'desc';
+            break;
+    }
+    return query(collection(firestore, 'companies'), orderBy(field, direction));
+  }, [firestore, sortOrder]);
+
   const { data: companies, isLoading } = useCollection<Company>(companiesQuery);
 
   const companiesCount = useMemo(() => companies?.length, [companies]);
@@ -157,17 +185,30 @@ export default function CompaniesPage() {
     <AppLayout>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle>Companies</CardTitle>
                <CardDescription>
                 Manage your client companies. You currently have {isLoading ? '...' : companiesCount} registered companies.
               </CardDescription>
             </div>
-            <Button onClick={() => openAddEditDialog(null)} size="sm">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Company
-            </Button>
+            <div className="flex items-center gap-2">
+                <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as SortOption)}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="date-desc">Newest First</SelectItem>
+                        <SelectItem value="date-asc">Oldest First</SelectItem>
+                        <SelectItem value="name-asc">Alphabetical (A-Z)</SelectItem>
+                        <SelectItem value="name-desc">Alphabetical (Z-A)</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Button onClick={() => openAddEditDialog(null)} size="sm">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Company
+                </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0 md:p-3 pt-0">
