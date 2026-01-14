@@ -141,9 +141,8 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     onSubmit(dataToSubmit);
   };
   
-  const radioCardBaseClasses = "flex items-center space-x-2 rounded-lg p-3 cursor-pointer transition-opacity";
-  const radioCardSelectedClasses = "opacity-100 ring-2 ring-offset-2 ring-offset-background";
-  const radioCardUnselectedClasses = "opacity-75 hover:opacity-100";
+  const radioCardBaseClasses = "flex w-auto items-center space-x-2 rounded-lg border p-3 cursor-pointer transition-all";
+  const radioCardSelectedClasses = "ring-2 ring-offset-2 ring-offset-background";
 
 
   return (
@@ -205,17 +204,17 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
                     onValueChange={handleLocationChange}
                     className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                 >
-                    <Label className={cn(radioCardBaseClasses, 'bg-orange-500 text-white', formData.locationType === 'Workshop' ? cn(radioCardSelectedClasses, 'ring-orange-500') : radioCardUnselectedClasses)}>
-                        <RadioGroupItem value="Workshop" id="Workshop" className="border-white text-white ring-offset-orange-500" />
-                        <span>Workshop</span>
+                    <Label className={cn(radioCardBaseClasses, 'border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-300', formData.locationType === 'Workshop' && cn(radioCardSelectedClasses, 'ring-orange-500'))}>
+                        <RadioGroupItem value="Workshop" id="Workshop" className="border-orange-300 text-orange-700 ring-offset-orange-500" />
+                        <span className="font-medium">Workshop</span>
                     </Label>
-                     <Label className={cn(radioCardBaseClasses, 'bg-green-600 text-white', formData.locationType === 'On-Site' ? cn(radioCardSelectedClasses, 'ring-green-600') : radioCardUnselectedClasses)}>
-                        <RadioGroupItem value="On-Site" id="On-Site" className="border-white text-white ring-offset-green-600" />
-                        <span>On-Site</span>
+                     <Label className={cn(radioCardBaseClasses, 'border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-300', formData.locationType === 'On-Site' && cn(radioCardSelectedClasses, 'ring-green-600'))}>
+                        <RadioGroupItem value="On-Site" id="On-Site" className="border-green-300 text-green-700 ring-offset-green-600" />
+                        <span className="font-medium">On-Site</span>
                     </Label>
-                    <Label className={cn(radioCardBaseClasses, 'bg-red-600 text-white', formData.locationType === 'Not Confirm' ? cn(radioCardSelectedClasses, 'ring-red-600') : radioCardUnselectedClasses)}>
-                        <RadioGroupItem value="Not Confirm" id="Not Confirm" className="border-white text-white ring-offset-red-600" />
-                        <span>Not Confirmed</span>
+                    <Label className={cn(radioCardBaseClasses, 'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300', formData.locationType === 'Not Confirm' && cn(radioCardSelectedClasses, 'ring-red-600'))}>
+                        <RadioGroupItem value="Not Confirm" id="Not Confirm" className="border-red-300 text-red-700 ring-offset-red-600" />
+                        <span className="font-medium">Not Confirmed</span>
                     </Label>
                 </RadioGroup>
            </div>
