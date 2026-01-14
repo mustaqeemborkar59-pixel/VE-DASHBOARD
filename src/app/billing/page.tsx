@@ -173,6 +173,10 @@ export default function BillingPage() {
   const [isSettingsPopoverOpen, setIsSettingsPopoverOpen] = useState(false);
   const [globalPageSettings, setGlobalPageSettings] = useState<Partial<CompanySettings>>(defaultPageSettings);
   const [isSubmittingSettings, setIsSubmittingSettings] = useState(false);
+  
+  const [openYearAccordions, setOpenYearAccordions] = useState<string[]>([]);
+  const [openMonthAccordions, setOpenMonthAccordions] = useState<string[]>([]);
+
 
   // Queries
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
@@ -245,7 +249,6 @@ export default function BillingPage() {
   }, [initialFormState, liveDefaultPageSettings, liveDefaultTemplate]);
 
   const openFormDialog = useCallback((invoice: Invoice | null) => {
-    closeAllDialogs();
     if (invoice) {
       setEditingInvoice(invoice);
       setCompanyId(invoice.companyId);
@@ -267,8 +270,8 @@ export default function BillingPage() {
     } else {
       resetForm();
     }
-    handleDelayedAction(() => setIsFormDialogOpen(true));
-  }, [ liveDefaultPageSettings, defaultDownloadOptions, liveDefaultTemplate, closeAllDialogs, resetForm ]);
+    setIsFormDialogOpen(true);
+  }, [ liveDefaultPageSettings, defaultDownloadOptions, liveDefaultTemplate, resetForm ]);
 
 
   const openPreviewDialog = useCallback((invoice: Invoice) => {
@@ -896,7 +899,7 @@ export default function BillingPage() {
       {isLoadingInvoices ? (
           <div className="text-center py-10 text-muted-foreground">Loading invoices...</div>
       ) : invoices.length > 0 ? (
-          <Accordion type="multiple" className="w-full">
+          <Accordion type="multiple" className="w-full" value={openYearAccordions} onValueChange={setOpenYearAccordions}>
               {invoices.map((year: any, yearIndex: number) => (
                    <AccordionItem value={`year-${year.key}`} key={year.key} className="mb-2 border-0">
                       <AccordionTrigger className="px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-sm font-medium hover:no-underline">
@@ -906,7 +909,7 @@ export default function BillingPage() {
                           </div>
                       </AccordionTrigger>
                       <AccordionContent className="pt-2 pl-0 md:pl-4">
-                           <Accordion type="multiple" className="w-full">
+                           <Accordion type="multiple" className="w-full" value={openMonthAccordions} onValueChange={setOpenMonthAccordions}>
                               {year.months.map((month: any) => {
                                   return (
                                   <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
@@ -1075,7 +1078,7 @@ export default function BillingPage() {
             </Card>
         </Tabs>
 
-        <Dialog open={isFormDialogOpen} onOpenChange={(open) => {if(!open) closeAllDialogs(); else setIsFormDialogOpen(true); }}>
+        <Dialog open={isFormDialogOpen} onOpenChange={(open) => {if(!open) setIsFormDialogOpen(false); else setIsFormDialogOpen(true); }}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pb-0">
                     <DialogTitle>{editingInvoice ? 'Edit Invoice' : `New Invoice for ${activeTab} Enterprises`}</DialogTitle>
