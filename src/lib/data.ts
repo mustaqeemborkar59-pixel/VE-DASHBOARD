@@ -123,9 +123,9 @@ export type DownloadOptions = {
 };
 
 
-
 export type Invoice = {
     id: string;
+    enterprise: 'Vithal' | 'RV';
     billNo: number;
     billNoSuffix?: string;
     billDate: string; // YYYY-MM-DD

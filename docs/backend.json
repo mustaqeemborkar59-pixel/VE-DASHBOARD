@@ -285,6 +285,11 @@
       "description": "Represents a tax invoice.",
       "type": "object",
       "properties": {
+        "enterprise": {
+          "type": "string",
+          "enum": ["Vithal", "RV"],
+          "description": "The enterprise this invoice belongs to."
+        },
         "billNo": {
           "type": "number",
           "description": "The sequential invoice number."
@@ -392,6 +397,7 @@
         }
       },
       "required": [
+        "enterprise",
         "billNo",
         "billDate",
         "companyId",
@@ -553,7 +559,7 @@
       "schema": {
         "$ref": "#/entities/CompanySettings"
       },
-      "description": "Stores the user's own company details. Should only contain one document."
+      "description": "Stores the user's own company details. Should contain one document per enterprise ('vithal', 'rv')."
     },
     "/companySettings/primary/bankAccounts/{accountId}": {
       "schema": {

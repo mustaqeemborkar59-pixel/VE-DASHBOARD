@@ -27,6 +27,7 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 const AutoHeightTextarea = React.memo(forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => {
@@ -48,6 +49,7 @@ AutoHeightTextarea.displayName = 'AutoHeightTextarea';
 
 type InvoiceItem = Omit<import('@/lib/data').InvoiceItem, 'id'> & { key: string };
 type ActiveInput = { key: string; field: 'particulars' | 'rate' } | null;
+type Enterprise = 'Vithal' | 'RV';
 
 const DocumentSettingsFields = React.memo(({ settings, onSettingsChange, onMarginChange, onFontSizeChange, prefix="page" }: { 
     settings: Partial<CompanySettings>, 
@@ -100,6 +102,8 @@ DocumentSettingsFields.displayName = 'DocumentSettingsFields';
 export default function BillingPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
+
+  const [activeTab, setActiveTab] = useState<Enterprise>('Vithal');
   
   const toISODateString = (date: Date) => {
     return format(date, 'yyyy-MM-dd');
@@ -173,17 +177,26 @@ export default function BillingPage() {
   // Queries
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
   const allInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billNo', 'asc')) : null, [firestore]);
-  const settingsDocRef = useMemoFirebase(() => firestore ? doc(firestore, 'companySettings', 'primary') : null, [firestore]);
+  
+  const vithalSettingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'companySettings', 'vithal') : null, [firestore]);
+  const rvSettingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'companySettings', 'rv') : null, [firestore]);
+
   const bankAccountsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companySettings', 'primary', 'bankAccounts'), orderBy('nickname')) : null, [firestore]);
 
 
   // Data
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
   const { data: allInvoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(allInvoicesQuery);
-  const { data: myCompanyDetails, isLoading: isLoadingSettings } = useDoc<CompanySettings>(settingsDocRef);
-  const { data: bankAccounts, isLoading: isLoadingBankAccounts } = useCollection<BankAccount>(bankAccountsQuery);
-
   
+  const { data: vithalCompanyDetails, isLoading: isLoadingVithalSettings } = useDoc<CompanySettings>(vithalSettingsRef);
+  const { data: rvCompanyDetails, isLoading: isLoadingRvSettings } = useDoc<CompanySettings>(rvSettingsRef);
+
+  const { data: bankAccounts, isLoading: isLoadingBankAccounts } = useCollection<BankAccount>(bankAccountsQuery);
+  
+  const isLoadingSettings = isLoadingVithalSettings || isLoadingRvSettings;
+  const myCompanyDetails = activeTab === 'Vithal' ? vithalCompanyDetails : rvCompanyDetails;
+
+
   useEffect(() => {
     if (myCompanyDetails) {
         setGlobalPageSettings(myCompanyDetails);
@@ -341,10 +354,14 @@ export default function BillingPage() {
     setSelectedInvoices([]);
   };
 
+  const filteredInvoices = useMemo(() => {
+    return allInvoices?.filter(inv => inv.enterprise === activeTab) || [];
+  }, [allInvoices, activeTab]);
+
   const maxBillNumber = useMemo(() => {
-    if (!allInvoices || allInvoices.length === 0) return 0;
-    return Math.max(0, ...allInvoices.map(inv => inv.billNo));
-  }, [allInvoices]);
+    if (!filteredInvoices || filteredInvoices.length === 0) return 0;
+    return Math.max(0, ...filteredInvoices.map(inv => inv.billNo));
+  }, [filteredInvoices]);
   
   const nextBillNumber = useMemo(() => {
     if (isLoadingSettings) return null;
@@ -354,7 +371,7 @@ export default function BillingPage() {
   }, [myCompanyDetails, maxBillNumber, isLoadingSettings]);
 
   const organizedInvoices = useMemo(() => {
-    if (!allInvoices) return [];
+    if (!filteredInvoices) return [];
 
     const getFinancialYear = (date: Date) => {
       const year = date.getFullYear();
@@ -363,7 +380,7 @@ export default function BillingPage() {
       return month >= 3 ? year : year - 1;
     };
 
-    const groupedByYear = allInvoices.reduce((acc, invoice) => {
+    const groupedByYear = filteredInvoices.reduce((acc, invoice) => {
       const billDate = parseISO(invoice.billDate);
       const financialYearStart = getFinancialYear(billDate);
       const yearKey = `${financialYearStart}-${financialYearStart + 1}`;
@@ -416,7 +433,7 @@ export default function BillingPage() {
       };
     });
 
-  }, [allInvoices]);
+  }, [filteredInvoices]);
 
 
   const calculations = useMemo(() => {
@@ -527,6 +544,8 @@ export default function BillingPage() {
         return;
     }
 
+    const settingsDocRef = activeTab === 'Vithal' ? vithalSettingsRef : rvSettingsRef;
+
     if (firestore && settingsDocRef) {
       const billNoToUse = editingInvoice ? editingInvoice.billNo : (nextBillNumber || maxBillNumber + 1);
 
@@ -549,6 +568,7 @@ export default function BillingPage() {
       const currentDownloadOptions = formDownloadOptions;
 
       const invoiceData: Omit<Invoice, 'id'> = {
+        enterprise: activeTab,
         billNo: billNoToUse,
         billNoSuffix: 'MHE',
         billDate: billDate,
@@ -607,6 +627,8 @@ export default function BillingPage() {
   };
   
   const handleConfirmDuplicate = () => {
+    const settingsDocRef = activeTab === 'Vithal' ? vithalSettingsRef : rvSettingsRef;
+
     if (!invoiceToDuplicate || !firestore || !nextBillNumber || !settingsDocRef) {
         toast({ variant: "destructive", title: "Error", description: "Could not duplicate invoice. Please try again." });
         return;
@@ -618,6 +640,7 @@ export default function BillingPage() {
         ...restOfInvoice,
         billNo: nextBillNumber,
         billDate: newBillDateForDuplicate,
+        enterprise: activeTab,
     };
     
     addDocumentNonBlocking(collection(firestore, 'invoices'), duplicatedInvoiceData);
@@ -631,6 +654,8 @@ export default function BillingPage() {
   };
   
   const handleConfirmBulkDuplicate = async () => {
+    const settingsDocRef = activeTab === 'Vithal' ? vithalSettingsRef : rvSettingsRef;
+
     if (!firestore || !nextBillNumber || !settingsDocRef || selectedInvoices.length === 0) {
         toast({ variant: "destructive", title: "Error", description: "Could not duplicate invoices. Please try again." });
         return;
@@ -647,6 +672,7 @@ export default function BillingPage() {
             ...restOfInvoice,
             billNo: currentBillNumber,
             billDate: newBillDateForBulk,
+            enterprise: activeTab,
         });
         currentBillNumber++;
     }
@@ -700,6 +726,7 @@ export default function BillingPage() {
   };
 
   const handleSaveDefaultSettings = async () => {
+    const settingsDocRef = activeTab === 'Vithal' ? vithalSettingsRef : rvSettingsRef;
     if (!firestore || !settingsDocRef) return;
     setIsSubmittingSettings(true);
     try {
@@ -864,178 +891,194 @@ export default function BillingPage() {
     </DropdownMenu>
   );
 
+  const InvoiceList = ({ invoices }: { invoices: ReturnType<typeof useMemo> }) => (
+    <>
+      {isLoadingInvoices ? (
+          <div className="text-center py-10 text-muted-foreground">Loading invoices...</div>
+      ) : invoices.length > 0 ? (
+          <Accordion type="multiple" className="w-full">
+              {invoices.map((year: any, yearIndex: number) => (
+                   <AccordionItem value={`year-${year.key}`} key={year.key} className="mb-2 border-0">
+                      <AccordionTrigger className="px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-sm font-medium hover:no-underline">
+                          <div className="flex items-center gap-3">
+                            <Folder className="h-5 w-5 text-amber-500 fill-amber-500/20" />
+                            <span>{year.label}</span>
+                          </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-2 pl-0 md:pl-4">
+                           <Accordion type="multiple" className="w-full">
+                              {year.months.map((month: any) => {
+                                  return (
+                                  <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
+                                      <AccordionTrigger className="flex items-center justify-between flex-1 text-xs font-medium hover:no-underline p-3 bg-muted/50 hover:bg-muted/80 rounded-md">
+                                           <div className="flex items-center gap-2">
+                                                <Folder className="h-4 w-4 text-amber-500 fill-amber-500/20" />
+                                                <span>{month.label}</span>
+                                           </div>
+                                      </AccordionTrigger>
+                                      <AccordionContent className="pt-2">
+                                          <div className="md:hidden">
+                                              <div className="space-y-4 p-4">
+                                              {month.invoices.map((invoice: Invoice) => (
+                                                  <div key={invoice.id} className="border rounded-lg p-4 space-y-3">
+                                                      <div className="flex justify-between items-start">
+                                                          <div className="flex items-start gap-3">
+                                                            <Checkbox 
+                                                              id={`select-inv-mob-${invoice.id}`} 
+                                                              className="mt-1"
+                                                              checked={selectedInvoices.includes(invoice.id)}
+                                                              onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
+                                                            />
+                                                            <div className="space-y-1 cursor-pointer" onClick={() => openPreviewDialog(invoice)}>
+                                                                <div className="font-bold">Bill No: {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
+                                                                <div className="text-sm text-muted-foreground">{getCompanyDisplay(invoice)}</div>
+                                                            </div>
+                                                          </div>
+                                                          {renderInvoiceActions(invoice)}
+                                                      </div>
+                                                      <div className="text-sm space-y-1" onClick={() => openPreviewDialog(invoice)}>
+                                                          <div><span className="font-medium text-muted-foreground">Date: </span>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</div>
+                                                          <div><span className="font-medium text-muted-foreground">Amount: </span>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</div>
+                                                      </div>
+                                                  </div>
+                                              ))}
+                                              </div>
+                                          </div>
+                                          <Table className="hidden md:table">
+                                              <TableHeader>
+                                                  <TableRow>
+                                                      <TableHead className="w-12 px-4"></TableHead>
+                                                      <TableHead>Bill No.</TableHead>
+                                                      <TableHead>Company</TableHead>
+                                                      <TableHead>Bill Date</TableHead>
+                                                      <TableHead className="text-right">Amount</TableHead>
+                                                      <TableHead className="w-[100px] text-right"><span className="sr-only">Actions</span></TableHead>
+                                                  </TableRow>
+                                              </TableHeader>
+                                              <TableBody>
+                                                  {month.invoices.map((invoice: Invoice) => (
+                                                      <TableRow key={invoice.id} data-state={selectedInvoices.includes(invoice.id) ? "selected" : ""}>
+                                                          <TableCell className="px-4">
+                                                              <Checkbox 
+                                                                id={`select-inv-desk-${invoice.id}`}
+                                                                checked={selectedInvoices.includes(invoice.id)}
+                                                                onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
+                                                                aria-label={`Select invoice ${invoice.billNo}`}
+                                                              />
+                                                          </TableCell>
+                                                          <TableCell className="font-medium cursor-pointer" onClick={() => openPreviewDialog(invoice)}>
+                                                              {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
+                                                          </TableCell>
+                                                          <TableCell onClick={() => openPreviewDialog(invoice)} className="cursor-pointer">{getCompanyDisplay(invoice)}</TableCell>
+                                                          <TableCell onClick={() => openPreviewDialog(invoice)} className="cursor-pointer">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
+                                                          <TableCell className="text-right cursor-pointer" onClick={() => openPreviewDialog(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
+                                                          <TableCell className="text-right">
+                                                              {renderInvoiceActions(invoice)}
+                                                          </TableCell>
+                                                      </TableRow>
+                                                  ))}
+                                              </TableBody>
+                                          </Table>
+                                      </AccordionContent>
+                                  </AccordionItem>
+                                  )
+                              })}
+                          </Accordion>
+                      </AccordionContent>
+                  </AccordionItem>
+              ))}
+          </Accordion>
+      ) : (
+          <div className="text-center py-10 text-muted-foreground">
+              No invoices found for this enterprise. Click "Add Invoice" to get started.
+          </div>
+      )}
+    </>
+  );
+
   return (
     <AppLayout>
       <div className="flex flex-col gap-6">
-        <Card>
-            <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <CardTitle>Invoices</CardTitle>
-                        <CardDescription>View, edit, and create new invoices organized by financial year.</CardDescription>
-                    </div>
-                    <div className="flex items-center gap-2 self-start sm:self-center">
-                        {selectedInvoices.length > 0 && (
-                            <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" onClick={handleBulkDownload}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download ({selectedInvoices.length})
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={openBulkDuplicateDialog}>
-                                    <Copy className="mr-2 h-4 w-4" />
-                                    Duplicate ({selectedInvoices.length})
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => setSelectedInvoices([])} className="h-9 w-9">
-                                    <X className="h-4 w-4" />
-                                    <span className="sr-only">Clear selection</span>
-                                </Button>
-                            </div>
-                        )}
-                        <Popover open={isSettingsPopoverOpen} onOpenChange={setIsSettingsPopoverOpen}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                    <Settings className="h-4 w-4" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-96">
-                                <div className="space-y-4">
-                                    <h4 className="font-medium leading-none">Default Document Settings</h4>
-                                    <p className="text-sm text-muted-foreground">Set the default layout for new invoices.</p>
-                                    <DocumentSettingsFields 
-                                        settings={globalPageSettings} 
-                                        onSettingsChange={handleGlobalSettingsChange}
-                                        onMarginChange={handleGlobalMarginChange}
-                                        onFontSizeChange={handleGlobalFontSizeChange}
-                                        prefix="global"
-                                    />
-                                    <Button onClick={handleSaveDefaultSettings} disabled={isSubmittingSettings} className="w-full">
-                                        {isSubmittingSettings ? 'Saving...' : 'Save Defaults'}
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Enterprise)} className="w-full">
+            <Card>
+                <CardHeader>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <CardTitle>Invoices</CardTitle>
+                            <CardDescription>View, edit, and create new invoices organized by financial year.</CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2 self-start sm:self-center">
+                            {selectedInvoices.length > 0 && (
+                                <div className="flex items-center gap-2">
+                                    <Button variant="outline" size="sm" onClick={handleBulkDownload}>
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download ({selectedInvoices.length})
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={openBulkDuplicateDialog}>
+                                        <Copy className="mr-2 h-4 w-4" />
+                                        Duplicate ({selectedInvoices.length})
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={() => setSelectedInvoices([])} className="h-9 w-9">
+                                        <X className="h-4 w-4" />
+                                        <span className="sr-only">Clear selection</span>
                                     </Button>
                                 </div>
-                            </PopoverContent>
-                        </Popover>
-                        <Button onClick={() => openFormDialog(null)} size="sm">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Add Invoice
-                        </Button>
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="flex flex-col sm:flex-row items-center gap-4 mb-6 p-4 border rounded-lg bg-muted/40">
-                    <div className="flex-1 w-full sm:w-auto">
-                        <Label htmlFor="invoiceStart" className="text-sm font-medium">Next Invoice Number</Label>
-                        <p className="text-xs text-muted-foreground">The next bill number will be <span className='font-bold'>{nextBillNumber || '...'}</span>. You can change this in Settings.</p>
-                    </div>
-                </div>
-
-                {isLoadingInvoices ? (
-                    <div className="text-center py-10 text-muted-foreground">Loading invoices...</div>
-                ) : organizedInvoices.length > 0 ? (
-                    <Accordion type="multiple" className="w-full">
-                        {organizedInvoices.map((year, yearIndex) => (
-                             <AccordionItem value={`year-${year.key}`} key={year.key} className="mb-2 border-0">
-                                <AccordionTrigger className="px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-sm font-medium hover:no-underline">
-                                    <div className="flex items-center gap-3">
-                                      <Folder className="h-5 w-5 text-amber-500 fill-amber-500/20" />
-                                      <span>{year.label}</span>
+                            )}
+                            <Popover open={isSettingsPopoverOpen} onOpenChange={setIsSettingsPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" size="icon">
+                                        <Settings className="h-4 w-4" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-96">
+                                    <div className="space-y-4">
+                                        <h4 className="font-medium leading-none">Default Document Settings</h4>
+                                        <p className="text-sm text-muted-foreground">Set the default layout for new invoices for <span className="font-bold">{activeTab} Enterprises</span>.</p>
+                                        <DocumentSettingsFields 
+                                            settings={globalPageSettings} 
+                                            onSettingsChange={handleGlobalSettingsChange}
+                                            onMarginChange={handleGlobalMarginChange}
+                                            onFontSizeChange={handleGlobalFontSizeChange}
+                                            prefix="global"
+                                        />
+                                        <Button onClick={handleSaveDefaultSettings} disabled={isSubmittingSettings} className="w-full">
+                                            {isSubmittingSettings ? 'Saving...' : 'Save Defaults'}
+                                        </Button>
                                     </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="pt-2 pl-0 md:pl-4">
-                                     <Accordion type="multiple" className="w-full">
-                                        {year.months.map(month => {
-                                            return (
-                                            <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
-                                                <AccordionTrigger className="flex items-center justify-between flex-1 text-xs font-medium hover:no-underline p-3 bg-muted/50 hover:bg-muted/80 rounded-md">
-                                                     <div className="flex items-center gap-2">
-                                                          <Folder className="h-4 w-4 text-amber-500 fill-amber-500/20" />
-                                                          <span>{month.label}</span>
-                                                     </div>
-                                                </AccordionTrigger>
-                                                <AccordionContent className="pt-2">
-                                                    <div className="md:hidden">
-                                                        <div className="space-y-4 p-4">
-                                                        {month.invoices.map((invoice) => (
-                                                            <div key={invoice.id} className="border rounded-lg p-4 space-y-3">
-                                                                <div className="flex justify-between items-start">
-                                                                    <div className="flex items-start gap-3">
-                                                                      <Checkbox 
-                                                                        id={`select-inv-mob-${invoice.id}`} 
-                                                                        className="mt-1"
-                                                                        checked={selectedInvoices.includes(invoice.id)}
-                                                                        onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
-                                                                      />
-                                                                      <div className="space-y-1 cursor-pointer" onClick={() => openPreviewDialog(invoice)}>
-                                                                          <div className="font-bold">Bill No: {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
-                                                                          <div className="text-sm text-muted-foreground">{getCompanyDisplay(invoice)}</div>
-                                                                      </div>
-                                                                    </div>
-                                                                    {renderInvoiceActions(invoice)}
-                                                                </div>
-                                                                <div className="text-sm space-y-1" onClick={() => openPreviewDialog(invoice)}>
-                                                                    <div><span className="font-medium text-muted-foreground">Date: </span>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</div>
-                                                                    <div><span className="font-medium text-muted-foreground">Amount: </span>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</div>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                        </div>
-                                                    </div>
-                                                    <Table className="hidden md:table">
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead className="w-12 px-4"></TableHead>
-                                                                <TableHead>Bill No.</TableHead>
-                                                                <TableHead>Company</TableHead>
-                                                                <TableHead>Bill Date</TableHead>
-                                                                <TableHead className="text-right">Amount</TableHead>
-                                                                <TableHead className="w-[100px] text-right"><span className="sr-only">Actions</span></TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {month.invoices.map((invoice) => (
-                                                                <TableRow key={invoice.id} data-state={selectedInvoices.includes(invoice.id) ? "selected" : ""}>
-                                                                    <TableCell className="px-4">
-                                                                        <Checkbox 
-                                                                          id={`select-inv-desk-${invoice.id}`}
-                                                                          checked={selectedInvoices.includes(invoice.id)}
-                                                                          onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
-                                                                          aria-label={`Select invoice ${invoice.billNo}`}
-                                                                        />
-                                                                    </TableCell>
-                                                                    <TableCell className="font-medium cursor-pointer" onClick={() => openPreviewDialog(invoice)}>
-                                                                        {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
-                                                                    </TableCell>
-                                                                    <TableCell onClick={() => openPreviewDialog(invoice)} className="cursor-pointer">{getCompanyDisplay(invoice)}</TableCell>
-                                                                    <TableCell onClick={() => openPreviewDialog(invoice)} className="cursor-pointer">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
-                                                                    <TableCell className="text-right cursor-pointer" onClick={() => openPreviewDialog(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
-                                                                    <TableCell className="text-right">
-                                                                        {renderInvoiceActions(invoice)}
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            ))}
-                                                        </TableBody>
-                                                    </Table>
-                                                </AccordionContent>
-                                            </AccordionItem>
-                                            )
-                                        })}
-                                    </Accordion>
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
-                ) : (
-                    <div className="text-center py-10 text-muted-foreground">
-                        No invoices found. Click "Add Invoice" to get started.
+                                </PopoverContent>
+                            </Popover>
+                            <Button onClick={() => openFormDialog(null)} size="sm">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Add Invoice
+                            </Button>
+                        </div>
                     </div>
-                )}
-            </CardContent>
-        </Card>
+                     <TabsList className="grid w-full grid-cols-2 mt-4">
+                        <TabsTrigger value="Vithal">Vithal Enterprises</TabsTrigger>
+                        <TabsTrigger value="RV">R.V Enterprises</TabsTrigger>
+                    </TabsList>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col sm:flex-row items-center gap-4 mb-6 p-4 border rounded-lg bg-muted/40">
+                        <div className="flex-1 w-full sm:w-auto">
+                            <Label htmlFor="invoiceStart" className="text-sm font-medium">Next Invoice Number for {activeTab} Enterprises</Label>
+                            <p className="text-xs text-muted-foreground">The next bill number will be <span className='font-bold'>{nextBillNumber || '...'}</span>. You can change this in Settings.</p>
+                        </div>
+                    </div>
+                    <TabsContent value="Vithal">
+                      <InvoiceList invoices={organizedInvoices} />
+                    </TabsContent>
+                    <TabsContent value="RV">
+                      <InvoiceList invoices={organizedInvoices} />
+                    </TabsContent>
+                </CardContent>
+            </Card>
+        </Tabs>
 
         <Dialog open={isFormDialogOpen} onOpenChange={(open) => {if(!open) closeAllDialogs(); else setIsFormDialogOpen(true); }}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pb-0">
-                    <DialogTitle>{editingInvoice ? 'Edit Invoice' : 'Generate New Invoice'}</DialogTitle>
+                    <DialogTitle>{editingInvoice ? 'Edit Invoice' : `New Invoice for ${activeTab} Enterprises`}</DialogTitle>
                     <DialogDescription>{editingInvoice ? `Updating Invoice No. ${editingInvoice.billNo}-MHE` : 'Fill the details below to create a new invoice.'}</DialogDescription>
                 </DialogHeader>
                 <div className="flex-grow overflow-y-auto px-6">
@@ -1313,13 +1356,3 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-    
-
-
-
-
-
-    
-
-    
