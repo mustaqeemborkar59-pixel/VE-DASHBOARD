@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Forklift, ServiceRequest } from "@/lib/data";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy } from "firebase/firestore";
 import { useState, useMemo, Fragment, useCallback } from "react";
@@ -132,6 +132,18 @@ export default function ForkliftsPage() {
       const sites = new Set(forklifts.map(f => f.siteCompany).filter(Boolean));
       return ['All', 'Workshop', 'On-Site', 'Not Confirm', ...Array.from(sites)];
   }, [forklifts]);
+
+  const handleClearFilters = () => {
+    setLocationFilter('All');
+    setEquipmentTypeFilter('All');
+    setCapacityFilter('All');
+    setSearchTerm('');
+    setSearchField('All');
+  };
+  
+  const anyFilterActive = useMemo(() => {
+      return locationFilter !== 'All' || equipmentTypeFilter !== 'All' || capacityFilter !== 'All' || searchTerm !== '';
+  }, [locationFilter, equipmentTypeFilter, capacityFilter, searchTerm]);
 
 
   const filteredForklifts = useMemo(() => {
@@ -237,7 +249,7 @@ export default function ForkliftsPage() {
     setExpandedRow(expandedRow === id ? null : id);
   };
   
-  const cardClassName = "border-0 bg-gradient-to-br shadow-lg";
+  const cardClassName = "border-0 bg-gradient-to-br shadow-lg transition-transform hover:scale-[1.02] cursor-pointer";
   
   const getLocationIcon = (locationType: Forklift['locationType']) => {
     switch (locationType) {
@@ -323,7 +335,7 @@ export default function ForkliftsPage() {
         </div>
 
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
+          <Card onClick={() => setLocationFilter('Workshop')} className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">In Workshop</CardTitle>
               <Warehouse className="h-5 w-5 text-white/80" />
@@ -333,7 +345,7 @@ export default function ForkliftsPage() {
               <p className="text-xs text-white/90">Units available at workshop</p>
             </CardContent>
           </Card>
-          <Card className={cn(cardClassName, "from-amber-500 to-orange-600 text-white shadow-amber-500/30")}>
+          <Card onClick={() => setLocationFilter('On-Site')} className={cn(cardClassName, "from-amber-500 to-orange-600 text-white shadow-amber-500/30")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">On-Site</CardTitle>
               <ForkliftIcon className="h-5 w-5 text-white/80" />
@@ -343,7 +355,7 @@ export default function ForkliftsPage() {
               <p className="text-xs text-white/90">Units deployed at client sites</p>
             </CardContent>
           </Card>
-          <Card className={cn(cardClassName, "from-red-500 to-rose-600 text-white shadow-red-500/30")}>
+          <Card onClick={() => setLocationFilter('Not Confirm')} className={cn(cardClassName, "from-red-500 to-rose-600 text-white shadow-red-500/30")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Not Confirmed</CardTitle>
               <AlertTriangle className="h-5 w-5 text-white/80" />
@@ -353,7 +365,7 @@ export default function ForkliftsPage() {
               <p className="text-xs text-white/90">Units with unconfirmed locations</p>
             </CardContent>
           </Card>
-          <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
+          <Card onClick={handleClearFilters} className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Forklifts</CardTitle>
               <ForkliftIcon className="h-5 w-5 text-white/80" />
@@ -421,6 +433,12 @@ export default function ForkliftsPage() {
                     ))}
                 </SelectContent>
                 </Select>
+                 {anyFilterActive && (
+                    <Button variant="ghost" size="sm" onClick={handleClearFilters}>
+                        <XCircle className="mr-2 h-4 w-4" />
+                        Clear Filters
+                    </Button>
+                )}
             </div>
         </div>
 
@@ -610,3 +628,5 @@ export default function ForkliftsPage() {
     </AppLayout>
   );
 }
+
+    
