@@ -10,6 +10,7 @@ import type { Forklift } from "@/lib/data";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "./ui/textarea";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { cn } from "@/lib/utils";
 
 export type ForkliftFormData = {
   serialNumber: string;
@@ -139,6 +140,11 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
 
     onSubmit(dataToSubmit);
   };
+  
+  const radioCardBaseClasses = "flex items-center space-x-2 rounded-lg p-3 cursor-pointer transition-opacity";
+  const radioCardSelectedClasses = "opacity-100 ring-2 ring-offset-2 ring-offset-background";
+  const radioCardUnselectedClasses = "opacity-75 hover:opacity-100";
+
 
   return (
     <form id="forklift-form" onSubmit={handleSubmit} className="grid gap-6">
@@ -194,24 +200,23 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
         <div className="grid gap-4">
           <h3 className="text-lg font-medium">Location Details</h3>
            <div className="grid gap-2">
-              <Label htmlFor="locationType">Location</Label>
                 <RadioGroup
                     value={formData.locationType}
                     onValueChange={handleLocationChange}
-                    className="flex items-center space-x-4"
-                    >
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Workshop" id="Workshop" />
-                        <Label htmlFor="Workshop">Workshop</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="On-Site" id="On-Site" />
-                        <Label htmlFor="On-Site">On-Site</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Not Confirm" id="Not Confirm" className="text-destructive"/>
-                        <Label htmlFor="Not Confirm">Not Confirmed</Label>
-                    </div>
+                    className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+                >
+                    <Label className={cn(radioCardBaseClasses, 'bg-orange-500 text-white', formData.locationType === 'Workshop' ? cn(radioCardSelectedClasses, 'ring-orange-500') : radioCardUnselectedClasses)}>
+                        <RadioGroupItem value="Workshop" id="Workshop" className="border-white text-white ring-offset-orange-500" />
+                        <span>Workshop</span>
+                    </Label>
+                     <Label className={cn(radioCardBaseClasses, 'bg-green-600 text-white', formData.locationType === 'On-Site' ? cn(radioCardSelectedClasses, 'ring-green-600') : radioCardUnselectedClasses)}>
+                        <RadioGroupItem value="On-Site" id="On-Site" className="border-white text-white ring-offset-green-600" />
+                        <span>On-Site</span>
+                    </Label>
+                    <Label className={cn(radioCardBaseClasses, 'bg-red-600 text-white', formData.locationType === 'Not Confirm' ? cn(radioCardSelectedClasses, 'ring-red-600') : radioCardUnselectedClasses)}>
+                        <RadioGroupItem value="Not Confirm" id="Not Confirm" className="border-white text-white ring-offset-red-600" />
+                        <span>Not Confirmed</span>
+                    </Label>
                 </RadioGroup>
            </div>
 
