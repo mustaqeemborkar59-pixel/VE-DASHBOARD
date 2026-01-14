@@ -20,7 +20,10 @@ import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@
 import { EllipsisVertical, Pencil, PlusCircle, Trash2, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+
+type Enterprise = 'Vithal' | 'RV';
 
 const ColumnAlignmentFields = ({ template, onTemplateChange }: { template: InvoiceTemplate, onTemplateChange: (id: 'sr_no' | 'particulars' | 'rate' | 'amount', align: 'left' | 'center' | 'right') => void }) => {
     return (
@@ -53,18 +56,17 @@ const ColumnAlignmentFields = ({ template, onTemplateChange }: { template: Invoi
     );
 };
 
-
-export default function SettingsPage() {
+const SettingsForm = ({ enterprise }: { enterprise: Enterprise }) => {
     const { firestore } = useFirebase();
     const { toast } = useToast();
     
-    const settingsDocRef = useMemoFirebase(() => firestore ? doc(firestore, "companySettings", "primary") : null, [firestore]);
-    const bankAccountsQuery = useMemoFirebase(() => firestore ? collection(firestore, "companySettings", "primary", "bankAccounts") : null, [firestore]);
-    
+    const settingsDocRef = useMemoFirebase(() => firestore ? doc(firestore, "companySettings", enterprise.toLowerCase()) : null, [firestore, enterprise]);
     const { data: initialSettings, isLoading: isLoadingSettings } = useDoc<CompanySettings>(settingsDocRef);
-    const { data: bankAccounts, isLoading: isLoadingBankAccounts } = useCollection<BankAccount>(bankAccountsQuery);
     
-    const defaultTemplate: InvoiceTemplate = {
+    const [settings, setSettings] = useState<Partial<CompanySettings>>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+     const defaultTemplate: InvoiceTemplate = {
       columns: [
           { id: 'sr_no', label: 'Sr. No', align: 'center' },
           { id: 'particulars', label: 'Particulars', align: 'left' },
@@ -73,25 +75,18 @@ export default function SettingsPage() {
       ],
     };
 
-    const [settings, setSettings] = useState<Partial<CompanySettings>>({});
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const [isBankAccountDialogOpen, setIsBankAccountDialogOpen] = useState(false);
-    const [selectedBankAccount, setSelectedBankAccount] = useState<BankAccount | null>(null);
-    const [bankAccountToDelete, setBankAccountToDelete] = useState<BankAccount | null>(null);
-
-    const isLoading = isLoadingSettings || isLoadingBankAccounts;
-    
     const settingsWithTemplate = useMemo(() => {
         return {
             ...settings,
             template: settings.template || defaultTemplate
         }
     }, [settings, defaultTemplate]);
-
+    
     useEffect(() => {
         if (initialSettings) {
             setSettings(initialSettings);
+        } else {
+            setSettings({});
         }
     }, [initialSettings]);
 
@@ -128,7 +123,7 @@ export default function SettingsPage() {
         }
     }
 
-    const handleTemplateChange = (id: 'sr_no' | 'particulars' | 'rate' | 'amount', align: 'left' | 'center' | 'right') => {
+     const handleTemplateChange = (id: 'sr_no' | 'particulars' | 'rate' | 'amount', align: 'left' | 'center' | 'right') => {
         setSettings(prev => ({
             ...prev,
             template: {
@@ -149,7 +144,7 @@ export default function SettingsPage() {
         setIsSubmitting(true);
         try {
             await setDoc(settingsDocRef, settings, { merge: true });
-            toast({ title: "Success", description: "Settings updated successfully." });
+            toast({ title: "Success", description: `${enterprise} settings updated successfully.` });
         } catch (error) {
             console.error("Error updating settings:", error);
             toast({ variant: "destructive", title: "Error", description: "Failed to update settings. Please try again." });
@@ -157,7 +152,142 @@ export default function SettingsPage() {
             setIsSubmitting(false);
         }
     };
+    
+    if (isLoadingSettings) {
+        return (
+             <div className="space-y-8">
+               <div className="space-y-4">
+                    <Skeleton className="h-6 w-1/4" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-10 w-full" /></div>
+                        <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-10 w-full" /></div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
+    return (
+        <div className="space-y-8">
+            <div className="space-y-4">
+                <h3 className="text-lg font-medium">Basic Information</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="companyName">Company Name</Label>
+                        <Input id="companyName" value={settings.companyName || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="pan">PAN Number</Label>
+                        <Input id="pan" value={settings.pan || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="gstin">GSTIN</Label>
+                        <Input id="gstin" value={settings.gstin || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="sacCode">SAC Code</Label>
+                        <Input id="sacCode" value={settings.sacCode || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="serviceTaxCode">Service Tax Code No</Label>
+                        <Input id="serviceTaxCode" value={settings.serviceTaxCode || ''} onChange={handleInputChange} />
+                    </div>
+                </div>
+            </div>
+
+            <Separator />
+            
+            <div className="space-y-4">
+                <h3 className="text-lg font-medium">Contact Person</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="contactPerson">Full Name</Label>
+                        <Input id="contactPerson" value={settings.contactPerson || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="contactNumber">Contact Number</Label>
+                        <Input id="contactNumber" value={settings.contactNumber || ''} onChange={handleInputChange} />
+                    </div>
+                </div>
+            </div>
+            
+            <Separator />
+
+            <div className="space-y-6">
+                <h3 className="text-lg font-medium">Default Invoice & Document Settings</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="nextBillNo">Next Invoice Number</Label>
+                        <Input id="nextBillNo" type="number" value={settings.nextBillNo || ''} onChange={handleInputChange} />
+                    </div>
+                 </div>
+                 <div className="space-y-4 pt-2">
+                    <Label>Default Document Layout</Label>
+                    <div className="p-4 border rounded-lg grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                         <div className="grid grid-cols-1 items-center gap-4">
+                            <Label>Page Size</Label>
+                            <Select value={settings.pageSize || 'A4'} onValueChange={(value) => handleSelectChange('pageSize', value)} >
+                                <SelectTrigger className="h-8">
+                                    <SelectValue placeholder="Select page size" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="A4">A4</SelectItem>
+                                    <SelectItem value="LETTER">Letter</SelectItem>
+                                    <SelectItem value="LEGAL">Legal</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid items-start gap-4">
+                            <Label>Margins (cm)</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Input type="number" placeholder="Top" value={settings.pageMargins?.top ?? ''} onChange={(e) => handleMarginChange('top', e.target.value)} className="h-8"/>
+                                <Input type="number" placeholder="Bottom" value={settings.pageMargins?.bottom ?? ''} onChange={(e) => handleMarginChange('bottom', e.target.value)} className="h-8"/>
+                                <Input type="number" placeholder="Left" value={settings.pageMargins?.left ?? ''} onChange={(e) => handleMarginChange('left', e.target.value)} className="h-8"/>
+                                <Input type="number" placeholder="Right" value={settings.pageMargins?.right ?? ''} onChange={(e) => handleMarginChange('right', e.target.value)} className="h-8"/>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 items-center gap-4">
+                            <Label>Page Font</Label>
+                            <Input type="number" value={settings.pageFontSize ?? ''} onChange={e => handleFontSizeChange('pageFontSize', e.target.value)} className="h-8" placeholder="e.g., 11"/>
+                        </div>
+                        <div className="grid grid-cols-1 items-center gap-4">
+                            <Label>Address Font</Label>
+                            <Input type="number" value={settings.addressFontSize ?? ''} onChange={e => handleFontSizeChange('addressFontSize', e.target.value)} className="h-8" placeholder="e.g., 10"/>
+                        </div>
+                        <div className="grid grid-cols-1 items-center gap-4">
+                            <Label>Table Font</Label>
+                            <Input type="number" value={settings.tableBodyFontSize ?? ''} onChange={e => handleFontSizeChange('tableBodyFontSize', e.target.value)} className="h-8" placeholder="e.g., 11"/>
+                        </div>
+                        <div className="lg:col-span-3">
+                            <Separator className="my-4"/>
+                            <ColumnAlignmentFields template={settingsWithTemplate.template} onTemplateChange={handleTemplateChange} />
+                        </div>
+                    </div>
+                 </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+                <Button onClick={handleSaveChanges} disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving...' : `Save ${enterprise} Settings`}
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+
+export default function SettingsPage() {
+    const { firestore } = useFirebase();
+    const { toast } = useToast();
+    
+    const bankAccountsQuery = useMemoFirebase(() => firestore ? collection(firestore, "companySettings", "primary", "bankAccounts") : null, [firestore]);
+    const { data: bankAccounts, isLoading: isLoadingBankAccounts } = useCollection<BankAccount>(bankAccountsQuery);
+    
+    const [isBankAccountDialogOpen, setIsBankAccountDialogOpen] = useState(false);
+    const [selectedBankAccount, setSelectedBankAccount] = useState<BankAccount | null>(null);
+    const [bankAccountToDelete, setBankAccountToDelete] = useState<BankAccount | null>(null);
+
+    
     const closeAllDialogs = useCallback(() => {
         setIsBankAccountDialogOpen(false);
         setBankAccountToDelete(null);
@@ -200,141 +330,29 @@ export default function SettingsPage() {
         setBankAccountToDelete(null);
     }
     
-    if (isLoading) {
-        return (
-            <AppLayout>
-                <Card>
-                    <CardHeader>
-                        <Skeleton className="h-8 w-1/3" />
-                        <Skeleton className="h-4 w-2/3" />
-                    </CardHeader>
-                    <CardContent className="space-y-8">
-                       <div className="space-y-4">
-                            <Skeleton className="h-6 w-1/4" />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-10 w-full" /></div>
-                                <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-10 w-full" /></div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </AppLayout>
-        );
-    }
-
     return (
         <AppLayout>
             <div className="flex flex-col gap-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Global Settings</CardTitle>
+                        <CardTitle>Enterprise Settings</CardTitle>
                         <CardDescription>
-                            Manage company-wide settings for invoices, documents, and general information.
+                            Manage settings for each of your enterprises.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-8">
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-medium">Basic Information</h3>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="companyName">Company Name</Label>
-                                    <Input id="companyName" value={settings.companyName || ''} onChange={handleInputChange} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="pan">PAN Number</Label>
-                                    <Input id="pan" value={settings.pan || ''} onChange={handleInputChange} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="gstin">GSTIN</Label>
-                                    <Input id="gstin" value={settings.gstin || ''} onChange={handleInputChange} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="sacCode">SAC Code</Label>
-                                    <Input id="sacCode" value={settings.sacCode || ''} onChange={handleInputChange} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="serviceTaxCode">Service Tax Code No</Label>
-                                    <Input id="serviceTaxCode" value={settings.serviceTaxCode || ''} onChange={handleInputChange} />
-                                </div>
-                            </div>
-                        </div>
-
-                        <Separator />
-                        
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-medium">Contact Person</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="contactPerson">Full Name</Label>
-                                    <Input id="contactPerson" value={settings.contactPerson || ''} onChange={handleInputChange} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="contactNumber">Contact Number</Label>
-                                    <Input id="contactNumber" value={settings.contactNumber || ''} onChange={handleInputChange} />
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <Separator />
-
-                        <div className="space-y-6">
-                            <h3 className="text-lg font-medium">Default Invoice & Document Settings</h3>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="nextBillNo">Next Invoice Number</Label>
-                                    <Input id="nextBillNo" type="number" value={settings.nextBillNo || ''} onChange={handleInputChange} />
-                                </div>
-                             </div>
-                             <div className="space-y-4 pt-2">
-                                <Label>Default Document Layout</Label>
-                                <div className="p-4 border rounded-lg grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                     <div className="grid grid-cols-1 items-center gap-4">
-                                        <Label>Page Size</Label>
-                                        <Select value={settings.pageSize || 'A4'} onValueChange={(value) => handleSelectChange('pageSize', value)} >
-                                            <SelectTrigger className="h-8">
-                                                <SelectValue placeholder="Select page size" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="A4">A4</SelectItem>
-                                                <SelectItem value="LETTER">Letter</SelectItem>
-                                                <SelectItem value="LEGAL">Legal</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="grid items-start gap-4">
-                                        <Label>Margins (cm)</Label>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <Input type="number" placeholder="Top" value={settings.pageMargins?.top ?? ''} onChange={(e) => handleMarginChange('top', e.target.value)} className="h-8"/>
-                                            <Input type="number" placeholder="Bottom" value={settings.pageMargins?.bottom ?? ''} onChange={(e) => handleMarginChange('bottom', e.target.value)} className="h-8"/>
-                                            <Input type="number" placeholder="Left" value={settings.pageMargins?.left ?? ''} onChange={(e) => handleMarginChange('left', e.target.value)} className="h-8"/>
-                                            <Input type="number" placeholder="Right" value={settings.pageMargins?.right ?? ''} onChange={(e) => handleMarginChange('right', e.target.value)} className="h-8"/>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 items-center gap-4">
-                                        <Label>Page Font</Label>
-                                        <Input type="number" value={settings.pageFontSize ?? ''} onChange={e => handleFontSizeChange('pageFontSize', e.target.value)} className="h-8" placeholder="e.g., 11"/>
-                                    </div>
-                                    <div className="grid grid-cols-1 items-center gap-4">
-                                        <Label>Address Font</Label>
-                                        <Input type="number" value={settings.addressFontSize ?? ''} onChange={e => handleFontSizeChange('addressFontSize', e.target.value)} className="h-8" placeholder="e.g., 10"/>
-                                    </div>
-                                    <div className="grid grid-cols-1 items-center gap-4">
-                                        <Label>Table Font</Label>
-                                        <Input type="number" value={settings.tableBodyFontSize ?? ''} onChange={e => handleFontSizeChange('tableBodyFontSize', e.target.value)} className="h-8" placeholder="e.g., 11"/>
-                                    </div>
-                                    <div className="lg:col-span-3">
-                                      <Separator className="my-4"/>
-                                      <ColumnAlignmentFields template={settingsWithTemplate.template} onTemplateChange={handleTemplateChange} />
-                                    </div>
-                                </div>
-                             </div>
-                        </div>
-
-                        <div className="flex justify-end pt-4">
-                            <Button onClick={handleSaveChanges} disabled={isSubmitting}>
-                                {isSubmitting ? 'Saving...' : 'Save All Settings'}
-                            </Button>
-                        </div>
+                    <CardContent>
+                       <Tabs defaultValue="Vithal" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="Vithal">Vithal Enterprises</TabsTrigger>
+                                <TabsTrigger value="RV">R.V Enterprises</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="Vithal" className="pt-6">
+                                <SettingsForm enterprise="Vithal" />
+                            </TabsContent>
+                            <TabsContent value="RV" className="pt-6">
+                                <SettingsForm enterprise="RV" />
+                            </TabsContent>
+                        </Tabs>
                     </CardContent>
                 </Card>
 
@@ -343,7 +361,7 @@ export default function SettingsPage() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <CardTitle>Bank Accounts</CardTitle>
-                                <CardDescription>Manage your company's bank accounts for invoices.</CardDescription>
+                                <CardDescription>Manage your company's bank accounts for invoices. These are shared across all enterprises.</CardDescription>
                             </div>
                             <Button onClick={() => openBankAccountDialog(null)} size="sm">
                                 <PlusCircle className="mr-2 h-4 w-4" />
