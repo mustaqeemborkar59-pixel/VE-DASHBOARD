@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import type { Forklift } from "@/lib/data";
+import type { Forklift, Company } from "@/lib/data";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "./ui/textarea";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 export type ForkliftFormData = {
   serialNumber: string;
@@ -35,9 +36,11 @@ interface ForkliftFormProps {
   onCancel: () => void;
   initialData?: Forklift;
   mode: 'add' | 'edit';
+  companies: Company[];
+  isLoadingCompanies: boolean;
 }
 
-export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: ForkliftFormProps) {
+export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies, isLoadingCompanies }: ForkliftFormProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState<ForkliftFormData>({
     serialNumber: '',
@@ -104,6 +107,10 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
   
   const handleLocationChange = (value: ForkliftFormData['locationType']) => {
     setFormData(prev => ({ ...prev, locationType: value }));
+  };
+
+  const handleSiteCompanyChange = (value: string) => {
+    setFormData(prev => ({ ...prev, siteCompany: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -224,7 +231,26 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    <div className="grid gap-2 col-span-2 sm:col-span-1">
                     <Label htmlFor="siteCompany">Site / Company</Label>
-                    <Input id="siteCompany" value={formData.siteCompany} onChange={handleInputChange} placeholder="e.g., ACME Corp" />
+                     <Select
+                        value={formData.siteCompany}
+                        onValueChange={handleSiteCompanyChange}
+                        disabled={isLoadingCompanies}
+                    >
+                        <SelectTrigger id="siteCompany">
+                            <SelectValue placeholder="Select a company..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {isLoadingCompanies ? (
+                                <SelectItem value="loading" disabled>Loading companies...</SelectItem>
+                            ) : (
+                                companies.map(company => (
+                                    <SelectItem key={company.id} value={company.name}>
+                                        {company.name}
+                                    </SelectItem>
+                                ))
+                            )}
+                        </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid gap-2 col-span-2 sm:col-span-1">
                     <Label htmlFor="siteArea">Area</Label>
@@ -254,3 +280,5 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode }: Forklift
     </form>
   );
 }
+
+    

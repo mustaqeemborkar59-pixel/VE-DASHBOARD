@@ -33,7 +33,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
-import { Forklift, ServiceRequest } from "@/lib/data";
+import { Forklift, ServiceRequest, Company } from "@/lib/data";
 import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy } from "firebase/firestore";
@@ -88,11 +88,13 @@ export default function ForkliftsPage() {
 
   const forkliftsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'forklifts'), orderBy('srNumber', 'asc')) : null, [firestore]);
   const serviceRequestsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'serviceRequests'), where('status', '!=', 'Completed')) : null, [firestore]);
+  const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name', 'asc')) : null, [firestore]);
   
   const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
   const { data: activeServiceRequests, isLoading: isLoadingRequests } = useCollection<ServiceRequest>(serviceRequestsQuery);
+  const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
   
-  const isLoading = isLoadingForklifts || isLoadingRequests;
+  const isLoading = isLoadingForklifts || isLoadingRequests || isLoadingCompanies;
   
   const stats = useMemo(() => {
     const total = forklifts?.length || 0;
@@ -591,6 +593,8 @@ export default function ForkliftsPage() {
                   onCancel={() => { setIsAddEditDialogOpen(false); setSelectedForklift(null);}}
                   initialData={selectedForklift || undefined}
                   mode={selectedForklift ? 'edit' : 'add'}
+                  companies={companies || []}
+                  isLoadingCompanies={isLoadingCompanies}
                 />
             </div>
             <DialogFooter className="p-6 pt-4 border-t">
@@ -628,5 +632,7 @@ export default function ForkliftsPage() {
     </AppLayout>
   );
 }
+
+    
 
     
