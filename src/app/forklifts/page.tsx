@@ -267,16 +267,25 @@ export default function ForkliftsPage() {
   }
   
   const getLocationText = (forklift: Forklift) => {
+    let text: string;
     switch (forklift.locationType) {
       case 'Workshop':
-        return 'Workshop';
+        text = 'Workshop';
+        break;
       case 'On-Site':
-        return forklift.siteCompany || 'On-Site';
+        text = forklift.siteCompany || 'On-Site';
+        break;
       case 'Not Confirm':
-        return 'Not Confirmed';
+        text = 'Not Confirmed';
+        break;
       default:
-        return 'Unknown';
+        text = 'Unknown';
     }
+    
+    if (text.length > 15) {
+        return `${text.substring(0, 15)}...`;
+    }
+    return text;
   }
   
   const getLocationBadgeClass = (locationType: Forklift['locationType']) => {
@@ -632,6 +641,8 @@ export default function ForkliftsPage() {
     </AppLayout>
   );
 }
+
+    
 
     
 
