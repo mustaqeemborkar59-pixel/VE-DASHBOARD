@@ -99,6 +99,54 @@ const DocumentSettingsFields = React.memo(({ settings, onSettingsChange, onMargi
 });
 DocumentSettingsFields.displayName = 'DocumentSettingsFields';
 
+const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeChange, items }: { 
+    template: InvoiceTemplate, 
+    onTemplateChange: (id: 'sr_no' | 'particulars' | 'rate' | 'amount', align: 'left' | 'center' | 'right') => void,
+    onTemplateFontSizeChange: (id: 'sr_no' | 'particulars' | 'rate' | 'amount', size: string) => void,
+    items: InvoiceItem[]
+  }) => {
+    const hasRateColumn = useMemo(() => items.some(item => item.rate && String(item.rate).trim() !== ''), [items]);
+    const columnsToShow = useMemo(() => template.columns.filter(col => hasRateColumn || col.id !== 'rate'), [template.columns, hasRateColumn]);
+    
+    return (
+        <div className="space-y-4">
+             <h4 className="font-semibold text-foreground">Column Styles</h4>
+             <div className="space-y-4">
+                {columnsToShow.map(col => (
+                    <div key={col.id} className="grid gap-2">
+                        <Label>{col.label}</Label>
+                        <div className="flex items-center gap-2">
+                            <div className="flex-1 p-1 bg-muted rounded-md flex items-center justify-between">
+                                {(['left', 'center', 'right'] as const).map(align => (
+                                    <Button 
+                                        key={align} 
+                                        type="button" 
+                                        variant={col.align === align ? 'default' : 'ghost'} 
+                                        size="icon" 
+                                        className="h-7 w-7 flex-1"
+                                        onClick={() => onTemplateChange(col.id as 'sr_no' | 'particulars' | 'rate' | 'amount', align)}
+                                    >
+                                        {align === 'left' && <AlignLeft className="h-4 w-4" />}
+                                        {align === 'center' && <AlignCenter className="h-4 w-4" />}
+                                        {align === 'right' && <AlignRight className="h-4 w-4" />}
+                                    </Button>
+                                ))}
+                            </div>
+                            <Input 
+                                type="number" 
+                                placeholder="Size" 
+                                value={col.fontSize ?? ''} 
+                                onChange={(e) => onTemplateFontSizeChange(col.id as 'sr_no' | 'particulars' | 'rate' | 'amount', e.target.value)}
+                                className="h-9 w-20"
+                            />
+                        </div>
+                    </div>
+                ))}
+             </div>
+        </div>
+    );
+  }
+
 export default function BillingPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
@@ -776,52 +824,7 @@ export default function BillingPage() {
     }
 };
 
-  const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeChange }: { 
-    template: InvoiceTemplate, 
-    onTemplateChange: typeof handleTemplateChange,
-    onTemplateFontSizeChange: typeof handleTemplateFontSizeChange 
-  }) => {
-    const hasRateColumn = useMemo(() => items.some(item => item.rate && String(item.rate).trim() !== ''), [items]);
-    const columnsToShow = useMemo(() => template.columns.filter(col => hasRateColumn || col.id !== 'rate'), [template.columns, hasRateColumn]);
-    
-    return (
-        <div className="space-y-4">
-             <h4 className="font-semibold text-foreground">Column Styles</h4>
-             <div className="space-y-4">
-                {columnsToShow.map(col => (
-                    <div key={col.id} className="grid gap-2">
-                        <Label>{col.label}</Label>
-                        <div className="flex items-center gap-2">
-                            <div className="flex-1 p-1 bg-muted rounded-md flex items-center justify-between">
-                                {(['left', 'center', 'right'] as const).map(align => (
-                                    <Button 
-                                        key={align} 
-                                        type="button" 
-                                        variant={col.align === align ? 'default' : 'ghost'} 
-                                        size="icon" 
-                                        className="h-7 w-7 flex-1"
-                                        onClick={() => onTemplateChange(col.id, align)}
-                                    >
-                                        {align === 'left' && <AlignLeft className="h-4 w-4" />}
-                                        {align === 'center' && <AlignCenter className="h-4 w-4" />}
-                                        {align === 'right' && <AlignRight className="h-4 w-4" />}
-                                    </Button>
-                                ))}
-                            </div>
-                            <Input 
-                                type="number" 
-                                placeholder="Size" 
-                                value={col.fontSize ?? ''} 
-                                onChange={(e) => onTemplateFontSizeChange(col.id, e.target.value)}
-                                className="h-9 w-20"
-                            />
-                        </div>
-                    </div>
-                ))}
-             </div>
-        </div>
-    );
-  }
+  
 
   const DownloadOptionsFields = ({ options, setOptions }: { options: DownloadOptions, setOptions: React.Dispatch<React.SetStateAction<DownloadOptions>> }) => {
     return (
@@ -1295,7 +1298,7 @@ export default function BillingPage() {
                                       <DownloadOptionsFields options={formDownloadOptions} setOptions={setFormDownloadOptions} />
                                     </div>
                                      <div className="p-4 border rounded-lg">
-                                      <ColumnAlignmentFields template={formTemplate} onTemplateChange={handleTemplateChange} onTemplateFontSizeChange={handleTemplateFontSizeChange} />
+                                      <ColumnAlignmentFields template={formTemplate} onTemplateChange={handleTemplateChange} onTemplateFontSizeChange={handleTemplateFontSizeChange} items={items} />
                                     </div>
                                 </div>
                             </div>
