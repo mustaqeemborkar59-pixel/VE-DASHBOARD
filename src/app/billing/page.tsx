@@ -76,10 +76,10 @@ const DocumentSettingsFields = React.memo(({ settings, onSettingsChange, onMargi
           <div className="grid grid-cols-3 items-start gap-4">
               <Label>Margins (cm)</Label>
               <div className="col-span-2 grid grid-cols-2 gap-2">
-                  <Input type="number" placeholder="Top" value={settings.pageMargins?.top ?? ''} onChange={(e) => onMarginChange('top', e.target.value)} className="h-8"/>
-                  <Input type="number" placeholder="Bottom" value={settings.pageMargins?.bottom ?? ''} onChange={(e) => onMarginChange('bottom', e.target.value)} className="h-8"/>
-                  <Input type="number" placeholder="Left" value={settings.pageMargins?.left ?? ''} onChange={(e) => onMarginChange('left', e.target.value)} className="h-8"/>
-                  <Input type="number" placeholder="Right" value={settings.pageMargins?.right ?? ''} onChange={(e) => onMarginChange('right', e.target.value)} className="h-8"/>
+                  <Input type="text" inputMode="decimal" placeholder="Top" value={settings.pageMargins?.top ?? ''} onChange={(e) => onMarginChange('top', e.target.value)} className="h-8"/>
+                  <Input type="text" inputMode="decimal" placeholder="Bottom" value={settings.pageMargins?.bottom ?? ''} onChange={(e) => onMarginChange('bottom', e.target.value)} className="h-8"/>
+                  <Input type="text" inputMode="decimal" placeholder="Left" value={settings.pageMargins?.left ?? ''} onChange={(e) => onMarginChange('left', e.target.value)} className="h-8"/>
+                  <Input type="text" inputMode="decimal" placeholder="Right" value={settings.pageMargins?.right ?? ''} onChange={(e) => onMarginChange('right', e.target.value)} className="h-8"/>
               </div>
           </div>
           <div className="grid grid-cols-3 items-center gap-4">
@@ -152,7 +152,7 @@ export default function BillingPage() {
 
     
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
-  const [invoicePageSettings, setInvoicePageSettings] = useState<PageSettings>(defaultPageSettings);
+  const [invoicePageSettings, setInvoicePageSettings] = useState<PageSettings | any>(defaultPageSettings);
   const [formDownloadOptions, setFormDownloadOptions] = useState<DownloadOptions>(defaultDownloadOptions);
   const [formTemplate, setFormTemplate] = useState<InvoiceTemplate>(defaultTemplate);
 
@@ -171,7 +171,7 @@ export default function BillingPage() {
   const [invoiceForPreview, setInvoiceForPreview] = useState<Invoice | null>(null);
   
   const [isSettingsPopoverOpen, setIsSettingsPopoverOpen] = useState(false);
-  const [globalPageSettings, setGlobalPageSettings] = useState<Partial<CompanySettings>>(defaultPageSettings);
+  const [globalPageSettings, setGlobalPageSettings] = useState<Partial<CompanySettings> | any>(defaultPageSettings);
   const [isSubmittingSettings, setIsSubmittingSettings] = useState(false);
   
   const [openYearAccordions, setOpenYearAccordions] = useState<string[]>([]);
@@ -562,7 +562,12 @@ export default function BillingPage() {
       const currentInvoiceSettings = {
           pageSize: invoicePageSettings.size,
           pageOrientation: invoicePageSettings.orientation,
-          pageMargins: invoicePageSettings.margin,
+          pageMargins: {
+            top: parseFloat(String(invoicePageSettings.margin.top)) || 0,
+            right: parseFloat(String(invoicePageSettings.margin.right)) || 0,
+            bottom: parseFloat(String(invoicePageSettings.margin.bottom)) || 0,
+            left: parseFloat(String(invoicePageSettings.margin.left)) || 0,
+          },
           pageFontSize: invoicePageSettings.pageFontSize,
           addressFontSize: invoicePageSettings.addressFontSize,
           tableBodyFontSize: invoicePageSettings.tableBodyFontSize,
@@ -712,11 +717,13 @@ export default function BillingPage() {
   };
 
   const handleGlobalMarginChange = (field: keyof PageMargin, value: string) => {
-      const numValue = value === '' ? '' : parseFloat(value);
-      if (numValue === '' || !isNaN(numValue as number)) {
+      if (/^(\d*\.?\d*)?$/.test(value)) {
         setGlobalPageSettings(prev => ({
             ...prev,
-            pageMargins: { ...(prev.pageMargins || {top:0,left:0,bottom:0,right:0}), [field]: numValue }
+            pageMargins: {
+                ...(prev.pageMargins || {top:0,left:0,bottom:0,right:0}),
+                [field]: value
+            }
         }));
       }
   };
@@ -732,8 +739,17 @@ export default function BillingPage() {
     const settingsDocRef = activeTab === 'Vithal' ? vithalSettingsRef : rvSettingsRef;
     if (!firestore || !settingsDocRef) return;
     setIsSubmittingSettings(true);
+
+    const settingsToSave = JSON.parse(JSON.stringify(globalPageSettings));
+    if (settingsToSave.pageMargins) {
+        settingsToSave.pageMargins.top = parseFloat(String(settingsToSave.pageMargins.top)) || 0;
+        settingsToSave.pageMargins.right = parseFloat(String(settingsToSave.pageMargins.right)) || 0;
+        settingsToSave.pageMargins.bottom = parseFloat(String(settingsToSave.pageMargins.bottom)) || 0;
+        settingsToSave.pageMargins.left = parseFloat(String(settingsToSave.pageMargins.left)) || 0;
+    }
+
     try {
-        await setDoc(settingsDocRef, globalPageSettings, { merge: true });
+        await setDoc(settingsDocRef, settingsToSave, { merge: true });
         toast({ title: "Success", description: "Default settings updated." });
         setIsSettingsPopoverOpen(false);
     } catch (e) {
@@ -833,11 +849,13 @@ export default function BillingPage() {
   }, []);
 
   const handleDocMarginChange = useCallback((field: keyof PageMargin, value: string) => {
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue) || value === '') {
+    if (/^(\d*\.?\d*)?$/.test(value)) {
         setInvoicePageSettings(prev => ({
             ...prev,
-            margin: { ...(prev.margin || {top:0,left:0,bottom:0,right:0}), [field]: value === '' ? 0 : numValue }
+            margin: {
+                ...(prev.margin || {top:0,left:0,bottom:0,right:0}),
+                [field]: value
+            }
         }));
     }
   }, []);
