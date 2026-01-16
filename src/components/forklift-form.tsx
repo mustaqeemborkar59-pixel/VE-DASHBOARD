@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from "react";
@@ -11,7 +10,9 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "./ui/textarea";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { cn } from "@/lib/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
+
 
 export type ForkliftFormData = {
   serialNumber: string;
@@ -231,26 +232,36 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    <div className="grid gap-2 col-span-2 sm:col-span-1">
                     <Label htmlFor="siteCompany">Site / Company</Label>
-                     <Select
-                        value={formData.siteCompany}
-                        onValueChange={handleSiteCompanyChange}
-                        disabled={isLoadingCompanies}
-                    >
-                        <SelectTrigger id="siteCompany">
-                            <SelectValue placeholder="Select a company..." />
-                        </SelectTrigger>
-                        <SelectContent>
+                      <div className="flex w-full items-center">
+                        <Input
+                          id="siteCompany"
+                          placeholder="Type or select a company"
+                          value={formData.siteCompany}
+                          onChange={handleInputChange}
+                          className="rounded-r-none"
+                        />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button type="button" variant="outline" size="icon" className="rounded-l-none border-l-0">
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-[--radix-dropdown-menu-trigger-width]">
                             {isLoadingCompanies ? (
-                                <SelectItem value="loading" disabled>Loading companies...</SelectItem>
+                              <DropdownMenuItem disabled>Loading companies...</DropdownMenuItem>
                             ) : (
-                                companies.map(company => (
-                                    <SelectItem key={company.id} value={company.name}>
-                                        {company.name}
-                                    </SelectItem>
-                                ))
+                              companies.map((company) => (
+                                <DropdownMenuItem
+                                  key={company.id}
+                                  onSelect={() => handleSiteCompanyChange(company.name)}
+                                >
+                                  {company.name}
+                                </DropdownMenuItem>
+                              ))
                             )}
-                        </SelectContent>
-                    </Select>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                   </div>
                   <div className="grid gap-2 col-span-2 sm:col-span-1">
                     <Label htmlFor="siteArea">Area</Label>
