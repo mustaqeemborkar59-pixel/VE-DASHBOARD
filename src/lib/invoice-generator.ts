@@ -363,11 +363,23 @@ export const generateAndDownloadInvoice = async (
                             children: headerCells,
                         }),
                         ...invoiceData.items.map((item, index) => {
+                            const tableBodyFontSize = (settings.tableBodyFontSize || 11);
+
+                            const srNoCol = invoiceData.template?.columns.find(c => c.id === 'sr_no');
+                            const particularsCol = invoiceData.template?.columns.find(c => c.id === 'particulars');
+                            const rateCol = invoiceData.template?.columns.find(c => c.id === 'rate');
+                            const amountCol = invoiceData.template?.columns.find(c => c.id === 'amount');
+                            
+                            const srNoFontSize = srNoCol?.fontSize || tableBodyFontSize;
+                            const particularsFontSize = particularsCol?.fontSize || tableBodyFontSize;
+                            const rateFontSize = rateCol?.fontSize || tableBodyFontSize;
+                            const amountFontSize = amountCol?.fontSize || tableBodyFontSize;
+
                              const itemCells = [
-                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: (index + 1).toString(), size: (settings.tableBodyFontSize || 11) * 2, font: "Calibri" })], alignment: getAlignment('sr_no') })], borders: {...tableCellBorders, ...tableBottomBorder}, margins: cellMargins }),
+                                new DocxTableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: (index + 1).toString(), size: srNoFontSize * 2, font: "Calibri" })], alignment: getAlignment('sr_no') })], borders: {...tableCellBorders, ...tableBottomBorder}, margins: cellMargins }),
                                 new DocxTableCell({
                                     verticalAlign: VerticalAlign.CENTER,
-                                    children: [new Paragraph({ children: createFormattedTextRuns(item.particulars, settings.tableBodyFontSize), alignment: getAlignment('particulars') })],
+                                    children: [new Paragraph({ children: createFormattedTextRuns(item.particulars, particularsFontSize), alignment: getAlignment('particulars') })],
                                     borders: {...tableCellBorders, ...tableBottomBorder},
                                     margins: cellMargins
                                 }),
@@ -376,7 +388,7 @@ export const generateAndDownloadInvoice = async (
                             if (hasRateColumn) {
                                 itemCells.push(new DocxTableCell({
                                     verticalAlign: VerticalAlign.CENTER,
-                                    children: [new Paragraph({ children: createFormattedTextRuns(item.rate, settings.tableBodyFontSize), alignment: getAlignment('rate') })],
+                                    children: [new Paragraph({ children: createFormattedTextRuns(item.rate, rateFontSize), alignment: getAlignment('rate') })],
                                     borders: {...tableCellBorders, ...tableBottomBorder},
                                     margins: cellMargins
                                 }));
@@ -384,7 +396,7 @@ export const generateAndDownloadInvoice = async (
 
                             itemCells.push(new DocxTableCell({
                                 verticalAlign: VerticalAlign.CENTER,
-                                children: [new Paragraph({ children: [new TextRun({ text: `${formatCurrency(item.amount)}/-`, size: (settings.tableBodyFontSize || 11) * 2, font: "Calibri" })], alignment: getAlignment('amount') })],
+                                children: [new Paragraph({ children: [new TextRun({ text: `${formatCurrency(item.amount)}/-`, size: amountFontSize * 2, font: "Calibri" })], alignment: getAlignment('amount') })],
                                 borders: {...tableCellBorders, ...tableBottomBorder},
                                 margins: cellMargins
                             }));

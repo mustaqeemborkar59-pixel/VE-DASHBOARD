@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc, setDoc, writeBatch } from 'firebase/firestore';
-import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions, BankAccount, InvoiceTemplate } from '@/lib/data';
+import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions, BankAccount, InvoiceTemplate, InvoiceItem as LibInvoiceItem } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
@@ -47,7 +47,7 @@ const AutoHeightTextarea = React.memo(forwardRef<HTMLTextAreaElement, React.Text
 AutoHeightTextarea.displayName = 'AutoHeightTextarea';
 
 
-type InvoiceItem = Omit<import('@/lib/data').InvoiceItem, 'id'> & { key: string };
+type InvoiceItem = Omit<LibInvoiceItem, 'id'> & { key: string };
 type ActiveInput = { key: string; field: 'particulars' | 'rate' } | null;
 type Enterprise = 'Vithal' | 'RV';
 
@@ -766,34 +766,59 @@ export default function BillingPage() {
     }));
   };
 
-  const ColumnAlignmentFields = ({ template, onTemplateChange }: { template: InvoiceTemplate, onTemplateChange: typeof handleTemplateChange }) => {
+  const handleTemplateFontSizeChange = (id: 'sr_no' | 'particulars' | 'rate' | 'amount', size: string) => {
+    const numValue = size === '' ? undefined : parseInt(size, 10);
+    if (size === '' || (numValue !== undefined && !isNaN(numValue))) {
+        setFormTemplate(prev => ({
+            ...prev,
+            columns: prev.columns.map(col => col.id === id ? { ...col, fontSize: numValue } : col)
+        }));
+    }
+};
+
+  const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeChange }: { 
+    template: InvoiceTemplate, 
+    onTemplateChange: typeof handleTemplateChange,
+    onTemplateFontSizeChange: typeof handleTemplateFontSizeChange 
+  }) => {
     const hasRateColumn = useMemo(() => items.some(item => item.rate && String(item.rate).trim() !== ''), [items]);
     const columnsToShow = useMemo(() => template.columns.filter(col => hasRateColumn || col.id !== 'rate'), [template.columns, hasRateColumn]);
     
     return (
         <div className="space-y-4">
-             <h4 className="font-semibold text-foreground">Column Alignment</h4>
-             {columnsToShow.map(col => (
-                <div key={col.id} className="grid grid-cols-3 items-center gap-4">
-                    <Label>{col.label}</Label>
-                    <div className="col-span-2 flex items-center justify-between p-1 bg-muted rounded-md">
-                        {(['left', 'center', 'right'] as const).map(align => (
-                            <Button 
-                                key={align} 
-                                type="button" 
-                                variant={col.align === align ? 'default' : 'ghost'} 
-                                size="icon" 
-                                className="h-7 w-7 flex-1"
-                                onClick={() => onTemplateChange(col.id, align)}
-                            >
-                                {align === 'left' && <AlignLeft className="h-4 w-4" />}
-                                {align === 'center' && <AlignCenter className="h-4 w-4" />}
-                                {align === 'right' && <AlignRight className="h-4 w-4" />}
-                            </Button>
-                        ))}
+             <h4 className="font-semibold text-foreground">Column Styles</h4>
+             <div className="space-y-4">
+                {columnsToShow.map(col => (
+                    <div key={col.id} className="grid gap-2">
+                        <Label>{col.label}</Label>
+                        <div className="flex items-center gap-2">
+                            <div className="flex-1 p-1 bg-muted rounded-md flex items-center justify-between">
+                                {(['left', 'center', 'right'] as const).map(align => (
+                                    <Button 
+                                        key={align} 
+                                        type="button" 
+                                        variant={col.align === align ? 'default' : 'ghost'} 
+                                        size="icon" 
+                                        className="h-7 w-7 flex-1"
+                                        onClick={() => onTemplateChange(col.id, align)}
+                                    >
+                                        {align === 'left' && <AlignLeft className="h-4 w-4" />}
+                                        {align === 'center' && <AlignCenter className="h-4 w-4" />}
+                                        {align === 'right' && <AlignRight className="h-4 w-4" />}
+                                    </Button>
+                                ))}
+                            </div>
+                            <Input 
+                                type="number" 
+                                placeholder="Size" 
+                                value={col.fontSize ?? ''} 
+                                onChange={(e) => onTemplateFontSizeChange(col.id, e.target.value)}
+                                className="h-9 w-20"
+                            />
+                        </div>
                     </div>
-                </div>
-             ))}
+                ))}
+             </div>
         </div>
     );
   }
@@ -1270,7 +1295,7 @@ export default function BillingPage() {
                                       <DownloadOptionsFields options={formDownloadOptions} setOptions={setFormDownloadOptions} />
                                     </div>
                                      <div className="p-4 border rounded-lg">
-                                      <ColumnAlignmentFields template={formTemplate} onTemplateChange={handleTemplateChange} />
+                                      <ColumnAlignmentFields template={formTemplate} onTemplateChange={handleTemplateChange} onTemplateFontSizeChange={handleTemplateFontSizeChange} />
                                     </div>
                                 </div>
                             </div>

@@ -85,6 +85,7 @@ export type InvoiceTemplate = {
     id: 'sr_no' | keyof InvoiceItem;
     label: string;
     align: 'left' | 'center' | 'right';
+    fontSize?: number;
   }[];
 };
 

@@ -25,21 +25,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Enterprise = 'Vithal' | 'RV';
 
-const ColumnAlignmentFields = ({ template, onTemplateChange }: { template: InvoiceTemplate, onTemplateChange: (id: 'sr_no' | 'particulars' | 'rate' | 'amount', align: 'left' | 'center' | 'right') => void }) => {
+const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeChange }: { 
+    template: InvoiceTemplate, 
+    onTemplateChange: (id: 'sr_no' | 'particulars' | 'rate' | 'amount', align: 'left' | 'center' | 'right') => void,
+    onTemplateFontSizeChange: (id: 'sr_no' | 'particulars' | 'rate' | 'amount', size: string) => void,
+}) => {
     return (
         <div className="space-y-4">
-            <h4 className="font-semibold text-foreground">Default Column Alignment</h4>
-            <div className="space-y-2">
-                {template.columns.map(col => (
-                    <div key={col.id} className="grid grid-cols-3 items-center gap-4">
-                        <Label>{col.label}</Label>
-                        <div className="col-span-2 flex items-center justify-between p-1 bg-muted rounded-md">
+             <h4 className="font-semibold text-foreground">Default Column Styles</h4>
+             <div className="space-y-4">
+             {template.columns.map(col => (
+                <div key={col.id} className="grid gap-2">
+                    <Label>{col.label}</Label>
+                    <div className="flex items-center gap-2">
+                        <div className="flex-1 p-1 bg-muted rounded-md flex items-center justify-between">
                             {(['left', 'center', 'right'] as const).map(align => (
-                                <Button
-                                    key={align}
-                                    type="button"
-                                    variant={col.align === align ? 'default' : 'ghost'}
-                                    size="icon"
+                                <Button 
+                                    key={align} 
+                                    type="button" 
+                                    variant={col.align === align ? 'default' : 'ghost'} 
+                                    size="icon" 
                                     className="h-7 w-7 flex-1"
                                     onClick={() => onTemplateChange(col.id, align)}
                                 >
@@ -49,9 +54,17 @@ const ColumnAlignmentFields = ({ template, onTemplateChange }: { template: Invoi
                                 </Button>
                             ))}
                         </div>
+                         <Input 
+                            type="number" 
+                            placeholder="Size" 
+                            value={col.fontSize ?? ''} 
+                            onChange={(e) => onTemplateFontSizeChange(col.id, e.target.value)}
+                            className="h-9 w-20"
+                        />
                     </div>
-                ))}
-            </div>
+                </div>
+             ))}
+             </div>
         </div>
     );
 };
@@ -134,6 +147,22 @@ const SettingsForm = ({ enterprise }: { enterprise: Enterprise }) => {
             },
         }));
     };
+
+    const handleTemplateFontSizeChange = (id: 'sr_no' | 'particulars' | 'rate' | 'amount', size: string) => {
+        const numValue = size === '' ? undefined : parseInt(size, 10);
+        if (size === '' || (numValue !== undefined && !isNaN(numValue))) {
+            setSettings(prev => ({
+                ...prev,
+                template: {
+                    ...(prev.template || defaultTemplate),
+                    columns: (prev.template?.columns || defaultTemplate.columns).map(col =>
+                        col.id === id ? { ...col, fontSize: numValue } : col
+                    ),
+                },
+            }));
+        }
+    };
+
 
     const handleSaveChanges = async () => {
         if (!firestore || !settingsDocRef) {
@@ -218,7 +247,7 @@ const SettingsForm = ({ enterprise }: { enterprise: Enterprise }) => {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="nextBillNo">Next Invoice Number</Label>
-                        <Input id="nextBillNo" type="number" value={settings.nextBillNo || ''} onChange={handleInputChange} />
+                        <Input id="nextBillNo" type="number" value={settings.nextBillNo ?? ''} onChange={handleInputChange} />
                     </div>
                  </div>
                  <div className="space-y-4 pt-2">
@@ -260,7 +289,7 @@ const SettingsForm = ({ enterprise }: { enterprise: Enterprise }) => {
                         </div>
                         <div className="lg:col-span-3">
                             <Separator className="my-4"/>
-                            <ColumnAlignmentFields template={settingsWithTemplate.template} onTemplateChange={handleTemplateChange} />
+                            <ColumnAlignmentFields template={settingsWithTemplate.template} onTemplateChange={handleTemplateChange} onTemplateFontSizeChange={handleTemplateFontSizeChange} />
                         </div>
                     </div>
                  </div>

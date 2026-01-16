@@ -394,6 +394,23 @@
               "type": "boolean"
             }
           }
+        },
+        "template": {
+          "type": "object",
+          "properties": {
+            "columns": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "label": { "type": "string" },
+                  "align": { "type": "string", "enum": ["left", "center", "right"] },
+                  "fontSize": { "type": "number", "description": "Font size for the column body in points (pt)." }
+                }
+              }
+            }
+          }
         }
       },
       "required": [

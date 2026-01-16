@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import type { Invoice, Company, CompanySettings, DownloadOptions, BankAccount } from '@/lib/data';
+import type { Invoice, Company, CompanySettings, DownloadOptions, BankAccount, InvoiceItem } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Separator } from './ui/separator';
@@ -38,6 +38,15 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
   const amountInWords = toWords.convert(invoice.grandTotal);
   const opts = downloadOptions;
   const selectedBank = invoice.selectedBankAccount;
+
+  const tableBodyFontSize = invoice.tableBodyFontSize || 11;
+  const getColumnStyle = (columnId: 'sr_no' | keyof InvoiceItem) => {
+    const column = invoice.template?.columns.find(c => c.id === columnId);
+    return {
+        fontSize: column?.fontSize ? `${column.fontSize}pt` : `${tableBodyFontSize}pt`,
+        textAlign: column?.align || 'left',
+    } as React.CSSProperties;
+  }
 
   return (
     <div className="bg-white text-black p-8 rounded-lg shadow-lg max-w-4xl mx-auto font-['Calibri',_sans-serif] text-sm">
@@ -76,19 +85,19 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
       <table className="w-full border-collapse border border-black mb-4">
         <thead>
           <tr>
-            <th className="border border-black p-2 w-[8%] text-center">Sr. No</th>
-            <th className="border border-black p-2 text-left">Particulars</th>
-            <th className="border border-black p-2 w-[15%] text-right">Rate</th>
-            <th className="border border-black p-2 w-[18%] text-right">Amount</th>
+            <th className="border border-black p-2 w-[8%]" style={getColumnStyle('sr_no')}>Sr. No</th>
+            <th className="border border-black p-2" style={getColumnStyle('particulars')}>Particulars</th>
+            <th className="border border-black p-2 w-[15%]" style={getColumnStyle('rate')}>Rate</th>
+            <th className="border border-black p-2 w-[18%]" style={getColumnStyle('amount')}>Amount</th>
           </tr>
         </thead>
         <tbody>
           {invoice.items.map((item, index) => (
             <tr key={index}>
-              <td className="border border-black p-2 text-center">{index + 1}</td>
-              <td className="border border-black p-2 whitespace-pre-wrap">{item.particulars}</td>
-              <td className="border border-black p-2 text-right">{item.rate || ''}</td>
-              <td className="border border-black p-2 text-right">{item.amount.toFixed(2)}/-</td>
+              <td className="border border-black p-2" style={getColumnStyle('sr_no')}>{index + 1}</td>
+              <td className="border border-black p-2 whitespace-pre-wrap" style={getColumnStyle('particulars')}>{item.particulars}</td>
+              <td className="border border-black p-2" style={getColumnStyle('rate')}>{item.rate || ''}</td>
+              <td className="border border-black p-2" style={getColumnStyle('amount')}>{item.amount.toFixed(2)}/-</td>
             </tr>
           ))}
           <tr>
@@ -161,7 +170,3 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
     </div>
   );
 }
-
-    
-
-    
