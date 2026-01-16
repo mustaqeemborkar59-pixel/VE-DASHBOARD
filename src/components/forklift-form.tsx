@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "./ui/textarea";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { cn } from "@/lib/utils";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronDown } from "lucide-react";
 
 
@@ -212,15 +213,15 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
                     onValueChange={handleLocationChange}
                     className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                 >
-                    <Label className={cn(radioCardBaseClasses, 'border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-300', formData.locationType === 'Workshop' && cn(radioCardSelectedClasses, 'ring-orange-500'))}>
+                    <Label className={cn(radioCardBaseClasses, 'border-orange-200 bg-orange-100 text-orange-800 dark:border-orange-800 dark:bg-orange-950/50 dark:text-orange-300', formData.locationType === 'Workshop' && cn(radioCardSelectedClasses, 'ring-orange-500'))}>
                         <RadioGroupItem value="Workshop" id="Workshop" className="border-orange-300 text-orange-700 ring-offset-orange-500" />
                         <span className="font-medium">Workshop</span>
                     </Label>
-                     <Label className={cn(radioCardBaseClasses, 'border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-300', formData.locationType === 'On-Site' && cn(radioCardSelectedClasses, 'ring-green-600'))}>
+                     <Label className={cn(radioCardBaseClasses, 'border-green-200 bg-green-100 text-green-800 dark:border-green-800 dark:bg-green-950/50 dark:text-green-300', formData.locationType === 'On-Site' && cn(radioCardSelectedClasses, 'ring-green-600'))}>
                         <RadioGroupItem value="On-Site" id="On-Site" className="border-green-300 text-green-700 ring-offset-green-600" />
                         <span className="font-medium">On-Site</span>
                     </Label>
-                    <Label className={cn(radioCardBaseClasses, 'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300', formData.locationType === 'Not Confirm' && cn(radioCardSelectedClasses, 'ring-red-600'))}>
+                    <Label className={cn(radioCardBaseClasses, 'border-red-200 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-950/50 dark:text-red-300', formData.locationType === 'Not Confirm' && cn(radioCardSelectedClasses, 'ring-red-600'))}>
                         <RadioGroupItem value="Not Confirm" id="Not Confirm" className="border-red-300 text-red-700 ring-offset-red-600" />
                         <span className="font-medium">Not Confirmed</span>
                     </Label>
@@ -246,19 +247,25 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
                               <ChevronDown className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-[--radix-dropdown-menu-trigger-width]">
-                            {isLoadingCompanies ? (
-                              <DropdownMenuItem disabled>Loading companies...</DropdownMenuItem>
-                            ) : (
-                              companies.map((company) => (
-                                <DropdownMenuItem
-                                  key={company.id}
-                                  onSelect={() => handleSiteCompanyChange(company.name)}
-                                >
-                                  {company.name}
-                                </DropdownMenuItem>
-                              ))
-                            )}
+                          <DropdownMenuContent align="end" className="w-56">
+                            <ScrollArea className="h-72">
+                                {isLoadingCompanies ? (
+                                <DropdownMenuItem disabled>Loading companies...</DropdownMenuItem>
+                                ) : companies.length > 0 ? (
+                                    companies.map((company, index) => (
+                                        <Fragment key={company.id}>
+                                            <DropdownMenuItem
+                                            onSelect={() => handleSiteCompanyChange(company.name)}
+                                            >
+                                            {company.name}
+                                            </DropdownMenuItem>
+                                            {index < companies.length - 1 && <DropdownMenuSeparator />}
+                                        </Fragment>
+                                    ))
+                                ) : (
+                                  <DropdownMenuItem disabled>No companies found.</DropdownMenuItem>
+                                )}
+                            </ScrollArea>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -291,7 +298,3 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
     </form>
   );
 }
-
-    
-
-    
