@@ -63,21 +63,21 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
   useEffect(() => {
     if (mode === 'edit' && initialData) {
       setFormData({
-        serialNumber: initialData.serialNumber,
-        make: initialData.make,
-        model: initialData.model,
-        year: initialData.year?.toString() || '',
-        capacity: initialData.capacity || '',
-        equipmentType: initialData.equipmentType || '',
-        voltage: initialData.voltage || '',
-        mastHeight: initialData.mastHeight || '',
-        locationType: initialData.locationType || 'Workshop',
-        siteCompany: initialData.siteCompany || '',
-        siteArea: initialData.siteArea || '',
-        siteContactPerson: initialData.siteContactPerson || '',
-        siteContactNumber: initialData.siteContactNumber || '',
-        remarks: initialData.remarks || '',
-        poPiNumber: initialData.poPiNumber || '',
+        serialNumber: initialData.serialNumber ?? '',
+        make: initialData.make ?? '',
+        model: initialData.model ?? '',
+        year: initialData.year?.toString() ?? '',
+        capacity: initialData.capacity ?? '',
+        equipmentType: initialData.equipmentType ?? '',
+        voltage: initialData.voltage ?? '',
+        mastHeight: initialData.mastHeight ?? '',
+        locationType: initialData.locationType ?? 'Workshop',
+        siteCompany: initialData.siteCompany ?? '',
+        siteArea: initialData.siteArea ?? '',
+        siteContactPerson: initialData.siteContactPerson ?? '',
+        siteContactNumber: initialData.siteContactNumber ?? '',
+        remarks: initialData.remarks ?? '',
+        poPiNumber: initialData.poPiNumber ?? '',
       });
     } else if (mode === 'add') {
         setFormData({
@@ -280,5 +280,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
     </form>
   );
 }
+
+    
 
     
