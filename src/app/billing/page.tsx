@@ -112,7 +112,7 @@ export default function BillingPage() {
   const defaultPageSettings: PageSettings = {
     size: 'A4',
     orientation: 'portrait',
-    margin: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 },
+    pageMargins: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 },
     pageFontSize: 11,
     addressFontSize: 10,
     tableBodyFontSize: 11,
@@ -224,16 +224,16 @@ export default function BillingPage() {
     return {
         size: myCompanyDetails.pageSize || defaultPageSettings.size,
         orientation: myCompanyDetails.pageOrientation || defaultPageSettings.orientation,
-        margin: myCompanyDetails.pageMargins || defaultPageSettings.margin,
+        pageMargins: myCompanyDetails.pageMargins || defaultPageSettings.pageMargins,
         pageFontSize: myCompanyDetails.pageFontSize || defaultPageSettings.pageFontSize,
         addressFontSize: myCompanyDetails.addressFontSize || defaultPageSettings.addressFontSize,
         tableBodyFontSize: myCompanyDetails.tableBodyFontSize || defaultPageSettings.tableBodyFontSize,
     }
-  }, [myCompanyDetails]);
+  }, [myCompanyDetails, defaultPageSettings]);
   
   const liveDefaultTemplate = useMemo((): InvoiceTemplate => {
       return myCompanyDetails?.template || defaultTemplate;
-  }, [myCompanyDetails]);
+  }, [myCompanyDetails, defaultTemplate]);
 
   const resetForm = useCallback(() => {
       setCompanyId(initialFormState.companyId);
@@ -246,7 +246,7 @@ export default function BillingPage() {
       setInvoicePageSettings(liveDefaultPageSettings);
       setFormDownloadOptions(defaultDownloadOptions);
       setFormTemplate(liveDefaultTemplate);
-  }, [initialFormState, liveDefaultPageSettings, liveDefaultTemplate]);
+  }, [initialFormState, liveDefaultPageSettings, liveDefaultTemplate, defaultDownloadOptions]);
 
   const openFormDialog = useCallback((invoice: Invoice | null) => {
     if (invoice) {
@@ -260,7 +260,7 @@ export default function BillingPage() {
       setInvoicePageSettings({
           size: invoice.pageSize || liveDefaultPageSettings.size,
           orientation: invoice.pageOrientation || liveDefaultPageSettings.orientation,
-          margin: invoice.pageMargins || liveDefaultPageSettings.margin,
+          pageMargins: invoice.pageMargins || liveDefaultPageSettings.pageMargins,
           pageFontSize: invoice.pageFontSize || liveDefaultPageSettings.pageFontSize,
           addressFontSize: invoice.addressFontSize || liveDefaultPageSettings.addressFontSize,
           tableBodyFontSize: invoice.tableBodyFontSize || liveDefaultPageSettings.tableBodyFontSize,
@@ -317,7 +317,7 @@ export default function BillingPage() {
     const pageSettingsToUse: PageSettings = {
         size: invoice.pageSize || liveDefaultPageSettings.size,
         orientation: invoice.pageOrientation || liveDefaultPageSettings.orientation,
-        margin: invoice.pageMargins || liveDefaultPageSettings.margin,
+        pageMargins: invoice.pageMargins || liveDefaultPageSettings.pageMargins,
         pageFontSize: invoice.pageFontSize || liveDefaultPageSettings.pageFontSize,
         addressFontSize: invoice.addressFontSize || liveDefaultPageSettings.addressFontSize,
         tableBodyFontSize: invoice.tableBodyFontSize || liveDefaultPageSettings.tableBodyFontSize,
@@ -563,10 +563,10 @@ export default function BillingPage() {
           pageSize: invoicePageSettings.size,
           pageOrientation: invoicePageSettings.orientation,
           pageMargins: {
-            top: parseFloat(String(invoicePageSettings.margin.top)) || 0,
-            right: parseFloat(String(invoicePageSettings.margin.right)) || 0,
-            bottom: parseFloat(String(invoicePageSettings.margin.bottom)) || 0,
-            left: parseFloat(String(invoicePageSettings.margin.left)) || 0,
+            top: parseFloat(String(invoicePageSettings.pageMargins.top)) || 0,
+            right: parseFloat(String(invoicePageSettings.pageMargins.right)) || 0,
+            bottom: parseFloat(String(invoicePageSettings.pageMargins.bottom)) || 0,
+            left: parseFloat(String(invoicePageSettings.pageMargins.left)) || 0,
           },
           pageFontSize: invoicePageSettings.pageFontSize,
           addressFontSize: invoicePageSettings.addressFontSize,
@@ -877,8 +877,8 @@ export default function BillingPage() {
     if (/^(\d*\.?\d*)?$/.test(value)) {
         setInvoicePageSettings(prev => ({
             ...prev,
-            margin: {
-                ...(prev.margin || {top:0,left:0,bottom:0,right:0}),
+            pageMargins: {
+                ...(prev.pageMargins || {top:0,left:0,bottom:0,right:0}),
                 [field]: value
             }
         }));

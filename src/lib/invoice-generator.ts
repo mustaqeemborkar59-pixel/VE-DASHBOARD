@@ -9,7 +9,7 @@ import type { Invoice, Company, InvoiceTemplate, InvoiceItem, CompanySettings } 
 export type PageSettings = {
     size: 'A4' | 'LETTER' | 'LEGAL',
     orientation: 'portrait' | 'landscape',
-    margin: {
+    pageMargins: {
         top: number;
         right: number;
         bottom: number;
@@ -142,7 +142,7 @@ export const generateAndDownloadInvoice = async (
     const settings: PageSettings = pageSettings || { 
         size: 'A4', 
         orientation: 'portrait', 
-        margin: {top: 1.27, right: 1.27, bottom: 1.27, left: 1.27},
+        pageMargins: {top: 1.27, right: 1.27, bottom: 1.27, left: 1.27},
         pageFontSize: 11,
         addressFontSize: 10,
         tableBodyFontSize: 11
@@ -279,10 +279,10 @@ export const generateAndDownloadInvoice = async (
                     size: getPageSize(settings.size),
                     orientation: settings.orientation === 'landscape' ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT,
                     margin: { 
-                        top: convertCmToTwip(settings.margin.top), 
-                        right: convertCmToTwip(settings.margin.right), 
-                        bottom: convertCmToTwip(settings.margin.bottom), 
-                        left: convertCmToTwip(settings.margin.left) 
+                        top: convertCmToTwip(settings.pageMargins.top), 
+                        right: convertCmToTwip(settings.pageMargins.right), 
+                        bottom: convertCmToTwip(settings.pageMargins.bottom), 
+                        left: convertCmToTwip(settings.pageMargins.left) 
                     },
                 },
             },
