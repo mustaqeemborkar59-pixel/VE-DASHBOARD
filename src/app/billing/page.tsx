@@ -53,15 +53,15 @@ type ActiveInput = { key: string; field: 'particulars' | 'rate' } | null;
 type Enterprise = 'Vithal' | 'RV';
 type DiscountType = 'before_gst' | 'after_gst';
 
-const DocumentSettingsFields = React.memo(({ settings, onSettingsChange, onMarginChange, onFontSizeChange, prefix="page" }: { 
+const DocumentSettingsFields = React.memo(forwardRef<HTMLDivElement, {
     settings: Partial<CompanySettings>, 
     onSettingsChange: (field: keyof CompanySettings, value: any) => void,
     onMarginChange: (field: keyof PageMargin, value: string) => void,
     onFontSizeChange: (field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', value: string) => void,
     prefix?: string,
-  }) => {
+}>(({ settings, onSettingsChange, onMarginChange, onFontSizeChange, prefix="page" }, ref) => {
     return (
-      <div className="grid gap-4">
+      <div className="grid gap-4" ref={ref}>
           <div className="grid grid-cols-3 items-center gap-4">
               <Label htmlFor={`${prefix}Size`}>Page Size</Label>
               <Select value={settings.pageSize} onValueChange={(value) => onSettingsChange('pageSize', value)} >
@@ -98,7 +98,7 @@ const DocumentSettingsFields = React.memo(({ settings, onSettingsChange, onMargi
           </div>
       </div>
     );
-});
+}));
 DocumentSettingsFields.displayName = 'DocumentSettingsFields';
 
 const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeChange, items }: { 
@@ -147,7 +147,213 @@ const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeC
              </div>
         </div>
     );
-  }
+}
+
+const DownloadOptionsFields = ({ options, setOptions }: { options: DownloadOptions, setOptions: React.Dispatch<React.SetStateAction<DownloadOptions>> }) => {
+    return (
+        <div className="space-y-6">
+            <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">My Company Details</h4>
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="myGstin" checked={options.myCompany.showGstin} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showGstin: !!checked} }))} />
+                    <Label htmlFor="myGstin">Show GSTIN</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="myPan" checked={options.myCompany.showPan} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showPan: !!checked} }))} />
+                    <Label htmlFor="myPan">Show PAN Number</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="myBank" checked={options.myCompany.showBankDetails} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showBankDetails: !!checked} }))} />
+                    <Label htmlFor="myBank">Show Bank Details</Label>
+                </div>
+                 <div className="flex items-center space-x-2">
+                    <Checkbox id="mySac" checked={options.myCompany.showSacCode} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showSacCode: !!checked} }))} />
+                    <Label htmlFor="mySac">Show SAC Code</Label>
+                </div>
+                 <div className="flex items-center space-x-2">
+                    <Checkbox id="myServiceTax" checked={options.myCompany.showServiceTaxCode} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showServiceTaxCode: !!checked} }))} />
+                    <Label htmlFor="myServiceTax">Show Service Tax Code</Label>
+                </div>
+            </div>
+            <Separator />
+            <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">Client Company Details</h4>
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="clientGstin" checked={options.clientCompany.showGstin} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, clientCompany: {...prev.clientCompany, showGstin: !!checked} }))} />
+                    <Label htmlFor="clientGstin">Show GSTIN</Label>
+                </div>
+            </div>
+            <Separator />
+            <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">Filename Options</h4>
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="includeSite" checked={options.includeSiteInFilename} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, includeSiteInFilename: !!checked }))} />
+                    <Label htmlFor="includeSite">Include Site in Filename</Label>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const InvoiceActions = ({ invoice, openPreviewDialog, handleDownloadWord, openFormDialog, openDuplicateDialog, openDeleteDialog }: {
+    invoice: Invoice;
+    openPreviewDialog: (invoice: Invoice) => void;
+    handleDownloadWord: (invoice: Invoice) => Promise<void>;
+    openFormDialog: (invoice: Invoice | null) => void;
+    openDuplicateDialog: (invoice: Invoice) => void;
+    openDeleteDialog: (invoice: Invoice) => void;
+}) => (
+    <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                <EllipsisVertical className="h-4 w-4" />
+            </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-40">
+            <DropdownMenuItem onSelect={() => openPreviewDialog(invoice)}>
+                <Eye className="mr-2 h-4 w-4" />Preview
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => handleDownloadWord(invoice)}>
+                <Download className="mr-2 h-4 w-4" />Download
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => openFormDialog(invoice)}>
+                <Pencil className="mr-2 h-4 w-4" />Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => openDuplicateDialog(invoice)}>
+                <FilePlus2 className="mr-2 h-4 w-4" />Duplicate
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => openDeleteDialog(invoice)} className="text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" />Delete
+            </DropdownMenuItem>
+        </DropdownMenuContent>
+    </DropdownMenu>
+);
+
+const InvoiceList = ({ 
+    invoices, 
+    isLoadingInvoices, 
+    openYearAccordions, 
+    setOpenYearAccordions, 
+    openMonthAccordions, 
+    setOpenMonthAccordions, 
+    selectedInvoices, 
+    handleSelectInvoice, 
+    getCompanyDisplay,
+    ...actionProps
+}: {
+    invoices: ReturnType<typeof useMemo>;
+    isLoadingInvoices: boolean;
+    openYearAccordions: string[];
+    setOpenYearAccordions: (value: string[]) => void;
+    openMonthAccordions: string[];
+    setOpenMonthAccordions: (value: string[]) => void;
+    selectedInvoices: string[];
+    handleSelectInvoice: (invoiceId: string, checked: boolean) => void;
+    getCompanyDisplay: (invoice: Invoice) => string;
+} & Omit<React.ComponentProps<typeof InvoiceActions>, 'invoice'>) => (
+  <>
+    {isLoadingInvoices ? (
+        <div className="text-center py-10 text-muted-foreground">Loading invoices...</div>
+    ) : invoices.length > 0 ? (
+        <Accordion type="multiple" className="w-full" value={openYearAccordions} onValueChange={setOpenYearAccordions}>
+            {invoices.map((year: any, yearIndex: number) => (
+                 <AccordionItem value={`year-${year.key}`} key={year.key} className="mb-2 border-0">
+                    <AccordionTrigger className="px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-sm font-medium hover:no-underline">
+                        <div className="flex items-center gap-3">
+                          <Folder className="h-5 w-5 text-amber-500 fill-amber-500/20" />
+                          <span>{year.label}</span>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-2 pl-0 md:pl-4">
+                         <Accordion type="multiple" className="w-full" value={openMonthAccordions} onValueChange={setOpenMonthAccordions}>
+                            {year.months.map((month: any) => {
+                                return (
+                                <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
+                                    <AccordionTrigger className="flex items-center justify-between flex-1 text-xs font-medium hover:no-underline p-3 bg-muted/50 hover:bg-muted/80 rounded-md">
+                                         <div className="flex items-center gap-2">
+                                              <Folder className="h-4 w-4 text-amber-500 fill-amber-500/20" />
+                                              <span>{month.label}</span>
+                                         </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="pt-2">
+                                        <div className="md:hidden">
+                                            <div className="space-y-4 p-4">
+                                            {month.invoices.map((invoice: Invoice) => (
+                                                <div key={invoice.id} className="border rounded-lg p-4 space-y-3">
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="flex items-start gap-3">
+                                                          <Checkbox 
+                                                            id={`select-inv-mob-${invoice.id}`} 
+                                                            className="mt-1"
+                                                            checked={selectedInvoices.includes(invoice.id)}
+                                                            onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
+                                                          />
+                                                          <div className="space-y-1 cursor-pointer" onClick={() => actionProps.openPreviewDialog(invoice)}>
+                                                              <div className="font-bold">Bill No: {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
+                                                              <div className="text-sm text-muted-foreground">{getCompanyDisplay(invoice)}</div>
+                                                          </div>
+                                                        </div>
+                                                        <InvoiceActions invoice={invoice} {...actionProps} />
+                                                    </div>
+                                                    <div className="text-sm space-y-1" onClick={() => actionProps.openPreviewDialog(invoice)}>
+                                                        <div><span className="font-medium text-muted-foreground">Date: </span>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</div>
+                                                        <div><span className="font-medium text-muted-foreground">Amount: </span>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            </div>
+                                        </div>
+                                        <Table className="hidden md:table">
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead className="w-12 px-4"></TableHead>
+                                                    <TableHead>Bill No.</TableHead>
+                                                    <TableHead>Company</TableHead>
+                                                    <TableHead>Bill Date</TableHead>
+                                                    <TableHead className="text-right">Amount</TableHead>
+                                                    <TableHead className="w-[100px] text-right"><span className="sr-only">Actions</span></TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {month.invoices.map((invoice: Invoice) => (
+                                                    <TableRow key={invoice.id} data-state={selectedInvoices.includes(invoice.id) ? "selected" : ""}>
+                                                        <TableCell className="px-4">
+                                                            <Checkbox 
+                                                              id={`select-inv-desk-${invoice.id}`}
+                                                              checked={selectedInvoices.includes(invoice.id)}
+                                                              onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
+                                                              aria-label={`Select invoice ${invoice.billNo}`}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell className="font-medium cursor-pointer" onClick={() => actionProps.openPreviewDialog(invoice)}>
+                                                            {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
+                                                        </TableCell>
+                                                        <TableCell onClick={() => actionProps.openPreviewDialog(invoice)} className="cursor-pointer">{getCompanyDisplay(invoice)}</TableCell>
+                                                        <TableCell onClick={() => actionProps.openPreviewDialog(invoice)} className="cursor-pointer">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
+                                                        <TableCell className="text-right cursor-pointer" onClick={() => actionProps.openPreviewDialog(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
+                                                        <TableCell className="text-right">
+                                                            <InvoiceActions invoice={invoice} {...actionProps} />
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </AccordionContent>
+                                </AccordionItem>
+                                )
+                            })}
+                        </Accordion>
+                    </AccordionContent>
+                </AccordionItem>
+            ))}
+        </Accordion>
+    ) : (
+        <div className="text-center py-10 text-muted-foreground">
+            No invoices found for this enterprise. Click "Add Invoice" to get started.
+        </div>
+    )}
+  </>
+);
 
 export default function BillingPage() {
   const { firestore } = useFirebase();
@@ -857,54 +1063,6 @@ export default function BillingPage() {
     }
 };
 
-  
-
-  const DownloadOptionsFields = ({ options, setOptions }: { options: DownloadOptions, setOptions: React.Dispatch<React.SetStateAction<DownloadOptions>> }) => {
-    return (
-        <div className="space-y-6">
-            <div className="space-y-4">
-                <h4 className="font-semibold text-foreground">My Company Details</h4>
-                <div className="flex items-center space-x-2">
-                    <Checkbox id="myGstin" checked={options.myCompany.showGstin} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showGstin: !!checked} }))} />
-                    <Label htmlFor="myGstin">Show GSTIN</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Checkbox id="myPan" checked={options.myCompany.showPan} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showPan: !!checked} }))} />
-                    <Label htmlFor="myPan">Show PAN Number</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Checkbox id="myBank" checked={options.myCompany.showBankDetails} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showBankDetails: !!checked} }))} />
-                    <Label htmlFor="myBank">Show Bank Details</Label>
-                </div>
-                 <div className="flex items-center space-x-2">
-                    <Checkbox id="mySac" checked={options.myCompany.showSacCode} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showSacCode: !!checked} }))} />
-                    <Label htmlFor="mySac">Show SAC Code</Label>
-                </div>
-                 <div className="flex items-center space-x-2">
-                    <Checkbox id="myServiceTax" checked={options.myCompany.showServiceTaxCode} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showServiceTaxCode: !!checked} }))} />
-                    <Label htmlFor="myServiceTax">Show Service Tax Code</Label>
-                </div>
-            </div>
-            <Separator />
-            <div className="space-y-4">
-                <h4 className="font-semibold text-foreground">Client Company Details</h4>
-                <div className="flex items-center space-x-2">
-                    <Checkbox id="clientGstin" checked={options.clientCompany.showGstin} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, clientCompany: {...prev.clientCompany, showGstin: !!checked} }))} />
-                    <Label htmlFor="clientGstin">Show GSTIN</Label>
-                </div>
-            </div>
-            <Separator />
-            <div className="space-y-4">
-                <h4 className="font-semibold text-foreground">Filename Options</h4>
-                <div className="flex items-center space-x-2">
-                    <Checkbox id="includeSite" checked={options.includeSiteInFilename} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, includeSiteInFilename: !!checked }))} />
-                    <Label htmlFor="includeSite">Include Site in Filename</Label>
-                </div>
-            </div>
-        </div>
-    );
-  };
-
   const handleDocSettingsChange = useCallback((field: keyof PageSettings, value: any) => {
     setInvoicePageSettings(prev => ({...prev, [field]: value}));
   }, []);
@@ -945,138 +1103,6 @@ export default function BillingPage() {
     }
     return companyName;
   }
-
-  const renderInvoiceActions = (invoice: Invoice) => (
-    <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
-                <EllipsisVertical className="h-4 w-4" />
-            </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-40">
-            <DropdownMenuItem onSelect={() => openPreviewDialog(invoice)}>
-                <Eye className="mr-2 h-4 w-4" />Preview
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => handleDownloadWord(invoice)}>
-                <Download className="mr-2 h-4 w-4" />Download
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => openFormDialog(invoice)}>
-                <Pencil className="mr-2 h-4 w-4" />Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => openDuplicateDialog(invoice)}>
-                <FilePlus2 className="mr-2 h-4 w-4" />Duplicate
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => openDeleteDialog(invoice)} className="text-destructive">
-                <Trash2 className="mr-2 h-4 w-4" />Delete
-            </DropdownMenuItem>
-        </DropdownMenuContent>
-    </DropdownMenu>
-  );
-
-  const InvoiceList = ({ invoices }: { invoices: ReturnType<typeof useMemo> }) => (
-    <>
-      {isLoadingInvoices ? (
-          <div className="text-center py-10 text-muted-foreground">Loading invoices...</div>
-      ) : invoices.length > 0 ? (
-          <Accordion type="multiple" className="w-full" value={openYearAccordions} onValueChange={setOpenYearAccordions}>
-              {invoices.map((year: any, yearIndex: number) => (
-                   <AccordionItem value={`year-${year.key}`} key={year.key} className="mb-2 border-0">
-                      <AccordionTrigger className="px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-sm font-medium hover:no-underline">
-                          <div className="flex items-center gap-3">
-                            <Folder className="h-5 w-5 text-amber-500 fill-amber-500/20" />
-                            <span>{year.label}</span>
-                          </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="pt-2 pl-0 md:pl-4">
-                           <Accordion type="multiple" className="w-full" value={openMonthAccordions} onValueChange={setOpenMonthAccordions}>
-                              {year.months.map((month: any) => {
-                                  return (
-                                  <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
-                                      <AccordionTrigger className="flex items-center justify-between flex-1 text-xs font-medium hover:no-underline p-3 bg-muted/50 hover:bg-muted/80 rounded-md">
-                                           <div className="flex items-center gap-2">
-                                                <Folder className="h-4 w-4 text-amber-500 fill-amber-500/20" />
-                                                <span>{month.label}</span>
-                                           </div>
-                                      </AccordionTrigger>
-                                      <AccordionContent className="pt-2">
-                                          <div className="md:hidden">
-                                              <div className="space-y-4 p-4">
-                                              {month.invoices.map((invoice: Invoice) => (
-                                                  <div key={invoice.id} className="border rounded-lg p-4 space-y-3">
-                                                      <div className="flex justify-between items-start">
-                                                          <div className="flex items-start gap-3">
-                                                            <Checkbox 
-                                                              id={`select-inv-mob-${invoice.id}`} 
-                                                              className="mt-1"
-                                                              checked={selectedInvoices.includes(invoice.id)}
-                                                              onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
-                                                            />
-                                                            <div className="space-y-1 cursor-pointer" onClick={() => openPreviewDialog(invoice)}>
-                                                                <div className="font-bold">Bill No: {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
-                                                                <div className="text-sm text-muted-foreground">{getCompanyDisplay(invoice)}</div>
-                                                            </div>
-                                                          </div>
-                                                          {renderInvoiceActions(invoice)}
-                                                      </div>
-                                                      <div className="text-sm space-y-1" onClick={() => openPreviewDialog(invoice)}>
-                                                          <div><span className="font-medium text-muted-foreground">Date: </span>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</div>
-                                                          <div><span className="font-medium text-muted-foreground">Amount: </span>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</div>
-                                                      </div>
-                                                  </div>
-                                              ))}
-                                              </div>
-                                          </div>
-                                          <Table className="hidden md:table">
-                                              <TableHeader>
-                                                  <TableRow>
-                                                      <TableHead className="w-12 px-4"></TableHead>
-                                                      <TableHead>Bill No.</TableHead>
-                                                      <TableHead>Company</TableHead>
-                                                      <TableHead>Bill Date</TableHead>
-                                                      <TableHead className="text-right">Amount</TableHead>
-                                                      <TableHead className="w-[100px] text-right"><span className="sr-only">Actions</span></TableHead>
-                                                  </TableRow>
-                                              </TableHeader>
-                                              <TableBody>
-                                                  {month.invoices.map((invoice: Invoice) => (
-                                                      <TableRow key={invoice.id} data-state={selectedInvoices.includes(invoice.id) ? "selected" : ""}>
-                                                          <TableCell className="px-4">
-                                                              <Checkbox 
-                                                                id={`select-inv-desk-${invoice.id}`}
-                                                                checked={selectedInvoices.includes(invoice.id)}
-                                                                onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
-                                                                aria-label={`Select invoice ${invoice.billNo}`}
-                                                              />
-                                                          </TableCell>
-                                                          <TableCell className="font-medium cursor-pointer" onClick={() => openPreviewDialog(invoice)}>
-                                                              {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
-                                                          </TableCell>
-                                                          <TableCell onClick={() => openPreviewDialog(invoice)} className="cursor-pointer">{getCompanyDisplay(invoice)}</TableCell>
-                                                          <TableCell onClick={() => openPreviewDialog(invoice)} className="cursor-pointer">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
-                                                          <TableCell className="text-right cursor-pointer" onClick={() => openPreviewDialog(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
-                                                          <TableCell className="text-right">
-                                                              {renderInvoiceActions(invoice)}
-                                                          </TableCell>
-                                                      </TableRow>
-                                                  ))}
-                                              </TableBody>
-                                          </Table>
-                                      </AccordionContent>
-                                  </AccordionItem>
-                                  )
-                              })}
-                          </Accordion>
-                      </AccordionContent>
-                  </AccordionItem>
-              ))}
-          </Accordion>
-      ) : (
-          <div className="text-center py-10 text-muted-foreground">
-              No invoices found for this enterprise. Click "Add Invoice" to get started.
-          </div>
-      )}
-    </>
-  );
 
   return (
     <AppLayout>
@@ -1148,10 +1174,40 @@ export default function BillingPage() {
                         </div>
                     </div>
                     <TabsContent value="Vithal">
-                      <InvoiceList invoices={organizedInvoices} />
+                      <InvoiceList 
+                        invoices={organizedInvoices}
+                        isLoadingInvoices={isLoadingInvoices}
+                        openYearAccordions={openYearAccordions}
+                        setOpenYearAccordions={setOpenYearAccordions}
+                        openMonthAccordions={openMonthAccordions}
+                        setOpenMonthAccordions={setOpenMonthAccordions}
+                        selectedInvoices={selectedInvoices}
+                        handleSelectInvoice={handleSelectInvoice}
+                        getCompanyDisplay={getCompanyDisplay}
+                        openPreviewDialog={openPreviewDialog}
+                        handleDownloadWord={handleDownloadWord}
+                        openFormDialog={openFormDialog}
+                        openDuplicateDialog={openDuplicateDialog}
+                        openDeleteDialog={openDeleteDialog}
+                      />
                     </TabsContent>
                     <TabsContent value="RV">
-                      <InvoiceList invoices={organizedInvoices} />
+                      <InvoiceList 
+                        invoices={organizedInvoices}
+                        isLoadingInvoices={isLoadingInvoices}
+                        openYearAccordions={openYearAccordions}
+                        setOpenYearAccordions={setOpenYearAccordions}
+                        openMonthAccordions={openMonthAccordions}
+                        setOpenMonthAccordions={setOpenMonthAccordions}
+                        selectedInvoices={selectedInvoices}
+                        handleSelectInvoice={handleSelectInvoice}
+                        getCompanyDisplay={getCompanyDisplay}
+                        openPreviewDialog={openPreviewDialog}
+                        handleDownloadWord={handleDownloadWord}
+                        openFormDialog={openFormDialog}
+                        openDuplicateDialog={openDuplicateDialog}
+                        openDeleteDialog={openDeleteDialog}
+                      />
                     </TabsContent>
                 </CardContent>
             </Card>
@@ -1515,5 +1571,3 @@ export default function BillingPage() {
   );
 }
 
-
-    
