@@ -1233,7 +1233,7 @@ export default function BillingPage() {
 
         <Dialog open={isFormDialogOpen} onOpenChange={(open) => {if(!open) setIsFormDialogOpen(false); else setIsFormDialogOpen(true); }}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
-                <DialogHeader className="p-6 pb-0">
+                <DialogHeader className="p-6 pr-14 pb-0">
                     <div className="flex items-start justify-between">
                         <div className="space-y-1.5">
                             <DialogTitle>
@@ -1613,3 +1613,5 @@ export default function BillingPage() {
   );
 }
 
+
+    
