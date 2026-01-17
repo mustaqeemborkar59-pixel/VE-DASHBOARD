@@ -48,6 +48,11 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
     } as React.CSSProperties;
   }
 
+  const discountAmount = invoice.discount || 0;
+  const advanceAmount = invoice.advanceReceived || 0;
+  const subTotal = invoice.netTotal + invoice.cgst + invoice.sgst;
+  const balanceDue = invoice.grandTotal - advanceAmount;
+
   return (
     <div className="bg-white text-black p-8 rounded-lg shadow-lg max-w-4xl mx-auto font-['Calibri',_sans-serif] text-sm">
       <header className="text-center mb-8">
@@ -115,11 +120,32 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
              <td className="border border-black p-2"></td>
             <td className="border border-black p-2 text-right font-bold">{formatCurrency(invoice.sgst)}</td>
           </tr>
-          <tr>
-            <td colSpan={2} className="border border-black p-2 text-right font-bold text-base">TOTAL AMOUNT PAYABLE</td>
+          {discountAmount > 0 && (
+             <tr>
+                <td colSpan={2} className="border border-black p-2 text-right font-bold">Discount</td>
+                <td className="border border-black p-2"></td>
+                <td className="border border-black p-2 text-right font-bold text-red-600">- {formatCurrency(discountAmount)}</td>
+             </tr>
+          )}
+          <tr className="font-bold text-base">
+            <td colSpan={2} className="border border-black p-2 text-right">{advanceAmount > 0 ? 'GRAND TOTAL' : 'TOTAL AMOUNT PAYABLE'}</td>
              <td className="border border-black p-2"></td>
-            <td className="border border-black p-2 text-right font-bold text-base">{formatCurrency(invoice.grandTotal)}</td>
+            <td className="border border-black p-2 text-right">{formatCurrency(invoice.grandTotal)}</td>
           </tr>
+           {advanceAmount > 0 && (
+            <>
+              <tr>
+                  <td colSpan={2} className="border border-black p-2 text-right font-bold">Advance Received</td>
+                  <td className="border border-black p-2"></td>
+                  <td className="border border-black p-2 text-right font-bold">- {formatCurrency(advanceAmount)}</td>
+              </tr>
+              <tr className="font-bold text-base">
+                  <td colSpan={2} className="border border-black p-2 text-right">TOTAL AMOUNT PAYABLE</td>
+                  <td className="border border-black p-2"></td>
+                  <td className="border border-black p-2 text-right">{formatCurrency(balanceDue)}</td>
+              </tr>
+            </>
+          )}
         </tbody>
       </table>
 

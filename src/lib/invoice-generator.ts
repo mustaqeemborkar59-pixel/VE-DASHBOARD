@@ -63,6 +63,7 @@ const generateInvoiceDataForWord = (invoice: Invoice, clientCompany: Company, my
         ignoreZeroCurrency: false,
       }
     });
+    // Amount in words should always be based on the grand total before advance payment.
     const grandTotalInWords = words.convert(invoice.grandTotal).toUpperCase();
     
     return {
@@ -83,7 +84,9 @@ const generateInvoiceDataForWord = (invoice: Invoice, clientCompany: Company, my
         netTotal: invoice.netTotal,
         cgst: invoice.cgst,
         sgst: invoice.sgst,
+        discount: invoice.discount || 0,
         grandTotal: invoice.grandTotal,
+        advanceReceived: invoice.advanceReceived || 0,
         amountInWords: grandTotalInWords,
     }
 }
@@ -220,7 +223,7 @@ export const generateAndDownloadInvoice = async (
         margins: cellMargins
     }));
     
-    const createTotalRow = (label: string, value: string, isGrandTotal = false) => {
+    const createTotalRow = (label: string, value: string, isGrandTotal = false, isNegative = false) => {
         const totalRowsBorders = {
             top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
             bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
@@ -255,7 +258,7 @@ export const generateAndDownloadInvoice = async (
         }
 
         cells.push(new DocxTableCell({
-            children: [new Paragraph({ children: [new TextRun({ text: `${value}/-`, bold: true, size: finalFontSize, font: "Calibri" })], alignment: getAlignment('amount') })],
+            children: [new Paragraph({ children: [new TextRun({ text: `${isNegative ? '-' : ''}${value}/-`, bold: true, size: finalFontSize, font: "Calibri" })], alignment: getAlignment('amount') })],
             verticalAlign: VerticalAlign.CENTER,
             borders: totalRowsBorders,
             margins: cellMargins,
@@ -263,6 +266,24 @@ export const generateAndDownloadInvoice = async (
 
         return new DocxTableRow({ children: cells });
     }
+
+    const totalRows = [];
+    totalRows.push(createTotalRow('Net total=', `${formatCurrency(invoiceData.netTotal)}`));
+    totalRows.push(createTotalRow('CGST@9%', `${formatCurrency(invoiceData.cgst)}`));
+    totalRows.push(createTotalRow('SGST@9%', `${formatCurrency(invoiceData.sgst)}`));
+
+    if (invoiceData.discount > 0) {
+        totalRows.push(createTotalRow('Discount', `${formatCurrency(invoiceData.discount)}`, false, true));
+    }
+
+    totalRows.push(createTotalRow(invoiceData.advanceReceived > 0 ? 'GRAND TOTAL' : 'TOTAL AMOUNT PAYABLE', `${formatCurrency(invoiceData.grandTotal)}`, true));
+
+    if (invoiceData.advanceReceived > 0) {
+        totalRows.push(createTotalRow('Advance Received', `${formatCurrency(invoiceData.advanceReceived)}`, false, true));
+        const balanceDue = invoiceData.grandTotal - invoiceData.advanceReceived;
+        totalRows.push(createTotalRow('TOTAL AMOUNT PAYABLE', `${formatCurrency(balanceDue)}`, true));
+    }
+
 
     const doc = new Document({
         styles: {
@@ -403,10 +424,7 @@ export const generateAndDownloadInvoice = async (
 
                             return new DocxTableRow({ children: itemCells });
                         }),
-                        createTotalRow('Net total=', `${formatCurrency(invoiceData.netTotal)}`),
-                        createTotalRow('CGST@9%', `${formatCurrency(invoiceData.cgst)}`),
-                        createTotalRow('SGST@9%', `${formatCurrency(invoiceData.sgst)}`),
-                        createTotalRow('TOTAL AMOUNT PAYABLE', `${formatCurrency(invoiceData.grandTotal)}`, true),
+                        ...totalRows,
                     ],
                 }),
 

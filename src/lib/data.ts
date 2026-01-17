@@ -138,6 +138,8 @@ export type Invoice = {
     cgst: number;
     sgst: number;
     grandTotal: number;
+    discount?: number;
+    advanceReceived?: number;
     myCompanyDetails: CompanySettings; // Snapshot of my company settings
     clientCompanyDetails: Company; // Snapshot of client company details
     selectedBankAccount?: BankAccount; // Snapshot of selected bank account

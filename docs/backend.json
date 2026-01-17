@@ -347,6 +347,14 @@
         "grandTotal": {
           "type": "number"
         },
+        "discount": {
+            "type": "number",
+            "description": "Discount amount to be subtracted from the total."
+        },
+        "advanceReceived": {
+            "type": "number",
+            "description": "Advance amount already paid by the client."
+        },
         "myCompanyDetails": {
           "$ref": "#/entities/CompanySettings",
           "description": "A snapshot of the user's company details at the time of invoice creation."

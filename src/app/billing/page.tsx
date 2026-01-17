@@ -188,6 +188,8 @@ export default function BillingPage() {
     site: '',
     items: [{ key: `item-${Date.now()}`, particulars: '', rate: '', amount: 0 }],
     selectedBankAccountId: '',
+    discount: '',
+    advanceReceived: '',
   };
 
   const [companyId, setCompanyId] = useState<string>('');
@@ -197,6 +199,8 @@ export default function BillingPage() {
   const [items, setItems] = useState<InvoiceItem[]>(initialFormState.items);
   const [selectedBankAccountId, setSelectedBankAccountId] = useState('');
   const [activeInput, setActiveInput] = useState<ActiveInput>(null);
+  const [discount, setDiscount] = useState<string>('');
+  const [advanceReceived, setAdvanceReceived] = useState<string>('');
 
     
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
@@ -290,6 +294,8 @@ export default function BillingPage() {
       setSite(initialFormState.site);
       setItems(initialFormState.items);
       setSelectedBankAccountId(initialFormState.selectedBankAccountId);
+      setDiscount(initialFormState.discount);
+      setAdvanceReceived(initialFormState.advanceReceived);
       setEditingInvoice(null);
       setInvoicePageSettings(liveDefaultPageSettings);
       setFormDownloadOptions(defaultDownloadOptions);
@@ -305,6 +311,8 @@ export default function BillingPage() {
       setSite(invoice.site || '');
       setItems(invoice.items.map((item, index) => ({ ...item, key: `item-${Date.now()}-${index}` })));
       setSelectedBankAccountId(invoice.selectedBankAccount?.id || '');
+      setDiscount(String(invoice.discount || ''));
+      setAdvanceReceived(String(invoice.advanceReceived || ''));
       setInvoicePageSettings({
           size: invoice.pageSize || liveDefaultPageSettings.size,
           orientation: invoice.pageOrientation || liveDefaultPageSettings.orientation,
@@ -491,9 +499,14 @@ export default function BillingPage() {
     const netTotal = items.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
     const cgst = netTotal * 0.09;
     const sgst = netTotal * 0.09;
-    const grandTotal = Math.round(netTotal + cgst + sgst);
-    return { netTotal, cgst, sgst, grandTotal };
-  }, [items]);
+    const subTotal = netTotal + cgst + sgst;
+    const discountAmount = Number(String(discount).replace(/,/g, '')) || 0;
+    const advanceAmount = Number(String(advanceReceived).replace(/,/g, '')) || 0;
+    const grandTotal = Math.round(subTotal - discountAmount);
+    const balanceDue = grandTotal - advanceAmount;
+
+    return { netTotal, cgst, sgst, grandTotal, balanceDue, discountAmount, advanceAmount };
+  }, [items, discount, advanceReceived]);
   
   const toWords = new ToWords({
     localeCode: 'en-IN',
@@ -503,6 +516,10 @@ export default function BillingPage() {
       ignoreZeroCurrency: false,
     }
   });
+
+  const amountInWords = useMemo(() => {
+    return toWords.convert(calculations.grandTotal).toUpperCase();
+  },[calculations.grandTotal, toWords]);
 
   const handleAddItem = () => {
     setItems([...items, { key: `item-${Date.now()}`, particulars: '', rate: '', amount: 0 }]);
@@ -563,12 +580,6 @@ export default function BillingPage() {
         textarea.setSelectionRange(start, end + (markdown === 'bold' ? 4 : 7 + String(size).length * 2 + 3));
     }, 0);
   };
-
-  
-  const amountInWords = useMemo(() => {
-    return toWords.convert(calculations.grandTotal).toUpperCase();
-  },[calculations.grandTotal, toWords]);
-  
   
   const handleFormSubmit = async () => {
     if (!companyId || !billDate || !selectedBankAccountId || items.some(i => !i.particulars)) {
@@ -636,6 +647,8 @@ export default function BillingPage() {
         cgst: calculations.cgst,
         sgst: calculations.sgst,
         grandTotal: calculations.grandTotal,
+        discount: calculations.discountAmount,
+        advanceReceived: calculations.advanceAmount,
         myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetails!,
         clientCompanyDetails: editingInvoice?.clientCompanyDetails || selectedCompanyForNewInvoice!,
         selectedBankAccount: selectedBankAccount,
@@ -1253,29 +1266,72 @@ export default function BillingPage() {
                             </Button>
                         </div>
                         
-                        <div className="flex justify-end">
-                            <div className="w-full max-w-sm space-y-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="discount">Discount</Label>
+                                    <Input 
+                                        id="discount"
+                                        type="text"
+                                        placeholder="Enter discount amount" 
+                                        value={discount} 
+                                        onChange={(e) => setDiscount(e.target.value)} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="advanceReceived">Advance Received</Label>
+                                    <Input 
+                                        id="advanceReceived" 
+                                        type="text"
+                                        placeholder="Enter advance amount" 
+                                        value={advanceReceived} 
+                                        onChange={(e) => setAdvanceReceived(e.target.value)} 
+                                    />
+                                </div>
+                            </div>
+                            <div className="w-full space-y-2 pt-2 self-end">
                                 <div className="flex justify-between">
-                                <span className="text-muted-foreground">Net Total</span>
-                                <span>{calculations.netTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                                    <span className="text-muted-foreground">Net Total</span>
+                                    <span>{calculations.netTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                <span className="text-muted-foreground">CGST @ 9%</span>
-                                <span>{calculations.cgst.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                                    <span className="text-muted-foreground">CGST @ 9%</span>
+                                    <span>{calculations.cgst.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                <span className="text-muted-foreground">SGST @ 9%</span>
-                                <span>{calculations.sgst.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                                    <span className="text-muted-foreground">SGST @ 9%</span>
+                                    <span>{calculations.sgst.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
                                 </div>
+                                {calculations.discountAmount > 0 && (
+                                    <div className="flex justify-between text-destructive">
+                                        <span className="text-muted-foreground">Discount</span>
+                                        <span>- {calculations.discountAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                                    </div>
+                                )}
+                                <Separator />
                                 <div className="flex justify-between font-bold text-lg">
-                                <span>Grand Total</span>
-                                <span>{calculations.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                                    <span>{calculations.advanceAmount > 0 ? 'Grand Total' : 'Total Amount Payable'}</span>
+                                    <span>{calculations.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
                                 </div>
+                                {calculations.advanceAmount > 0 && (
+                                    <>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Advance Received</span>
+                                            <span>- {calculations.advanceAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                                        </div>
+                                        <Separator />
+                                        <div className="flex justify-between font-bold text-lg">
+                                            <span>Total Amount Payable</span>
+                                            <span>{calculations.balanceDue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                                        </div>
+                                    </>
+                                )}
                                 <div className="text-sm text-muted-foreground pt-1">
-                                In words: <span className="font-medium text-foreground">{amountInWords}</span>
+                                    In words: <span className="font-medium text-foreground">{amountInWords}</span>
                                 </div>
                             </div>
                         </div>
+
 
                         {editingInvoice && (
                           <>
