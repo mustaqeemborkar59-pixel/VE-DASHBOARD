@@ -50,7 +50,15 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
 
   const discountAmount = invoice.discount || 0;
   const advanceAmount = invoice.advanceReceived || 0;
-  const subTotal = invoice.netTotal + invoice.cgst + invoice.sgst;
+  
+  const discountType = invoice.discountType || 'after_gst';
+
+  const taxableAmount = discountType === 'before_gst' ? invoice.netTotal - discountAmount : invoice.netTotal;
+  const cgst = taxableAmount * 0.09;
+  const sgst = taxableAmount * 0.09;
+
+  const subTotalAfterGst = taxableAmount + cgst + sgst;
+  
   const balanceDue = invoice.grandTotal - advanceAmount;
 
   return (
@@ -110,17 +118,31 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
             <td className="border border-black p-2"></td>
             <td className="border border-black p-2 text-right font-bold">{formatCurrency(invoice.netTotal)}</td>
           </tr>
+          {discountType === 'before_gst' && discountAmount > 0 && (
+             <tr>
+                <td colSpan={2} className="border border-black p-2 text-right font-bold">Discount</td>
+                <td className="border border-black p-2"></td>
+                <td className="border border-black p-2 text-right font-bold text-red-600">- {formatCurrency(discountAmount)}</td>
+             </tr>
+          )}
+           {discountType === 'before_gst' && discountAmount > 0 && (
+             <tr>
+                <td colSpan={2} className="border border-black p-2 text-right font-bold">Taxable Amount</td>
+                <td className="border border-black p-2"></td>
+                <td className="border border-black p-2 text-right font-bold">{formatCurrency(taxableAmount)}</td>
+             </tr>
+          )}
           <tr>
             <td colSpan={2} className="border border-black p-2 text-right font-bold">CGST@9%</td>
              <td className="border border-black p-2"></td>
-            <td className="border border-black p-2 text-right font-bold">{formatCurrency(invoice.cgst)}</td>
+            <td className="border border-black p-2 text-right font-bold">{formatCurrency(cgst)}</td>
           </tr>
           <tr>
             <td colSpan={2} className="border border-black p-2 text-right font-bold">SGST@9%</td>
              <td className="border border-black p-2"></td>
-            <td className="border border-black p-2 text-right font-bold">{formatCurrency(invoice.sgst)}</td>
+            <td className="border border-black p-2 text-right font-bold">{formatCurrency(sgst)}</td>
           </tr>
-          {discountAmount > 0 && (
+          {discountType === 'after_gst' && discountAmount > 0 && (
              <tr>
                 <td colSpan={2} className="border border-black p-2 text-right font-bold">Discount</td>
                 <td className="border border-black p-2"></td>
@@ -196,3 +218,6 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
     </div>
   );
 }
+
+
+    

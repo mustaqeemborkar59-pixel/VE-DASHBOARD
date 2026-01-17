@@ -351,6 +351,11 @@
             "type": "number",
             "description": "Discount amount to be subtracted from the total."
         },
+        "discountType": {
+          "type": "string",
+          "enum": ["before_gst", "after_gst"],
+          "description": "Specifies if the discount is applied before or after GST calculation."
+        },
         "advanceReceived": {
             "type": "number",
             "description": "Advance amount already paid by the client."
@@ -594,3 +599,6 @@
     }
   }
 }
+
+
+    

@@ -28,6 +28,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 
 const AutoHeightTextarea = React.memo(forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => {
@@ -50,6 +51,7 @@ AutoHeightTextarea.displayName = 'AutoHeightTextarea';
 type InvoiceItem = Omit<LibInvoiceItem, 'id'> & { key: string };
 type ActiveInput = { key: string; field: 'particulars' | 'rate' } | null;
 type Enterprise = 'Vithal' | 'RV';
+type DiscountType = 'before_gst' | 'after_gst';
 
 const DocumentSettingsFields = React.memo(({ settings, onSettingsChange, onMarginChange, onFontSizeChange, prefix="page" }: { 
     settings: Partial<CompanySettings>, 
@@ -101,8 +103,8 @@ DocumentSettingsFields.displayName = 'DocumentSettingsFields';
 
 const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeChange, items }: { 
     template: InvoiceTemplate, 
-    onTemplateChange: (id: 'sr_no' | 'particulars' | 'rate' | 'amount', align: 'left' | 'center' | 'right') => void,
-    onTemplateFontSizeChange: (id: 'sr_no' | 'particulars' | 'rate' | 'amount', size: string) => void,
+    onTemplateChange: (id: string, align: 'left' | 'center' | 'right') => void,
+    onTemplateFontSizeChange: (id: string, size: string) => void,
     items: InvoiceItem[]
   }) => {
     const hasRateColumn = useMemo(() => items.some(item => item.rate && String(item.rate).trim() !== ''), [items]);
@@ -124,7 +126,7 @@ const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeC
                                         variant={col.align === align ? 'default' : 'ghost'} 
                                         size="icon" 
                                         className="h-7 w-7 flex-1"
-                                        onClick={() => onTemplateChange(col.id as 'sr_no' | 'particulars' | 'rate' | 'amount', align)}
+                                        onClick={() => onTemplateChange(col.id, align)}
                                     >
                                         {align === 'left' && <AlignLeft className="h-4 w-4" />}
                                         {align === 'center' && <AlignCenter className="h-4 w-4" />}
@@ -136,7 +138,7 @@ const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeC
                                 type="number" 
                                 placeholder="Size" 
                                 value={col.fontSize ?? ''} 
-                                onChange={(e) => onTemplateFontSizeChange(col.id as 'sr_no' | 'particulars' | 'rate' | 'amount', e.target.value)}
+                                onChange={(e) => onTemplateFontSizeChange(col.id, e.target.value)}
                                 className="h-9 w-20"
                             />
                         </div>
@@ -189,6 +191,7 @@ export default function BillingPage() {
     items: [{ key: `item-${Date.now()}`, particulars: '', rate: '', amount: 0 }],
     selectedBankAccountId: '',
     discount: '',
+    discountType: 'after_gst' as DiscountType,
     advanceReceived: '',
   };
 
@@ -200,6 +203,7 @@ export default function BillingPage() {
   const [selectedBankAccountId, setSelectedBankAccountId] = useState('');
   const [activeInput, setActiveInput] = useState<ActiveInput>(null);
   const [discount, setDiscount] = useState<string>('');
+  const [discountType, setDiscountType] = useState<DiscountType>('after_gst');
   const [advanceReceived, setAdvanceReceived] = useState<string>('');
 
     
@@ -295,6 +299,7 @@ export default function BillingPage() {
       setItems(initialFormState.items);
       setSelectedBankAccountId(initialFormState.selectedBankAccountId);
       setDiscount(initialFormState.discount);
+      setDiscountType(initialFormState.discountType);
       setAdvanceReceived(initialFormState.advanceReceived);
       setEditingInvoice(null);
       setInvoicePageSettings(liveDefaultPageSettings);
@@ -312,6 +317,7 @@ export default function BillingPage() {
       setItems(invoice.items.map((item, index) => ({ ...item, key: `item-${Date.now()}-${index}` })));
       setSelectedBankAccountId(invoice.selectedBankAccount?.id || '');
       setDiscount(String(invoice.discount || ''));
+      setDiscountType(invoice.discountType || 'after_gst');
       setAdvanceReceived(String(invoice.advanceReceived || ''));
       setInvoicePageSettings({
           size: invoice.pageSize || liveDefaultPageSettings.size,
@@ -497,16 +503,29 @@ export default function BillingPage() {
 
   const calculations = useMemo(() => {
     const netTotal = items.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
-    const cgst = netTotal * 0.09;
-    const sgst = netTotal * 0.09;
-    const subTotal = netTotal + cgst + sgst;
     const discountAmount = Number(String(discount).replace(/,/g, '')) || 0;
     const advanceAmount = Number(String(advanceReceived).replace(/,/g, '')) || 0;
-    const grandTotal = Math.round(subTotal - discountAmount);
+
+    let taxableAmount = netTotal;
+    if (discountType === 'before_gst' && discountAmount > 0) {
+        taxableAmount = netTotal - discountAmount;
+    }
+
+    const cgst = taxableAmount * 0.09;
+    const sgst = taxableAmount * 0.09;
+
+    const totalBeforeFinalDiscount = taxableAmount + cgst + sgst;
+
+    let finalGrandTotal = totalBeforeFinalDiscount;
+    if (discountType === 'after_gst' && discountAmount > 0) {
+        finalGrandTotal = totalBeforeFinalDiscount - discountAmount;
+    }
+    
+    const grandTotal = Math.round(finalGrandTotal);
     const balanceDue = grandTotal - advanceAmount;
 
-    return { netTotal, cgst, sgst, grandTotal, balanceDue, discountAmount, advanceAmount };
-  }, [items, discount, advanceReceived]);
+    return { netTotal, taxableAmount, cgst, sgst, grandTotal, balanceDue, discountAmount, advanceAmount };
+  }, [items, discount, discountType, advanceReceived]);
   
   const toWords = new ToWords({
     localeCode: 'en-IN',
@@ -648,6 +667,7 @@ export default function BillingPage() {
         sgst: calculations.sgst,
         grandTotal: calculations.grandTotal,
         discount: calculations.discountAmount,
+        discountType: discountType,
         advanceReceived: calculations.advanceAmount,
         myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetails!,
         clientCompanyDetails: editingInvoice?.clientCompanyDetails || selectedCompanyForNewInvoice!,
@@ -820,14 +840,14 @@ export default function BillingPage() {
     }
   };
   
-  const handleTemplateChange = (id: 'sr_no' | 'particulars' | 'rate' | 'amount', align: 'left' | 'center' | 'right') => {
+  const handleTemplateChange = (id: string, align: 'left' | 'center' | 'right') => {
     setFormTemplate(prev => ({
         ...prev,
         columns: prev.columns.map(col => col.id === id ? { ...col, align } : col)
     }));
   };
 
-  const handleTemplateFontSizeChange = (id: 'sr_no' | 'particulars' | 'rate' | 'amount', size: string) => {
+  const handleTemplateFontSizeChange = (id: string, size: string) => {
     const numValue = size === '' ? undefined : parseInt(size, 10);
     if (size === '' || (numValue !== undefined && !isNaN(numValue))) {
         setFormTemplate(prev => ({
@@ -1268,15 +1288,28 @@ export default function BillingPage() {
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                             <div className="space-y-4">
-                                <div className="space-y-2">
+                               <div className="space-y-2">
                                     <Label htmlFor="discount">Discount</Label>
-                                    <Input 
-                                        id="discount"
-                                        type="text"
-                                        placeholder="Enter discount amount" 
-                                        value={discount} 
-                                        onChange={(e) => setDiscount(e.target.value)} 
-                                    />
+                                    <div className="flex gap-2">
+                                        <Input 
+                                            id="discount"
+                                            type="text"
+                                            placeholder="Enter discount amount" 
+                                            value={discount} 
+                                            onChange={(e) => setDiscount(e.target.value)}
+                                            className="flex-1"
+                                        />
+                                        <RadioGroup value={discountType} onValueChange={(v) => setDiscountType(v as DiscountType)} className="flex items-center gap-2 rounded-md border p-1 h-10 bg-muted/50">
+                                            <Label htmlFor="before_gst" className={cn("flex items-center gap-1 cursor-pointer text-xs px-2 py-1 rounded-sm", discountType === 'before_gst' && "bg-background shadow")}>
+                                                <RadioGroupItem value="before_gst" id="before_gst" className="sr-only"/>
+                                                Before GST
+                                            </Label>
+                                            <Label htmlFor="after_gst" className={cn("flex items-center gap-1 cursor-pointer text-xs px-2 py-1 rounded-sm", discountType === 'after_gst' && "bg-background shadow")}>
+                                                <RadioGroupItem value="after_gst" id="after_gst" className="sr-only"/>
+                                                After GST
+                                            </Label>
+                                        </RadioGroup>
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="advanceReceived">Advance Received</Label>
@@ -1289,11 +1322,30 @@ export default function BillingPage() {
                                     />
                                 </div>
                             </div>
-                            <div className="w-full space-y-2 pt-2 self-end">
+                           <div className="w-full space-y-2 pt-2 self-end">
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Net Total</span>
                                     <span>{calculations.netTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
                                 </div>
+
+                                {discountType === 'before_gst' && calculations.discountAmount > 0 && (
+                                    <div className="flex justify-between text-destructive">
+                                        <span className="text-muted-foreground">Discount</span>
+                                        <span>- {calculations.discountAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                                    </div>
+                                )}
+                                
+                                {discountType === 'before_gst' && calculations.discountAmount > 0 && (
+                                    <>
+                                    <Separator/>
+                                    <div className="flex justify-between font-medium">
+                                        <span className="text-muted-foreground">Taxable Amount</span>
+                                        <span>{calculations.taxableAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
+                                    </div>
+                                    <Separator/>
+                                    </>
+                                )}
+
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">CGST @ 9%</span>
                                     <span>{calculations.cgst.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
@@ -1302,7 +1354,8 @@ export default function BillingPage() {
                                     <span className="text-muted-foreground">SGST @ 9%</span>
                                     <span>{calculations.sgst.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
                                 </div>
-                                {calculations.discountAmount > 0 && (
+                                
+                                {discountType === 'after_gst' && calculations.discountAmount > 0 && (
                                     <div className="flex justify-between text-destructive">
                                         <span className="text-muted-foreground">Discount</span>
                                         <span>- {calculations.discountAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
@@ -1461,3 +1514,6 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+
+    

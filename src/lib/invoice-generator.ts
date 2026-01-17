@@ -1,5 +1,6 @@
 
 
+
 import { Packer, Document, Paragraph, TextRun, AlignmentType, BorderStyle, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType, VerticalAlign, PageOrientation, IPageSize, PageSize, TableLayoutType } from 'docx';
 import { saveAs } from 'file-saver';
 import { format, parseISO } from 'date-fns';
@@ -63,9 +64,14 @@ const generateInvoiceDataForWord = (invoice: Invoice, clientCompany: Company, my
         ignoreZeroCurrency: false,
       }
     });
-    // Amount in words should always be based on the grand total before advance payment.
     const grandTotalInWords = words.convert(invoice.grandTotal).toUpperCase();
     
+    const discountAmount = invoice.discount || 0;
+    const discountType = invoice.discountType || 'after_gst';
+    const taxableAmount = discountType === 'before_gst' ? invoice.netTotal - discountAmount : invoice.netTotal;
+    const cgst = taxableAmount * 0.09;
+    const sgst = taxableAmount * 0.09;
+
     return {
         to: {
           name: clientCompany.name.toUpperCase(),
@@ -82,9 +88,10 @@ const generateInvoiceDataForWord = (invoice: Invoice, clientCompany: Company, my
         items: invoice.items,
         template: invoice.template,
         netTotal: invoice.netTotal,
-        cgst: invoice.cgst,
-        sgst: invoice.sgst,
-        discount: invoice.discount || 0,
+        cgst: cgst,
+        sgst: sgst,
+        discount: discountAmount,
+        discountType: discountType,
         grandTotal: invoice.grandTotal,
         advanceReceived: invoice.advanceReceived || 0,
         amountInWords: grandTotalInWords,
@@ -269,10 +276,17 @@ export const generateAndDownloadInvoice = async (
 
     const totalRows = [];
     totalRows.push(createTotalRow('Net total=', `${formatCurrency(invoiceData.netTotal)}`));
+    
+    if (invoiceData.discountType === 'before_gst' && invoiceData.discount > 0) {
+        totalRows.push(createTotalRow('Discount', formatCurrency(invoiceData.discount), false, true));
+        const taxableAmount = invoiceData.netTotal - invoiceData.discount;
+        totalRows.push(createTotalRow('Taxable Amount', formatCurrency(taxableAmount), true, false));
+    }
+    
     totalRows.push(createTotalRow('CGST@9%', `${formatCurrency(invoiceData.cgst)}`));
     totalRows.push(createTotalRow('SGST@9%', `${formatCurrency(invoiceData.sgst)}`));
 
-    if (invoiceData.discount > 0) {
+    if (invoiceData.discountType === 'after_gst' && invoiceData.discount > 0) {
         totalRows.push(createTotalRow('Discount', `${formatCurrency(invoiceData.discount)}`, false, true));
     }
 
@@ -526,3 +540,6 @@ export const generateAndDownloadInvoice = async (
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);
 }
+
+
+    

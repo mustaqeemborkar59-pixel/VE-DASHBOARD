@@ -1,5 +1,6 @@
 
 
+
 export type Employee = {
   id: string;
   fullName: string;
@@ -139,6 +140,7 @@ export type Invoice = {
     sgst: number;
     grandTotal: number;
     discount?: number;
+    discountType?: 'before_gst' | 'after_gst';
     advanceReceived?: number;
     myCompanyDetails: CompanySettings; // Snapshot of my company settings
     clientCompanyDetails: Company; // Snapshot of client company details
@@ -152,3 +154,6 @@ export type Invoice = {
     downloadOptions?: DownloadOptions;
     template?: InvoiceTemplate;
 }
+
+
+    
