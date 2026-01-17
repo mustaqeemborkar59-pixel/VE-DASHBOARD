@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 import AppLayout from "@/components/app-layout";
@@ -12,7 +11,7 @@ import { collection, query, orderBy, doc, setDoc, writeBatch } from 'firebase/fi
 import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions, BankAccount, InvoiceTemplate, InvoiceItem as LibInvoiceItem } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow, AlignLeft, AlignCenter, AlignRight, ChevronDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -360,6 +359,7 @@ export default function BillingPage() {
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<Enterprise>('Vithal');
+  const [formEnterprise, setFormEnterprise] = useState<Enterprise>(activeTab);
   
   const toISODateString = (date: Date) => {
     return format(date, 'yyyy-MM-dd');
@@ -516,6 +516,7 @@ export default function BillingPage() {
   const openFormDialog = useCallback((invoice: Invoice | null) => {
     if (invoice) {
       setEditingInvoice(invoice);
+      setFormEnterprise(invoice.enterprise);
       setCompanyId(invoice.companyId);
       setBillDate(invoice.billDate);
       setPoNumber(invoice.poNumber || 'AGREEMENT');
@@ -537,9 +538,10 @@ export default function BillingPage() {
       setFormTemplate(invoice.template || liveDefaultTemplate);
     } else {
       resetForm();
+      setFormEnterprise(activeTab);
     }
     setIsFormDialogOpen(true);
-  }, [ liveDefaultPageSettings, defaultDownloadOptions, liveDefaultTemplate, resetForm ]);
+  }, [ activeTab, liveDefaultPageSettings, defaultDownloadOptions, liveDefaultTemplate, resetForm ]);
 
 
   const openPreviewDialog = useCallback((invoice: Invoice) => {
@@ -640,6 +642,20 @@ export default function BillingPage() {
     const nextCalculated = maxBillNumber + 1;
     return fromSettings && fromSettings > nextCalculated ? fromSettings : nextCalculated;
   }, [myCompanyDetails, maxBillNumber, isLoadingSettings]);
+  
+  const nextBillNumberForForm = useMemo(() => {
+    if (isLoadingVithalSettings || isLoadingRvSettings || !allInvoices) return null;
+    
+    const targetInvoices = allInvoices.filter(inv => inv.enterprise === formEnterprise);
+    const maxBillNumber = Math.max(0, ...targetInvoices.map(inv => inv.billNo));
+    const nextCalculated = maxBillNumber + 1;
+
+    const targetSettings = formEnterprise === 'Vithal' ? vithalCompanyDetails : rvCompanyDetails;
+    const fromSettings = targetSettings?.nextBillNo;
+    
+    return fromSettings && fromSettings > nextCalculated ? fromSettings : nextCalculated;
+  }, [formEnterprise, allInvoices, vithalCompanyDetails, rvCompanyDetails, isLoadingVithalSettings, isLoadingRvSettings]);
+
 
   const organizedInvoices = useMemo(() => {
     if (!filteredInvoices) return [];
@@ -816,7 +832,9 @@ export default function BillingPage() {
       return;
     }
     
-    if (!myCompanyDetails && !editingInvoice) {
+    const myCompanyDetailsForForm = formEnterprise === 'Vithal' ? vithalCompanyDetails : rvCompanyDetails;
+
+    if (!myCompanyDetailsForForm && !editingInvoice) {
       toast({
         variant: 'destructive',
         title: 'Company Settings Missing',
@@ -831,10 +849,10 @@ export default function BillingPage() {
         return;
     }
 
-    const settingsDocRef = activeTab === 'Vithal' ? vithalSettingsRef : rvSettingsRef;
+    const settingsDocRef = formEnterprise === 'Vithal' ? vithalSettingsRef : rvSettingsRef;
 
     if (firestore && settingsDocRef) {
-      const billNoToUse = editingInvoice ? editingInvoice.billNo : (nextBillNumber || maxBillNumber + 1);
+      const billNoToUse = editingInvoice ? editingInvoice.billNo : (nextBillNumberForForm || 1);
 
       if (isNaN(billNoToUse)) {
         toast({ variant: 'destructive', title: 'Invalid Bill Number', description: 'Could not determine next bill number.' });
@@ -860,7 +878,7 @@ export default function BillingPage() {
       const currentDownloadOptions = formDownloadOptions;
 
       const invoiceData: Omit<Invoice, 'id'> = {
-        enterprise: activeTab,
+        enterprise: formEnterprise,
         billNo: billNoToUse,
         billNoSuffix: 'MHE',
         billDate: billDate,
@@ -875,7 +893,7 @@ export default function BillingPage() {
         discount: calculations.discountAmount,
         discountType: discountType,
         advanceReceived: calculations.advanceAmount,
-        myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetails!,
+        myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetailsForForm!,
         clientCompanyDetails: editingInvoice?.clientCompanyDetails || selectedCompanyForNewInvoice!,
         selectedBankAccount: selectedBankAccount,
         ...currentInvoiceSettings,
@@ -1216,8 +1234,32 @@ export default function BillingPage() {
         <Dialog open={isFormDialogOpen} onOpenChange={(open) => {if(!open) setIsFormDialogOpen(false); else setIsFormDialogOpen(true); }}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pb-0">
-                    <DialogTitle>{editingInvoice ? 'Edit Invoice' : `New Invoice for ${activeTab} Enterprises`}</DialogTitle>
-                    <DialogDescription>{editingInvoice ? `Updating Invoice No. ${editingInvoice.billNo}-MHE` : 'Fill the details below to create a new invoice.'}</DialogDescription>
+                    <div className="flex items-start justify-between">
+                        <div className="space-y-1.5">
+                            <DialogTitle>
+                                {editingInvoice ? 'Edit Invoice' : 'New Invoice'}
+                            </DialogTitle>
+                            <DialogDescription>
+                                {editingInvoice ? `Updating Invoice No. ${editingInvoice.billNo}-MHE` : `Creating a new invoice for ${formEnterprise} Enterprises.`}
+                            </DialogDescription>
+                        </div>
+                        {!editingInvoice && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="ml-4 shrink-0">
+                                        {formEnterprise}
+                                        <ChevronDown className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuRadioGroup value={formEnterprise} onValueChange={(value) => setFormEnterprise(value as Enterprise)}>
+                                        <DropdownMenuRadioItem value="Vithal">Vithal</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="RV">RV</DropdownMenuRadioItem>
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                    </div>
                 </DialogHeader>
                 <div className="flex-grow overflow-y-auto px-6">
                     <div className="space-y-6">
