@@ -34,7 +34,10 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { Invoice, Company, Payment } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { DateRange } from 'react-day-picker';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+
+type Enterprise = 'Vithal' | 'RV';
 type PaymentStatus = 'All' | 'Paid' | 'Partial' | 'Pending';
 
 export default function PaymentsPage() {
@@ -52,6 +55,7 @@ export default function PaymentsPage() {
   const isLoading = isLoadingInvoices || isLoadingCompanies || isLoadingPayments;
 
   // Filters
+  const [activeTab, setActiveTab] = useState<Enterprise>('Vithal');
   const [companyFilter, setCompanyFilter] = useState('All');
   const [dateRangeFilter, setDateRangeFilter] = useState<DateRange | undefined>();
   const [statusFilter, setStatusFilter] = useState<PaymentStatus>('All');
@@ -98,6 +102,9 @@ export default function PaymentsPage() {
 
   const filteredInvoices = useMemo(() => {
     return processedInvoices.filter(invoice => {
+      const enterpriseMatch = invoice.enterprise === activeTab;
+      if (!enterpriseMatch) return false;
+
       const companyMatch = companyFilter === 'All' || invoice.companyId === companyFilter;
       const statusMatch = statusFilter === 'All' || invoice.status === statusFilter;
       
@@ -113,7 +120,7 @@ export default function PaymentsPage() {
 
       return companyMatch && statusMatch && dateMatch && searchMatch;
     });
-  }, [processedInvoices, companyFilter, statusFilter, dateRangeFilter, searchFilter]);
+  }, [processedInvoices, activeTab, companyFilter, statusFilter, dateRangeFilter, searchFilter]);
   
   const summary = useMemo(() => {
       const totalBilled = filteredInvoices.reduce((acc, inv) => acc + inv.grandTotal, 0);
@@ -151,141 +158,146 @@ export default function PaymentsPage() {
   return (
     <AppLayout>
       <div className="flex flex-col gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment Tracking & Reconciliation</CardTitle>
-            <CardDescription>Monitor and manage invoice payments.</CardDescription>
-          </CardHeader>
-           <CardContent className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Card className="bg-blue-50 dark:bg-blue-900/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Total Billed</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-blue-900 dark:text-blue-200">{formatCurrency(summary.totalBilled)}</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-green-50 dark:bg-green-900/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">Total Received</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-900 dark:text-green-200">{formatCurrency(summary.totalReceived)}</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-orange-50 dark:bg-orange-900/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300">Total TDS</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-orange-900 dark:text-orange-200">{formatCurrency(summary.totalTds)}</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-red-50 dark:bg-red-900/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300">Total Pending</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-red-900 dark:text-red-200">{formatCurrency(summary.totalPending)}</div>
-                </CardContent>
-              </Card>
-            </div>
-          </CardContent>
-        </Card>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Enterprise)} className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Tracking & Reconciliation</CardTitle>
+              <CardDescription>Monitor and manage invoice payments.</CardDescription>
+              <TabsList className="grid w-full grid-cols-2 mt-4">
+                  <TabsTrigger value="Vithal">Vithal Enterprises</TabsTrigger>
+                  <TabsTrigger value="RV">R.V Enterprises</TabsTrigger>
+              </TabsList>
+            </CardHeader>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
-                <div className="relative flex-1">
-                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                   <Input 
-                      placeholder="Search by Bill No. or Company..."
-                      className="pl-8 w-full"
-                      value={searchFilter}
-                      onChange={(e) => setSearchFilter(e.target.value)}
-                   />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="bg-blue-50 dark:bg-blue-900/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Total Billed</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-900 dark:text-blue-200">{formatCurrency(summary.totalBilled)}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-green-50 dark:bg-green-900/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">Total Received</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-900 dark:text-green-200">{formatCurrency(summary.totalReceived)}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-orange-50 dark:bg-orange-900/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300">Total TDS</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-orange-900 dark:text-orange-200">{formatCurrency(summary.totalTds)}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-red-50 dark:bg-red-900/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300">Total Pending</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-900 dark:text-red-200">{formatCurrency(summary.totalPending)}</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                        placeholder="Search by Bill No. or Company..."
+                        className="pl-8 w-full"
+                        value={searchFilter}
+                        onChange={(e) => setSearchFilter(e.target.value)}
+                    />
+                  </div>
+                  <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Filter by Company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Companies</SelectItem>
+                      {companies?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as PaymentStatus)}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Filter by Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Statuses</SelectItem>
+                      <SelectItem value="Paid">Paid</SelectItem>
+                      <SelectItem value="Partial">Partial</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <DatePickerWithRange onDateChange={setDateRangeFilter} />
+                  <Button variant="ghost" onClick={clearFilters} className="w-full sm:w-auto">
+                      <XCircle className="mr-2 h-4 w-4"/> Clear
+                  </Button>
                 </div>
-                <Select value={companyFilter} onValueChange={setCompanyFilter}>
-                  <SelectTrigger className="w-full sm:w-[200px]">
-                    <SelectValue placeholder="Filter by Company" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All">All Companies</SelectItem>
-                    {companies?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                 <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as PaymentStatus)}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Filter by Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All">All Statuses</SelectItem>
-                    <SelectItem value="Paid">Paid</SelectItem>
-                    <SelectItem value="Partial">Partial</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                  </SelectContent>
-                </Select>
-                <DatePickerWithRange onDateChange={setDateRangeFilter} />
-                <Button variant="ghost" onClick={clearFilters} className="w-full sm:w-auto">
-                    <XCircle className="mr-2 h-4 w-4"/> Clear
-                </Button>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0 md:p-3 pt-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Bill No.</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Total Amount</TableHead>
-                  <TableHead className="text-right">Amount Received</TableHead>
-                  <TableHead className="text-right">TDS</TableHead>
-                  <TableHead className="text-right">Deducted</TableHead>
-                  <TableHead className="text-right">Balance</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="w-24"><span className="sr-only">Actions</span></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
+            </CardHeader>
+            <CardContent className="p-0 md:p-3 pt-0">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={10} className="h-24 text-center">Loading payments...</TableCell>
+                    <TableHead>Bill No.</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Total Amount</TableHead>
+                    <TableHead className="text-right">Amount Received</TableHead>
+                    <TableHead className="text-right">TDS</TableHead>
+                    <TableHead className="text-right">Deducted</TableHead>
+                    <TableHead className="text-right">Balance</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="w-24"><span className="sr-only">Actions</span></TableHead>
                   </TableRow>
-                ) : filteredInvoices.length > 0 ? (
-                  filteredInvoices.map((invoice) => (
-                    <TableRow key={invoice.id}>
-                      <TableCell className="font-medium">{invoice.enterprise.charAt(0)}/{invoice.billNo}</TableCell>
-                      <TableCell>{invoice.companyName}</TableCell>
-                      <TableCell>{format(parseISO(invoice.billDate), 'dd-MM-yyyy')}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(invoice.grandTotal)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(invoice.totalPaid)}</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(invoice.totalTds)} 
-                        <span className="text-xs text-muted-foreground"> ({invoice.tdsPercentage.toFixed(2)}%)</span>
-                      </TableCell>
-                      <TableCell className="text-right">{formatCurrency(invoice.totalDeductions)}</TableCell>
-                      <TableCell className="text-right font-medium">{formatCurrency(invoice.balance)}</TableCell>
-                      <TableCell className="text-center">{getStatusBadge(invoice.status)}</TableCell>
-                      <TableCell>
-                          <Button variant="outline" size="sm">
-                             <PlusCircle className="mr-2 h-3.5 w-3.5"/> Add
-                          </Button>
-                      </TableCell>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={10} className="h-24 text-center">Loading payments...</TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={10} className="h-24 text-center">No matching invoices found.</TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  ) : filteredInvoices.length > 0 ? (
+                    filteredInvoices.map((invoice) => (
+                      <TableRow key={invoice.id}>
+                        <TableCell className="font-medium">{invoice.enterprise.charAt(0)}/{invoice.billNo}</TableCell>
+                        <TableCell>{invoice.companyName}</TableCell>
+                        <TableCell>{format(parseISO(invoice.billDate), 'dd-MM-yyyy')}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(invoice.grandTotal)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(invoice.totalPaid)}</TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(invoice.totalTds)} 
+                          <span className="text-xs text-muted-foreground"> ({invoice.tdsPercentage.toFixed(2)}%)</span>
+                        </TableCell>
+                        <TableCell className="text-right">{formatCurrency(invoice.totalDeductions)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(invoice.balance)}</TableCell>
+                        <TableCell className="text-center">{getStatusBadge(invoice.status)}</TableCell>
+                        <TableCell>
+                            <Button variant="outline" size="sm">
+                              <PlusCircle className="mr-2 h-3.5 w-3.5"/> Add
+                            </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={10} className="h-24 text-center">No matching invoices found.</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </Tabs>
       </div>
     </AppLayout>
   );
