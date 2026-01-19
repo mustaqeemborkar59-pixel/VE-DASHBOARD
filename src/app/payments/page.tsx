@@ -17,6 +17,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -25,23 +33,37 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 import { PlusCircle, Search, XCircle } from "lucide-react";
 import AppLayout from "@/components/app-layout";
-import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Invoice, Company, Payment } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 
 type Enterprise = 'Vithal' | 'RV';
 type PaymentStatus = 'All' | 'Paid' | 'Partial' | 'Pending';
+type ProcessedInvoice = Invoice & {
+    companyName: string;
+    totalPaid: number;
+    totalTds: number;
+    totalDeductions: number;
+    balance: number;
+    status: Omit<PaymentStatus, 'All'>;
+    tdsPercentage: number;
+};
+
 
 export default function PaymentsPage() {
   const { firestore } = useFirebase();
+  const { toast } = useToast();
 
   // Data fetching
   const invoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billDate', 'desc')) : null, [firestore]);
@@ -61,6 +83,18 @@ export default function PaymentsPage() {
   const [statusFilter, setStatusFilter] = useState<PaymentStatus>('All');
   const [searchFilter, setSearchFilter] = useState('');
 
+  // Payment Dialog State
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<ProcessedInvoice | null>(null);
+
+  // Payment Form State
+  const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [receivedAmount, setReceivedAmount] = useState('');
+  const [tdsDeducted, setTdsDeducted] = useState('');
+  const [otherDeductions, setOtherDeductions] = useState('');
+  const [notes, setNotes] = useState('');
+
+
   const getPaymentDetails = useCallback((invoiceId: string) => {
     const relevantPayments = payments?.filter(p => p.invoiceId === invoiceId) || [];
     const totalPaid = relevantPayments.reduce((acc, p) => acc + p.receivedAmount, 0);
@@ -69,15 +103,15 @@ export default function PaymentsPage() {
     return { totalPaid, totalTds, totalDeductions };
   }, [payments]);
 
-  const processedInvoices = useMemo(() => {
+  const processedInvoices = useMemo((): ProcessedInvoice[] => {
     if (!invoices) return [];
     return invoices.map(invoice => {
       const { totalPaid, totalTds, totalDeductions } = getPaymentDetails(invoice.id);
-      const totalReceived = totalPaid + totalTds + totalDeductions;
+      const totalReceived = totalPaid + totalTds + totalDeductions + (invoice.advanceReceived || 0);
       const balance = invoice.grandTotal - totalReceived;
 
       let status: Omit<PaymentStatus, 'All'>;
-      if (balance <= 0) {
+      if (balance <= 0.01) { // Use a small epsilon for float comparison
         status = 'Paid';
       } else if (totalReceived > 0 && balance > 0) {
         status = 'Partial';
@@ -124,10 +158,10 @@ export default function PaymentsPage() {
   
   const summary = useMemo(() => {
       const totalBilled = filteredInvoices.reduce((acc, inv) => acc + inv.grandTotal, 0);
-      const totalReceived = filteredInvoices.reduce((acc, inv) => acc + inv.totalPaid, 0);
+      const totalPaid = filteredInvoices.reduce((acc, inv) => acc + inv.totalPaid, 0);
       const totalTds = filteredInvoices.reduce((acc, inv) => acc + inv.totalTds, 0);
       const totalPending = filteredInvoices.reduce((acc, inv) => acc + inv.balance, 0);
-      return { totalBilled, totalReceived, totalTds, totalPending };
+      return { totalBilled, totalPaid, totalTds, totalPending };
   }, [filteredInvoices]);
 
   const clearFilters = () => {
@@ -136,6 +170,51 @@ export default function PaymentsPage() {
     setDateRangeFilter(undefined);
     setSearchFilter('');
   };
+  
+  const handleOpenPaymentDialog = (invoice: ProcessedInvoice) => {
+    setSelectedInvoiceForPayment(invoice);
+    setPaymentDate(format(new Date(), 'yyyy-MM-dd'));
+    setReceivedAmount('');
+    setTdsDeducted('');
+    setOtherDeductions('');
+    setNotes('');
+    setIsPaymentDialogOpen(true);
+  };
+  
+  const handleAddPayment = () => {
+      if (!firestore || !selectedInvoiceForPayment) return;
+
+      const received = parseFloat(receivedAmount.replace(/,/g, '')) || 0;
+
+      if (received <= 0) {
+          toast({
+              variant: "destructive",
+              title: "Invalid Amount",
+              description: "Received amount must be greater than zero.",
+          });
+          return;
+      }
+
+      const paymentData = {
+          invoiceId: selectedInvoiceForPayment.id,
+          companyId: selectedInvoiceForPayment.companyId,
+          paymentDate: paymentDate,
+          receivedAmount: received,
+          tdsDeducted: parseFloat(tdsDeducted.replace(/,/g, '')) || 0,
+          otherDeductions: parseFloat(otherDeductions.replace(/,/g, '')) || 0,
+          notes: notes,
+          createdAt: new Date().toISOString(),
+      };
+      
+      addDocumentNonBlocking(collection(firestore, 'payments'), paymentData);
+
+      toast({
+          title: "Payment Recorded",
+          description: `Payment for Bill No. ${selectedInvoiceForPayment.billNo} has been recorded.`,
+      });
+
+      setIsPaymentDialogOpen(false);
+  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
@@ -184,7 +263,7 @@ export default function PaymentsPage() {
                 <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">Total Received</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-900 dark:text-green-200">{formatCurrency(summary.totalReceived)}</div>
+                <div className="text-2xl font-bold text-green-900 dark:text-green-200">{formatCurrency(summary.totalPaid)}</div>
               </CardContent>
             </Card>
             <Card className="bg-orange-50 dark:bg-orange-900/20">
@@ -282,7 +361,7 @@ export default function PaymentsPage() {
                         <TableCell className="text-right font-medium">{formatCurrency(invoice.balance)}</TableCell>
                         <TableCell className="text-center">{getStatusBadge(invoice.status)}</TableCell>
                         <TableCell>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={() => handleOpenPaymentDialog(invoice)}>
                               <PlusCircle className="mr-2 h-3.5 w-3.5"/> Add
                             </Button>
                         </TableCell>
@@ -298,6 +377,44 @@ export default function PaymentsPage() {
             </CardContent>
           </Card>
         </Tabs>
+        
+        <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Record Payment</DialogTitle>
+                    <DialogDescription>
+                        Record a payment for Bill No. {selectedInvoiceForPayment?.billNo} to {selectedInvoiceForPayment?.companyName}. <br/>
+                        <span className="font-bold">Amount Due: {formatCurrency(selectedInvoiceForPayment?.balance || 0)}</span>
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="paymentDate" className="text-right">Payment Date</Label>
+                        <Input id="paymentDate" type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="receivedAmount" className="text-right">Amount Received</Label>
+                        <Input id="receivedAmount" value={receivedAmount} onChange={(e) => setReceivedAmount(e.target.value)} className="col-span-3" placeholder="e.g., 5000" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="tdsDeducted" className="text-right">TDS Deducted</Label>
+                        <Input id="tdsDeducted" value={tdsDeducted} onChange={(e) => setTdsDeducted(e.target.value)} className="col-span-3" placeholder="e.g., 50" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="otherDeductions" className="text-right">Other Deductions</Label>
+                        <Input id="otherDeductions" value={otherDeductions} onChange={(e) => setOtherDeductions(e.target.value)} className="col-span-3" placeholder="e.g., 20" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="notes" className="text-right">Notes</Label>
+                        <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="col-span-3" placeholder="Optional notes about the payment" />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleAddPayment}>Save Payment</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
