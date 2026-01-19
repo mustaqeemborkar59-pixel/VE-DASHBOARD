@@ -46,7 +46,7 @@ const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeC
                                     variant={col.align === align ? 'default' : 'ghost'} 
                                     size="icon" 
                                     className="h-7 w-7 flex-1"
-                                    onClick={() => onTemplateChange(col.id, align)}
+                                    onClick={() => onTemplateChange(col.id as 'sr_no' | 'particulars' | 'rate' | 'amount', align)}
                                 >
                                     {align === 'left' && <AlignLeft className="h-4 w-4" />}
                                     {align === 'center' && <AlignCenter className="h-4 w-4" />}
@@ -58,7 +58,7 @@ const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeC
                             type="number" 
                             placeholder="Size" 
                             value={col.fontSize ?? ''} 
-                            onChange={(e) => onTemplateFontSizeChange(col.id, e.target.value)}
+                            onChange={(e) => onTemplateFontSizeChange(col.id as 'sr_no' | 'particulars' | 'rate' | 'amount', e.target.value)}
                             className="h-9 w-20"
                         />
                     </div>
@@ -70,10 +70,13 @@ const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeC
 };
 
 const SettingsForm = ({ enterprise }: { enterprise: Enterprise }) => {
-    const { firestore } = useFirebase();
+    const { firestore, user } = useFirebase();
     const { toast } = useToast();
     
-    const settingsDocRef = useMemoFirebase(() => firestore ? doc(firestore, "companySettings", enterprise.toLowerCase()) : null, [firestore, enterprise]);
+    const settingsDocRef = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, "companySettings", enterprise.toLowerCase())
+    }, [firestore, enterprise, user]);
     const { data: initialSettings, isLoading: isLoadingSettings } = useDoc<CompanySettings>(settingsDocRef);
     
     const [settings, setSettings] = useState<Partial<CompanySettings>>({});
@@ -306,10 +309,13 @@ const SettingsForm = ({ enterprise }: { enterprise: Enterprise }) => {
 
 
 export default function SettingsPage() {
-    const { firestore } = useFirebase();
+    const { firestore, user } = useFirebase();
     const { toast } = useToast();
     
-    const bankAccountsQuery = useMemoFirebase(() => firestore ? collection(firestore, "companySettings", "primary", "bankAccounts") : null, [firestore]);
+    const bankAccountsQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return collection(firestore, "companySettings", "primary", "bankAccounts");
+    }, [firestore, user]);
     const { data: bankAccounts, isLoading: isLoadingBankAccounts } = useCollection<BankAccount>(bankAccountsQuery);
     
     const [isBankAccountDialogOpen, setIsBankAccountDialogOpen] = useState(false);
