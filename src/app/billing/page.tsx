@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc, setDoc, writeBatch } from 'firebase/firestore';
-import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions, BankAccount, InvoiceTemplate, InvoiceItem as LibInvoiceItem } from '@/lib/data';
+import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions, BankAccount, InvoiceTemplate, InvoiceItem as LibInvoiceItem, DocumentSettings } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow, AlignLeft, AlignCenter, AlignRight, ChevronDown } from 'lucide-react';
@@ -53,8 +53,8 @@ type Enterprise = 'Vithal' | 'RV';
 type DiscountType = 'before_gst' | 'after_gst';
 
 const DocumentSettingsFields = React.memo(forwardRef<HTMLDivElement, {
-    settings: Partial<CompanySettings>, 
-    onSettingsChange: (field: keyof CompanySettings, value: any) => void,
+    settings: Partial<DocumentSettings>, 
+    onSettingsChange: (field: keyof DocumentSettings, value: any) => void,
     onMarginChange: (field: keyof PageMargin, value: string) => void,
     onFontSizeChange: (field: 'pageFontSize' | 'addressFontSize' | 'tableBodyFontSize', value: string) => void,
     prefix?: string,
@@ -365,9 +365,9 @@ export default function BillingPage() {
     return format(date, 'yyyy-MM-dd');
   }
   
-  const defaultPageSettings: PageSettings = {
-    size: 'A4',
-    orientation: 'portrait',
+  const defaultDocumentSettings: DocumentSettings = {
+    pageSize: 'A4',
+    pageOrientation: 'portrait',
     pageMargins: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 },
     pageFontSize: 11,
     addressFontSize: 10,
@@ -414,7 +414,7 @@ export default function BillingPage() {
 
     
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
-  const [invoicePageSettings, setInvoicePageSettings] = useState<PageSettings | any>(defaultPageSettings);
+  const [invoicePageSettings, setInvoicePageSettings] = useState<DocumentSettings>(defaultDocumentSettings);
   const [formDownloadOptions, setFormDownloadOptions] = useState<DownloadOptions>(defaultDownloadOptions);
   const [formTemplate, setFormTemplate] = useState<InvoiceTemplate>(defaultTemplate);
 
@@ -433,7 +433,7 @@ export default function BillingPage() {
   const [invoiceForPreview, setInvoiceForPreview] = useState<Invoice | null>(null);
   
   const [isSettingsPopoverOpen, setIsSettingsPopoverOpen] = useState(false);
-  const [globalPageSettings, setGlobalPageSettings] = useState<Partial<CompanySettings> | any>(defaultPageSettings);
+  const [globalPageSettings, setGlobalPageSettings] = useState<Partial<CompanySettings> | any>(defaultDocumentSettings);
   const [isSubmittingSettings, setIsSubmittingSettings] = useState(false);
   
   const [openYearAccordions, setOpenYearAccordions] = useState<string[]>([]);
@@ -481,17 +481,17 @@ export default function BillingPage() {
     setIsPreviewOpen(false);
   }, []);
   
-  const liveDefaultPageSettings = useMemo((): PageSettings => {
-    if (!myCompanyDetails) return defaultPageSettings;
+  const liveDefaultPageSettings = useMemo((): DocumentSettings => {
+    if (!myCompanyDetails) return defaultDocumentSettings;
     return {
-        size: myCompanyDetails.pageSize || defaultPageSettings.size,
-        orientation: myCompanyDetails.pageOrientation || defaultPageSettings.orientation,
-        pageMargins: myCompanyDetails.pageMargins || defaultPageSettings.pageMargins,
-        pageFontSize: myCompanyDetails.pageFontSize || defaultPageSettings.pageFontSize,
-        addressFontSize: myCompanyDetails.addressFontSize || defaultPageSettings.addressFontSize,
-        tableBodyFontSize: myCompanyDetails.tableBodyFontSize || defaultPageSettings.tableBodyFontSize,
+        pageSize: myCompanyDetails.pageSize || defaultDocumentSettings.pageSize,
+        pageOrientation: myCompanyDetails.pageOrientation || defaultDocumentSettings.pageOrientation,
+        pageMargins: myCompanyDetails.pageMargins || defaultDocumentSettings.pageMargins,
+        pageFontSize: myCompanyDetails.pageFontSize || defaultDocumentSettings.pageFontSize,
+        addressFontSize: myCompanyDetails.addressFontSize || defaultDocumentSettings.addressFontSize,
+        tableBodyFontSize: myCompanyDetails.tableBodyFontSize || defaultDocumentSettings.tableBodyFontSize,
     }
-  }, [myCompanyDetails, defaultPageSettings]);
+  }, [myCompanyDetails, defaultDocumentSettings]);
   
   const liveDefaultTemplate = useMemo((): InvoiceTemplate => {
       return myCompanyDetails?.template || defaultTemplate;
@@ -527,12 +527,12 @@ export default function BillingPage() {
       setDiscountType(invoice.discountType || 'after_gst');
       setAdvanceReceived(String(invoice.advanceReceived || ''));
       setInvoicePageSettings({
-          size: invoice.pageSize || liveDefaultPageSettings.size,
-          orientation: invoice.pageOrientation || liveDefaultPageSettings.orientation,
-          pageMargins: invoice.pageMargins || liveDefaultPageSettings.pageMargins,
-          pageFontSize: invoice.pageFontSize || liveDefaultPageSettings.pageFontSize,
-          addressFontSize: invoice.addressFontSize || liveDefaultPageSettings.addressFontSize,
-          tableBodyFontSize: invoice.tableBodyFontSize || liveDefaultPageSettings.tableBodyFontSize,
+          pageSize: invoice.documentSettings?.pageSize || liveDefaultPageSettings.pageSize,
+          pageOrientation: invoice.documentSettings?.pageOrientation || liveDefaultPageSettings.pageOrientation,
+          pageMargins: invoice.documentSettings?.pageMargins || liveDefaultPageSettings.pageMargins,
+          pageFontSize: invoice.documentSettings?.pageFontSize || liveDefaultPageSettings.pageFontSize,
+          addressFontSize: invoice.documentSettings?.addressFontSize || liveDefaultPageSettings.addressFontSize,
+          tableBodyFontSize: invoice.documentSettings?.tableBodyFontSize || liveDefaultPageSettings.tableBodyFontSize,
       });
       setFormDownloadOptions(invoice.downloadOptions || defaultDownloadOptions);
       setFormTemplate(invoice.template || liveDefaultTemplate);
@@ -585,12 +585,12 @@ export default function BillingPage() {
     }
     
     const pageSettingsToUse: PageSettings = {
-        size: invoice.pageSize || liveDefaultPageSettings.size,
-        orientation: invoice.pageOrientation || liveDefaultPageSettings.orientation,
-        pageMargins: invoice.pageMargins || liveDefaultPageSettings.pageMargins,
-        pageFontSize: invoice.pageFontSize || liveDefaultPageSettings.pageFontSize,
-        addressFontSize: invoice.addressFontSize || liveDefaultPageSettings.addressFontSize,
-        tableBodyFontSize: invoice.tableBodyFontSize || liveDefaultPageSettings.tableBodyFontSize,
+        size: invoice.documentSettings?.pageSize || liveDefaultPageSettings.pageSize || 'A4',
+        orientation: invoice.documentSettings?.pageOrientation || liveDefaultPageSettings.pageOrientation || 'portrait',
+        pageMargins: invoice.documentSettings?.pageMargins || liveDefaultPageSettings.pageMargins || { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 },
+        pageFontSize: invoice.documentSettings?.pageFontSize || liveDefaultPageSettings.pageFontSize,
+        addressFontSize: invoice.documentSettings?.addressFontSize || liveDefaultPageSettings.addressFontSize,
+        tableBodyFontSize: invoice.documentSettings?.tableBodyFontSize || liveDefaultPageSettings.tableBodyFontSize,
     }
 
     try {
@@ -861,21 +861,19 @@ export default function BillingPage() {
       
       const itemsToSave = items.map(({ key, ...rest }) => rest);
       
-      const currentInvoiceSettings = {
-          pageSize: invoicePageSettings.size,
-          pageOrientation: invoicePageSettings.orientation,
+      const currentDocumentSettings: DocumentSettings = {
+          pageSize: invoicePageSettings.pageSize,
+          pageOrientation: invoicePageSettings.pageOrientation,
           pageMargins: {
-            top: parseFloat(String(invoicePageSettings.pageMargins.top)) || 0,
-            right: parseFloat(String(invoicePageSettings.pageMargins.right)) || 0,
-            bottom: parseFloat(String(invoicePageSettings.pageMargins.bottom)) || 0,
-            left: parseFloat(String(invoicePageSettings.pageMargins.left)) || 0,
+            top: parseFloat(String(invoicePageSettings.pageMargins?.top || 0)) || 0,
+            right: parseFloat(String(invoicePageSettings.pageMargins?.right || 0)) || 0,
+            bottom: parseFloat(String(invoicePageSettings.pageMargins?.bottom || 0)) || 0,
+            left: parseFloat(String(invoicePageSettings.pageMargins?.left || 0)) || 0,
           },
           pageFontSize: invoicePageSettings.pageFontSize,
           addressFontSize: invoicePageSettings.addressFontSize,
           tableBodyFontSize: invoicePageSettings.tableBodyFontSize,
         };
-
-      const currentDownloadOptions = formDownloadOptions;
 
       const invoiceData: Omit<Invoice, 'id'> = {
         enterprise: formEnterprise,
@@ -896,24 +894,20 @@ export default function BillingPage() {
         myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetailsForForm!,
         clientCompanyDetails: editingInvoice?.clientCompanyDetails || selectedCompanyForNewInvoice!,
         selectedBankAccount: selectedBankAccount,
-        ...currentInvoiceSettings,
-        downloadOptions: currentDownloadOptions,
+        documentSettings: currentDocumentSettings,
+        downloadOptions: formDownloadOptions,
         template: formTemplate,
       };
 
       try {
         if (editingInvoice) {
           const invoiceDocRef = doc(firestore, 'invoices', editingInvoice.id);
-          const { myCompanyDetails: _mc, clientCompanyDetails: _cc, ...updateData } = invoiceData;
-          
-          updateDocumentNonBlocking(invoiceDocRef, {
-            ...updateData,
+          const dataForUpdate = {
+            ...invoiceData,
             clientCompanyDetails: editingInvoice.clientCompanyDetails, // Preserve snapshot
             myCompanyDetails: editingInvoice.myCompanyDetails, // Preserve snapshot
-            downloadOptions: formDownloadOptions,
-            ...currentInvoiceSettings,
-            template: formTemplate,
-          });
+          };
+          updateDocumentNonBlocking(invoiceDocRef, dataForUpdate);
 
           toast({
               title: 'Invoice Updated',
@@ -1081,7 +1075,7 @@ export default function BillingPage() {
     }
 };
 
-  const handleDocSettingsChange = useCallback((field: keyof PageSettings, value: any) => {
+  const handleDocSettingsChange = useCallback((field: keyof DocumentSettings, value: any) => {
     setInvoicePageSettings(prev => ({...prev, [field]: value}));
   }, []);
 

@@ -372,6 +372,26 @@
           "$ref": "#/entities/BankAccount",
           "description": "A snapshot of the bank account selected for this invoice."
         },
+        "documentSettings": {
+            "type": "object",
+            "description": "Layout and formatting settings for the invoice document.",
+            "properties": {
+                "pageSize": { "type": "string", "enum": ["A4", "LETTER", "LEGAL"] },
+                "pageOrientation": { "type": "string", "enum": ["portrait", "landscape"] },
+                "pageMargins": {
+                    "type": "object",
+                    "properties": {
+                        "top": { "type": "number" },
+                        "right": { "type": "number" },
+                        "bottom": { "type": "number" },
+                        "left": { "type": "number" }
+                    }
+                },
+                "pageFontSize": { "type": "number" },
+                "addressFontSize": { "type": "number" },
+                "tableBodyFontSize": { "type": "number" }
+            }
+        },
         "downloadOptions": {
           "type": "object",
           "properties": {

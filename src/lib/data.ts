@@ -2,6 +2,7 @@
 
 
 
+
 export type Employee = {
   id: string;
   fullName: string;
@@ -91,6 +92,15 @@ export type InvoiceTemplate = {
   }[];
 };
 
+export type DocumentSettings = {
+    pageSize?: 'A4' | 'LETTER' | 'LEGAL';
+    pageOrientation?: 'portrait' | 'landscape';
+    pageMargins?: PageMargin;
+    pageFontSize?: number;
+    addressFontSize?: number;
+    tableBodyFontSize?: number;
+};
+
 export type CompanySettings = {
     id?: string;
     companyName: string;
@@ -146,12 +156,7 @@ export type Invoice = {
     myCompanyDetails: CompanySettings; // Snapshot of my company settings
     clientCompanyDetails: Company; // Snapshot of client company details
     selectedBankAccount?: BankAccount; // Snapshot of selected bank account
-    pageSize?: 'A4' | 'LETTER' | 'LEGAL';
-    pageOrientation?: 'portrait' | 'landscape';
-    pageMargins?: PageMargin;
-    pageFontSize?: number;
-    addressFontSize?: number;
-    tableBodyFontSize?: number;
+    documentSettings?: DocumentSettings;
     downloadOptions?: DownloadOptions;
     template?: InvoiceTemplate;
 }
