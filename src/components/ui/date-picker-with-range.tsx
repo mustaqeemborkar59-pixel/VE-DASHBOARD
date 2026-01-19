@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -12,8 +13,18 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-export function DatePickerWithRange() {
+interface DatePickerWithRangeProps {
+  onDateChange: (range: DateRange | undefined) => void;
+  className?: string;
+}
+
+export function DatePickerWithRange({ onDateChange, className }: DatePickerWithRangeProps) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
+  const handleSelect = (range: DateRange | undefined) => {
+    setDateRange(range);
+    onDateChange(range);
+  }
 
   return (
     <Popover>
@@ -23,7 +34,8 @@ export function DatePickerWithRange() {
           variant={"outline"}
           className={cn(
             "w-[260px] justify-start text-left font-normal",
-            !dateRange && "text-muted-foreground"
+            !dateRange && "text-muted-foreground",
+            className
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
@@ -47,7 +59,7 @@ export function DatePickerWithRange() {
           mode="range"
           defaultMonth={dateRange?.from}
           selected={dateRange}
-          onSelect={setDateRange}
+          onSelect={handleSelect}
           numberOfMonths={2}
         />
       </PopoverContent>

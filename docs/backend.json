@@ -529,6 +529,51 @@
           "type": "number"
         }
       }
+    },
+     "Payment": {
+      "title": "Payment",
+      "description": "Represents a payment received for an invoice.",
+      "type": "object",
+      "properties": {
+        "invoiceId": {
+          "type": "string",
+          "description": "Reference to the Invoice."
+        },
+        "companyId": {
+          "type": "string",
+          "description": "Reference to the Company."
+        },
+        "paymentDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "receivedAmount": {
+          "type": "number",
+          "description": "The amount received in this payment transaction."
+        },
+        "tdsDeducted": {
+          "type": "number",
+          "description": "Tax Deducted at Source for this payment."
+        },
+        "otherDeductions": {
+          "type": "number",
+          "description": "Any other deductions made by the client."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Any notes related to this payment."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "invoiceId",
+        "companyId",
+        "paymentDate",
+        "receivedAmount"
+      ]
     }
   },
   "auth": {
@@ -596,6 +641,12 @@
         "$ref": "#/entities/BankAccount"
       },
       "description": "Stores individual bank accounts for the user's company."
+    },
+    "/payments/{paymentId}": {
+        "schema": {
+            "$ref": "#/entities/Payment"
+        },
+        "description": "Stores all payment records for invoices."
     }
   }
 }

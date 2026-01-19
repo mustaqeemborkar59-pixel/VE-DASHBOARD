@@ -1,6 +1,7 @@
 
 
 
+
 export type Employee = {
   id: string;
   fullName: string;
@@ -155,5 +156,16 @@ export type Invoice = {
     template?: InvoiceTemplate;
 }
 
+export type Payment = {
+    id: string;
+    invoiceId: string;
+    companyId: string;
+    paymentDate: string; // YYYY-MM-DD
+    receivedAmount: number;
+    tdsDeducted: number;
+    otherDeductions: number;
+    notes?: string;
+    createdAt: string;
+}
 
     
