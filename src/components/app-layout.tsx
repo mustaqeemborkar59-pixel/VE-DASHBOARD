@@ -69,7 +69,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   const userEmail = user.email || 'Not logged in';
-  const userInitial = user.email?.[0]?.toUpperCase() || '?';
+  const userInitial = user.displayName?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '?';
 
   return (
     <SidebarProvider>
