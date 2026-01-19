@@ -60,7 +60,6 @@ export function useCollection<T = any>(
     setIsLoading(true);
     setError(null);
 
-    // Directly use memoizedTargetRefOrQuery as it's assumed to be the final query
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
@@ -78,13 +77,12 @@ export function useCollection<T = any>(
           if (memoizedTargetRefOrQuery.type === 'collection') {
             path = (memoizedTargetRefOrQuery as CollectionReference).path;
           } else if (memoizedTargetRefOrQuery.type === 'query') {
-            // This is a more stable way to get the collection reference from a query
             const query = memoizedTargetRefOrQuery as Query;
             const collectionRef = (query as any)._query.collectionGroup ? (query as any)._query.collectionGroup : (query as any)._query.path.toString();
             path = collectionRef;
           }
         } catch (e) {
-          console.warn("Could not determine path for Firestore error", e);
+            // Path detection failed, proceed with a generic path
         }
 
         const contextualError = new FirestorePermissionError({
@@ -102,7 +100,8 @@ export function useCollection<T = any>(
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
+  }, [memoizedTargetRefOrQuery]);
+
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
     throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
   }
