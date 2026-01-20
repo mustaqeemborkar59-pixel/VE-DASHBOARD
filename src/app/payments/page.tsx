@@ -35,14 +35,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 import { PlusCircle, Search, XCircle } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Invoice, Company, Payment } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
-import { DateRange } from 'react-day-picker';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
@@ -77,7 +75,8 @@ export default function PaymentsPage() {
   // Filters
   const [activeTab, setActiveTab] = useState<Enterprise>('Vithal');
   const [companyFilter, setCompanyFilter] = useState('All');
-  const [dateRangeFilter, setDateRangeFilter] = useState<DateRange | undefined>();
+  const [startDateFilter, setStartDateFilter] = useState('');
+  const [endDateFilter, setEndDateFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<PaymentStatus>('All');
   const [searchFilter, setSearchFilter] = useState('');
 
@@ -140,10 +139,12 @@ export default function PaymentsPage() {
       const companyMatch = companyFilter === 'All' || invoice.companyId === companyFilter;
       const statusMatch = statusFilter === 'All' || invoice.status === statusFilter;
       
-      const dateMatch = !dateRangeFilter || !dateRangeFilter.from || (
-        parseISO(invoice.billDate) >= dateRangeFilter.from &&
-        (!dateRangeFilter.to || parseISO(invoice.billDate) <= dateRangeFilter.to)
-      );
+      const dateMatch = (() => {
+        if (!startDateFilter && !endDateFilter) return true;
+        if (startDateFilter && invoice.billDate < startDateFilter) return false;
+        if (endDateFilter && invoice.billDate > endDateFilter) return false;
+        return true;
+      })();
 
       const searchLower = searchFilter.toLowerCase();
       const searchMatch = searchFilter === '' ||
@@ -152,7 +153,7 @@ export default function PaymentsPage() {
 
       return companyMatch && statusMatch && dateMatch && searchMatch;
     });
-  }, [processedInvoices, activeTab, companyFilter, statusFilter, dateRangeFilter, searchFilter]);
+  }, [processedInvoices, activeTab, companyFilter, statusFilter, startDateFilter, endDateFilter, searchFilter]);
   
   const summary = useMemo(() => {
       const totalBilled = filteredInvoices.reduce((acc, inv) => acc + inv.grandTotal, 0);
@@ -165,7 +166,8 @@ export default function PaymentsPage() {
   const clearFilters = () => {
     setCompanyFilter('All');
     setStatusFilter('All');
-    setDateRangeFilter(undefined);
+    setStartDateFilter('');
+    setEndDateFilter('');
     setSearchFilter('');
   };
   
@@ -299,8 +301,8 @@ export default function PaymentsPage() {
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
-                  <div className="relative flex-1">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full flex-wrap">
+                  <div className="relative flex-1 min-w-[200px]">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input 
                         placeholder="Search by Bill No. or Company..."
@@ -329,7 +331,29 @@ export default function PaymentsPage() {
                       <SelectItem value="Pending">Pending</SelectItem>
                     </SelectContent>
                   </Select>
-                  <DatePickerWithRange onDateChange={setDateRangeFilter} />
+                  <div className="flex items-end gap-2 flex-col sm:flex-row">
+                      <div className="grid gap-1.5 w-full sm:w-auto">
+                          <Label htmlFor="start-date" className="text-xs">Start Date</Label>
+                          <Input
+                              id="start-date"
+                              type="date"
+                              value={startDateFilter}
+                              onChange={(e) => setStartDateFilter(e.target.value)}
+                              className="w-full sm:w-auto"
+                          />
+                      </div>
+                      <div className="grid gap-1.5 w-full sm:w-auto">
+                          <Label htmlFor="end-date" className="text-xs">End Date</Label>
+                          <Input
+                              id="end-date"
+                              type="date"
+                              value={endDateFilter}
+                              onChange={(e) => setEndDateFilter(e.target.value)}
+                              className="w-full sm:w-auto"
+                              min={startDateFilter}
+                          />
+                      </div>
+                  </div>
                   <Button variant="ghost" onClick={clearFilters} className="w-full sm:w-auto">
                       <XCircle className="mr-2 h-4 w-4"/> Clear
                   </Button>
