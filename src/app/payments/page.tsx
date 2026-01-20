@@ -390,7 +390,6 @@ export default function PaymentsPage() {
                   <TableRow>
                     <TableHead>Bill No.</TableHead>
                     <TableHead>Company</TableHead>
-                    <TableHead>Date</TableHead>
                     <TableHead className="text-right">Total Amount</TableHead>
                     <TableHead className="text-center w-28">TDS %</TableHead>
                     <TableHead className="text-right">TDS Amount</TableHead>
@@ -404,14 +403,16 @@ export default function PaymentsPage() {
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={11} className="h-24 text-center">Loading payments...</TableCell>
+                      <TableCell colSpan={10} className="h-24 text-center">Loading payments...</TableCell>
                     </TableRow>
                   ) : filteredInvoices.length > 0 ? (
                     filteredInvoices.map((invoice) => (
                       <TableRow key={invoice.id}>
                         <TableCell className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
-                        <TableCell>{invoice.companyName}</TableCell>
-                        <TableCell>{format(parseISO(invoice.billDate), 'dd-MMM-yyyy')}</TableCell>
+                        <TableCell>
+                          <div className="font-medium truncate max-w-sm">{invoice.companyName}</div>
+                          <div className="text-sm text-muted-foreground">{format(parseISO(invoice.billDate), 'dd-MMM-yyyy')}</div>
+                        </TableCell>
                         <TableCell className="text-right">{formatCurrency(invoice.grandTotal)}</TableCell>
                         <TableCell className="text-center">
                           <Input
@@ -443,7 +444,7 @@ export default function PaymentsPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={11} className="h-24 text-center">No matching invoices found.</TableCell>
+                      <TableCell colSpan={10} className="h-24 text-center">No matching invoices found.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
