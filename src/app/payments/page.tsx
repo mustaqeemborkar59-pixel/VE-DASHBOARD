@@ -420,8 +420,9 @@ export default function PaymentsPage() {
                         <TableCell className="text-right font-bold text-orange-600 dark:text-orange-500">{formatCurrency(invoice.balance)}</TableCell>
                         <TableCell className="text-center">{getStatusBadge(invoice.status)}</TableCell>
                         <TableCell>
-                            <Button variant="outline" size="sm" onClick={() => handleOpenPaymentDialog(invoice)}>
-                              <PlusCircle className="mr-2 h-3.5 w-3.5"/> Add
+                            <Button variant="outline" size="icon" onClick={() => handleOpenPaymentDialog(invoice)} className="h-8 w-8">
+                                <PlusCircle className="h-4 w-4" />
+                                <span className="sr-only">Add Payment</span>
                             </Button>
                         </TableCell>
                       </TableRow>
