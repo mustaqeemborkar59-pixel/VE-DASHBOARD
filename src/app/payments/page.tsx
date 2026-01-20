@@ -114,9 +114,10 @@ export default function PaymentsPage() {
       const totalReceivedWithAdvance = totalPaid + (invoice.advanceReceived || 0);
       const totalCredited = totalReceivedWithAdvance + totalDeductions;
       const rawBalance = invoice.grandTotal - totalCredited - tdsAmount;
+      const roundedBalance = Math.round(rawBalance);
 
       let status: Omit<PaymentStatus, 'All'>;
-      if (rawBalance <= 0.01) { // Use raw balance for status check
+      if (roundedBalance <= 0) {
         status = 'Paid';
       } else if (totalCredited > 0 && rawBalance > 0) {
         status = 'Partial';
@@ -130,7 +131,7 @@ export default function PaymentsPage() {
         totalPaid: totalReceivedWithAdvance,
         totalDeductions,
         tdsAmount,
-        balance: Math.round(rawBalance), // Rounded balance for display
+        balance: roundedBalance,
         status,
       };
     });
