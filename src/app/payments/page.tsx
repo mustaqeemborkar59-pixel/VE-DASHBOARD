@@ -362,7 +362,7 @@ export default function PaymentsPage() {
                   ) : filteredInvoices.length > 0 ? (
                     filteredInvoices.map((invoice) => (
                       <TableRow key={invoice.id}>
-                        <TableCell className="font-medium">{invoice.enterprise.charAt(0)}/{invoice.billNo}</TableCell>
+                        <TableCell className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
                         <TableCell>{invoice.companyName}</TableCell>
                         <TableCell>{format(parseISO(invoice.billDate), 'dd-MM-yyyy')}</TableCell>
                         <TableCell className="text-right">{formatCurrency(invoice.grandTotal)}</TableCell>
