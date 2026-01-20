@@ -347,6 +347,10 @@
         "grandTotal": {
           "type": "number"
         },
+        "tdsPercentage": {
+          "type": "number",
+          "description": "Tax Deducted at Source percentage for this invoice."
+        },
         "discount": {
             "type": "number",
             "description": "Discount amount to be subtracted from the total."

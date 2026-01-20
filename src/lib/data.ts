@@ -3,6 +3,7 @@
 
 
 
+
 export type Employee = {
   id: string;
   fullName: string;
@@ -150,6 +151,7 @@ export type Invoice = {
     cgst: number;
     sgst: number;
     grandTotal: number;
+    tdsPercentage?: number;
     discount?: number;
     discountType?: 'before_gst' | 'after_gst';
     advanceReceived?: number;

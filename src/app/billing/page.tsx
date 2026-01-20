@@ -399,6 +399,7 @@ export default function BillingPage() {
     discount: '',
     discountType: 'after_gst' as DiscountType,
     advanceReceived: '',
+    tdsPercentage: '',
   };
 
   const [companyId, setCompanyId] = useState<string>('');
@@ -411,6 +412,7 @@ export default function BillingPage() {
   const [discount, setDiscount] = useState<string>('');
   const [discountType, setDiscountType] = useState<DiscountType>('after_gst');
   const [advanceReceived, setAdvanceReceived] = useState<string>('');
+  const [tdsPercentage, setTdsPercentage] = useState<string>('');
 
     
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
@@ -507,6 +509,7 @@ export default function BillingPage() {
       setDiscount(initialFormState.discount);
       setDiscountType(initialFormState.discountType);
       setAdvanceReceived(initialFormState.advanceReceived);
+      setTdsPercentage(initialFormState.tdsPercentage);
       setEditingInvoice(null);
       setInvoicePageSettings(liveDefaultPageSettings);
       setFormDownloadOptions(defaultDownloadOptions);
@@ -527,6 +530,7 @@ export default function BillingPage() {
       setDiscount(String(invoice.discount || ''));
       setDiscountType(invoice.discountType || 'after_gst');
       setAdvanceReceived(String(invoice.advanceReceived || ''));
+      setTdsPercentage(String(invoice.tdsPercentage || ''));
       setInvoicePageSettings({
           pageSize: invoice.documentSettings?.pageSize || liveDefaultPageSettings.pageSize,
           pageOrientation: invoice.documentSettings?.pageOrientation || liveDefaultPageSettings.pageOrientation,
@@ -889,6 +893,7 @@ export default function BillingPage() {
         cgst: calculations.cgst,
         sgst: calculations.sgst,
         grandTotal: calculations.grandTotal,
+        tdsPercentage: Number(tdsPercentage) || 0,
         discount: calculations.discountAmount,
         discountType: discountType,
         advanceReceived: calculations.advanceAmount,
@@ -1412,6 +1417,16 @@ export default function BillingPage() {
                                         placeholder="Enter advance amount" 
                                         value={advanceReceived} 
                                         onChange={(e) => setAdvanceReceived(e.target.value)} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="tdsPercentage">TDS Percentage (%)</Label>
+                                    <Input 
+                                        id="tdsPercentage" 
+                                        type="number"
+                                        placeholder="e.g., 2" 
+                                        value={tdsPercentage} 
+                                        onChange={(e) => setTdsPercentage(e.target.value)} 
                                     />
                                 </div>
                             </div>

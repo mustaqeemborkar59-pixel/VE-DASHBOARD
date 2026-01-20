@@ -39,8 +39,8 @@ import { Badge } from "@/components/ui/badge";
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 import { PlusCircle, Search, XCircle } from "lucide-react";
 import AppLayout from "@/components/app-layout";
-import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Invoice, Company, Payment } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { DateRange } from 'react-day-picker';
@@ -53,11 +53,10 @@ type PaymentStatus = 'All' | 'Paid' | 'Partial' | 'Pending';
 type ProcessedInvoice = Invoice & {
     companyName: string;
     totalPaid: number;
-    totalTds: number;
     totalDeductions: number;
+    tdsAmount: number;
     balance: number;
     status: Omit<PaymentStatus, 'All'>;
-    tdsPercentage: number;
 };
 
 
@@ -90,7 +89,6 @@ export default function PaymentsPage() {
   // Payment Form State
   const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [receivedAmount, setReceivedAmount] = useState('');
-  const [tdsDeducted, setTdsDeducted] = useState('');
   const [otherDeductions, setOtherDeductions] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -98,17 +96,21 @@ export default function PaymentsPage() {
   const getPaymentDetails = useCallback((invoiceId: string) => {
     const relevantPayments = payments?.filter(p => p.invoiceId === invoiceId) || [];
     const totalPaid = relevantPayments.reduce((acc, p) => acc + p.receivedAmount, 0);
-    const totalTds = relevantPayments.reduce((acc, p) => acc + (p.tdsDeducted || 0), 0);
     const totalDeductions = relevantPayments.reduce((acc, p) => acc + (p.otherDeductions || 0), 0);
-    return { totalPaid, totalTds, totalDeductions };
+    return { totalPaid, totalDeductions };
   }, [payments]);
 
   const processedInvoices = useMemo((): ProcessedInvoice[] => {
     if (!invoices) return [];
     return invoices.map(invoice => {
-      const { totalPaid, totalTds, totalDeductions } = getPaymentDetails(invoice.id);
-      const totalReceived = totalPaid + totalTds + totalDeductions + (invoice.advanceReceived || 0);
-      const balance = invoice.grandTotal - totalReceived;
+      const { totalPaid, totalDeductions } = getPaymentDetails(invoice.id);
+      
+      const tdsPercentage = invoice.tdsPercentage || 0;
+      const tdsAmount = (invoice.grandTotal * tdsPercentage) / 100;
+      const netReceivable = invoice.grandTotal - tdsAmount;
+      
+      const totalReceived = totalPaid + totalDeductions + (invoice.advanceReceived || 0);
+      const balance = netReceivable - totalReceived;
 
       let status: Omit<PaymentStatus, 'All'>;
       if (balance <= 0.01) { // Use a small epsilon for float comparison
@@ -118,18 +120,15 @@ export default function PaymentsPage() {
       } else {
         status = 'Pending';
       }
-      
-      const tdsPercentage = totalPaid > 0 ? (totalTds / totalPaid) * 100 : 0;
 
       return {
         ...invoice,
         companyName: companies?.find(c => c.id === invoice.companyId)?.name || 'Unknown',
         totalPaid,
-        totalTds,
         totalDeductions,
+        tdsAmount,
         balance,
         status,
-        tdsPercentage
       };
     });
   }, [invoices, companies, getPaymentDetails]);
@@ -159,7 +158,7 @@ export default function PaymentsPage() {
   const summary = useMemo(() => {
       const totalBilled = filteredInvoices.reduce((acc, inv) => acc + inv.grandTotal, 0);
       const totalPaid = filteredInvoices.reduce((acc, inv) => acc + inv.totalPaid, 0);
-      const totalTds = filteredInvoices.reduce((acc, inv) => acc + inv.totalTds, 0);
+      const totalTds = filteredInvoices.reduce((acc, inv) => acc + inv.tdsAmount, 0);
       const totalPending = filteredInvoices.reduce((acc, inv) => acc + inv.balance, 0);
       return { totalBilled, totalPaid, totalTds, totalPending };
   }, [filteredInvoices]);
@@ -175,7 +174,6 @@ export default function PaymentsPage() {
     setSelectedInvoiceForPayment(invoice);
     setPaymentDate(format(new Date(), 'yyyy-MM-dd'));
     setReceivedAmount('');
-    setTdsDeducted('');
     setOtherDeductions('');
     setNotes('');
     setIsPaymentDialogOpen(true);
@@ -195,12 +193,12 @@ export default function PaymentsPage() {
           return;
       }
 
-      const paymentData = {
+      const paymentData: Omit<Payment, 'id'> = {
           invoiceId: selectedInvoiceForPayment.id,
           companyId: selectedInvoiceForPayment.companyId,
           paymentDate: paymentDate,
           receivedAmount: received,
-          tdsDeducted: parseFloat(tdsDeducted.replace(/,/g, '')) || 0,
+          tdsDeducted: 0, // This is now calculated at the invoice level
           otherDeductions: parseFloat(otherDeductions.replace(/,/g, '')) || 0,
           notes: notes,
           createdAt: new Date().toISOString(),
@@ -214,6 +212,21 @@ export default function PaymentsPage() {
       });
 
       setIsPaymentDialogOpen(false);
+  }
+
+  const handleTdsUpdate = (invoiceId: string, value: string) => {
+    if (!firestore) return;
+    const percentage = Number(value);
+    if (isNaN(percentage) || percentage < 0 || percentage > 100) {
+        toast({
+            variant: "destructive",
+            title: "Invalid TDS %",
+            description: "Please enter a number between 0 and 100.",
+        });
+        return;
+    }
+    const invoiceRef = doc(firestore, 'invoices', invoiceId);
+    updateDocumentNonBlocking(invoiceRef, { tdsPercentage: percentage });
   }
 
   const formatCurrency = (amount: number) => {
@@ -332,8 +345,9 @@ export default function PaymentsPage() {
                     <TableHead>Company</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Total Amount</TableHead>
+                    <TableHead className="text-center w-28">TDS %</TableHead>
+                    <TableHead className="text-right">TDS Amount</TableHead>
                     <TableHead className="text-right">Amount Received</TableHead>
-                    <TableHead className="text-right">TDS</TableHead>
                     <TableHead className="text-right">Deducted</TableHead>
                     <TableHead className="text-right">Balance</TableHead>
                     <TableHead className="text-center">Status</TableHead>
@@ -343,7 +357,7 @@ export default function PaymentsPage() {
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="h-24 text-center">Loading payments...</TableCell>
+                      <TableCell colSpan={11} className="h-24 text-center">Loading payments...</TableCell>
                     </TableRow>
                   ) : filteredInvoices.length > 0 ? (
                     filteredInvoices.map((invoice) => (
@@ -352,11 +366,17 @@ export default function PaymentsPage() {
                         <TableCell>{invoice.companyName}</TableCell>
                         <TableCell>{format(parseISO(invoice.billDate), 'dd-MM-yyyy')}</TableCell>
                         <TableCell className="text-right">{formatCurrency(invoice.grandTotal)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(invoice.totalPaid)}</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(invoice.totalTds)} 
-                          <span className="text-xs text-muted-foreground"> ({invoice.tdsPercentage.toFixed(2)}%)</span>
+                        <TableCell className="text-center">
+                          <Input
+                            type="number"
+                            defaultValue={invoice.tdsPercentage || ''}
+                            onBlur={(e) => handleTdsUpdate(invoice.id, e.target.value)}
+                            className="h-8 w-20 text-center mx-auto"
+                            placeholder="%"
+                          />
                         </TableCell>
+                        <TableCell className="text-right">{formatCurrency(invoice.tdsAmount)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(invoice.totalPaid)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(invoice.totalDeductions)}</TableCell>
                         <TableCell className="text-right font-medium">{formatCurrency(invoice.balance)}</TableCell>
                         <TableCell className="text-center">{getStatusBadge(invoice.status)}</TableCell>
@@ -369,7 +389,7 @@ export default function PaymentsPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={10} className="h-24 text-center">No matching invoices found.</TableCell>
+                      <TableCell colSpan={11} className="h-24 text-center">No matching invoices found.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -394,11 +414,7 @@ export default function PaymentsPage() {
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="receivedAmount" className="text-right">Amount Received</Label>
-                        <Input id="receivedAmount" value={receivedAmount} onChange={(e) => setReceivedAmount(e.target.value)} className="col-span-3" placeholder="e.g., 5000" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="tdsDeducted" className="text-right">TDS Deducted</Label>
-                        <Input id="tdsDeducted" value={tdsDeducted} onChange={(e) => setTdsDeducted(e.target.value)} className="col-span-3" placeholder="e.g., 50" />
+                        <Input id="receivedAmount" value={receivedAmount} onChange={(e) => setReceivedAmount(e.target.value)} className="col-span-3" placeholder="e.g., 50000" />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="otherDeductions" className="text-right">Other Deductions</Label>
