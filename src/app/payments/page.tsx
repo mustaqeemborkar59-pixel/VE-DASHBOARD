@@ -410,7 +410,7 @@ export default function PaymentsPage() {
                             type="number"
                             defaultValue={invoice.tdsPercentage || ''}
                             onBlur={(e) => handleTdsUpdate(invoice.id, e.target.value)}
-                            className="h-8 w-20 text-center mx-auto"
+                            className="h-8 w-8 text-center mx-auto px-1"
                             placeholder="%"
                           />
                         </TableCell>
