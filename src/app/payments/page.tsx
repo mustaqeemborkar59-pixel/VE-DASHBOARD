@@ -207,16 +207,33 @@ export default function PaymentsPage() {
     setIsDetailsDialogOpen(true);
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+  }
+
   const handleAddPayment = () => {
       if (!firestore || !selectedInvoiceForPayment) return;
 
       const received = parseFloat(receivedAmount.replace(/,/g, '')) || 0;
+      const newOtherDeductions = parseFloat(otherDeductions.replace(/,/g, '')) || 0;
+      const totalPayment = received + newOtherDeductions;
 
-      if (received <= 0) {
+      if (totalPayment <= 0) {
           toast({
               variant: "destructive",
               title: "Invalid Amount",
-              description: "Received amount must be greater than zero.",
+              description: "Total payment (Received + Deductions) must be greater than zero.",
+          });
+          return;
+      }
+
+      const currentBalance = selectedInvoiceForPayment.balance;
+      // Use a small epsilon for floating point comparisons
+      if (totalPayment > currentBalance + 0.01) {
+          toast({
+              variant: "destructive",
+              title: "Payment Exceeds Balance",
+              description: `Payment of ${formatCurrency(totalPayment)} is more than the pending amount of ${formatCurrency(currentBalance)}.`,
           });
           return;
       }
@@ -227,7 +244,7 @@ export default function PaymentsPage() {
           paymentDate: paymentDate,
           receivedAmount: received,
           tdsDeducted: 0, // This is now calculated at the invoice level
-          otherDeductions: parseFloat(otherDeductions.replace(/,/g, '')) || 0,
+          otherDeductions: newOtherDeductions,
           notes: notes,
           createdAt: new Date().toISOString(),
       };
@@ -255,10 +272,6 @@ export default function PaymentsPage() {
     }
     const invoiceRef = doc(firestore, 'invoices', invoiceId);
     updateDocumentNonBlocking(invoiceRef, { tdsPercentage: percentage });
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
   }
   
   const getStatusBadge = (status: Omit<PaymentStatus, 'All'>) => {
@@ -358,26 +371,34 @@ export default function PaymentsPage() {
                       <SelectItem value="Pending">Pending</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Select value={yearFilter} onValueChange={setYearFilter}>
-                    <SelectTrigger className="w-full sm:w-[120px]">
-                      <SelectValue placeholder="Year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableYears.map(year => (
-                        <SelectItem key={year} value={year}>{year}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={monthFilter} onValueChange={setMonthFilter}>
-                    <SelectTrigger className="w-full sm:w-[150px]">
-                      <SelectValue placeholder="Month" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableMonths.map(month => (
-                        <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className='flex gap-2'>
+                    <div className="space-y-2">
+                      <Label htmlFor="year-filter" className="sr-only">Year</Label>
+                      <Select value={yearFilter} onValueChange={setYearFilter}>
+                          <SelectTrigger id="year-filter" className="w-full sm:w-[120px]">
+                              <SelectValue placeholder="Year" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              {availableYears.map(year => (
+                                  <SelectItem key={year} value={year}>{year}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="month-filter" className="sr-only">Month</Label>
+                      <Select value={monthFilter} onValueChange={setMonthFilter}>
+                          <SelectTrigger id="month-filter" className="w-full sm:w-[150px]">
+                              <SelectValue placeholder="Month" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              {availableMonths.map(month => (
+                                  <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <Button variant="ghost" onClick={clearFilters} className="w-full sm:w-auto">
                       <XCircle className="mr-2 h-4 w-4"/> Clear
                   </Button>
@@ -410,16 +431,16 @@ export default function PaymentsPage() {
                       <TableRow key={invoice.id}>
                         <TableCell className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
                         <TableCell>
-                          <div className="font-medium truncate max-w-sm">{invoice.companyName}</div>
+                          <div className="font-medium truncate max-w-[200px]">{invoice.companyName}</div>
                           <div className="text-sm text-muted-foreground">{format(parseISO(invoice.billDate), 'dd-MMM-yyyy')}</div>
                         </TableCell>
                         <TableCell className="text-right">{formatCurrency(invoice.grandTotal)}</TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-center p-1">
                           <Input
                             type="number"
                             defaultValue={invoice.tdsPercentage || ''}
                             onBlur={(e) => handleTdsUpdate(invoice.id, e.target.value)}
-                            className="h-8 w-8 text-center mx-auto px-1"
+                            className="h-8 w-16 text-center mx-auto"
                             placeholder="%"
                           />
                         </TableCell>
@@ -530,7 +551,7 @@ export default function PaymentsPage() {
                                                     <TableRow key={payment.id}>
                                                         <TableCell>{format(parseISO(payment.paymentDate), 'dd-MMM-yyyy')}</TableCell>
                                                         <TableCell className="text-muted-foreground">{payment.notes || '-'}</TableCell>
-                                                        <TableCell className="text-right text-red-600">{formatCurrency(payment.otherDeductions)}</TableCell>
+                                                        <TableCell className="text-right text-red-600">{formatCurrency(payment.otherDeductions || 0)}</TableCell>
                                                         <TableCell className="text-right font-medium text-green-600">{formatCurrency(payment.receivedAmount)}</TableCell>
                                                     </TableRow>
                                                 ))}
