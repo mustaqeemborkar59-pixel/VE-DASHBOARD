@@ -109,13 +109,13 @@ export default function PaymentsPage() {
       const tdsAmount = (invoice.grandTotal * tdsPercentage) / 100;
       const netReceivable = invoice.grandTotal - tdsAmount;
       
-      const totalReceived = totalPaid + totalDeductions + (invoice.advanceReceived || 0);
-      const balance = netReceivable - totalReceived;
+      const totalCredited = totalPaid + totalDeductions + (invoice.advanceReceived || 0);
+      const balance = netReceivable - totalCredited;
 
       let status: Omit<PaymentStatus, 'All'>;
       if (balance <= 0.01) { // Use a small epsilon for float comparison
         status = 'Paid';
-      } else if (totalReceived > 0 && balance > 0) {
+      } else if (totalCredited > 0 && balance > 0) {
         status = 'Partial';
       } else {
         status = 'Pending';
@@ -124,7 +124,7 @@ export default function PaymentsPage() {
       return {
         ...invoice,
         companyName: companies?.find(c => c.id === invoice.companyId)?.name || 'Unknown',
-        totalPaid,
+        totalPaid: totalPaid + (invoice.advanceReceived || 0),
         totalDeductions,
         tdsAmount,
         balance,
