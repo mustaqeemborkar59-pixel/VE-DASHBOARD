@@ -107,10 +107,10 @@ export default function PaymentsPage() {
       
       const tdsPercentage = invoice.tdsPercentage || 0;
       const tdsAmount = (invoice.grandTotal * tdsPercentage) / 100;
-      const netReceivable = invoice.grandTotal - tdsAmount;
       
-      const totalCredited = totalPaid + totalDeductions + (invoice.advanceReceived || 0);
-      const balance = netReceivable - totalCredited;
+      const totalReceivedWithAdvance = totalPaid + (invoice.advanceReceived || 0);
+      const totalCredited = totalReceivedWithAdvance + totalDeductions;
+      const balance = invoice.grandTotal - totalCredited - tdsAmount;
 
       let status: Omit<PaymentStatus, 'All'>;
       if (balance <= 0.01) { // Use a small epsilon for float comparison
@@ -124,7 +124,7 @@ export default function PaymentsPage() {
       return {
         ...invoice,
         companyName: companies?.find(c => c.id === invoice.companyId)?.name || 'Unknown',
-        totalPaid: totalPaid + (invoice.advanceReceived || 0),
+        totalPaid: totalReceivedWithAdvance,
         totalDeductions,
         tdsAmount,
         balance,
@@ -364,7 +364,7 @@ export default function PaymentsPage() {
                       <TableRow key={invoice.id}>
                         <TableCell className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
                         <TableCell>{invoice.companyName}</TableCell>
-                        <TableCell>{format(parseISO(invoice.billDate), 'dd-MM-yyyy')}</TableCell>
+                        <TableCell>{format(parseISO(invoice.billDate), 'dd-MMM-yyyy')}</TableCell>
                         <TableCell className="text-right">{formatCurrency(invoice.grandTotal)}</TableCell>
                         <TableCell className="text-center">
                           <Input
@@ -376,9 +376,9 @@ export default function PaymentsPage() {
                           />
                         </TableCell>
                         <TableCell className="text-right">{formatCurrency(invoice.tdsAmount)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(invoice.totalPaid)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(invoice.totalDeductions)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(invoice.balance)}</TableCell>
+                        <TableCell className="text-right font-medium text-green-600 dark:text-green-500">{formatCurrency(invoice.totalPaid)}</TableCell>
+                        <TableCell className="text-right font-medium text-red-600 dark:text-red-500">{formatCurrency(invoice.totalDeductions)}</TableCell>
+                        <TableCell className="text-right font-bold text-orange-600 dark:text-orange-500">{formatCurrency(invoice.balance)}</TableCell>
                         <TableCell className="text-center">{getStatusBadge(invoice.status)}</TableCell>
                         <TableCell>
                             <Button variant="outline" size="sm" onClick={() => handleOpenPaymentDialog(invoice)}>
