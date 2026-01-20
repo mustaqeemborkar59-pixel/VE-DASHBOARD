@@ -75,8 +75,8 @@ export default function PaymentsPage() {
   // Filters
   const [activeTab, setActiveTab] = useState<Enterprise>('Vithal');
   const [companyFilter, setCompanyFilter] = useState('All');
-  const [startDateFilter, setStartDateFilter] = useState('');
-  const [endDateFilter, setEndDateFilter] = useState('');
+  const [yearFilter, setYearFilter] = useState('All');
+  const [monthFilter, setMonthFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState<PaymentStatus>('All');
   const [searchFilter, setSearchFilter] = useState('');
 
@@ -131,6 +131,28 @@ export default function PaymentsPage() {
     });
   }, [invoices, companies, getPaymentDetails]);
 
+  const availableYears = useMemo(() => {
+    if (!processedInvoices) return [];
+    const years = new Set(processedInvoices.map(inv => format(parseISO(inv.billDate), 'yyyy')));
+    return ['All', ...Array.from(years).sort((a, b) => b.localeCompare(a))];
+  }, [processedInvoices]);
+
+  const availableMonths = [
+      { value: 'All', label: 'All Months' },
+      { value: '01', label: 'January' },
+      { value: '02', label: 'February' },
+      { value: '03', label: 'March' },
+      { value: '04', label: 'April' },
+      { value: '05', label: 'May' },
+      { value: '06', label: 'June' },
+      { value: '07', label: 'July' },
+      { value: '08', label: 'August' },
+      { value: '09', label: 'September' },
+      { value: '10', label: 'October' },
+      { value: '11', label: 'November' },
+      { value: '12', label: 'December' },
+  ];
+
   const filteredInvoices = useMemo(() => {
     return processedInvoices.filter(invoice => {
       const enterpriseMatch = invoice.enterprise === activeTab;
@@ -139,21 +161,18 @@ export default function PaymentsPage() {
       const companyMatch = companyFilter === 'All' || invoice.companyId === companyFilter;
       const statusMatch = statusFilter === 'All' || invoice.status === statusFilter;
       
-      const dateMatch = (() => {
-        if (!startDateFilter && !endDateFilter) return true;
-        if (startDateFilter && invoice.billDate < startDateFilter) return false;
-        if (endDateFilter && invoice.billDate > endDateFilter) return false;
-        return true;
-      })();
+      const date = parseISO(invoice.billDate);
+      const yearMatch = yearFilter === 'All' || format(date, 'yyyy') === yearFilter;
+      const monthMatch = monthFilter === 'All' || format(date, 'MM') === monthFilter;
 
       const searchLower = searchFilter.toLowerCase();
       const searchMatch = searchFilter === '' ||
         invoice.billNo.toString().includes(searchLower) ||
         invoice.companyName.toLowerCase().includes(searchLower);
 
-      return companyMatch && statusMatch && dateMatch && searchMatch;
+      return companyMatch && statusMatch && yearMatch && monthMatch && searchMatch;
     });
-  }, [processedInvoices, activeTab, companyFilter, statusFilter, startDateFilter, endDateFilter, searchFilter]);
+  }, [processedInvoices, activeTab, companyFilter, statusFilter, yearFilter, monthFilter, searchFilter]);
   
   const summary = useMemo(() => {
       const totalBilled = filteredInvoices.reduce((acc, inv) => acc + inv.grandTotal, 0);
@@ -166,8 +185,8 @@ export default function PaymentsPage() {
   const clearFilters = () => {
     setCompanyFilter('All');
     setStatusFilter('All');
-    setStartDateFilter('');
-    setEndDateFilter('');
+    setYearFilter('All');
+    setMonthFilter('All');
     setSearchFilter('');
   };
   
@@ -331,29 +350,26 @@ export default function PaymentsPage() {
                       <SelectItem value="Pending">Pending</SelectItem>
                     </SelectContent>
                   </Select>
-                  <div className="flex items-end gap-2 flex-col sm:flex-row">
-                      <div className="grid gap-1.5 w-full sm:w-auto">
-                          <Label htmlFor="start-date" className="text-xs">Start Date</Label>
-                          <Input
-                              id="start-date"
-                              type="date"
-                              value={startDateFilter}
-                              onChange={(e) => setStartDateFilter(e.target.value)}
-                              className="w-full sm:w-auto"
-                          />
-                      </div>
-                      <div className="grid gap-1.5 w-full sm:w-auto">
-                          <Label htmlFor="end-date" className="text-xs">End Date</Label>
-                          <Input
-                              id="end-date"
-                              type="date"
-                              value={endDateFilter}
-                              onChange={(e) => setEndDateFilter(e.target.value)}
-                              className="w-full sm:w-auto"
-                              min={startDateFilter}
-                          />
-                      </div>
-                  </div>
+                  <Select value={yearFilter} onValueChange={setYearFilter}>
+                    <SelectTrigger className="w-full sm:w-[120px]">
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableYears.map(year => (
+                        <SelectItem key={year} value={year}>{year}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={monthFilter} onValueChange={setMonthFilter}>
+                    <SelectTrigger className="w-full sm:w-[150px]">
+                      <SelectValue placeholder="Month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableMonths.map(month => (
+                        <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Button variant="ghost" onClick={clearFilters} className="w-full sm:w-auto">
                       <XCircle className="mr-2 h-4 w-4"/> Clear
                   </Button>
