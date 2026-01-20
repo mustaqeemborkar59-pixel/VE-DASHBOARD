@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useMemo, useCallback } from 'react';
 import {
@@ -375,7 +374,7 @@ export default function PaymentsPage() {
                             placeholder="%"
                           />
                         </TableCell>
-                        <TableCell className="text-right">{formatCurrency(invoice.tdsAmount)}</TableCell>
+                        <TableCell className="text-right font-medium text-red-600 dark:text-red-500">{formatCurrency(invoice.tdsAmount)}</TableCell>
                         <TableCell className="text-right font-medium text-green-600 dark:text-green-500">{formatCurrency(invoice.totalPaid)}</TableCell>
                         <TableCell className="text-right font-medium text-red-600 dark:text-red-500">{formatCurrency(invoice.totalDeductions)}</TableCell>
                         <TableCell className="text-right font-bold text-orange-600 dark:text-orange-500">{formatCurrency(invoice.balance)}</TableCell>
