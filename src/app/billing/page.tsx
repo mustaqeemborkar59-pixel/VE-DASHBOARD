@@ -514,6 +514,7 @@ export default function BillingPage() {
   }, [initialFormState, liveDefaultPageSettings, liveDefaultTemplate, defaultDownloadOptions]);
 
   const openFormDialog = useCallback((invoice: Invoice | null) => {
+    closeAllDialogs();
     if (invoice) {
       setEditingInvoice(invoice);
       setFormEnterprise(invoice.enterprise);
@@ -540,8 +541,8 @@ export default function BillingPage() {
       resetForm();
       setFormEnterprise(activeTab);
     }
-    setIsFormDialogOpen(true);
-  }, [ activeTab, liveDefaultPageSettings, defaultDownloadOptions, liveDefaultTemplate, resetForm ]);
+    handleDelayedAction(() => setIsFormDialogOpen(true));
+  }, [ activeTab, liveDefaultPageSettings, defaultDownloadOptions, liveDefaultTemplate, resetForm, closeAllDialogs ]);
 
 
   const openPreviewDialog = useCallback((invoice: Invoice) => {
@@ -1225,7 +1226,7 @@ export default function BillingPage() {
             </Card>
         </Tabs>
 
-        <Dialog open={isFormDialogOpen} onOpenChange={(open) => {if(!open) setIsFormDialogOpen(false); else setIsFormDialogOpen(true); }}>
+        <Dialog open={isFormDialogOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pr-14 pb-0">
                     <div className="flex items-start justify-between">
@@ -1583,7 +1584,7 @@ export default function BillingPage() {
             </AlertDialogContent>
         </AlertDialog>
         
-        <Dialog open={isPreviewOpen} onOpenChange={(open) => {if(!open) closeAllDialogs(); else setIsPreviewOpen(true); }}>
+        <Dialog open={isPreviewOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
             <DialogContent className="max-w-4xl p-0">
                  <DialogHeader className="p-6 pb-2">
                     <DialogTitle>Invoice Preview</DialogTitle>
@@ -1607,5 +1608,7 @@ export default function BillingPage() {
   );
 }
 
+
+    
 
     
