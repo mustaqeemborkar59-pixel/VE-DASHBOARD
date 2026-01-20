@@ -35,7 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, XCircle } from "lucide-react";
+import { PlusCircle, Search, XCircle, Info } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
@@ -80,9 +80,12 @@ export default function PaymentsPage() {
   const [statusFilter, setStatusFilter] = useState<PaymentStatus>('All');
   const [searchFilter, setSearchFilter] = useState('');
 
-  // Payment Dialog State
+  // Dialog States
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<ProcessedInvoice | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [invoiceForDetails, setInvoiceForDetails] = useState<ProcessedInvoice | null>(null);
+
 
   // Payment Form State
   const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -199,6 +202,11 @@ export default function PaymentsPage() {
     setIsPaymentDialogOpen(true);
   };
   
+  const handleOpenDetailsDialog = (invoice: ProcessedInvoice) => {
+    setInvoiceForDetails(invoice);
+    setIsDetailsDialogOpen(true);
+  };
+
   const handleAddPayment = () => {
       if (!firestore || !selectedInvoiceForPayment) return;
 
@@ -390,7 +398,7 @@ export default function PaymentsPage() {
                     <TableHead className="text-right">Deducted</TableHead>
                     <TableHead className="text-right">Balance</TableHead>
                     <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="w-24"><span className="sr-only">Actions</span></TableHead>
+                    <TableHead className="text-right w-[100px]"><span className="sr-only">Actions</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -419,11 +427,17 @@ export default function PaymentsPage() {
                         <TableCell className="text-right font-medium text-red-600 dark:text-red-500">{formatCurrency(invoice.totalDeductions)}</TableCell>
                         <TableCell className="text-right font-bold text-orange-600 dark:text-orange-500">{formatCurrency(invoice.balance)}</TableCell>
                         <TableCell className="text-center">{getStatusBadge(invoice.status)}</TableCell>
-                        <TableCell>
-                            <Button variant="outline" size="icon" onClick={() => handleOpenPaymentDialog(invoice)} className="h-8 w-8">
-                                <PlusCircle className="h-4 w-4" />
-                                <span className="sr-only">Add Payment</span>
-                            </Button>
+                        <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                                <Button variant="outline" size="icon" onClick={() => handleOpenDetailsDialog(invoice)} className="h-8 w-8">
+                                    <Info className="h-4 w-4" />
+                                    <span className="sr-only">View Payment History</span>
+                                </Button>
+                                <Button variant="outline" size="icon" onClick={() => handleOpenPaymentDialog(invoice)} className="h-8 w-8">
+                                    <PlusCircle className="h-4 w-4" />
+                                    <span className="sr-only">Add Payment</span>
+                                </Button>
+                            </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -471,6 +485,72 @@ export default function PaymentsPage() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>Payment History</DialogTitle>
+                    <DialogDescription>
+                        Detailed payment history for Bill No. {invoiceForDetails?.billNo}-{invoiceForDetails?.billNoSuffix || 'MHE'}.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 max-h-[60vh] overflow-y-auto">
+                    {invoiceForDetails ? (
+                        (() => {
+                            const invoicePayments = payments?.filter(p => p.invoiceId === invoiceForDetails.id) || [];
+                            const hasAdvance = invoiceForDetails.advanceReceived && invoiceForDetails.advanceReceived > 0;
+                            return (
+                                <div className="space-y-4">
+                                    {hasAdvance && (
+                                        <div className="p-3 rounded-md border bg-muted/50">
+                                            <h4 className="font-semibold mb-2">Advance Payment</h4>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-muted-foreground">Amount:</span>
+                                                <span className="font-medium">{formatCurrency(invoiceForDetails.advanceReceived!)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-muted-foreground">Note:</span>
+                                                <span className="font-medium">Received with invoice</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {invoicePayments.length > 0 ? (
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Date</TableHead>
+                                                    <TableHead>Notes</TableHead>
+                                                    <TableHead className="text-right">Deductions</TableHead>
+                                                    <TableHead className="text-right">Amount</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {invoicePayments.map(payment => (
+                                                    <TableRow key={payment.id}>
+                                                        <TableCell>{format(parseISO(payment.paymentDate), 'dd-MMM-yyyy')}</TableCell>
+                                                        <TableCell className="text-muted-foreground">{payment.notes || '-'}</TableCell>
+                                                        <TableCell className="text-right text-red-600">{formatCurrency(payment.otherDeductions)}</TableCell>
+                                                        <TableCell className="text-right font-medium text-green-600">{formatCurrency(payment.receivedAmount)}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    ) : (
+                                        !hasAdvance && <p className="text-sm text-muted-foreground text-center py-4">No payments recorded yet for this invoice.</p>
+                                    )}
+                                </div>
+                            )
+                        })()
+                    ) : (
+                        <p>Loading details...</p>
+                    )}
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
       </div>
     </AppLayout>
   );
