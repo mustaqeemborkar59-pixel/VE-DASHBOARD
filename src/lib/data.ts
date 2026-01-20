@@ -4,6 +4,7 @@
 
 
 
+
 export type Employee = {
   id: string;
   fullName: string;
@@ -173,6 +174,6 @@ export type Payment = {
     otherDeductions: number;
     notes?: string;
     createdAt: string;
+    paymentMode?: 'RTGS' | 'NEFT' | 'IMPS' | 'CHEQUE' | 'CASH';
+    chequeDetails?: string;
 }
-
-    

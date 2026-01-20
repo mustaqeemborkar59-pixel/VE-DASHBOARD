@@ -571,6 +571,15 @@
           "type": "string",
           "format": "date"
         },
+        "paymentMode": {
+            "type": "string",
+            "enum": ["RTGS", "NEFT", "IMPS", "CHEQUE", "CASH"],
+            "description": "The mode of payment."
+        },
+        "chequeDetails": {
+            "type": "string",
+            "description": "Details like cheque number and date, if applicable."
+        },
         "receivedAmount": {
           "type": "number",
           "description": "The amount received in this payment transaction."
@@ -596,7 +605,8 @@
         "invoiceId",
         "companyId",
         "paymentDate",
-        "receivedAmount"
+        "receivedAmount",
+        "paymentMode"
       ]
     }
   },

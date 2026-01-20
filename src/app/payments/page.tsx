@@ -47,6 +47,8 @@ import { useToast } from "@/hooks/use-toast";
 
 type Enterprise = 'Vithal' | 'RV';
 type PaymentStatus = 'All' | 'Paid' | 'Partial' | 'Pending';
+type PaymentMode = 'RTGS' | 'NEFT' | 'IMPS' | 'CHEQUE' | 'CASH';
+
 type ProcessedInvoice = Invoice & {
     companyName: string;
     totalPaid: number;
@@ -94,6 +96,8 @@ export default function PaymentsPage() {
   const [receivedAmount, setReceivedAmount] = useState('');
   const [otherDeductions, setOtherDeductions] = useState('');
   const [notes, setNotes] = useState('');
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>('RTGS');
+  const [chequeDetails, setChequeDetails] = useState('');
 
 
   const getPaymentDetails = useCallback((invoiceId: string) => {
@@ -202,6 +206,8 @@ export default function PaymentsPage() {
     setReceivedAmount('');
     setOtherDeductions('');
     setNotes('');
+    setPaymentMode('RTGS');
+    setChequeDetails('');
     setIsPaymentDialogOpen(true);
   };
   
@@ -230,7 +236,6 @@ export default function PaymentsPage() {
           return;
       }
       
-      // Recalculate raw balance to avoid issues with rounded balance from state
       const originalInvoice = invoices?.find(inv => inv.id === selectedInvoiceForPayment.id);
       if (!originalInvoice) {
           toast({ variant: "destructive", title: "Error", description: "Could not find original invoice." });
@@ -244,7 +249,6 @@ export default function PaymentsPage() {
       const currentRawBalance = originalInvoice.grandTotal - totalCredited - tdsAmount;
 
 
-      // Use a small epsilon for floating point comparisons
       if (totalPayment > currentRawBalance + 0.01) {
           toast({
               variant: "destructive",
@@ -259,10 +263,12 @@ export default function PaymentsPage() {
           companyId: selectedInvoiceForPayment.companyId,
           paymentDate: paymentDate,
           receivedAmount: received,
-          tdsDeducted: 0, // This is now calculated at the invoice level
+          tdsDeducted: 0, 
           otherDeductions: newOtherDeductions,
           notes: notes,
           createdAt: new Date().toISOString(),
+          paymentMode: paymentMode,
+          chequeDetails: paymentMode === 'CHEQUE' ? chequeDetails : '',
       };
       
       addDocumentNonBlocking(collection(firestore, 'payments'), paymentData);
@@ -505,6 +511,27 @@ export default function PaymentsPage() {
                         <Input id="paymentDate" type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="col-span-3" />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="paymentMode" className="text-right">Payment Mode</Label>
+                        <Select value={paymentMode} onValueChange={(value) => setPaymentMode(value as PaymentMode)}>
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Select mode" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="RTGS">RTGS</SelectItem>
+                                <SelectItem value="NEFT">NEFT</SelectItem>
+                                <SelectItem value="IMPS">IMPS</SelectItem>
+                                <SelectItem value="CHEQUE">CHEQUE</SelectItem>
+                                <SelectItem value="CASH">CASH</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    {paymentMode === 'CHEQUE' && (
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="chequeDetails" className="text-right">Cheque Details</Label>
+                            <Input id="chequeDetails" value={chequeDetails} onChange={(e) => setChequeDetails(e.target.value)} className="col-span-3" placeholder="Cheque no., date, bank" />
+                        </div>
+                    )}
+                    <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="receivedAmount" className="text-right">Amount Received</Label>
                         <Input id="receivedAmount" value={receivedAmount} onChange={(e) => setReceivedAmount(e.target.value)} className="col-span-3" placeholder="e.g., 50000" />
                     </div>
@@ -525,7 +552,7 @@ export default function PaymentsPage() {
         </Dialog>
 
         <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Payment History</DialogTitle>
                     <DialogDescription>
@@ -557,6 +584,7 @@ export default function PaymentsPage() {
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableHead>Date</TableHead>
+                                                    <TableHead>Mode</TableHead>
                                                     <TableHead>Notes</TableHead>
                                                     <TableHead className="text-right">Deductions</TableHead>
                                                     <TableHead className="text-right">Amount</TableHead>
@@ -566,6 +594,12 @@ export default function PaymentsPage() {
                                                 {invoicePayments.map(payment => (
                                                     <TableRow key={payment.id}>
                                                         <TableCell>{format(parseISO(payment.paymentDate), 'dd-MMM-yyyy')}</TableCell>
+                                                         <TableCell>
+                                                            <div className="font-medium">{payment.paymentMode}</div>
+                                                            {payment.paymentMode === 'CHEQUE' && payment.chequeDetails && (
+                                                                <div className="text-xs text-muted-foreground">{payment.chequeDetails}</div>
+                                                            )}
+                                                        </TableCell>
                                                         <TableCell className="text-muted-foreground">{payment.notes || '-'}</TableCell>
                                                         <TableCell className="text-right text-red-600">{formatCurrency(payment.otherDeductions || 0)}</TableCell>
                                                         <TableCell className="text-right font-medium text-green-600">{formatCurrency(payment.receivedAmount)}</TableCell>
