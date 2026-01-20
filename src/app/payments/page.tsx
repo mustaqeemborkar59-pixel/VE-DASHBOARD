@@ -75,10 +75,12 @@ export default function PaymentsPage() {
   // Filters
   const [activeTab, setActiveTab] = useState<Enterprise>('Vithal');
   const [companyFilter, setCompanyFilter] = useState('All');
-  const [yearFilter, setYearFilter] = useState('All');
-  const [monthFilter, setMonthFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState<PaymentStatus>('All');
   const [searchFilter, setSearchFilter] = useState('');
+  
+  // New state for year and month filters
+  const [yearFilter, setYearFilter] = useState('All');
+  const [monthFilter, setMonthFilter] = useState('All');
 
   // Dialog States
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -111,12 +113,12 @@ export default function PaymentsPage() {
       
       const totalReceivedWithAdvance = totalPaid + (invoice.advanceReceived || 0);
       const totalCredited = totalReceivedWithAdvance + totalDeductions;
-      const balance = invoice.grandTotal - totalCredited - tdsAmount;
+      const rawBalance = invoice.grandTotal - totalCredited - tdsAmount;
 
       let status: Omit<PaymentStatus, 'All'>;
-      if (balance <= 0.01) { // Use a small epsilon for float comparison
+      if (rawBalance <= 0.01) { // Use raw balance for status check
         status = 'Paid';
-      } else if (totalCredited > 0 && balance > 0) {
+      } else if (totalCredited > 0 && rawBalance > 0) {
         status = 'Partial';
       } else {
         status = 'Pending';
@@ -128,7 +130,7 @@ export default function PaymentsPage() {
         totalPaid: totalReceivedWithAdvance,
         totalDeductions,
         tdsAmount,
-        balance,
+        balance: Math.round(rawBalance), // Rounded balance for display
         status,
       };
     });
@@ -226,14 +228,27 @@ export default function PaymentsPage() {
           });
           return;
       }
+      
+      // Recalculate raw balance to avoid issues with rounded balance from state
+      const originalInvoice = invoices?.find(inv => inv.id === selectedInvoiceForPayment.id);
+      if (!originalInvoice) {
+          toast({ variant: "destructive", title: "Error", description: "Could not find original invoice." });
+          return;
+      }
+      const { totalPaid, totalDeductions } = getPaymentDetails(originalInvoice.id);
+      const tdsPercentage = originalInvoice.tdsPercentage || 0;
+      const tdsAmount = (originalInvoice.grandTotal * tdsPercentage) / 100;
+      const totalReceivedWithAdvance = totalPaid + (originalInvoice.advanceReceived || 0);
+      const totalCredited = totalReceivedWithAdvance + totalDeductions;
+      const currentRawBalance = originalInvoice.grandTotal - totalCredited - tdsAmount;
 
-      const currentBalance = selectedInvoiceForPayment.balance;
+
       // Use a small epsilon for floating point comparisons
-      if (totalPayment > currentBalance + 0.01) {
+      if (totalPayment > currentRawBalance + 0.01) {
           toast({
               variant: "destructive",
               title: "Payment Exceeds Balance",
-              description: `Payment of ${formatCurrency(totalPayment)} is more than the pending amount of ${formatCurrency(currentBalance)}.`,
+              description: `Payment of ${formatCurrency(totalPayment)} is more than the pending amount of ${formatCurrency(currentRawBalance)}.`,
           });
           return;
       }
