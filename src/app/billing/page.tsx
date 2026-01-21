@@ -705,8 +705,8 @@ export default function BillingPage() {
     };
 
     const groupedByYear = filteredInvoices.reduce((acc, invoice) => {
-      const billDate = parseISO(invoice.billDate);
-      const financialYearStart = getFinancialYear(billDate);
+      const dateForGrouping = invoice.billingMonth ? parseISO(`${invoice.billingMonth}-01`) : parseISO(invoice.billDate);
+      const financialYearStart = getFinancialYear(dateForGrouping);
       const yearKey = `${financialYearStart}-${financialYearStart + 1}`;
       
       if (!acc[yearKey]) {
@@ -727,7 +727,7 @@ export default function BillingPage() {
       const maxBill = Math.max(...yearInvoices.map(inv => inv.billNo));
       
       const groupedByMonth = yearInvoices.reduce((acc, invoice) => {
-        const monthKey = format(parseISO(invoice.billDate), 'yyyy-MM');
+        const monthKey = invoice.billingMonth || format(parseISO(invoice.billDate), 'yyyy-MM');
         if (!acc[monthKey]) {
           acc[monthKey] = [];
         }
