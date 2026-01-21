@@ -112,8 +112,11 @@ export default function PaymentsPage() {
     return invoices.map(invoice => {
       const { totalPaid, totalDeductions } = getPaymentDetails(invoice.id);
       
+      const taxableAmount = invoice.discountType === 'before_gst' 
+        ? invoice.netTotal - (invoice.discount || 0) 
+        : invoice.netTotal;
       const tdsPercentage = invoice.tdsPercentage || 0;
-      const tdsAmount = (invoice.grandTotal * tdsPercentage) / 100;
+      const tdsAmount = (taxableAmount * tdsPercentage) / 100;
       
       const totalReceivedWithAdvance = totalPaid + (invoice.advanceReceived || 0);
       const totalCredited = totalReceivedWithAdvance + totalDeductions;
@@ -242,8 +245,13 @@ export default function PaymentsPage() {
           return;
       }
       const { totalPaid, totalDeductions } = getPaymentDetails(originalInvoice.id);
+      
+      const taxableAmount = originalInvoice.discountType === 'before_gst' 
+        ? originalInvoice.netTotal - (originalInvoice.discount || 0) 
+        : originalInvoice.netTotal;
       const tdsPercentage = originalInvoice.tdsPercentage || 0;
-      const tdsAmount = (originalInvoice.grandTotal * tdsPercentage) / 100;
+      const tdsAmount = (taxableAmount * tdsPercentage) / 100;
+      
       const totalReceivedWithAdvance = totalPaid + (originalInvoice.advanceReceived || 0);
       const totalCredited = totalReceivedWithAdvance + totalDeductions;
       const currentRawBalance = originalInvoice.grandTotal - totalCredited - tdsAmount;
