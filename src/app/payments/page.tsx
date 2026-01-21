@@ -64,7 +64,7 @@ export default function PaymentsPage() {
   const { toast } = useToast();
 
   // Data fetching
-  const invoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billDate', 'desc')) : null, [firestore]);
+  const invoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billNo', 'asc')) : null, [firestore]);
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
   const paymentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'payments'), orderBy('paymentDate', 'desc')) : null, [firestore]);
 
