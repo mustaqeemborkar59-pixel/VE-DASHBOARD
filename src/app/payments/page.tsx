@@ -443,8 +443,7 @@ export default function PaymentsPage() {
                   <TableRow>
                     <TableHead>Bill No.</TableHead>
                     <TableHead>Company</TableHead>
-                    <TableHead className="text-right">Total Amount</TableHead>
-                    <TableHead className="text-right">Taxable Amount</TableHead>
+                    <TableHead className="text-right">Total / Taxable</TableHead>
                     <TableHead className="text-center w-28">TDS %</TableHead>
                     <TableHead className="text-right">TDS Amount</TableHead>
                     <TableHead className="text-right">Amount Received</TableHead>
@@ -457,7 +456,7 @@ export default function PaymentsPage() {
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={11} className="h-24 text-center">Loading payments...</TableCell>
+                      <TableCell colSpan={10} className="h-24 text-center">Loading payments...</TableCell>
                     </TableRow>
                   ) : filteredInvoices.length > 0 ? (
                     filteredInvoices.map((invoice) => (
@@ -467,8 +466,10 @@ export default function PaymentsPage() {
                           <div className="font-medium truncate max-w-[200px]">{invoice.companyName}</div>
                           <div className="text-sm text-muted-foreground">{format(parseISO(invoice.billDate), 'dd-MMM-yyyy')}</div>
                         </TableCell>
-                        <TableCell className="text-right">{formatCurrency(invoice.grandTotal)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(invoice.taxableAmount)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="font-bold">{formatCurrency(invoice.grandTotal)}</div>
+                          <div className="text-xs text-muted-foreground">({formatCurrency(invoice.taxableAmount)})</div>
+                        </TableCell>
                         <TableCell className="text-center p-1">
                           <Input
                             type="number"
@@ -499,7 +500,7 @@ export default function PaymentsPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={11} className="h-24 text-center">No matching invoices found.</TableCell>
+                      <TableCell colSpan={10} className="h-24 text-center">No matching invoices found.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
