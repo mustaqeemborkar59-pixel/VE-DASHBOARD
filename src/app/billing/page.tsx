@@ -395,7 +395,7 @@ export default function BillingPage() {
     poNumber: 'AGREEMENT',
     site: '',
     items: [{ key: `item-${Date.now()}`, particulars: '', rate: '', amount: 0 }],
-    selectedBankAccountId: '',
+    selectedBankAccountId: 'no_bank',
     discount: '',
     discountType: 'after_gst' as DiscountType,
     advanceReceived: '',
@@ -407,7 +407,7 @@ export default function BillingPage() {
   const [poNumber, setPoNumber] = useState('AGREEMENT');
   const [site, setSite] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>(initialFormState.items);
-  const [selectedBankAccountId, setSelectedBankAccountId] = useState('');
+  const [selectedBankAccountId, setSelectedBankAccountId] = useState('no_bank');
   const [activeInput, setActiveInput] = useState<ActiveInput>(null);
   const [discount, setDiscount] = useState<string>('');
   const [discountType, setDiscountType] = useState<DiscountType>('after_gst');
@@ -526,7 +526,7 @@ export default function BillingPage() {
       setPoNumber(invoice.poNumber || 'AGREEMENT');
       setSite(invoice.site || '');
       setItems(invoice.items.map((item, index) => ({ ...item, key: `item-${Date.now()}-${index}` })));
-      setSelectedBankAccountId(invoice.selectedBankAccount?.id || '');
+      setSelectedBankAccountId(invoice.selectedBankAccount?.id || 'no_bank');
       setDiscount(String(invoice.discount || ''));
       setDiscountType(invoice.discountType || 'after_gst');
       setAdvanceReceived(String(invoice.advanceReceived || ''));
@@ -872,10 +872,13 @@ export default function BillingPage() {
       return;
     }
     
-    const selectedBankAccount = selectedBankAccountId ? bankAccounts?.find(b => b.id === selectedBankAccountId) : undefined;
-    if (selectedBankAccountId && !selectedBankAccount) {
-        toast({ variant: 'destructive', title: 'Bank Account Error', description: 'Could not find the selected bank account.' });
-        return;
+    let selectedBankAccount: BankAccount | undefined;
+    if (selectedBankAccountId && selectedBankAccountId !== 'no_bank') {
+        selectedBankAccount = bankAccounts?.find(b => b.id === selectedBankAccountId);
+        if (!selectedBankAccount) {
+            toast({ variant: 'destructive', title: 'Bank Account Error', description: 'Could not find the selected bank account.' });
+            return;
+        }
     }
 
     const settingsDocRef = formEnterprise === 'Vithal' ? vithalSettingsRef : rvSettingsRef;
@@ -1333,7 +1336,7 @@ export default function BillingPage() {
                                             <SelectItem value="loading" disabled>Loading accounts...</SelectItem>
                                         ) : (
                                             <>
-                                                <SelectItem value="">No Bank</SelectItem>
+                                                <SelectItem value="no_bank">No Bank</SelectItem>
                                                 {bankAccounts?.map(account => (
                                                     <SelectItem key={account.id} value={account.id}>{account.nickname}</SelectItem>
                                                 ))}
@@ -1664,3 +1667,4 @@ export default function BillingPage() {
 
 
     
+
