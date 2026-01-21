@@ -458,8 +458,7 @@
         "items",
         "grandTotal",
         "myCompanyDetails",
-        "clientCompanyDetails",
-        "selectedBankAccount"
+        "clientCompanyDetails"
       ]
     },
     "BankAccount": {
@@ -684,3 +683,5 @@
     }
   }
 }
+
+    

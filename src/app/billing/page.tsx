@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, writeBatch, deleteField } from 'firebase/firestore';
 import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions, BankAccount, InvoiceTemplate, InvoiceItem as LibInvoiceItem, DocumentSettings } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -584,10 +584,6 @@ export default function BillingPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'Your company details were not saved with this invoice.' });
       return;
     }
-     if (!invoice.selectedBankAccount) {
-      toast({ variant: 'destructive', title: 'Error', description: 'No bank account was saved with this invoice.' });
-      return;
-    }
     
     const pageSettingsToUse: PageSettings = {
         size: invoice.documentSettings?.pageSize || liveDefaultPageSettings.pageSize || 'A4',
@@ -856,11 +852,11 @@ export default function BillingPage() {
   };
   
   const handleFormSubmit = async () => {
-    if (!companyId || !billDate || !selectedBankAccountId || items.some(i => !i.particulars)) {
+    if (!companyId || !billDate || items.some(i => !i.particulars)) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
-        description: 'Please select a company, bank account, date, and fill all invoice items.',
+        description: 'Please select a company, date, and fill all invoice items.',
       });
       return;
     }
@@ -876,8 +872,8 @@ export default function BillingPage() {
       return;
     }
     
-    const selectedBankAccount = bankAccounts?.find(b => b.id === selectedBankAccountId);
-    if (!selectedBankAccount) {
+    const selectedBankAccount = selectedBankAccountId ? bankAccounts?.find(b => b.id === selectedBankAccountId) : undefined;
+    if (selectedBankAccountId && !selectedBankAccount) {
         toast({ variant: 'destructive', title: 'Bank Account Error', description: 'Could not find the selected bank account.' });
         return;
     }
@@ -936,11 +932,16 @@ export default function BillingPage() {
       try {
         if (editingInvoice) {
           const invoiceDocRef = doc(firestore, 'invoices', editingInvoice.id);
-          const dataForUpdate = {
+          const dataForUpdate: {[key: string]: any} = {
             ...invoiceData,
             clientCompanyDetails: editingInvoice.clientCompanyDetails, // Preserve snapshot
             myCompanyDetails: editingInvoice.myCompanyDetails, // Preserve snapshot
           };
+
+          if (!selectedBankAccount) {
+            dataForUpdate.selectedBankAccount = deleteField();
+          }
+
           updateDocumentNonBlocking(invoiceDocRef, dataForUpdate);
 
           toast({
@@ -1657,3 +1658,6 @@ export default function BillingPage() {
     
 
 
+
+
+    
