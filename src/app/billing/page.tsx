@@ -364,6 +364,10 @@ export default function BillingPage() {
   const toISODateString = (date: Date) => {
     return format(date, 'yyyy-MM-dd');
   }
+
+  const toMonthString = (date: Date) => {
+    return format(date, 'yyyy-MM');
+  }
   
   const defaultDocumentSettings: DocumentSettings = {
     pageSize: 'A4',
@@ -392,6 +396,7 @@ export default function BillingPage() {
   const initialFormState = {
     companyId: '',
     billDate: toISODateString(new Date()),
+    billingMonth: toMonthString(new Date()),
     poNumber: 'AGREEMENT',
     site: '',
     items: [{ key: `item-${Date.now()}`, particulars: '', rate: '', amount: 0 }],
@@ -404,6 +409,7 @@ export default function BillingPage() {
 
   const [companyId, setCompanyId] = useState<string>('');
   const [billDate, setBillDate] = useState<string>(toISODateString(new Date()));
+  const [billingMonth, setBillingMonth] = useState<string>(toMonthString(new Date()));
   const [poNumber, setPoNumber] = useState('AGREEMENT');
   const [site, setSite] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>(initialFormState.items);
@@ -502,6 +508,7 @@ export default function BillingPage() {
   const resetForm = useCallback(() => {
       setCompanyId(initialFormState.companyId);
       setBillDate(initialFormState.billDate);
+      setBillingMonth(initialFormState.billingMonth);
       setPoNumber(initialFormState.poNumber);
       setSite(initialFormState.site);
       setItems(initialFormState.items);
@@ -523,6 +530,7 @@ export default function BillingPage() {
       setFormEnterprise(invoice.enterprise);
       setCompanyId(invoice.companyId);
       setBillDate(invoice.billDate);
+      setBillingMonth(invoice.billingMonth || format(parseISO(invoice.billDate), 'yyyy-MM'));
       setPoNumber(invoice.poNumber || 'AGREEMENT');
       setSite(invoice.site || '');
       setItems(invoice.items.map((item, index) => ({ ...item, key: `item-${Date.now()}-${index}` })));
@@ -852,11 +860,11 @@ export default function BillingPage() {
   };
   
   const handleFormSubmit = async () => {
-    if (!companyId || !billDate || items.some(i => !i.particulars)) {
+    if (!companyId || !billDate || !billingMonth || items.some(i => !i.particulars)) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
-        description: 'Please select a company, date, and fill all invoice items.',
+        description: 'Please select a company, date, billing month, and fill all invoice items.',
       });
       return;
     }
@@ -912,6 +920,7 @@ export default function BillingPage() {
         billNo: billNoToUse,
         billNoSuffix: 'MHE',
         billDate: billDate,
+        billingMonth: billingMonth,
         companyId,
         poNumber,
         site,
@@ -984,6 +993,7 @@ export default function BillingPage() {
         ...restOfInvoice,
         billNo: nextBillNumber,
         billDate: newBillDateForDuplicate,
+        billingMonth: invoiceToDuplicate.billingMonth || format(parseISO(invoiceToDuplicate.billDate), 'yyyy-MM'),
         enterprise: activeTab,
     };
     
@@ -1013,6 +1023,7 @@ export default function BillingPage() {
             ...restOfInvoice,
             billNo: currentBillNumber,
             billDate: newBillDateForBulk,
+            billingMonth: invoice.billingMonth || format(parseISO(invoice.billDate), 'yyyy-MM'),
             enterprise: activeTab,
         });
         currentBillNumber++;
@@ -1296,7 +1307,7 @@ export default function BillingPage() {
                 <div className="flex-grow overflow-y-auto px-6">
                     <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
+                            <div className="space-y-2 md:col-span-2">
                                 <Label htmlFor="company">Bill To</Label>
                                 <Select value={companyId} onValueChange={setCompanyId} disabled={isLoadingCompanies || !!editingInvoice}>
                                     <SelectTrigger id="company" className="w-full">
@@ -1322,6 +1333,16 @@ export default function BillingPage() {
                                     type="date"
                                     value={billDate}
                                     onChange={(e) => setBillDate(e.target.value)}
+                                    className="w-full"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="billingMonth">Billing Month</Label>
+                                <Input
+                                    id="billingMonth"
+                                    type="month"
+                                    value={billingMonth}
+                                    onChange={(e) => setBillingMonth(e.target.value)}
                                     className="w-full"
                                 />
                             </div>
@@ -1657,14 +1678,3 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-
-    
-
-    
-
-
-
-
-    
-

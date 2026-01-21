@@ -61,6 +61,10 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
   
   const balanceDue = invoice.grandTotal - advanceAmount;
 
+  const billingMonthDisplay = invoice.billingMonth
+    ? format(parseISO(invoice.billingMonth), 'MMM yyyy').toUpperCase()
+    : format(parseISO(invoice.billDate), 'MMM yyyy').toUpperCase();
+
   return (
     <div className="bg-white text-black p-8 rounded-lg shadow-lg max-w-4xl mx-auto font-['Calibri',_sans-serif] text-sm">
       <header className="text-center mb-8">
@@ -85,7 +89,7 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
       <section className="grid grid-cols-2 gap-4 mb-4">
          <div>
           <p><span className="font-bold">Bill No:</span> {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</p>
-          <p><span className="font-bold">MONTH:</span> {format(parseISO(invoice.billDate), 'MMM yyyy').toUpperCase()}</p>
+          <p><span className="font-bold">MONTH:</span> {billingMonthDisplay}</p>
         </div>
         <div className="text-right">
           <p><span className="font-bold">PO.NO:</span> {invoice.poNumber || 'AGREEMENT'}</p>
@@ -218,6 +222,3 @@ export function InvoicePreview({ invoice, company, myCompanyDetails, downloadOpt
     </div>
   );
 }
-
-
-    

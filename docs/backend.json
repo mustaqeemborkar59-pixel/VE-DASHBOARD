@@ -302,6 +302,10 @@
           "type": "string",
           "format": "date"
         },
+        "billingMonth": {
+            "type": "string",
+            "description": "The billing month for the invoice, in YYYY-MM format."
+        },
         "companyId": {
           "type": "string",
           "description": "Reference to the Company being billed."
@@ -683,5 +687,3 @@
     }
   }
 }
-
-    

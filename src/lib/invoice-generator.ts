@@ -1,6 +1,7 @@
 
 
 
+
 import { Packer, Document, Paragraph, TextRun, AlignmentType, BorderStyle, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType, VerticalAlign, PageOrientation, IPageSize, PageSize, TableLayoutType } from 'docx';
 import { saveAs } from 'file-saver';
 import { format, parseISO } from 'date-fns';
@@ -83,7 +84,9 @@ const generateInvoiceDataForWord = (invoice: Invoice, clientCompany: Company, my
         billDate: format(parseISO(invoice.billDate), 'dd/MM/yyyy'),
         billNo: `${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}`.toUpperCase(),
         poNo: (invoice.poNumber || 'AGREEMENT').toUpperCase(),
-        month: format(parseISO(invoice.billDate), 'MMM yyyy').toUpperCase(),
+        month: invoice.billingMonth
+            ? format(parseISO(invoice.billingMonth), 'MMM yyyy').toUpperCase()
+            : format(parseISO(invoice.billDate), 'MMM yyyy').toUpperCase(),
         site: (invoice.site || '').toUpperCase(),
         items: invoice.items,
         template: invoice.template,
@@ -533,13 +536,12 @@ export const generateAndDownloadInvoice = async (
 
     const companyNameForFile = clientCompany.name.replace(/[^a-zA-Z0-9\s]/g, '').toUpperCase();
     const siteForFile = (invoice.site && downloadOpts.includeSiteInFilename) ? `(${invoice.site.replace(/[^a-zA-Z0-9\s]/g, '')})` : '';
-    const monthYear = format(parseISO(invoice.billDate), 'MMM-yy').toUpperCase();
+    const monthYearForFile = invoice.billingMonth
+        ? format(parseISO(invoice.billingMonth), 'MMM-yy').toUpperCase()
+        : format(parseISO(invoice.billDate), 'MMM-yy').toUpperCase();
     
-    const fileName = `Bill no ${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}-${companyNameForFile}${siteForFile ? `-${siteForFile}` : ''}-(${monthYear})-GST 18.docx`;
+    const fileName = `Bill no ${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}-${companyNameForFile}${siteForFile ? `-${siteForFile}` : ''}-(${monthYearForFile})-GST 18.docx`;
 
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);
 }
-
-
-    

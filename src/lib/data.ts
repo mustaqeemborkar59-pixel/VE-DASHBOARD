@@ -6,6 +6,7 @@
 
 
 
+
 export type Employee = {
   id: string;
   fullName: string;
@@ -145,6 +146,7 @@ export type Invoice = {
     billNo: number;
     billNoSuffix?: string;
     billDate: string; // YYYY-MM-DD
+    billingMonth?: string; // YYYY-MM
     companyId: string;
     poNumber?: string;
     site?: string;
