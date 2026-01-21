@@ -53,6 +53,7 @@ type ProcessedInvoice = Invoice & {
     companyName: string;
     totalPaid: number;
     totalDeductions: number;
+    taxableAmount: number;
     tdsAmount: number;
     balance: number;
     status: Omit<PaymentStatus, 'All'>;
@@ -137,6 +138,7 @@ export default function PaymentsPage() {
         companyName: companies?.find(c => c.id === invoice.companyId)?.name || 'Unknown',
         totalPaid: totalReceivedWithAdvance,
         totalDeductions,
+        taxableAmount,
         tdsAmount,
         balance: roundedBalance,
         status,
@@ -442,6 +444,7 @@ export default function PaymentsPage() {
                     <TableHead>Bill No.</TableHead>
                     <TableHead>Company</TableHead>
                     <TableHead className="text-right">Total Amount</TableHead>
+                    <TableHead className="text-right">Taxable Amount</TableHead>
                     <TableHead className="text-center w-28">TDS %</TableHead>
                     <TableHead className="text-right">TDS Amount</TableHead>
                     <TableHead className="text-right">Amount Received</TableHead>
@@ -454,7 +457,7 @@ export default function PaymentsPage() {
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="h-24 text-center">Loading payments...</TableCell>
+                      <TableCell colSpan={11} className="h-24 text-center">Loading payments...</TableCell>
                     </TableRow>
                   ) : filteredInvoices.length > 0 ? (
                     filteredInvoices.map((invoice) => (
@@ -465,6 +468,7 @@ export default function PaymentsPage() {
                           <div className="text-sm text-muted-foreground">{format(parseISO(invoice.billDate), 'dd-MMM-yyyy')}</div>
                         </TableCell>
                         <TableCell className="text-right">{formatCurrency(invoice.grandTotal)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(invoice.taxableAmount)}</TableCell>
                         <TableCell className="text-center p-1">
                           <Input
                             type="number"
@@ -495,7 +499,7 @@ export default function PaymentsPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={10} className="h-24 text-center">No matching invoices found.</TableCell>
+                      <TableCell colSpan={11} className="h-24 text-center">No matching invoices found.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
