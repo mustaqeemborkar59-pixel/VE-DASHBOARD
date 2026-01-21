@@ -148,7 +148,10 @@ export default function PaymentsPage() {
 
   const availableYears = useMemo(() => {
     if (!processedInvoices) return [];
-    const years = new Set(processedInvoices.map(inv => format(parseISO(inv.billDate), 'yyyy')));
+    const years = new Set(processedInvoices.map(inv => {
+        const dateForYear = inv.billingMonth ? parseISO(`${inv.billingMonth}-01`) : parseISO(inv.billDate);
+        return format(dateForYear, 'yyyy');
+    }));
     return ['All', ...Array.from(years).sort((a, b) => b.localeCompare(a))];
   }, [processedInvoices]);
 
@@ -176,9 +179,9 @@ export default function PaymentsPage() {
       const companyMatch = companyFilter === 'All' || invoice.companyId === companyFilter;
       const statusMatch = statusFilter === 'All' || invoice.status === statusFilter;
       
-      const date = parseISO(invoice.billDate);
-      const yearMatch = yearFilter === 'All' || format(date, 'yyyy') === yearFilter;
-      const monthMatch = monthFilter === 'All' || format(date, 'MM') === monthFilter;
+      const dateForFilter = invoice.billingMonth ? parseISO(`${invoice.billingMonth}-01`) : parseISO(invoice.billDate);
+      const yearMatch = yearFilter === 'All' || format(dateForFilter, 'yyyy') === yearFilter;
+      const monthMatch = monthFilter === 'All' || format(dateForFilter, 'MM') === monthFilter;
 
       const searchLower = searchFilter.toLowerCase();
       const searchMatch = searchFilter === '' ||
