@@ -1332,9 +1332,12 @@ export default function BillingPage() {
                                         {isLoadingBankAccounts ? (
                                             <SelectItem value="loading" disabled>Loading accounts...</SelectItem>
                                         ) : (
-                                            bankAccounts?.map(account => (
-                                                <SelectItem key={account.id} value={account.id}>{account.nickname}</SelectItem>
-                                            ))
+                                            <>
+                                                <SelectItem value="">No Bank</SelectItem>
+                                                {bankAccounts?.map(account => (
+                                                    <SelectItem key={account.id} value={account.id}>{account.nickname}</SelectItem>
+                                                ))}
+                                            </>
                                         )}
                                     </SelectContent>
                                 </Select>
