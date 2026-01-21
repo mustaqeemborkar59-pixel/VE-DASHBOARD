@@ -278,7 +278,7 @@ const InvoiceList = ({
                                         <div className="md:hidden">
                                             <div className="space-y-4 p-4">
                                             {month.invoices.map((invoice: Invoice) => (
-                                                <div key={invoice.id} className="border rounded-lg p-4 space-y-3">
+                                                <div key={invoice.id} className="border rounded-lg p-3 space-y-3">
                                                     <div className="flex justify-between items-start">
                                                         <div className="flex items-start gap-3">
                                                           <Checkbox 
@@ -316,7 +316,7 @@ const InvoiceList = ({
                                             <TableBody>
                                                 {month.invoices.map((invoice: Invoice) => (
                                                     <TableRow key={invoice.id} data-state={selectedInvoices.includes(invoice.id) ? "selected" : ""}>
-                                                        <TableCell className="px-4">
+                                                        <TableCell className="px-4 py-2">
                                                             <Checkbox 
                                                               id={`select-inv-desk-${invoice.id}`}
                                                               checked={selectedInvoices.includes(invoice.id)}
@@ -324,13 +324,13 @@ const InvoiceList = ({
                                                               aria-label={`Select invoice ${invoice.billNo}`}
                                                             />
                                                         </TableCell>
-                                                        <TableCell className="font-medium cursor-pointer" onClick={() => actionProps.openPreviewDialog(invoice)}>
+                                                        <TableCell className="font-medium cursor-pointer py-2" onClick={() => actionProps.openPreviewDialog(invoice)}>
                                                             {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
                                                         </TableCell>
-                                                        <TableCell onClick={() => actionProps.openPreviewDialog(invoice)} className="cursor-pointer">{getCompanyDisplay(invoice)}</TableCell>
-                                                        <TableCell onClick={() => actionProps.openPreviewDialog(invoice)} className="cursor-pointer">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
-                                                        <TableCell className="text-right cursor-pointer" onClick={() => actionProps.openPreviewDialog(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
-                                                        <TableCell className="text-right">
+                                                        <TableCell onClick={() => actionProps.openPreviewDialog(invoice)} className="cursor-pointer py-2">{getCompanyDisplay(invoice)}</TableCell>
+                                                        <TableCell onClick={() => actionProps.openPreviewDialog(invoice)} className="cursor-pointer py-2">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
+                                                        <TableCell className="text-right cursor-pointer py-2" onClick={() => actionProps.openPreviewDialog(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
+                                                        <TableCell className="text-right py-2">
                                                             <InvoiceActions invoice={invoice} {...actionProps} />
                                                         </TableCell>
                                                     </TableRow>
@@ -642,9 +642,12 @@ export default function BillingPage() {
   }, [filteredInvoices]);
   
   const nextBillNumber = useMemo(() => {
-    if (maxBillNumber === 0) return myCompanyDetails?.nextBillNo || 1;
+    if (maxBillNumber === 0) {
+      const targetSettings = activeTab === 'Vithal' ? vithalCompanyDetails : rvCompanyDetails;
+      return targetSettings?.nextBillNo || 1;
+    }
     return maxBillNumber + 1;
-  }, [maxBillNumber, myCompanyDetails]);
+  }, [maxBillNumber, activeTab, vithalCompanyDetails, rvCompanyDetails]);
   
   const nextBillNumberForForm = useMemo(() => {
     if (!allInvoices) return 1;
@@ -1652,4 +1655,5 @@ export default function BillingPage() {
     
 
     
+
 
