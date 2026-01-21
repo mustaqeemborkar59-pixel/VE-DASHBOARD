@@ -11,7 +11,7 @@ import { collection, query, orderBy, doc, setDoc, writeBatch } from 'firebase/fi
 import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions, BankAccount, InvoiceTemplate, InvoiceItem as LibInvoiceItem, DocumentSettings } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow, AlignLeft, AlignCenter, AlignRight, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow, AlignLeft, AlignCenter, AlignRight, ChevronDown, AlertTriangle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -642,24 +642,49 @@ export default function BillingPage() {
   }, [filteredInvoices]);
   
   const nextBillNumber = useMemo(() => {
-    if (isLoadingSettings) return null;
-    const fromSettings = myCompanyDetails?.nextBillNo;
-    const nextCalculated = maxBillNumber + 1;
-    return fromSettings && fromSettings > nextCalculated ? fromSettings : nextCalculated;
-  }, [myCompanyDetails, maxBillNumber, isLoadingSettings]);
+    if (maxBillNumber === 0) return myCompanyDetails?.nextBillNo || 1;
+    return maxBillNumber + 1;
+  }, [maxBillNumber, myCompanyDetails]);
   
   const nextBillNumberForForm = useMemo(() => {
-    if (isLoadingVithalSettings || isLoadingRvSettings || !allInvoices) return null;
-    
+    if (!allInvoices) return 1;
     const targetInvoices = allInvoices.filter(inv => inv.enterprise === formEnterprise);
-    const maxBillNumber = Math.max(0, ...targetInvoices.map(inv => inv.billNo));
-    const nextCalculated = maxBillNumber + 1;
-
-    const targetSettings = formEnterprise === 'Vithal' ? vithalCompanyDetails : rvCompanyDetails;
-    const fromSettings = targetSettings?.nextBillNo;
+    const maxBillNumberForForm = Math.max(0, ...targetInvoices.map(inv => inv.billNo));
     
-    return fromSettings && fromSettings > nextCalculated ? fromSettings : nextCalculated;
-  }, [formEnterprise, allInvoices, vithalCompanyDetails, rvCompanyDetails, isLoadingVithalSettings, isLoadingRvSettings]);
+    if (maxBillNumberForForm === 0) {
+      const targetSettings = formEnterprise === 'Vithal' ? vithalCompanyDetails : rvCompanyDetails;
+      return targetSettings?.nextBillNo || 1;
+    }
+    
+    return maxBillNumberForForm + 1;
+  }, [formEnterprise, allInvoices, vithalCompanyDetails, rvCompanyDetails]);
+
+  const skippedBillNumbersText = useMemo(() => {
+    if (!filteredInvoices || filteredInvoices.length < 2) return null;
+
+    const billNumbers = filteredInvoices.map(inv => inv.billNo).sort((a, b) => a - b);
+    if (billNumbers.length === 0) return null;
+
+    const min = billNumbers[0];
+    const max = billNumbers[billNumbers.length - 1];
+    const skipped = [];
+    const numberSet = new Set(billNumbers);
+
+    for (let i = min; i <= max; i++) {
+      if (!numberSet.has(i)) {
+        skipped.push(i);
+      }
+    }
+    
+    if (skipped.length === 0) return null;
+
+    if (skipped.length > 5) {
+        return `${skipped.slice(0, 5).join(', ')} and ${skipped.length - 5} more`;
+    }
+    
+    return skipped.join(', ');
+
+  }, [filteredInvoices]);
 
 
   const organizedInvoices = useMemo(() => {
@@ -921,7 +946,6 @@ export default function BillingPage() {
           });
         } else {
           addDocumentNonBlocking(collection(firestore, 'invoices'), invoiceData);
-          setDoc(settingsDocRef, { nextBillNo: billNoToUse + 1 }, { merge: true });
           toast({
               title: 'Invoice Saved',
               description: `Invoice No. ${billNoToUse}-MHE has been saved.`,
@@ -957,7 +981,6 @@ export default function BillingPage() {
     };
     
     addDocumentNonBlocking(collection(firestore, 'invoices'), duplicatedInvoiceData);
-    setDoc(settingsDocRef, { nextBillNo: nextBillNumber + 1 }, { merge: true });
 
     toast({
         title: "Invoice Duplicated",
@@ -967,9 +990,7 @@ export default function BillingPage() {
   };
   
   const handleConfirmBulkDuplicate = async () => {
-    const settingsDocRef = activeTab === 'Vithal' ? vithalSettingsRef : rvSettingsRef;
-
-    if (!firestore || !nextBillNumber || !settingsDocRef || selectedInvoices.length === 0) {
+    if (!firestore || !nextBillNumber || selectedInvoices.length === 0) {
         toast({ variant: "destructive", title: "Error", description: "Could not duplicate invoices. Please try again." });
         return;
     }
@@ -990,8 +1011,6 @@ export default function BillingPage() {
         currentBillNumber++;
     }
     
-    batch.set(settingsDocRef, { nextBillNo: currentBillNumber }, { merge: true });
-
     try {
         await batch.commit();
         toast({
@@ -1188,7 +1207,13 @@ export default function BillingPage() {
                     <div className="flex flex-col sm:flex-row items-center gap-4 mb-6 p-4 border rounded-lg bg-muted/40">
                         <div className="flex-1 w-full sm:w-auto">
                             <Label htmlFor="invoiceStart" className="text-sm font-medium">Next Invoice Number for {activeTab} Enterprises</Label>
-                            <p className="text-xs text-muted-foreground">The next bill number will be <span className='font-bold'>{nextBillNumber || '...'}</span>. You can change this in Settings.</p>
+                            <p className="text-xs text-muted-foreground">The next bill number will be automatically set to <span className='font-bold'>{nextBillNumber || '1'}</span>.</p>
+                            {skippedBillNumbersText && (
+                                <p className="text-xs text-amber-600 dark:text-amber-500 mt-1 flex items-center">
+                                    <AlertTriangle className="inline-block h-4 w-4 mr-1.5 shrink-0" />
+                                    <span>Note: Some bill numbers may be skipped: {skippedBillNumbersText}.</span>
+                                </p>
+                            )}
                         </div>
                     </div>
                     <TabsContent value="Vithal">
@@ -1627,3 +1652,4 @@ export default function BillingPage() {
     
 
     
+
