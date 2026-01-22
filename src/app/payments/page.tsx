@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
@@ -111,7 +112,9 @@ export default function PaymentsPage() {
   
   const closeAllDialogs = useCallback(() => {
     setIsPaymentDialogOpen(false);
+    setSelectedInvoiceForPayment(null);
     setIsDetailsDialogOpen(false);
+    setInvoiceForDetails(null);
     setPaymentToDelete(null);
   }, []);
 
@@ -576,7 +579,7 @@ export default function PaymentsPage() {
           </Card>
         </Tabs>
         
-        <Dialog open={isPaymentDialogOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
+        <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Record Payment</DialogTitle>
@@ -631,7 +634,7 @@ export default function PaymentsPage() {
             </DialogContent>
         </Dialog>
 
-        <Dialog open={isDetailsDialogOpen} onOpenChange={(open) => {if (!open) { closeAllDialogs(); } else { setIsDetailsDialogOpen(true); }}}>
+        <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Payment History</DialogTitle>
