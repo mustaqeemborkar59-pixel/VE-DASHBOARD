@@ -993,7 +993,7 @@ export default function BillingPage() {
         ...restOfInvoice,
         billNo: nextBillNumber,
         billDate: newBillDateForDuplicate,
-        billingMonth: invoiceToDuplicate.billingMonth || format(parseISO(invoiceToDuplicate.billDate), 'yyyy-MM'),
+        billingMonth: format(parseISO(newBillDateForDuplicate), 'yyyy-MM'),
         enterprise: activeTab,
     };
     
@@ -1023,7 +1023,7 @@ export default function BillingPage() {
             ...restOfInvoice,
             billNo: currentBillNumber,
             billDate: newBillDateForBulk,
-            billingMonth: invoice.billingMonth || format(parseISO(invoice.billDate), 'yyyy-MM'),
+            billingMonth: format(parseISO(newBillDateForBulk), 'yyyy-MM'),
             enterprise: activeTab,
         });
         currentBillNumber++;
