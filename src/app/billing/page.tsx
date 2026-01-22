@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 import AppLayout from "@/components/app-layout";
@@ -281,12 +282,19 @@ const InvoiceList = ({
                                                 <div key={invoice.id} className="border rounded-lg p-3 space-y-3">
                                                     <div className="flex justify-between items-start">
                                                         <div className="flex items-start gap-3">
-                                                          <Checkbox 
-                                                            id={`select-inv-mob-${invoice.id}`} 
-                                                            className="mt-1"
-                                                            checked={selectedInvoices.includes(invoice.id)}
-                                                            onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
-                                                          />
+                                                            <div className="relative">
+                                                                <Checkbox 
+                                                                    id={`select-inv-mob-${invoice.id}`} 
+                                                                    className="mt-1"
+                                                                    checked={selectedInvoices.includes(invoice.id)}
+                                                                    onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
+                                                                />
+                                                                {selectedInvoices.includes(invoice.id) && (
+                                                                    <div className="absolute top-0 -right-2.5 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                                                                        {selectedInvoices.indexOf(invoice.id) + 1}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                           <div className="space-y-1 cursor-pointer" onClick={() => actionProps.openPreviewDialog(invoice)}>
                                                               <div className="font-bold">Bill No: {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
                                                               <div className="text-sm text-muted-foreground">{getCompanyDisplay(invoice)}</div>
@@ -316,13 +324,18 @@ const InvoiceList = ({
                                             <TableBody>
                                                 {month.invoices.map((invoice: Invoice) => (
                                                     <TableRow key={invoice.id} data-state={selectedInvoices.includes(invoice.id) ? "selected" : ""}>
-                                                        <TableCell className="px-4 py-2">
+                                                        <TableCell className="px-4 py-2 relative">
                                                             <Checkbox 
                                                               id={`select-inv-desk-${invoice.id}`}
                                                               checked={selectedInvoices.includes(invoice.id)}
                                                               onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
                                                               aria-label={`Select invoice ${invoice.billNo}`}
                                                             />
+                                                            {selectedInvoices.includes(invoice.id) && (
+                                                                <div className="absolute top-2 left-8 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                                                                    {selectedInvoices.indexOf(invoice.id) + 1}
+                                                                </div>
+                                                            )}
                                                         </TableCell>
                                                         <TableCell className="font-medium cursor-pointer py-2" onClick={() => actionProps.openPreviewDialog(invoice)}>
                                                             {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
@@ -1013,7 +1026,8 @@ export default function BillingPage() {
     }
 
     const batch = writeBatch(firestore);
-    const invoicesToDuplicate = allInvoices?.filter(inv => selectedInvoices.includes(inv.id)) || [];
+    const invoicesToDuplicate = selectedInvoices.map(id => allInvoices?.find(inv => inv.id === id)).filter((inv): inv is Invoice => !!inv);
+
     let currentBillNumber = nextBillNumber;
 
     for (const invoice of invoicesToDuplicate) {
