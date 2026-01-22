@@ -482,7 +482,7 @@ export default function PaymentsPage() {
                     monthlyGroupedInvoices.map(({ monthKey, monthLabel, invoices: monthInvoices }) => (
                       <React.Fragment key={monthKey}>
                         <TableRow className="border-b-0 hover:bg-transparent">
-                          <TableCell colSpan={10} className="py-4">
+                          <TableCell colSpan={10} className="pt-10 pb-1">
                             <div className="relative">
                                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
                                     <div className="w-full border-t" />
@@ -678,4 +678,5 @@ export default function PaymentsPage() {
     </AppLayout>
   );
 }
+
 
