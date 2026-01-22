@@ -746,7 +746,7 @@ export default function BillingPage() {
       return acc;
     }, {} as Record<string, Invoice[]>);
     
-    const sortedYearKeys = Object.keys(groupedByYear).sort((a, b) => b.localeCompare(a));
+    const sortedYearKeys = Object.keys(groupedByYear).sort((a, b) => a.localeCompare(b));
 
     return sortedYearKeys.map((yearKey, index) => {
       const yearInvoices = groupedByYear[yearKey];
@@ -1174,11 +1174,12 @@ export default function BillingPage() {
 
   const handleSelectInvoice = (invoiceId: string, checked: boolean) => {
     setSelectedInvoices(prev => {
-      if (checked) {
-        return [...prev, invoiceId];
-      } else {
-        return prev.filter(id => id !== invoiceId);
-      }
+      const newSelection = checked
+        ? [...prev, invoiceId]
+        : prev.filter(id => id !== invoiceId);
+      
+      // The order is based on the selection sequence
+      return newSelection;
     });
   };
 
@@ -1709,5 +1710,7 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
 
     
