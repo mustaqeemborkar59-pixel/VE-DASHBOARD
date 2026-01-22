@@ -172,7 +172,7 @@ export default function PaymentsPage() {
       return acc;
     }, {} as Record<string, ProcessedInvoice[]>);
     
-    const sortedMonthKeys = Object.keys(groups).sort((a,b) => b.localeCompare(a));
+    const sortedMonthKeys = Object.keys(groups).sort((a,b) => a.localeCompare(b));
 
     return sortedMonthKeys.map(monthKey => ({
       monthKey,
