@@ -278,36 +278,42 @@ const InvoiceList = ({
                                     <AccordionContent className="pt-2">
                                         <div className="md:hidden">
                                             <div className="space-y-4 p-4">
-                                            {month.invoices.map((invoice: Invoice) => (
-                                                <div key={invoice.id} className="border rounded-lg p-3 space-y-3">
-                                                    <div className="flex justify-between items-start">
-                                                        <div className="flex items-start gap-3">
-                                                            <div className="relative">
-                                                                <Checkbox 
-                                                                    id={`select-inv-mob-${invoice.id}`} 
-                                                                    className="mt-1"
-                                                                    checked={selectedInvoices.includes(invoice.id)}
-                                                                    onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
-                                                                />
-                                                                {selectedInvoices.includes(invoice.id) && (
-                                                                    <div className="absolute top-0 -right-2.5 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
-                                                                        {selectedInvoices.indexOf(invoice.id) + 1}
-                                                                    </div>
-                                                                )}
+                                            {month.invoices.map((invoice: Invoice) => {
+                                                const isSelected = selectedInvoices.includes(invoice.id);
+                                                const selectionIndex = isSelected ? selectedInvoices.indexOf(invoice.id) + 1 : 0;
+                                                return (
+                                                    <div key={invoice.id} className="border rounded-lg p-3 space-y-3">
+                                                        <div className="flex justify-between items-start">
+                                                            <div className="flex items-start gap-3">
+                                                                <div
+                                                                    id={`select-inv-mob-${invoice.id}`}
+                                                                    onClick={() => handleSelectInvoice(invoice.id, !isSelected)}
+                                                                    className={cn(
+                                                                        "mt-1 h-4 w-4 shrink-0 rounded-sm border border-primary flex items-center justify-center cursor-pointer ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                                                        isSelected && "bg-primary text-primary-foreground"
+                                                                    )}
+                                                                    role="checkbox"
+                                                                    aria-checked={isSelected}
+                                                                    aria-label={`Select invoice ${invoice.billNo}`}
+                                                                >
+                                                                    {isSelected && (
+                                                                        <span className="text-[10px] font-bold leading-none">{selectionIndex}</span>
+                                                                    )}
+                                                                </div>
+                                                              <div className="space-y-1 cursor-pointer" onClick={() => actionProps.openPreviewDialog(invoice)}>
+                                                                  <div className="font-bold">Bill No: {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
+                                                                  <div className="text-sm text-muted-foreground">{getCompanyDisplay(invoice)}</div>
+                                                              </div>
                                                             </div>
-                                                          <div className="space-y-1 cursor-pointer" onClick={() => actionProps.openPreviewDialog(invoice)}>
-                                                              <div className="font-bold">Bill No: {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
-                                                              <div className="text-sm text-muted-foreground">{getCompanyDisplay(invoice)}</div>
-                                                          </div>
+                                                            <InvoiceActions invoice={invoice} {...actionProps} />
                                                         </div>
-                                                        <InvoiceActions invoice={invoice} {...actionProps} />
+                                                        <div className="text-sm space-y-1" onClick={() => actionProps.openPreviewDialog(invoice)}>
+                                                            <div><span className="font-medium text-muted-foreground">Date: </span>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</div>
+                                                            <div><span className="font-medium text-muted-foreground">Amount: </span>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</div>
+                                                        </div>
                                                     </div>
-                                                    <div className="text-sm space-y-1" onClick={() => actionProps.openPreviewDialog(invoice)}>
-                                                        <div><span className="font-medium text-muted-foreground">Date: </span>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</div>
-                                                        <div><span className="font-medium text-muted-foreground">Amount: </span>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</div>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                             </div>
                                         </div>
                                         <Table className="hidden md:table">
@@ -322,32 +328,40 @@ const InvoiceList = ({
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {month.invoices.map((invoice: Invoice) => (
-                                                    <TableRow key={invoice.id} data-state={selectedInvoices.includes(invoice.id) ? "selected" : ""}>
-                                                        <TableCell className="px-4 py-2 relative">
-                                                            <Checkbox 
-                                                              id={`select-inv-desk-${invoice.id}`}
-                                                              checked={selectedInvoices.includes(invoice.id)}
-                                                              onCheckedChange={(checked) => handleSelectInvoice(invoice.id, !!checked)}
-                                                              aria-label={`Select invoice ${invoice.billNo}`}
-                                                            />
-                                                            {selectedInvoices.includes(invoice.id) && (
-                                                                <div className="absolute top-2 left-8 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
-                                                                    {selectedInvoices.indexOf(invoice.id) + 1}
+                                                {month.invoices.map((invoice: Invoice) => {
+                                                    const isSelected = selectedInvoices.includes(invoice.id);
+                                                    const selectionIndex = isSelected ? selectedInvoices.indexOf(invoice.id) + 1 : 0;
+                                                    return (
+                                                        <TableRow key={invoice.id} data-state={isSelected ? "selected" : ""}>
+                                                            <TableCell className="px-4 py-2">
+                                                                <div 
+                                                                  id={`select-inv-desk-${invoice.id}`}
+                                                                  onClick={() => handleSelectInvoice(invoice.id, !isSelected)}
+                                                                  className={cn(
+                                                                      "h-4 w-4 rounded-sm border border-primary flex items-center justify-center cursor-pointer ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                                                      isSelected && "bg-primary text-primary-foreground"
+                                                                  )}
+                                                                  aria-label={`Select invoice ${invoice.billNo}`}
+                                                                  role="checkbox"
+                                                                  aria-checked={isSelected}
+                                                                >
+                                                                    {isSelected && (
+                                                                        <span className="text-[10px] font-bold leading-none">{selectionIndex}</span>
+                                                                    )}
                                                                 </div>
-                                                            )}
-                                                        </TableCell>
-                                                        <TableCell className="font-medium cursor-pointer py-2" onClick={() => actionProps.openPreviewDialog(invoice)}>
-                                                            {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
-                                                        </TableCell>
-                                                        <TableCell onClick={() => actionProps.openPreviewDialog(invoice)} className="cursor-pointer py-2">{getCompanyDisplay(invoice)}</TableCell>
-                                                        <TableCell onClick={() => actionProps.openPreviewDialog(invoice)} className="cursor-pointer py-2">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
-                                                        <TableCell className="text-right cursor-pointer py-2" onClick={() => actionProps.openPreviewDialog(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
-                                                        <TableCell className="text-right py-2">
-                                                            <InvoiceActions invoice={invoice} {...actionProps} />
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
+                                                            </TableCell>
+                                                            <TableCell className="font-medium cursor-pointer py-2" onClick={() => actionProps.openPreviewDialog(invoice)}>
+                                                                {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
+                                                            </TableCell>
+                                                            <TableCell onClick={() => actionProps.openPreviewDialog(invoice)} className="cursor-pointer py-2">{getCompanyDisplay(invoice)}</TableCell>
+                                                            <TableCell onClick={() => actionProps.openPreviewDialog(invoice)} className="cursor-pointer py-2">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
+                                                            <TableCell className="text-right cursor-pointer py-2" onClick={() => actionProps.openPreviewDialog(invoice)}>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
+                                                            <TableCell className="text-right py-2">
+                                                                <InvoiceActions invoice={invoice} {...actionProps} />
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
                                             </TableBody>
                                         </Table>
                                     </AccordionContent>
@@ -633,7 +647,10 @@ export default function BillingPage() {
       return;
     }
 
-    const invoicesToDownload = allInvoices.filter(inv => selectedInvoices.includes(inv.id));
+    const invoicesToDownload = selectedInvoices
+      .map(id => allInvoices.find(inv => inv.id === id))
+      .filter((inv): inv is Invoice => !!inv);
+
     toast({ title: "Download Started", description: `Downloading ${invoicesToDownload.length} invoices.` });
 
     for (const invoice of invoicesToDownload) {
@@ -1692,3 +1709,5 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
