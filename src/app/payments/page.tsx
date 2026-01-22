@@ -1,6 +1,6 @@
 
 'use client';
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -81,6 +81,8 @@ export default function PaymentsPage() {
   const [companyFilter, setCompanyFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState<PaymentStatus>('All');
   const [searchFilter, setSearchFilter] = useState('');
+  const [yearFilter, setYearFilter] = useState('All');
+  const [monthFilter, setMonthFilter] = useState('All');
   
   // Dialog States
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -96,6 +98,12 @@ export default function PaymentsPage() {
   const [notes, setNotes] = useState('');
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('RTGS');
   const [chequeDetails, setChequeDetails] = useState('');
+  
+  useEffect(() => {
+    if (yearFilter === 'All') {
+      setMonthFilter('All');
+    }
+  }, [yearFilter]);
 
 
   const getPaymentDetails = useCallback((invoiceId: string) => {
@@ -142,11 +150,30 @@ export default function PaymentsPage() {
       };
     });
   }, [invoices, companies, getPaymentDetails]);
+  
+  const availableYears = useMemo(() => {
+    if (!processedInvoices) return [];
+    const years = new Set(processedInvoices.filter(inv => inv.enterprise === activeTab).map(inv => format(parseISO(inv.billDate), 'yyyy')));
+    return ['All', ...Array.from(years).sort((a, b) => b.localeCompare(a))];
+  }, [processedInvoices, activeTab]);
+
+  const availableMonths = useMemo(() => {
+    if (yearFilter === 'All' || !processedInvoices) return [];
+    const months = new Set(
+      processedInvoices
+        .filter(inv => format(parseISO(inv.billDate), 'yyyy') === yearFilter && inv.enterprise === activeTab)
+        .map(inv => format(parseISO(inv.billDate), 'yyyy-MM'))
+    );
+    return ['All', ...Array.from(months).sort()];
+  }, [processedInvoices, yearFilter, activeTab]);
 
   const filteredInvoices = useMemo(() => {
     return processedInvoices.filter(invoice => {
       const enterpriseMatch = invoice.enterprise === activeTab;
       if (!enterpriseMatch) return false;
+
+      const yearMatch = yearFilter === 'All' || format(parseISO(invoice.billDate), 'yyyy') === yearFilter;
+      const monthMatch = monthFilter === 'All' || format(parseISO(invoice.billDate), 'yyyy-MM') === monthFilter;
 
       const companyMatch = companyFilter === 'All' || invoice.companyId === companyFilter;
       const statusMatch = statusFilter === 'All' || invoice.status === statusFilter;
@@ -156,9 +183,9 @@ export default function PaymentsPage() {
         invoice.billNo.toString().includes(searchLower) ||
         invoice.companyName.toLowerCase().includes(searchLower);
 
-      return companyMatch && statusMatch && searchMatch;
+      return yearMatch && monthMatch && companyMatch && statusMatch && searchMatch;
     });
-  }, [processedInvoices, activeTab, companyFilter, statusFilter, searchFilter]);
+  }, [processedInvoices, activeTab, companyFilter, statusFilter, searchFilter, yearFilter, monthFilter]);
   
   const monthlyGroupedInvoices = useMemo(() => {
     if (!filteredInvoices) return [];
@@ -193,6 +220,8 @@ export default function PaymentsPage() {
     setCompanyFilter('All');
     setStatusFilter('All');
     setSearchFilter('');
+    setYearFilter('All');
+    setMonthFilter('All');
   };
   
   const handleOpenPaymentDialog = (invoice: ProcessedInvoice) => {
@@ -373,6 +402,28 @@ export default function PaymentsPage() {
                         onChange={(e) => setSearchFilter(e.target.value)}
                     />
                   </div>
+                   <Select value={yearFilter} onValueChange={setYearFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Filter by Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableYears.map(year => (
+                        <SelectItem key={year} value={year}>{year === 'All' ? 'All Years' : year}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={monthFilter} onValueChange={setMonthFilter} disabled={yearFilter === 'All'}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Filter by Month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableMonths.map(month => (
+                        <SelectItem key={month} value={month}>
+                          {month === 'All' ? 'All Months' : format(parseISO(month), 'MMMM')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Select value={companyFilter} onValueChange={setCompanyFilter}>
                     <SelectTrigger className="w-full sm:w-[200px]">
                       <SelectValue placeholder="Filter by Company" />
