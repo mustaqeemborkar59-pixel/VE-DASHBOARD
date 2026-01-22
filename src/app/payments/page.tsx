@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -82,10 +82,6 @@ export default function PaymentsPage() {
   const [statusFilter, setStatusFilter] = useState<PaymentStatus>('All');
   const [searchFilter, setSearchFilter] = useState('');
   
-  // New state for year and month filters
-  const [yearFilter, setYearFilter] = useState('All');
-  const [monthFilter, setMonthFilter] = useState('All');
-
   // Dialog States
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<ProcessedInvoice | null>(null);
@@ -147,31 +143,6 @@ export default function PaymentsPage() {
     });
   }, [invoices, companies, getPaymentDetails]);
 
-  const availableYears = useMemo(() => {
-    if (!processedInvoices) return [];
-    const years = new Set(processedInvoices.map(inv => {
-        const dateForYear = inv.billingMonth ? parseISO(`${inv.billingMonth}-01`) : parseISO(inv.billDate);
-        return format(dateForYear, 'yyyy');
-    }));
-    return ['All', ...Array.from(years).sort((a, b) => b.localeCompare(a))];
-  }, [processedInvoices]);
-
-  const availableMonths = [
-      { value: 'All', label: 'All Months' },
-      { value: '01', label: 'January' },
-      { value: '02', label: 'February' },
-      { value: '03', label: 'March' },
-      { value: '04', label: 'April' },
-      { value: '05', label: 'May' },
-      { value: '06', label: 'June' },
-      { value: '07', label: 'July' },
-      { value: '08', label: 'August' },
-      { value: '09', label: 'September' },
-      { value: '10', label: 'October' },
-      { value: '11', label: 'November' },
-      { value: '12', label: 'December' },
-  ];
-
   const filteredInvoices = useMemo(() => {
     return processedInvoices.filter(invoice => {
       const enterpriseMatch = invoice.enterprise === activeTab;
@@ -180,19 +151,36 @@ export default function PaymentsPage() {
       const companyMatch = companyFilter === 'All' || invoice.companyId === companyFilter;
       const statusMatch = statusFilter === 'All' || invoice.status === statusFilter;
       
-      const dateForFilter = invoice.billingMonth ? parseISO(`${invoice.billingMonth}-01`) : parseISO(invoice.billDate);
-      const yearMatch = yearFilter === 'All' || format(dateForFilter, 'yyyy') === yearFilter;
-      const monthMatch = monthFilter === 'All' || format(dateForFilter, 'MM') === monthFilter;
-
       const searchLower = searchFilter.toLowerCase();
       const searchMatch = searchFilter === '' ||
         invoice.billNo.toString().includes(searchLower) ||
         invoice.companyName.toLowerCase().includes(searchLower);
 
-      return companyMatch && statusMatch && yearMatch && monthMatch && searchMatch;
+      return companyMatch && statusMatch && searchMatch;
     });
-  }, [processedInvoices, activeTab, companyFilter, statusFilter, yearFilter, monthFilter, searchFilter]);
+  }, [processedInvoices, activeTab, companyFilter, statusFilter, searchFilter]);
   
+  const monthlyGroupedInvoices = useMemo(() => {
+    if (!filteredInvoices) return [];
+
+    const groups = filteredInvoices.reduce((acc, invoice) => {
+      const monthKey = format(parseISO(invoice.billDate), 'yyyy-MM');
+      if (!acc[monthKey]) {
+        acc[monthKey] = [];
+      }
+      acc[monthKey].push(invoice);
+      return acc;
+    }, {} as Record<string, ProcessedInvoice[]>);
+    
+    const sortedMonthKeys = Object.keys(groups).sort((a,b) => b.localeCompare(a));
+
+    return sortedMonthKeys.map(monthKey => ({
+      monthKey,
+      monthLabel: format(parseISO(monthKey), 'MMMM yyyy'),
+      invoices: groups[monthKey],
+    }));
+  }, [filteredInvoices]);
+
   const summary = useMemo(() => {
       const totalBilled = filteredInvoices.reduce((acc, inv) => acc + inv.grandTotal, 0);
       const totalPaid = filteredInvoices.reduce((acc, inv) => acc + inv.totalPaid, 0);
@@ -204,8 +192,6 @@ export default function PaymentsPage() {
   const clearFilters = () => {
     setCompanyFilter('All');
     setStatusFilter('All');
-    setYearFilter('All');
-    setMonthFilter('All');
     setSearchFilter('');
   };
   
@@ -407,34 +393,6 @@ export default function PaymentsPage() {
                       <SelectItem value="Pending">Pending</SelectItem>
                     </SelectContent>
                   </Select>
-                  <div className='flex gap-2'>
-                    <div className="space-y-2">
-                      <Label htmlFor="year-filter" className="sr-only">Year</Label>
-                      <Select value={yearFilter} onValueChange={setYearFilter}>
-                          <SelectTrigger id="year-filter" className="w-full sm:w-[120px]">
-                              <SelectValue placeholder="Year" />
-                          </SelectTrigger>
-                          <SelectContent>
-                              {availableYears.map(year => (
-                                  <SelectItem key={year} value={year}>{year}</SelectItem>
-                              ))}
-                          </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="month-filter" className="sr-only">Month</Label>
-                      <Select value={monthFilter} onValueChange={setMonthFilter}>
-                          <SelectTrigger id="month-filter" className="w-full sm:w-[150px]">
-                              <SelectValue placeholder="Month" />
-                          </SelectTrigger>
-                          <SelectContent>
-                              {availableMonths.map(month => (
-                                  <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
-                              ))}
-                          </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
                   <Button variant="ghost" onClick={clearFilters} className="w-full sm:w-auto">
                       <XCircle className="mr-2 h-4 w-4"/> Clear
                   </Button>
@@ -469,45 +427,54 @@ export default function PaymentsPage() {
                     <TableRow>
                       <TableCell colSpan={10} className="h-24 text-center">Loading payments...</TableCell>
                     </TableRow>
-                  ) : filteredInvoices.length > 0 ? (
-                    filteredInvoices.map((invoice) => (
-                      <TableRow key={invoice.id}>
-                        <TableCell className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
-                        <TableCell>
-                          <div className="font-medium truncate max-w-[200px]">{invoice.companyName}</div>
-                          <div className="text-sm text-muted-foreground">{format(parseISO(invoice.billDate), 'dd-MMM-yyyy')}</div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="font-bold">{formatCurrency(invoice.grandTotal)}</div>
-                          <div className="text-xs text-muted-foreground">({formatCurrency(invoice.taxableAmount)})</div>
-                        </TableCell>
-                        <TableCell className="text-center p-1">
-                          <Input
-                            type="number"
-                            defaultValue={invoice.tdsPercentage || ''}
-                            onBlur={(e) => handleTdsUpdate(invoice.id, e.target.value)}
-                            className="h-8 w-16 text-center mx-auto"
-                            placeholder="%"
-                          />
-                        </TableCell>
-                        <TableCell className="text-right font-medium text-red-600 dark:text-red-500">{formatCurrency(invoice.tdsAmount)}</TableCell>
-                        <TableCell className="text-right font-medium text-green-600 dark:text-green-500">{formatCurrency(invoice.totalPaid)}</TableCell>
-                        <TableCell className="text-right font-medium text-red-600 dark:text-red-500">{formatCurrency(invoice.totalDeductions)}</TableCell>
-                        <TableCell className="text-right font-bold text-orange-600 dark:text-orange-500">{formatCurrency(invoice.balance)}</TableCell>
-                        <TableCell className="text-center">{getStatusBadge(invoice.status)}</TableCell>
-                        <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                                <Button variant="outline" size="icon" onClick={() => handleOpenDetailsDialog(invoice)} className="h-8 w-8">
-                                    <Info className="h-4 w-4" />
-                                    <span className="sr-only">View Payment History</span>
-                                </Button>
-                                <Button variant="outline" size="icon" onClick={() => handleOpenPaymentDialog(invoice)} className="h-8 w-8">
-                                    <PlusCircle className="h-4 w-4" />
-                                    <span className="sr-only">Add Payment</span>
-                                </Button>
-                            </div>
-                        </TableCell>
-                      </TableRow>
+                  ) : monthlyGroupedInvoices.length > 0 ? (
+                    monthlyGroupedInvoices.map(({ monthKey, monthLabel, invoices: monthInvoices }) => (
+                      <React.Fragment key={monthKey}>
+                        <TableRow className="border-t-2 border-border bg-muted/20 hover:bg-muted/30">
+                          <TableCell colSpan={10} className="py-2 text-center font-bold text-muted-foreground">
+                            {monthLabel}
+                          </TableCell>
+                        </TableRow>
+                        {monthInvoices.map((invoice) => (
+                           <TableRow key={invoice.id}>
+                            <TableCell className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
+                            <TableCell>
+                              <div className="font-medium truncate max-w-[200px]">{invoice.companyName}</div>
+                              <div className="text-sm text-muted-foreground">{format(parseISO(invoice.billDate), 'dd-MMM-yyyy')}</div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="font-bold">{formatCurrency(invoice.grandTotal)}</div>
+                              <div className="text-xs text-muted-foreground">({formatCurrency(invoice.taxableAmount)})</div>
+                            </TableCell>
+                            <TableCell className="text-center p-1">
+                              <Input
+                                type="number"
+                                defaultValue={invoice.tdsPercentage || ''}
+                                onBlur={(e) => handleTdsUpdate(invoice.id, e.target.value)}
+                                className="h-8 w-16 text-center mx-auto"
+                                placeholder="%"
+                              />
+                            </TableCell>
+                            <TableCell className="text-right font-medium text-red-600 dark:text-red-500">{formatCurrency(invoice.tdsAmount)}</TableCell>
+                            <TableCell className="text-right font-medium text-green-600 dark:text-green-500">{formatCurrency(invoice.totalPaid)}</TableCell>
+                            <TableCell className="text-right font-medium text-red-600 dark:text-red-500">{formatCurrency(invoice.totalDeductions)}</TableCell>
+                            <TableCell className="text-right font-bold text-orange-600 dark:text-orange-500">{formatCurrency(invoice.balance)}</TableCell>
+                            <TableCell className="text-center">{getStatusBadge(invoice.status)}</TableCell>
+                            <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                    <Button variant="outline" size="icon" onClick={() => handleOpenDetailsDialog(invoice)} className="h-8 w-8">
+                                        <Info className="h-4 w-4" />
+                                        <span className="sr-only">View Payment History</span>
+                                    </Button>
+                                    <Button variant="outline" size="icon" onClick={() => handleOpenPaymentDialog(invoice)} className="h-8 w-8">
+                                        <PlusCircle className="h-4 w-4" />
+                                        <span className="sr-only">Add Payment</span>
+                                    </Button>
+                                </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </React.Fragment>
                     ))
                   ) : (
                     <TableRow>
