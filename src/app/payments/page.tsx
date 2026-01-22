@@ -461,16 +461,16 @@ export default function PaymentsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Bill No.</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead className="text-right">Total / Taxable</TableHead>
+                    <TableHead className="text-center">Bill No.</TableHead>
+                    <TableHead className="text-center">Company</TableHead>
+                    <TableHead className="text-center">Total / Taxable</TableHead>
                     <TableHead className="text-center w-28">TDS %</TableHead>
-                    <TableHead className="text-right">TDS Amount</TableHead>
-                    <TableHead className="text-right">Amount Received</TableHead>
-                    <TableHead className="text-right">Deducted</TableHead>
-                    <TableHead className="text-right">Balance</TableHead>
+                    <TableHead className="text-center">TDS Amount</TableHead>
+                    <TableHead className="text-center">Amount Received</TableHead>
+                    <TableHead className="text-center">Deducted</TableHead>
+                    <TableHead className="text-center">Balance</TableHead>
                     <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-right w-[100px]"><span className="sr-only">Actions</span></TableHead>
+                    <TableHead className="text-center w-[100px]"><span className="sr-only">Actions</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -678,5 +678,6 @@ export default function PaymentsPage() {
     </AppLayout>
   );
 }
+
 
 
