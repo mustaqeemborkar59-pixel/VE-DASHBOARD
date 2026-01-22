@@ -431,7 +431,7 @@ export default function PaymentsPage() {
                     monthlyGroupedInvoices.map(({ monthKey, monthLabel, invoices: monthInvoices }) => (
                       <React.Fragment key={monthKey}>
                         <TableRow className="border-t-2 border-border bg-muted/20 hover:bg-muted/30">
-                          <TableCell colSpan={10} className="py-2 text-center font-bold text-muted-foreground">
+                          <TableCell colSpan={10} className="pt-6 pb-2 text-center font-bold text-muted-foreground">
                             {monthLabel}
                           </TableCell>
                         </TableRow>
