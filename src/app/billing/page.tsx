@@ -101,12 +101,12 @@ const DocumentSettingsFields = React.memo(forwardRef<HTMLDivElement, {
 }));
 DocumentSettingsFields.displayName = 'DocumentSettingsFields';
 
-const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeChange, items }: { 
+const ColumnAlignmentFields = React.memo(function ColumnAlignmentFields({ template, onTemplateChange, onTemplateFontSizeChange, items }: { 
     template: InvoiceTemplate, 
     onTemplateChange: (id: string, align: 'left' | 'center' | 'right') => void,
     onTemplateFontSizeChange: (id: string, size: string) => void,
     items: InvoiceItem[]
-  }) => {
+  }) {
     const hasRateColumn = useMemo(() => items.some(item => item.rate && String(item.rate).trim() !== ''), [items]);
     const columnsToShow = useMemo(() => template.columns.filter(col => hasRateColumn || col.id !== 'rate'), [template.columns, hasRateColumn]);
     
@@ -147,9 +147,10 @@ const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeC
              </div>
         </div>
     );
-}
+});
 
-const DownloadOptionsFields = ({ options, setOptions }: { options: DownloadOptions, setOptions: React.Dispatch<React.SetStateAction<DownloadOptions>> }) => {
+
+const DownloadOptionsFields = React.memo(function DownloadOptionsFields({ options, setOptions }: { options: DownloadOptions, setOptions: React.Dispatch<React.SetStateAction<DownloadOptions>> }) {
     return (
         <div className="space-y-6">
             <div className="space-y-4">
@@ -193,7 +194,7 @@ const DownloadOptionsFields = ({ options, setOptions }: { options: DownloadOptio
             </div>
         </div>
     );
-};
+});
 
 const InvoiceActions = ({ invoice, openPreviewDialog, handleDownloadWord, openFormDialog, openDuplicateDialog, openDeleteDialog }: {
     invoice: Invoice;
@@ -991,11 +992,17 @@ export default function BillingPage() {
               description: `Invoice No. ${invoiceData.billNo}-MHE has been updated.`,
           });
         } else {
-          addDocumentNonBlocking(collection(firestore, 'invoices'), invoiceData);
-          toast({
-              title: 'Invoice Saved',
-              description: `Invoice No. ${billNoToUse}-MHE has been saved.`,
-          });
+            const { selectedBankAccount: _, ...dataForCreate } = invoiceData;
+
+            const finalData = selectedBankAccount 
+                ? { ...dataForCreate, selectedBankAccount: selectedBankAccount } 
+                : dataForCreate;
+
+            addDocumentNonBlocking(collection(firestore, 'invoices'), finalData);
+            toast({
+                title: 'Invoice Saved',
+                description: `Invoice No. ${billNoToUse}-MHE has been saved.`,
+            });
         }
         setIsFormDialogOpen(false);
         
