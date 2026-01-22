@@ -510,7 +510,7 @@ export default function PaymentsPage() {
                                     <div className="w-full border-t" />
                                 </div>
                                 <div className="relative flex justify-center">
-                                    <span className="bg-card px-4 text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                                    <span className="bg-card px-4 text-base font-bold uppercase tracking-wider text-muted-foreground">
                                         {monthLabel}
                                     </span>
                                 </div>
@@ -624,7 +624,7 @@ export default function PaymentsPage() {
             </DialogContent>
         </Dialog>
 
-        <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+        <Dialog open={isDetailsDialogOpen} onOpenChange={(open) => { if (!open) closeAllDialogs()}}>
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Payment History</DialogTitle>
@@ -637,6 +637,11 @@ export default function PaymentsPage() {
                         (() => {
                             const invoicePayments = payments?.filter(p => p.invoiceId === invoiceForDetails.id) || [];
                             const hasAdvance = invoiceForDetails.advanceReceived && invoiceForDetails.advanceReceived > 0;
+                            
+                            if (invoicePayments.length === 0 && !hasAdvance) {
+                                return <p className="text-sm text-muted-foreground text-center py-4">No payments recorded yet for this invoice.</p>;
+                            }
+
                             return (
                                 <div className="space-y-4">
                                     {hasAdvance && (
@@ -652,7 +657,7 @@ export default function PaymentsPage() {
                                             </div>
                                         </div>
                                     )}
-                                    {invoicePayments.length > 0 ? (
+                                    {invoicePayments.length > 0 && (
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
@@ -678,7 +683,7 @@ export default function PaymentsPage() {
                                                         <TableCell className="text-right text-red-600">{formatCurrency(payment.otherDeductions || 0)}</TableCell>
                                                         <TableCell className="text-right font-medium text-green-600">{formatCurrency(payment.receivedAmount)}</TableCell>
                                                         <TableCell className="text-right">
-                                                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setPaymentToDelete(payment); }}>
+                                                            <Button variant="ghost" size="icon" onClick={() => setPaymentToDelete(payment)}>
                                                                 <Trash2 className="h-4 w-4 text-destructive" />
                                                             </Button>
                                                         </TableCell>
@@ -686,8 +691,6 @@ export default function PaymentsPage() {
                                                 ))}
                                             </TableBody>
                                         </Table>
-                                    ) : (
-                                        !hasAdvance && <p className="text-sm text-muted-foreground text-center py-4">No payments recorded yet for this invoice.</p>
                                     )}
                                 </div>
                             )
