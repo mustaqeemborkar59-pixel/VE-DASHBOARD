@@ -25,16 +25,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -688,7 +678,7 @@ export default function PaymentsPage() {
                                                         <TableCell className="text-right text-red-600">{formatCurrency(payment.otherDeductions || 0)}</TableCell>
                                                         <TableCell className="text-right font-medium text-green-600">{formatCurrency(payment.receivedAmount)}</TableCell>
                                                         <TableCell className="text-right">
-                                                            <Button variant="ghost" size="icon" onClick={() => setPaymentToDelete(payment)}>
+                                                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setPaymentToDelete(payment); }}>
                                                                 <Trash2 className="h-4 w-4 text-destructive" />
                                                             </Button>
                                                         </TableCell>
@@ -712,20 +702,20 @@ export default function PaymentsPage() {
             </DialogContent>
         </Dialog>
 
-        <AlertDialog open={!!paymentToDelete} onOpenChange={(open) => !open && setPaymentToDelete(null)}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
+        <Dialog open={!!paymentToDelete} onOpenChange={(open) => { if (!open) setPaymentToDelete(null); }}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Are you absolutely sure?</DialogTitle>
+                    <DialogDescription>
                         This action cannot be undone. This will permanently delete this payment record.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeletePayment} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setPaymentToDelete(null)}>Cancel</Button>
+                    <Button variant="destructive" onClick={handleDeletePayment}>Delete</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
       </div>
     </AppLayout>
