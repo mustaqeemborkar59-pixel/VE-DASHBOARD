@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
@@ -25,6 +24,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -36,9 +45,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, XCircle, Info } from "lucide-react";
+import { PlusCircle, Search, XCircle, Info, Trash2 } from "lucide-react";
 import AppLayout from "@/components/app-layout";
-import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Invoice, Company, Payment } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
@@ -89,6 +98,7 @@ export default function PaymentsPage() {
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<ProcessedInvoice | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [invoiceForDetails, setInvoiceForDetails] = useState<ProcessedInvoice | null>(null);
+  const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
 
 
   // Payment Form State
@@ -99,6 +109,12 @@ export default function PaymentsPage() {
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('RTGS');
   const [chequeDetails, setChequeDetails] = useState('');
   
+  const closeAllDialogs = useCallback(() => {
+    setIsPaymentDialogOpen(false);
+    setIsDetailsDialogOpen(false);
+    setPaymentToDelete(null);
+  }, []);
+
   useEffect(() => {
     if (yearFilter === 'All') {
       setMonthFilter('All');
@@ -225,6 +241,7 @@ export default function PaymentsPage() {
   };
   
   const handleOpenPaymentDialog = (invoice: ProcessedInvoice) => {
+    closeAllDialogs();
     setSelectedInvoiceForPayment(invoice);
     setPaymentDate(format(new Date(), 'yyyy-MM-dd'));
     setReceivedAmount('');
@@ -236,6 +253,7 @@ export default function PaymentsPage() {
   };
   
   const handleOpenDetailsDialog = (invoice: ProcessedInvoice) => {
+    closeAllDialogs();
     setInvoiceForDetails(invoice);
     setIsDetailsDialogOpen(true);
   };
@@ -325,6 +343,17 @@ export default function PaymentsPage() {
     updateDocumentNonBlocking(invoiceRef, { tdsPercentage: percentage });
   }
   
+  const handleDeletePayment = () => {
+    if (!firestore || !paymentToDelete) return;
+    const paymentDocRef = doc(firestore, 'payments', paymentToDelete.id);
+    deleteDocumentNonBlocking(paymentDocRef);
+    toast({
+        title: "Payment Deleted",
+        description: `The payment record has been successfully deleted.`,
+    });
+    setPaymentToDelete(null);
+  }
+
   const getStatusBadge = (status: Omit<PaymentStatus, 'All'>) => {
     switch (status) {
       case 'Paid':
@@ -462,15 +491,15 @@ export default function PaymentsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-center">Bill No.</TableHead>
-                    <TableHead className="text-center">Company</TableHead>
-                    <TableHead className="text-center">Total / Taxable</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead className="text-right">Total / Taxable</TableHead>
                     <TableHead className="text-center w-28">TDS %</TableHead>
-                    <TableHead className="text-center">TDS Amount</TableHead>
-                    <TableHead className="text-center">Amount Received</TableHead>
-                    <TableHead className="text-center">Deducted</TableHead>
-                    <TableHead className="text-center">Balance</TableHead>
+                    <TableHead className="text-right">TDS Amount</TableHead>
+                    <TableHead className="text-right">Amount Received</TableHead>
+                    <TableHead className="text-right">Deducted</TableHead>
+                    <TableHead className="text-right">Balance</TableHead>
                     <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-center w-[100px]"><span className="sr-only">Actions</span></TableHead>
+                    <TableHead className="text-right w-[100px]"><span className="sr-only">Actions</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -497,7 +526,7 @@ export default function PaymentsPage() {
                         </TableRow>
                         {monthInvoices.map((invoice) => (
                            <TableRow key={invoice.id}>
-                            <TableCell className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
+                            <TableCell className="font-medium text-center">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
                             <TableCell>
                               <div className="font-medium truncate max-w-[200px]">{invoice.companyName}</div>
                               <div className="text-sm text-muted-foreground">{format(parseISO(invoice.billDate), 'dd-MMM-yyyy')}</div>
@@ -547,7 +576,7 @@ export default function PaymentsPage() {
           </Card>
         </Tabs>
         
-        <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+        <Dialog open={isPaymentDialogOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Record Payment</DialogTitle>
@@ -602,7 +631,7 @@ export default function PaymentsPage() {
             </DialogContent>
         </Dialog>
 
-        <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+        <Dialog open={isDetailsDialogOpen} onOpenChange={(open) => {if (!open) { closeAllDialogs(); } else { setIsDetailsDialogOpen(true); }}}>
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Payment History</DialogTitle>
@@ -639,6 +668,7 @@ export default function PaymentsPage() {
                                                     <TableHead>Notes</TableHead>
                                                     <TableHead className="text-right">Deductions</TableHead>
                                                     <TableHead className="text-right">Amount</TableHead>
+                                                    <TableHead className="text-right">Actions</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -654,6 +684,11 @@ export default function PaymentsPage() {
                                                         <TableCell className="text-muted-foreground">{payment.notes || '-'}</TableCell>
                                                         <TableCell className="text-right text-red-600">{formatCurrency(payment.otherDeductions || 0)}</TableCell>
                                                         <TableCell className="text-right font-medium text-green-600">{formatCurrency(payment.receivedAmount)}</TableCell>
+                                                        <TableCell className="text-right">
+                                                            <Button variant="ghost" size="icon" onClick={() => setPaymentToDelete(payment)}>
+                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                            </Button>
+                                                        </TableCell>
                                                     </TableRow>
                                                 ))}
                                             </TableBody>
@@ -674,10 +709,22 @@ export default function PaymentsPage() {
             </DialogContent>
         </Dialog>
 
+        <AlertDialog open={!!paymentToDelete} onOpenChange={(open) => !open && setPaymentToDelete(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete this payment record.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeletePayment} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
       </div>
     </AppLayout>
   );
 }
-
-
-
