@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo, useCallback } from 'react';
 import {
@@ -441,6 +442,13 @@ export default function PaymentsPage() {
               </div>
             </CardHeader>
             <CardContent className="p-0 md:p-3 pt-0">
+               <div className="px-4 md:px-1 py-3 text-sm text-muted-foreground">
+                {isLoading
+                    ? 'Loading records...'
+                    : `Showing ${filteredInvoices.length} of ${
+                        processedInvoices.filter(inv => inv.enterprise === activeTab).length
+                        } invoices for ${activeTab} Enterprises.`}
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
