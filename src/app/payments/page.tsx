@@ -289,7 +289,7 @@ export default function PaymentsPage() {
       const currentRawBalance = originalInvoice.grandTotal - totalCredited - tdsAmount;
 
 
-      if (totalPayment > currentRawBalance + 0.01) {
+      if ((totalPayment - currentRawBalance) > 0.5) {
           toast({
               variant: "destructive",
               title: "Payment Exceeds Balance",
