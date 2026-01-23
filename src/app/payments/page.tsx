@@ -141,7 +141,7 @@ export default function PaymentsPage() {
       let status: Omit<PaymentStatus, 'All'>;
       if (roundedBalance <= 0) {
         status = 'Paid';
-      } else if (totalCredited > 0 && rawBalance > 0) {
+      } else if (totalCredited > 0 && roundedBalance > 0) {
         status = 'Partial';
       } else {
         status = 'Pending';
@@ -296,13 +296,14 @@ export default function PaymentsPage() {
       const totalReceivedWithAdvance = totalPaid + (originalInvoice.advanceReceived || 0);
       const totalCredited = totalReceivedWithAdvance + totalDeductions;
       const currentRawBalance = originalInvoice.grandTotal - totalCredited - tdsAmount;
+      const currentRoundedBalance = Math.round(currentRawBalance);
 
 
-      if ((totalPayment - currentRawBalance) > 0.5) {
+      if (totalPayment > currentRoundedBalance) {
           toast({
               variant: "destructive",
               title: "Payment Exceeds Balance",
-              description: `Payment of ${formatCurrency(totalPayment)} is more than the pending amount of ${formatCurrency(currentRawBalance)}.`,
+              description: `Payment of ${formatCurrency(totalPayment)} is more than the pending amount of ${formatCurrency(currentRoundedBalance)}.`,
           });
           return;
       }
