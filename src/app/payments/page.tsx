@@ -162,7 +162,10 @@ export default function PaymentsPage() {
   
   const availableYears = useMemo(() => {
     if (!processedInvoices) return [];
-    const years = new Set(processedInvoices.filter(inv => inv.enterprise === activeTab).map(inv => format(parseISO(inv.billDate), 'yyyy')));
+    const years = new Set(processedInvoices.filter(inv => inv.enterprise === activeTab).map(inv => {
+        const dateString = inv.billingMonth ? `${inv.billingMonth}-01` : inv.billDate;
+        return format(parseISO(dateString), 'yyyy');
+    }));
     return ['All', ...Array.from(years).sort((a, b) => b.localeCompare(a))];
   }, [processedInvoices, activeTab]);
 
@@ -170,8 +173,11 @@ export default function PaymentsPage() {
     if (yearFilter === 'All' || !processedInvoices) return [];
     const months = new Set(
       processedInvoices
-        .filter(inv => format(parseISO(inv.billDate), 'yyyy') === yearFilter && inv.enterprise === activeTab)
-        .map(inv => format(parseISO(inv.billDate), 'yyyy-MM'))
+        .filter(inv => {
+            const dateString = inv.billingMonth ? `${inv.billingMonth}-01` : inv.billDate;
+            return format(parseISO(dateString), 'yyyy') === yearFilter && inv.enterprise === activeTab;
+        })
+        .map(inv => inv.billingMonth || format(parseISO(inv.billDate), 'yyyy-MM'))
     );
     return ['All', ...Array.from(months).sort()];
   }, [processedInvoices, yearFilter, activeTab]);
@@ -181,8 +187,11 @@ export default function PaymentsPage() {
       const enterpriseMatch = invoice.enterprise === activeTab;
       if (!enterpriseMatch) return false;
 
-      const yearMatch = yearFilter === 'All' || format(parseISO(invoice.billDate), 'yyyy') === yearFilter;
-      const monthMatch = monthFilter === 'All' || format(parseISO(invoice.billDate), 'yyyy-MM') === monthFilter;
+      const yearFromInvoice = invoice.billingMonth ? invoice.billingMonth.substring(0, 4) : format(parseISO(invoice.billDate), 'yyyy');
+      const monthFromInvoice = invoice.billingMonth || format(parseISO(invoice.billDate), 'yyyy-MM');
+      
+      const yearMatch = yearFilter === 'All' || yearFromInvoice === yearFilter;
+      const monthMatch = monthFilter === 'All' || monthFromInvoice === monthFilter;
 
       const companyMatch = companyFilter === 'All' || invoice.companyId === companyFilter;
       const statusMatch = statusFilter === 'All' || invoice.status === statusFilter;
@@ -200,7 +209,7 @@ export default function PaymentsPage() {
     if (!filteredInvoices) return [];
 
     const groups = filteredInvoices.reduce((acc, invoice) => {
-      const monthKey = format(parseISO(invoice.billDate), 'yyyy-MM');
+      const monthKey = invoice.billingMonth || format(parseISO(invoice.billDate), 'yyyy-MM');
       if (!acc[monthKey]) {
         acc[monthKey] = [];
       }
