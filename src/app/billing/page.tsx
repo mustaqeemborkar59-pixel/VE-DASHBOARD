@@ -26,9 +26,10 @@ import { InvoicePreview } from '@/components/invoice-preview';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const AutoHeightTextarea = React.memo(forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => {
@@ -464,6 +465,7 @@ export default function BillingPage() {
 
 
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+  const [billNoOverride, setBillNoOverride] = useState<number | null>(null);
   
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [invoiceForPreview, setInvoiceForPreview] = useState<Invoice | null>(null);
@@ -515,6 +517,7 @@ export default function BillingPage() {
     setInvoiceToDuplicate(null);
     setIsBulkDuplicateDialogOpen(false);
     setIsPreviewOpen(false);
+    setBillNoOverride(null);
   }, []);
   
   const liveDefaultPageSettings = useMemo((): DocumentSettings => {
@@ -551,7 +554,7 @@ export default function BillingPage() {
       setFormTemplate(liveDefaultTemplate);
   }, [initialFormState, liveDefaultPageSettings, liveDefaultTemplate, defaultDownloadOptions]);
 
-  const openFormDialog = useCallback((invoice: Invoice | null) => {
+  const openFormDialog = useCallback((invoice: Invoice | null, billNoToFill?: number) => {
     closeAllDialogs();
     if (invoice) {
       setEditingInvoice(invoice);
@@ -577,9 +580,15 @@ export default function BillingPage() {
       });
       setFormDownloadOptions(invoice.downloadOptions || defaultDownloadOptions);
       setFormTemplate(invoice.template || liveDefaultTemplate);
+      setBillNoOverride(null);
     } else {
       resetForm();
       setFormEnterprise(activeTab);
+      if (billNoToFill) {
+          setBillNoOverride(billNoToFill);
+      } else {
+          setBillNoOverride(null);
+      }
     }
     handleDelayedAction(() => setIsFormDialogOpen(true));
   }, [ activeTab, liveDefaultPageSettings, defaultDownloadOptions, liveDefaultTemplate, resetForm, closeAllDialogs ]);
@@ -697,15 +706,15 @@ export default function BillingPage() {
     return maxBillNumberForForm + 1;
   }, [formEnterprise, allInvoices, vithalCompanyDetails, rvCompanyDetails]);
 
-  const skippedBillNumbersText = useMemo(() => {
-    if (!filteredInvoices || filteredInvoices.length < 2) return null;
+  const skippedBillNumbers = useMemo(() => {
+    if (!filteredInvoices || filteredInvoices.length < 2) return [];
 
     const billNumbers = filteredInvoices.map(inv => inv.billNo).sort((a, b) => a - b);
-    if (billNumbers.length === 0) return null;
+    if (billNumbers.length === 0) return [];
 
     const min = billNumbers[0];
     const max = billNumbers[billNumbers.length - 1];
-    const skipped = [];
+    const skipped: number[] = [];
     const numberSet = new Set(billNumbers);
 
     for (let i = min; i <= max; i++) {
@@ -714,14 +723,7 @@ export default function BillingPage() {
       }
     }
     
-    if (skipped.length === 0) return null;
-
-    if (skipped.length > 5) {
-        return `${skipped.slice(0, 5).join(', ')} and ${skipped.length - 5} more`;
-    }
-    
-    return skipped.join(', ');
-
+    return skipped;
   }, [filteredInvoices]);
 
 
@@ -923,10 +925,10 @@ export default function BillingPage() {
     const settingsDocRef = formEnterprise === 'Vithal' ? vithalSettingsRef : rvSettingsRef;
 
     if (firestore && settingsDocRef) {
-      const billNoToUse = editingInvoice ? editingInvoice.billNo : (nextBillNumberForForm || 1);
+      const billNoToUse = editingInvoice ? editingInvoice.billNo : (billNoOverride || nextBillNumberForForm || 1);
 
       if (isNaN(billNoToUse)) {
-        toast({ variant: 'destructive', title: 'Invalid Bill Number', description: 'Could not determine next bill number.' });
+        toast({ variant: 'destructive', title: 'Invalid Bill Number', description: 'Could not determine bill number.' });
         return;
       }
       
@@ -1249,6 +1251,25 @@ export default function BillingPage() {
                                     </div>
                                 </PopoverContent>
                             </Popover>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" disabled={skippedBillNumbers.length === 0}>
+                                        <FilePlus2 className="mr-2 h-4 w-4" />
+                                        Fill Missing
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuLabel>Select a missing bill no.</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <ScrollArea className="h-72">
+                                        {skippedBillNumbers.map(num => (
+                                            <DropdownMenuItem key={num} onSelect={() => openFormDialog(null, num)}>
+                                                Invoice No. {num}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </ScrollArea>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             <Button onClick={() => openFormDialog(null)} size="sm">
                                 <PlusCircle className="mr-2 h-4 w-4" />
                                 Add Invoice
@@ -1261,18 +1282,7 @@ export default function BillingPage() {
                     </TabsList>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex flex-col sm:flex-row items-center gap-4 mb-6 p-4 border rounded-lg bg-muted/40">
-                        <div className="flex-1 w-full sm:w-auto">
-                            <Label htmlFor="invoiceStart" className="text-sm font-medium">Next Invoice Number for {activeTab} Enterprises</Label>
-                            <p className="text-xs text-muted-foreground">The next bill number will be automatically set to <span className='font-bold'>{nextBillNumber || '1'}</span>.</p>
-                            {skippedBillNumbersText && (
-                                <p className="text-xs text-amber-600 dark:text-amber-500 mt-1 flex items-center">
-                                    <AlertTriangle className="inline-block h-4 w-4 mr-1.5 shrink-0" />
-                                    <span>Note: Some bill numbers may be skipped: {skippedBillNumbersText}.</span>
-                                </p>
-                            )}
-                        </div>
-                    </div>
+                    <p className="px-1 py-2 text-sm text-muted-foreground">The next bill number will be automatically set to <span className='font-bold'>{nextBillNumber || '1'}</span>.</p>
                     <TabsContent value="Vithal">
                       <InvoiceList 
                         invoices={organizedInvoices}
@@ -1319,13 +1329,13 @@ export default function BillingPage() {
                     <div className="flex items-start justify-between">
                         <div className="space-y-1.5">
                             <DialogTitle>
-                                {editingInvoice ? 'Edit Invoice' : 'New Invoice'}
+                                {editingInvoice ? 'Edit Invoice' : (billNoOverride ? `Fill Missing Invoice (No. ${billNoOverride})` : 'New Invoice')}
                             </DialogTitle>
                             <DialogDescription>
-                                {editingInvoice ? `Updating Invoice No. ${editingInvoice.billNo}-MHE` : `Creating a new invoice for ${formEnterprise} Enterprises.`}
+                                {editingInvoice ? `Updating Invoice No. ${editingInvoice.billNo}-MHE` : (billNoOverride ? `Creating an invoice for the missing bill number for ${formEnterprise} Enterprises.` : `Creating a new invoice for ${formEnterprise} Enterprises.`)}
                             </DialogDescription>
                         </div>
-                        {!editingInvoice && (
+                        {!editingInvoice && !billNoOverride && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="outline" className="ml-4 shrink-0">
