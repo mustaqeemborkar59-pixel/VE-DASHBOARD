@@ -102,12 +102,12 @@ const DocumentSettingsFields = React.memo(forwardRef<HTMLDivElement, {
 }));
 DocumentSettingsFields.displayName = 'DocumentSettingsFields';
 
-const ColumnAlignmentFields = React.memo(function ColumnAlignmentFields({ template, onTemplateChange, onTemplateFontSizeChange, items }: { 
+const ColumnAlignmentFields = React.memo(({ template, onTemplateChange, onTemplateFontSizeChange, items }: { 
     template: InvoiceTemplate, 
     onTemplateChange: (id: string, align: 'left' | 'center' | 'right') => void,
     onTemplateFontSizeChange: (id: string, size: string) => void,
     items: InvoiceItem[]
-  }) {
+  }) => {
     const hasRateColumn = useMemo(() => items.some(item => item.rate && String(item.rate).trim() !== ''), [items]);
     const columnsToShow = useMemo(() => template.columns.filter(col => hasRateColumn || col.id !== 'rate'), [template.columns, hasRateColumn]);
     
@@ -149,9 +149,10 @@ const ColumnAlignmentFields = React.memo(function ColumnAlignmentFields({ templa
         </div>
     );
 });
+ColumnAlignmentFields.displayName = 'ColumnAlignmentFields';
 
 
-const DownloadOptionsFields = React.memo(function DownloadOptionsFields({ options, setOptions }: { options: DownloadOptions, setOptions: React.Dispatch<React.SetStateAction<DownloadOptions>> }) {
+const DownloadOptionsFields = React.memo(({ options, setOptions }: { options: DownloadOptions, setOptions: React.Dispatch<React.SetStateAction<DownloadOptions>> }) => {
     return (
         <div className="space-y-6">
             <div className="space-y-4">
@@ -196,6 +197,7 @@ const DownloadOptionsFields = React.memo(function DownloadOptionsFields({ option
         </div>
     );
 });
+DownloadOptionsFields.displayName = 'DownloadOptionsFields';
 
 const InvoiceActions = ({ invoice, openPreviewDialog, handleDownloadWord, openFormDialog, openDuplicateDialog, openDeleteDialog }: {
     invoice: Invoice;
@@ -913,6 +915,15 @@ export default function BillingPage() {
       return;
     }
     
+    if (!selectedCompanyForNewInvoice) {
+        toast({
+            variant: 'destructive',
+            title: 'Company Not Found',
+            description: 'Please select a valid company.',
+        });
+        return;
+    }
+
     let selectedBankAccount: BankAccount | undefined;
     if (selectedBankAccountId && selectedBankAccountId !== 'no_bank') {
         selectedBankAccount = bankAccounts?.find(b => b.id === selectedBankAccountId);
@@ -967,7 +978,7 @@ export default function BillingPage() {
         discountType: discountType,
         advanceReceived: calculations.advanceAmount,
         myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetailsForForm!,
-        clientCompanyDetails: editingInvoice?.clientCompanyDetails || selectedCompanyForNewInvoice!,
+        clientCompanyDetails: selectedCompanyForNewInvoice,
         selectedBankAccount: selectedBankAccount,
         documentSettings: currentDocumentSettings,
         downloadOptions: formDownloadOptions,
@@ -979,7 +990,6 @@ export default function BillingPage() {
           const invoiceDocRef = doc(firestore, 'invoices', editingInvoice.id);
           const dataForUpdate: {[key: string]: any} = {
             ...invoiceData,
-            clientCompanyDetails: editingInvoice.clientCompanyDetails, // Preserve snapshot
             myCompanyDetails: editingInvoice.myCompanyDetails, // Preserve snapshot
           };
 
@@ -1358,7 +1368,7 @@ export default function BillingPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2 md:col-span-2">
                                 <Label htmlFor="company">Bill To</Label>
-                                <Select value={companyId} onValueChange={setCompanyId} disabled={isLoadingCompanies || !!editingInvoice}>
+                                <Select value={companyId} onValueChange={setCompanyId} disabled={isLoadingCompanies}>
                                     <SelectTrigger id="company" className="w-full">
                                         <SelectValue placeholder="Select a company..." />
                                     </SelectTrigger>
@@ -1727,6 +1737,8 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
+
+    
 
     
 
