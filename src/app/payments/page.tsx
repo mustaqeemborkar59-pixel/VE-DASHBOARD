@@ -268,55 +268,56 @@ export default function PaymentsPage() {
   }
 
   const handleAddPayment = () => {
-      if (!firestore || !selectedInvoiceForPayment) return;
+    if (!firestore || !selectedInvoiceForPayment) return;
 
-      const received = parseFloat(receivedAmount.replace(/,/g, '')) || 0;
-      const newOtherDeductions = parseFloat(otherDeductions.replace(/,/g, '')) || 0;
-      const totalPayment = received + newOtherDeductions;
+    const received = parseFloat(receivedAmount.replace(/,/g, '')) || 0;
+    const newOtherDeductions = parseFloat(otherDeductions.replace(/,/g, '')) || 0;
+    const trimmedNotes = notes.trim();
 
-      if (totalPayment <= 0) {
-          toast({
-              variant: "destructive",
-              title: "Invalid Amount",
-              description: "Total payment (Received + Deductions) must be greater than zero.",
-          });
-          return;
-      }
-      
-      const currentRoundedBalance = selectedInvoiceForPayment.balance;
+    if (received <= 0 && newOtherDeductions <= 0 && !trimmedNotes) {
+        toast({
+            variant: "destructive",
+            title: "Invalid Entry",
+            description: "Please enter an amount, deductions, or a note.",
+        });
+        return;
+    }
+    
+    const totalPayment = received + newOtherDeductions;
+    const currentRoundedBalance = selectedInvoiceForPayment.balance;
 
-      // Allow a small tolerance for rounding (e.g., up to 0.50)
-      if (totalPayment > currentRoundedBalance + 0.5) {
-          toast({
-              variant: "destructive",
-              title: "Payment Exceeds Balance",
-              description: `Payment of ${formatCurrency(totalPayment)} is more than the pending amount of ${formatCurrency(currentRoundedBalance)}.`,
-          });
-          return;
-      }
+    // Allow a small tolerance for rounding (e.g., up to 0.50)
+    if (totalPayment > 0 && totalPayment > currentRoundedBalance + 0.5) {
+        toast({
+            variant: "destructive",
+            title: "Payment Exceeds Balance",
+            description: `Payment of ${formatCurrency(totalPayment)} is more than the pending amount of ${formatCurrency(currentRoundedBalance)}.`,
+        });
+        return;
+    }
 
-      const paymentData: Omit<Payment, 'id'> = {
-          invoiceId: selectedInvoiceForPayment.id,
-          companyId: selectedInvoiceForPayment.companyId,
-          paymentDate: paymentDate,
-          receivedAmount: received,
-          tdsDeducted: 0, 
-          otherDeductions: newOtherDeductions,
-          notes: notes,
-          createdAt: new Date().toISOString(),
-          paymentMode: paymentMode,
-          chequeDetails: paymentMode === 'CHEQUE' ? chequeDetails : '',
-      };
-      
-      addDocumentNonBlocking(collection(firestore, 'payments'), paymentData);
+    const paymentData: Omit<Payment, 'id'> = {
+        invoiceId: selectedInvoiceForPayment.id,
+        companyId: selectedInvoiceForPayment.companyId,
+        paymentDate: paymentDate,
+        receivedAmount: received,
+        tdsDeducted: 0, 
+        otherDeductions: newOtherDeductions,
+        notes: trimmedNotes,
+        createdAt: new Date().toISOString(),
+        paymentMode: paymentMode,
+        chequeDetails: paymentMode === 'CHEQUE' ? chequeDetails : '',
+    };
+    
+    addDocumentNonBlocking(collection(firestore, 'payments'), paymentData);
 
-      toast({
-          title: "Payment Recorded",
-          description: `Payment for Bill No. ${selectedInvoiceForPayment.billNo} has been recorded.`,
-      });
+    toast({
+        title: "Entry Recorded",
+        description: `An entry for Bill No. ${selectedInvoiceForPayment.billNo} has been recorded.`,
+    });
 
-      setIsPaymentDialogOpen(false);
-  }
+    setIsPaymentDialogOpen(false);
+}
 
   const handleTdsUpdate = (invoiceId: string, value: string) => {
     if (!firestore) return;
