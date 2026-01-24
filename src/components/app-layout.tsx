@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -18,6 +17,7 @@ import {
   SidebarFooter,
   SidebarTrigger,
   SidebarInset,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -75,12 +75,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
       <Sidebar variant='inset' collapsible='icon'>
-        <SidebarHeader>
-          <div className="flex items-center gap-2">
-            <div className="flex flex-col">
-              <h2 className="text-lg font-semibold tracking-tight">Vithal Enterprises</h2>
-            </div>
+        <SidebarHeader className="p-0">
+          <div className="flex h-14 items-center justify-between px-3">
+            <Link href="/" className="flex items-center gap-2 font-semibold overflow-hidden">
+              <ForkliftIcon className="h-6 w-6 shrink-0 text-primary" />
+              <span className="truncate group-data-[collapsible=icon]:hidden">ForkliftFlow</span>
+            </Link>
+            <SidebarTrigger className="hidden shrink-0 md:flex" />
           </div>
+          <SidebarSeparator />
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
@@ -108,7 +111,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                         {user && user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || ''} />}
                         <AvatarFallback>{userInitial}</AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col items-start overflow-hidden">
+                    <div className="flex flex-col items-start overflow-hidden group-data-[collapsible=icon]:hidden">
                         <span className="truncate font-medium">{user?.displayName || userEmail}</span>
                         <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
                     </div>
