@@ -686,18 +686,23 @@ export default function BillingPage() {
     if (isLoadingInvoices || isLoadingVithalSettings || isLoadingRvSettings) return 1;
 
     const existingBillNumbers = new Set(filteredInvoices.map(inv => inv.billNo));
-
     const targetSettings = activeTab === 'Vithal' ? vithalCompanyDetails : rvCompanyDetails;
     const settingsBillNo = targetSettings?.nextBillNo;
 
-    // Priority 1: Use settings number if it's set and not already used.
-    if (settingsBillNo && !existingBillNumbers.has(settingsBillNo)) {
-        return settingsBillNo;
+    // If there are no bills, always start from the setting number or 1.
+    if (existingBillNumbers.size === 0) {
+        return settingsBillNo || 1;
     }
 
-    // Priority 2: Fallback to the next number after the highest existing one.
-    const maxBillNumber = Math.max(0, ...Array.from(existingBillNumbers));
-    return maxBillNumber + 1;
+    // Start searching for a gap from the settings number, or 1 if not set.
+    let nextNum = settingsBillNo || 1;
+    
+    // Find the first available number by incrementing until a gap is found.
+    while (existingBillNumbers.has(nextNum)) {
+        nextNum++;
+    }
+    
+    return nextNum;
   }, [filteredInvoices, activeTab, vithalCompanyDetails, rvCompanyDetails, isLoadingInvoices, isLoadingVithalSettings, isLoadingRvSettings]);
   
   const nextBillNumberForForm = useMemo(() => {
@@ -709,14 +714,17 @@ export default function BillingPage() {
     const targetSettings = formEnterprise === 'Vithal' ? vithalCompanyDetails : rvCompanyDetails;
     const settingsBillNo = targetSettings?.nextBillNo;
 
-    // Priority 1: Use settings number if it's set and not already used.
-    if (settingsBillNo && !existingBillNumbers.has(settingsBillNo)) {
-        return settingsBillNo;
+    if (existingBillNumbers.size === 0) {
+        return settingsBillNo || 1;
     }
 
-    // Priority 2: Fallback to the next number after the highest existing one.
-    const maxBillNumber = Math.max(0, ...Array.from(existingBillNumbers));
-    return maxBillNumber + 1;
+    let nextNum = settingsBillNo || 1;
+
+    while (existingBillNumbers.has(nextNum)) {
+        nextNum++;
+    }
+
+    return nextNum;
   }, [formEnterprise, allInvoices, vithalCompanyDetails, rvCompanyDetails, isLoadingVithalSettings, isLoadingRvSettings]);
 
   const skippedBillNumbers = useMemo(() => {
