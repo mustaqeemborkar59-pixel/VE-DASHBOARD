@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useCallback, useMemo } from 'react';
 import {
@@ -35,7 +34,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
-import { EllipsisVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Trash2 } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, OrderByDirection } from 'firebase/firestore';
@@ -45,6 +44,7 @@ import { CompanyForm, CompanyFormData } from '@/components/company-form';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
 type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc';
 
@@ -56,6 +56,7 @@ export default function CompaniesPage() {
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOption>('date-desc');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const companiesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -85,7 +86,22 @@ export default function CompaniesPage() {
 
   const { data: companies, isLoading } = useCollection<Company>(companiesQuery);
 
-  const companiesCount = useMemo(() => companies?.length, [companies]);
+  const filteredCompanies = useMemo(() => {
+    if (!companies) return [];
+    const lowercasedSearchTerm = searchTerm.toLowerCase();
+
+    if (!lowercasedSearchTerm) return companies;
+
+    return companies.filter(company => {
+      const nameMatch = company.name.toLowerCase().includes(lowercasedSearchTerm);
+      const addressMatch = company.address.toLowerCase().includes(lowercasedSearchTerm);
+      const gstinMatch = company.gstin?.toLowerCase().includes(lowercasedSearchTerm) ?? false;
+      return nameMatch || addressMatch || gstinMatch;
+    });
+  }, [companies, searchTerm]);
+
+  const companiesCount = useMemo(() => filteredCompanies?.length, [filteredCompanies]);
+  const totalCompaniesCount = useMemo(() => companies?.length, [companies]);
   
   const closeAllDialogs = useCallback(() => {
     setIsAddEditDialogOpen(false);
@@ -189,12 +205,22 @@ export default function CompaniesPage() {
             <div>
               <CardTitle>Companies</CardTitle>
                <CardDescription>
-                Manage your client companies. You currently have {isLoading ? '...' : companiesCount} registered companies.
+                {isLoading ? 'Loading companies...' : `Showing ${companiesCount} of ${totalCompaniesCount} registered companies.`}
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative w-full sm:w-auto">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        placeholder="Search companies..."
+                        className="pl-8 w-full sm:w-[250px]"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
                 <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as SortOption)}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-full sm:w-[180px]">
                         <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>
@@ -215,9 +241,9 @@ export default function CompaniesPage() {
           <div className="md:hidden">
              {isLoading ? (
                 <div className="text-center p-6 text-muted-foreground">Loading companies...</div>
-             ) : companies && companies.length > 0 ? (
+             ) : filteredCompanies && filteredCompanies.length > 0 ? (
                 <div className="space-y-4 p-4">
-                  {companies.map((company) => (
+                  {filteredCompanies.map((company) => (
                     <div key={company.id} className="border rounded-lg p-4 space-y-3">
                         <div className="flex justify-between items-start">
                           <div className="space-y-1">
@@ -252,8 +278,8 @@ export default function CompaniesPage() {
                 <TableRow>
                   <TableCell colSpan={3} className="text-center">Loading companies...</TableCell>
                 </TableRow>
-              ) : companies && companies.length > 0 ? (
-                companies.map((company) => (
+              ) : filteredCompanies && filteredCompanies.length > 0 ? (
+                filteredCompanies.map((company) => (
                   <TableRow key={company.id}>
                     <TableCell>
                       <div className="font-medium">{company.name}</div>
