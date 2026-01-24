@@ -47,7 +47,7 @@ import { useToast } from "@/hooks/use-toast";
 
 
 type Enterprise = 'Vithal' | 'RV';
-type PaymentStatus = 'All' | 'Paid' | 'Partial' | 'Pending';
+type PaymentStatus = 'All' | 'Received' | 'Partial' | 'Pending';
 type PaymentMode = 'RTGS' | 'NEFT' | 'IMPS' | 'CHEQUE' | 'CASH';
 
 type ProcessedInvoice = Invoice & {
@@ -139,8 +139,11 @@ export default function PaymentsPage() {
       const roundedBalance = Math.round(rawBalance);
 
       let status: Omit<PaymentStatus, 'All'>;
+      let finalBalance = roundedBalance;
+
       if (roundedBalance <= 0) {
-        status = 'Paid';
+        status = 'Received';
+        finalBalance = 0; // If paid or overpaid, show balance as 0.
       } else if (totalCredited > 0 && roundedBalance > 0) {
         status = 'Partial';
       } else {
@@ -154,7 +157,7 @@ export default function PaymentsPage() {
         totalDeductions,
         taxableAmount,
         tdsAmount,
-        balance: roundedBalance,
+        balance: finalBalance,
         status,
       };
     });
@@ -280,26 +283,10 @@ export default function PaymentsPage() {
           return;
       }
       
-      const originalInvoice = invoices?.find(inv => inv.id === selectedInvoiceForPayment.id);
-      if (!originalInvoice) {
-          toast({ variant: "destructive", title: "Error", description: "Could not find original invoice." });
-          return;
-      }
-      const { totalPaid, totalDeductions } = getPaymentDetails(originalInvoice.id);
-      
-      const taxableAmount = originalInvoice.discountType === 'before_gst' 
-        ? originalInvoice.netTotal - (originalInvoice.discount || 0) 
-        : originalInvoice.netTotal;
-      const tdsPercentage = originalInvoice.tdsPercentage || 0;
-      const tdsAmount = (taxableAmount * tdsPercentage) / 100;
-      
-      const totalReceivedWithAdvance = totalPaid + (originalInvoice.advanceReceived || 0);
-      const totalCredited = totalReceivedWithAdvance + totalDeductions;
-      const currentRawBalance = originalInvoice.grandTotal - totalCredited - tdsAmount;
-      const currentRoundedBalance = Math.round(currentRawBalance);
+      const currentRoundedBalance = selectedInvoiceForPayment.balance;
 
-
-      if (totalPayment > currentRoundedBalance) {
+      // Allow a small tolerance for rounding (e.g., up to 0.50)
+      if (totalPayment > currentRoundedBalance + 0.5) {
           toast({
               variant: "destructive",
               title: "Payment Exceeds Balance",
@@ -359,8 +346,8 @@ export default function PaymentsPage() {
 
   const getStatusBadge = (status: Omit<PaymentStatus, 'All'>) => {
     switch (status) {
-      case 'Paid':
-        return <Badge className="bg-green-600/80 text-white">Paid</Badge>;
+      case 'Received':
+        return <Badge className="bg-green-600/80 text-white">Received</Badge>;
       case 'Partial':
         return <Badge className="bg-yellow-500/80 text-white">Partial</Badge>;
       case 'Pending':
@@ -471,7 +458,7 @@ export default function PaymentsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="All">All Statuses</SelectItem>
-                      <SelectItem value="Paid">Paid</SelectItem>
+                      <SelectItem value="Received">Received</SelectItem>
                       <SelectItem value="Partial">Partial</SelectItem>
                       <SelectItem value="Pending">Pending</SelectItem>
                     </SelectContent>
