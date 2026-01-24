@@ -539,7 +539,7 @@ export default function PaymentsPage() {
                             <TableCell className={cn("text-right font-medium text-red-600 dark:text-red-500", invoice.tdsAmount === 0 && "opacity-50")}>{formatCurrency(invoice.tdsAmount)}</TableCell>
                             <TableCell className="text-right font-medium text-green-600 dark:text-green-500">{formatCurrency(invoice.totalPaid)}</TableCell>
                             <TableCell className={cn("text-right font-medium text-red-600 dark:text-red-500", invoice.totalDeductions === 0 && "opacity-50")}>{formatCurrency(invoice.totalDeductions)}</TableCell>
-                            <TableCell className="text-right font-bold text-orange-600 dark:text-orange-500">{formatCurrency(invoice.balance)}</TableCell>
+                            <TableCell className={cn("text-right font-bold text-orange-600 dark:text-orange-500", invoice.balance === 0 && "opacity-50")}>{formatCurrency(invoice.balance)}</TableCell>
                             <TableCell className="text-center">{getStatusBadge(invoice.status)}</TableCell>
                             <TableCell className="text-right">
                                 <div className="flex items-center justify-end gap-2">
