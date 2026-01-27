@@ -103,10 +103,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             ))}
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter>
+        <SidebarFooter className="p-0">
            <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <button className='flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2'>
+                <button className='group-data-[collapsible=icon]:justify-center flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2'>
                     <Avatar className="h-8 w-8">
                         {user && user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || ''} />}
                         <AvatarFallback>{userInitial}</AvatarFallback>
