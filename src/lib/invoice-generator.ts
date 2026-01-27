@@ -1,7 +1,4 @@
 
-
-
-
 import { Packer, Document, Paragraph, TextRun, AlignmentType, BorderStyle, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType, VerticalAlign, PageOrientation, IPageSize, PageSize, TableLayoutType } from 'docx';
 import { saveAs } from 'file-saver';
 import { format, parseISO } from 'date-fns';
@@ -540,7 +537,7 @@ export const generateAndDownloadInvoice = async (
         ? format(parseISO(invoice.billingMonth), 'MMM-yy').toUpperCase()
         : format(parseISO(invoice.billDate), 'MMM-yy').toUpperCase();
     
-    const fileName = `Bill no ${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}-${companyNameForFile}${siteForFile ? `-${siteForFile}` : ''}-(${monthYearForFile})-GST 18.docx`;
+    const fileName = `Bill no.${invoice.billNo}-${invoice.billNoSuffix || 'MHE'}-${companyNameForFile}${siteForFile ? `-${siteForFile}` : ''}-(${monthYearForFile})-GST 18.docx`;
 
     const blob = await Packer.toBlob(doc);
     saveAs(blob, fileName);
