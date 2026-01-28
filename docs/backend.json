@@ -26,6 +26,22 @@
         "assignedTechnicianId": {
           "type": "string",
           "description": "Reference to the Employee assigned to the request."
+        },
+        "technicianNotes": {
+          "type": "string",
+          "description": "Notes from the technician about the work performed."
+        },
+        "partsUsed": {
+          "type": "array",
+          "description": "List of part names used for the service.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "completionDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date when the service request was completed."
         }
       },
       "required": [

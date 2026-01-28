@@ -7,6 +7,7 @@
 
 
 
+
 export type Employee = {
   id: string;
   fullName: string;
@@ -46,6 +47,9 @@ export type ServiceRequest = {
   status: 'Pending' | 'Assigned' | 'In Progress' | 'Completed';
   assignedTechnicianId?: string;
   requestDate: string;
+  technicianNotes?: string;
+  partsUsed?: string[];
+  completionDate?: string;
 };
 
 export type Part = {
