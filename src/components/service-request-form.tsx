@@ -106,7 +106,7 @@ export function ServiceRequestForm({
     <form onSubmit={handleSubmit} className="grid gap-6 py-4">
       <div className="grid gap-2">
         <Label htmlFor="forklift">Forklift</Label>
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={setOpen} modal={false}>
             <PopoverTrigger asChild>
                 <Button
                 variant="outline"
