@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Card,
@@ -106,13 +105,23 @@ export default function ServiceRequestsPage() {
     const requestRef = doc(firestore, 'serviceRequests', requestId);
     updateDocumentNonBlocking(requestRef, { assignedTechnicianId: technicianId, status: 'Assigned' });
   }
+
+  const closeAllDialogs = useCallback(() => {
+    setIsJobLogDialogOpen(false);
+    setSelectedRequest(null);
+  }, []);
+
+  const handleDelayedAction = (action: () => void) => {
+    setTimeout(action, 100);
+  };
   
-  const openJobLogDialog = (request: ServiceRequest) => {
+  const openJobLogDialog = useCallback((request: ServiceRequest) => {
+    closeAllDialogs();
     setSelectedRequest(request);
     setTechnicianNotes(request.technicianNotes || '');
     setPartsUsed(request.partsUsed || []);
-    setIsJobLogDialogOpen(true);
-  }
+    handleDelayedAction(() => setIsJobLogDialogOpen(true));
+  }, [closeAllDialogs]);
 
   const handleSaveJobLog = () => {
     if (!firestore || !selectedRequest) return;
@@ -125,8 +134,7 @@ export default function ServiceRequestsPage() {
       completionDate: new Date().toISOString(),
     });
 
-    setIsJobLogDialogOpen(false);
-    setSelectedRequest(null);
+    closeAllDialogs();
   };
   
   const getStatusBadge = (status: ServiceRequest['status']) => {
@@ -289,7 +297,7 @@ export default function ServiceRequestsPage() {
       </Card>
 
       {/* Log Work Dialog */}
-      <Dialog open={isJobLogDialogOpen} onOpenChange={setIsJobLogDialogOpen}>
+      <Dialog open={isJobLogDialogOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Log Work & Complete Job</DialogTitle>
@@ -371,7 +379,7 @@ export default function ServiceRequestsPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsJobLogDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={closeAllDialogs}>Cancel</Button>
             <Button onClick={handleSaveJobLog}>Save & Complete Job</Button>
           </DialogFooter>
         </DialogContent>
