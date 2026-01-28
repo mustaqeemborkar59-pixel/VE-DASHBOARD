@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ServiceRequest, Employee, Forklift, Part } from "@/lib/data";
+import { ServiceRequest, Employee, Forklift } from "@/lib/data";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,9 +36,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { MoreHorizontal, PlusCircle, Check, ChevronsUpDown, X } from "lucide-react";
+import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, doc, query, where } from "firebase/firestore";
+import { collection, doc, query } from "firebase/firestore";
 import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import AppLayout from "@/components/app-layout";
@@ -47,9 +47,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { cn } from "@/lib/utils";
 
 
 export default function ServiceRequestsPage() {
@@ -60,17 +57,14 @@ export default function ServiceRequestsPage() {
   // Form state for the job log dialog
   const [technicianNotes, setTechnicianNotes] = useState('');
   const [partsUsed, setPartsUsed] = useState<string[]>([]);
-  const [partsPopoverOpen, setPartsPopoverOpen] = useState(false);
 
   const serviceRequestsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'serviceRequests') : null, [firestore]);
   const employeesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'employees') : null, [firestore]);
   const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
-  const partsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
 
   const { data: serviceRequests, isLoading: isLoadingRequests } = useCollection<ServiceRequest>(serviceRequestsQuery);
   const { data: employees, isLoading: isLoadingTechs } = useCollection<Employee>(employeesQuery);
   const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
-  const { data: parts, isLoading: isLoadingParts } = useCollection<Part>(partsQuery);
 
   const { activeRequests, completedRequests } = useMemo(() => {
     const active = serviceRequests?.filter(r => r.status !== 'Completed') || [];
@@ -152,7 +146,7 @@ export default function ServiceRequestsPage() {
     }
   };
 
-  const isLoading = isLoadingRequests || isLoadingTechs || isLoadingForklifts || isLoadingParts;
+  const isLoading = isLoadingRequests || isLoadingTechs || isLoadingForklifts;
 
   return (
     <AppLayout>
@@ -322,59 +316,14 @@ export default function ServiceRequestsPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Parts Used</Label>
-                <Popover open={partsPopoverOpen} onOpenChange={setPartsPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10">
-                       <div className="flex flex-wrap gap-1">
-                         {partsUsed.length > 0 ? (
-                           partsUsed.map(partName => (
-                             <Badge
-                               key={partName}
-                               variant="secondary"
-                               className="mr-1"
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 setPartsUsed(partsUsed.filter(p => p !== partName));
-                               }}
-                             >
-                               {partName}
-                               <X className="ml-1 h-3 w-3" />
-                             </Badge>
-                           ))
-                         ) : (
-                           <span className="text-muted-foreground">Select parts...</span>
-                         )}
-                       </div>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                    <Command>
-                      <CommandInput placeholder="Search parts..." />
-                      <CommandList>
-                        <CommandEmpty>No parts found.</CommandEmpty>
-                        <CommandGroup>
-                          {parts?.map(part => (
-                            <CommandItem
-                              key={part.id}
-                              value={part.name}
-                              onSelect={() => {
-                                const newParts = partsUsed.includes(part.name)
-                                  ? partsUsed.filter(p => p !== part.name)
-                                  : [...partsUsed, part.name];
-                                setPartsUsed(newParts);
-                              }}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", partsUsed.includes(part.name) ? "opacity-100" : "opacity-0")} />
-                              {part.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <Label htmlFor="parts-used">Parts Used</Label>
+                <Textarea
+                  id="parts-used"
+                  value={partsUsed.join('\n')}
+                  onChange={(e) => setPartsUsed(e.target.value.split('\n').filter(p => p.trim() !== ''))}
+                  placeholder="Enter each part on a new line..."
+                  className="min-h-24"
+                />
               </div>
             </div>
           )}
