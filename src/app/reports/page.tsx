@@ -1,6 +1,6 @@
+
 'use client';
-import { useMemo, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useState, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -8,209 +8,256 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button";
+import { EllipsisVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc } from 'firebase/firestore';
-import { Invoice, Company, MonthlyRepair } from '@/lib/data';
-import { format, parseISO } from 'date-fns';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { collection, doc, query, orderBy } from 'firebase/firestore';
+import { JobCard, Company, Forklift, Employee } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { JobCardForm, JobCardFormData } from '@/components/job-card-form';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
-export default function ReportsPage() {
+export default function JobCardsPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
+  
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<JobCard | null>(null);
+  const [selectedJob, setSelectedJob] = useState<JobCard | null>(null);
 
-  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
-  const [repairCount, setRepairCount] = useState('');
-
-  // Queries
-  const invoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billDate', 'desc')) : null, [firestore]);
-  const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
-  const monthlyRepairsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'monthlyRepairs'), orderBy('id', 'asc')) : null, [firestore]);
-
-  // Data fetching
-  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesQuery);
+  const jobCardsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'jobCards'), orderBy('creationDate', 'desc')) : null, [firestore]);
+  const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name', 'asc')) : null, [firestore]);
+  const forkliftsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'forklifts'), orderBy('serialNumber', 'asc')) : null, [firestore]);
+  const employeesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'employees'), orderBy('fullName', 'asc')) : null, [firestore]);
+  
+  const { data: jobCards, isLoading: isLoadingJobs } = useCollection<JobCard>(jobCardsQuery);
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
-  const { data: monthlyRepairs, isLoading: isLoadingRepairs } = useCollection<MonthlyRepair>(monthlyRepairsQuery);
+  const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
+  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesQuery);
 
-  const isLoading = isLoadingInvoices || isLoadingCompanies || isLoadingRepairs;
+  const isLoading = isLoadingJobs || isLoadingCompanies || isLoadingForklifts || isLoadingEmployees;
 
-  const handleSaveData = async () => {
-    if (!firestore) return;
-    const count = parseInt(repairCount, 10);
-    if (!selectedMonth || isNaN(count) || count < 0) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid Input',
-        description: 'Please select a month and enter a valid number of repairs.',
-      });
-      return;
-    }
-    
-    try {
-      const docRef = doc(firestore, 'monthlyRepairs', selectedMonth);
-      await setDoc(docRef, { repairs: count });
-      toast({
-        title: 'Data Saved',
-        description: `Repair data for ${format(parseISO(selectedMonth), 'MMMM yyyy')} has been saved.`,
-      });
-      setRepairCount('');
-    } catch (error) {
-      console.error("Error saving repair data:", error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not save repair data. Please check permissions.',
-      });
-    }
+  const companyMap = useMemo(() => new Map(companies?.map(c => [c.id, c.name])), [companies]);
+  const forkliftMap = useMemo(() => new Map(forklifts?.map(f => [f.id, `${f.serialNumber} (${f.make})`])), [forklifts]);
+  const employeeMap = useMemo(() => new Map(employees?.map(e => [e.id, e.fullName])), [employees]);
+
+  const closeAllDialogs = useCallback(() => {
+    setIsFormOpen(false);
+    setJobToDelete(null);
+    setSelectedJob(null);
+  }, []);
+  
+  const handleDelayedAction = (action: () => void) => {
+    setTimeout(action, 100);
   };
   
-  const monthlyRepairsChartData = useMemo(() => {
-    if (!monthlyRepairs) return [];
+  const openFormDialog = useCallback((job: JobCard | null) => {
+    closeAllDialogs();
+    setSelectedJob(job);
+    handleDelayedAction(() => setIsFormOpen(true));
+  }, [closeAllDialogs]);
+
+  const openDeleteDialog = useCallback((job: JobCard) => {
+    closeAllDialogs();
+    handleDelayedAction(() => setJobToDelete(job));
+  }, [closeAllDialogs]);
+
+  const handleFormSubmit = (formData: Partial<JobCardFormData>) => {
+    if (!firestore) return;
     
-    return monthlyRepairs
-      .map(item => ({
-        month: format(parseISO(item.id), 'MMM yyyy'),
-        repairs: item.repairs,
-      }))
-      .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime())
-      .slice(-12); // Show last 12 months
-  }, [monthlyRepairs]);
+    if (selectedJob) { // Edit mode
+      const jobDocRef = doc(firestore, 'jobCards', selectedJob.id);
+      updateDocumentNonBlocking(jobDocRef, formData);
+      toast({ title: "Success", description: "Job Card updated successfully." });
+    } else { // Add mode
+      const jobsCollection = collection(firestore, 'jobCards');
+      addDocumentNonBlocking(jobsCollection, {
+        ...formData,
+        creationDate: new Date().toISOString(),
+      });
+      toast({ title: "Success", description: "Job Card added successfully." });
+    }
+    closeAllDialogs();
+  };
+  
+  const handleDelete = () => {
+    if (!firestore || !jobToDelete) return;
+    
+    const jobDocRef = doc(firestore, 'jobCards', jobToDelete.id);
+    deleteDocumentNonBlocking(jobDocRef);
 
-  const revenueByCompanyData = useMemo(() => {
-    if (!invoices || !companies) return [];
+    toast({
+      title: "Job Card Deleted",
+      description: `Job Card for "${jobToDelete.jobTitle}" has been removed.`,
+    });
 
-    const companyRevenue = invoices.reduce((acc, invoice) => {
-        const companyName = companies.find(c => c.id === invoice.companyId)?.name || 'Unknown Company';
-        acc[companyName] = (acc[companyName] || 0) + invoice.grandTotal;
-        return acc;
-    }, {} as Record<string, number>);
+    setJobToDelete(null);
+  };
 
-    return Object.entries(companyRevenue)
-        .map(([name, revenue]) => ({ name, revenue: Math.round(revenue) }))
-        .sort((a, b) => b.revenue - a.revenue)
-        .slice(0, 10); // Show top 10 companies
-  }, [invoices, companies]);
+  const getStatusBadge = (status: JobCard['status']) => {
+    const statusClasses = {
+        Pending: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
+        Assigned: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700',
+        'In Progress': 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/50 dark:text-indigo-300 dark:border-indigo-700',
+        Completed: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
+        Cancelled: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
+    };
+    return <Badge variant="outline" className={cn(statusClasses[status])}>{status}</Badge>;
+  }
 
-  const renderLoader = () => (
-    <div className="h-[300px] w-full flex items-center justify-center">
-        <p className="text-muted-foreground">Loading report data...</p>
-    </div>
+  const renderActions = (job: JobCard) => (
+    <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                <EllipsisVertical className="h-4 w-4" />
+            </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-40">
+            <DropdownMenuItem onSelect={() => openFormDialog(job)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => openDeleteDialog(job)} className="text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+            </DropdownMenuItem>
+        </DropdownMenuContent>
+    </DropdownMenu>
   );
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-6">
-        <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Enter Monthly Repair Data</CardTitle>
-                    <CardDescription>Manually input the total number of repairs for a specific month.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                     <div className="space-y-2">
-                        <Label htmlFor="month-input">Month</Label>
-                        <Input
-                            id="month-input"
-                            type="month"
-                            value={selectedMonth}
-                            onChange={(e) => setSelectedMonth(e.target.value)}
-                        />
-                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="repair-count">Number of Repairs</Label>
-                        <Input
-                            id="repair-count"
-                            type="number"
-                            value={repairCount}
-                            onChange={(e) => setRepairCount(e.target.value)}
-                            placeholder="e.g., 50"
-                        />
-                     </div>
-                     <Button onClick={handleSaveData}>Save Data</Button>
-                </CardContent>
-            </Card>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Job Cards</CardTitle>
+              <CardDescription>Manage all service and repair jobs for your fleet.</CardDescription>
+            </div>
+            <Button onClick={() => openFormDialog(null)} size="sm">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Job Card
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 md:p-3 pt-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Job Title</TableHead>
+                <TableHead>Company</TableHead>
+                <TableHead>Forklift</TableHead>
+                <TableHead>Assigned To</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead><span className="sr-only">Actions</span></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center h-24">Loading job cards...</TableCell>
+                </TableRow>
+              ) : jobCards && jobCards.length > 0 ? (
+                jobCards.map((job) => (
+                  <TableRow key={job.id}>
+                    <TableCell>
+                      <div className="font-medium">{job.jobTitle}</div>
+                      <div className="text-sm text-muted-foreground">{format(new Date(job.creationDate), "PP")}</div>
+                    </TableCell>
+                    <TableCell>{companyMap.get(job.companyId) || 'N/A'}</TableCell>
+                    <TableCell>{forkliftMap.get(job.forkliftId) || 'N/A'}</TableCell>
+                    <TableCell>{job.employeeId ? employeeMap.get(job.employeeId) : 'Unassigned'}</TableCell>
+                    <TableCell>{getStatusBadge(job.status)}</TableCell>
+                    <TableCell className="text-right">
+                       {renderActions(job)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center h-24">No job cards found.</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-            <Card>
-            <CardHeader>
-                <CardTitle>Monthly Repairs</CardTitle>
-                <CardDescription>Total repair and maintenance jobs per month (from manual entry).</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {isLoadingRepairs ? renderLoader() : (
-                    <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={monthlyRepairsChartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-                        <Tooltip
-                            cursor={{ fill: 'hsl(var(--accent))' }}
-                            contentStyle={{
-                                background: "hsl(var(--background))",
-                                borderColor: "hsl(var(--border))"
-                            }}
-                        />
-                        <Bar dataKey="repairs" fill="hsl(var(--primary))" name="Repairs" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                    </ResponsiveContainer>
-                )}
-            </CardContent>
-            </Card>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-            <CardHeader>
-                <CardTitle>Top 10 Clients by Revenue</CardTitle>
-                <CardDescription>Your most valuable clients based on total billing.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 {isLoadingInvoices || isLoadingCompanies ? renderLoader() : (
-                    <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={revenueByCompanyData} layout="vertical" margin={{ right: 30, left: 20 }}>
-                        <XAxis type="number" hide />
-                        <YAxis 
-                            dataKey="name" 
-                            type="category" 
-                            axisLine={false} 
-                            tickLine={false} 
-                            width={120} 
-                            fontSize={12}
-                            tick={{ width: 110, textOverflow: 'ellipsis', overflow: 'hidden' }}
-                        />
-                        <Tooltip
-                            cursor={{ fill: 'hsl(var(--accent))' }}
-                            contentStyle={{
-                                background: "hsl(var(--background))",
-                                borderColor: "hsl(var(--border))"
-                            }}
-                             formatter={(value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(Number(value))}
-                        />
-                        <Bar dataKey="revenue" name="Total Revenue" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                    </ResponsiveContainer>
-                 )}
-            </CardContent>
-            </Card>
-
-            <Card>
-            <CardHeader>
-                <CardTitle>Parts Consumption</CardTitle>
-                <CardDescription>Analysis of parts used in maintenance.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-center h-[300px]">
-                <div className="text-center text-muted-foreground">
-                    <p className="font-semibold">Feature Under Development</p>
-                    <p className="text-sm mt-2 max-w-sm mx-auto">
-                        To accurately track parts consumption, invoice items need to be linked to your inventory. Currently, they are stored as free text.
-                    </p>
-                </div>
-            </CardContent>
-            </Card>
-        </div>
-      </div>
+      <Dialog open={isFormOpen} onOpenChange={(open) => {if(!open) closeAllDialogs()}}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle>{selectedJob ? 'Edit Job Card' : 'Add New Job Card'}</DialogTitle>
+            <DialogDescription>
+              {selectedJob ? 'Update the details of this service job.' : 'Fill out the form to create a new job card.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-grow overflow-y-auto px-6">
+            <JobCardForm 
+              onSubmit={handleFormSubmit}
+              onCancel={closeAllDialogs}
+              initialData={selectedJob || undefined}
+              mode={selectedJob ? 'edit' : 'add'}
+              companies={companies || []}
+              forklifts={forklifts || []}
+              employees={employees || []}
+            />
+          </div>
+          <DialogFooter className="p-6 pt-4 border-t">
+              <Button variant="outline" type="button" onClick={closeAllDialogs}>
+                Cancel
+              </Button>
+              <Button type="submit" form="job-card-form">
+                {selectedJob ? 'Update Job Card' : 'Save Job Card'}
+              </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={!!jobToDelete} onOpenChange={(open) => { if (!open) closeAllDialogs(); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the job card: <span className="font-medium">{jobToDelete?.jobTitle}</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

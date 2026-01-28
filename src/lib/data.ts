@@ -1,12 +1,17 @@
 
 
-
-
-
-
-
-
-
+export type JobCard = {
+  id: string;
+  jobTitle: string;
+  forkliftId: string;
+  companyId: string;
+  employeeId?: string;
+  status: 'Pending' | 'Assigned' | 'In Progress' | 'Completed' | 'Cancelled';
+  creationDate: string; // ISO DateTime
+  jobDescription: string;
+  technicianNotes?: string;
+  completionDate?: string; // YYYY-MM-DD
+};
 
 
 export type Employee = {

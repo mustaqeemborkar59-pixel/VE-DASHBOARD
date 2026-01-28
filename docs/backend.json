@@ -123,35 +123,61 @@
     "JobCard": {
       "title": "JobCard",
       "type": "object",
-      "description": "Represents a job card for a service request.",
+      "description": "Represents a job card for a service or repair request.",
       "properties": {
-        "serviceRequestId": {
+        "jobTitle": {
           "type": "string",
-          "description": "Reference to the ServiceRequest."
+          "description": "A short summary of the job."
+        },
+        "forkliftId": {
+          "type": "string",
+          "description": "Reference to the Forklift being serviced."
+        },
+        "companyId": {
+          "type": "string",
+          "description": "Reference to the client Company."
+        },
+        "employeeId": {
+          "type": "string",
+          "description": "Reference to the assigned Employee/Technician."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Pending",
+            "Assigned",
+            "In Progress",
+            "Completed",
+            "Cancelled"
+          ],
+          "description": "The current status of the job."
         },
         "creationDate": {
           "type": "string",
-          "description": "Date the job card was created.",
+          "description": "Date and time the job card was created.",
           "format": "date-time"
         },
-        "description": {
+        "jobDescription": {
           "type": "string",
-          "description": "Detailed description of the work to be done."
+          "description": "Detailed description of the problem or work to be done."
         },
         "technicianNotes": {
           "type": "string",
-          "description": "Notes added by the assigned employee."
+          "description": "Notes and updates from the assigned technician."
         },
         "completionDate": {
           "type": "string",
           "description": "Date the job was completed.",
-          "format": "date-time"
+          "format": "date"
         }
       },
       "required": [
-        "serviceRequestId",
+        "jobTitle",
+        "forkliftId",
+        "companyId",
+        "status",
         "creationDate",
-        "description"
+        "jobDescription"
       ]
     },
     "Part": {

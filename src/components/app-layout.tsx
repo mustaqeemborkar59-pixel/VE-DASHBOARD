@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -30,12 +31,12 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/forklifts', label: 'Forklifts', icon: ForkliftIcon },
+  { href: '/reports', label: 'Job Cards', icon: Wrench },
   { href: '/employees', label: 'Employees', icon: User },
   { href: '/companies', label: 'Companies', icon: Building },
   { href: '/inventory', label: 'Inventory', icon: Warehouse },
   { href: '/billing', label: 'Billing', icon: ReceiptText },
   { href: '/payments', label: 'Payments', icon: Banknote },
-  { href: '/reports', label: 'Reports', icon: ScrollText },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
