@@ -39,15 +39,12 @@ export default function ReportsPage() {
 
       if (dateRange?.from) {
         const invoiceDate = parseISO(invoice.billDate);
-        const fromDate = dateRange.from;
-        const toDate = dateRange.to || dateRange.from; // if `to` is not selected, consider it a single day range
+        const fromDate = new Date(dateRange.from.setHours(0, 0, 0, 0));
+        const toDate = dateRange.to ? new Date(dateRange.to.setHours(23, 59, 59, 999)) : new Date(dateRange.from.setHours(23, 59, 59, 999));
         return invoiceDate >= fromDate && invoiceDate <= toDate;
       }
       return true; // No date range filter
     });
-
-    const totalRevenue = filtered.reduce((acc, inv) => acc + inv.grandTotal, 0);
-    const totalInvoices = filtered.length;
 
     const maintenanceItems = filtered.flatMap(invoice =>
       invoice.items.map(item => ({
@@ -60,10 +57,7 @@ export default function ReportsPage() {
     );
 
     return {
-      totalRevenue,
-      totalInvoices,
       maintenanceItems,
-      selectedCompanyName: selectedCompanyId === 'All' ? 'All Companies' : companies.find(c => c.id === selectedCompanyId)?.name
     };
   }, [invoices, companies, selectedCompanyId, dateRange]);
 
@@ -76,9 +70,9 @@ export default function ReportsPage() {
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div>
-                <CardTitle>Company Maintenance Report</CardTitle>
+                <CardTitle>Maintenance Report</CardTitle>
                 <CardDescription>
-                  Har company ka kachha chittha: maintenance, kharcha aur aamdani ka poora record.
+                  Har company ke liye kiye gaye maintenance kaamo ka poora record (invoices ke anusaar).
                 </CardDescription>
               </div>
               <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
@@ -97,77 +91,45 @@ export default function ReportsPage() {
               </div>
             </div>
           </CardHeader>
-        </Card>
-
-        {isLoading ? (
-          <div className="text-center text-muted-foreground py-10">Loading report data...</div>
-        ) : reportData ? (
-          <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{formatCurrency(reportData.totalRevenue)}</div>
-                        <p className="text-xs text-muted-foreground">from {reportData.selectedCompanyName}</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{reportData.totalInvoices}</div>
-                        <p className="text-xs text-muted-foreground">generated for {reportData.selectedCompanyName}</p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Detailed Work Log</CardTitle>
-                    <CardDescription>
-                        A complete list of all maintenance items from invoices for the selected criteria.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Date</TableHead>
-                                {selectedCompanyId === 'All' && <TableHead>Company</TableHead>}
-                                <TableHead>Bill No.</TableHead>
-                                <TableHead>Work Performed (Particulars)</TableHead>
-                                <TableHead className="text-right">Amount</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {reportData.maintenanceItems.length > 0 ? (
-                                reportData.maintenanceItems.map((item, index) => (
-                                    <TableRow key={`${item.invoiceId}-${index}`}>
-                                        <TableCell>{format(parseISO(item.billDate), 'dd MMM, yyyy')}</TableCell>
-                                        {selectedCompanyId === 'All' && <TableCell>{item.companyName}</TableCell>}
-                                        <TableCell>{item.billNo}</TableCell>
-                                        <TableCell className="whitespace-pre-wrap">{item.particulars}</TableCell>
-                                        <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">
-                                        No maintenance records found for the selected criteria.
-                                    </TableCell>
+          <CardContent>
+            {isLoading ? (
+                <div className="text-center text-muted-foreground py-10">Loading report data...</div>
+            ) : reportData ? (
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Date</TableHead>
+                            {selectedCompanyId === 'All' && <TableHead>Company</TableHead>}
+                            <TableHead>Bill No.</TableHead>
+                            <TableHead>Work Performed (Particulars)</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {reportData.maintenanceItems.length > 0 ? (
+                            reportData.maintenanceItems.map((item, index) => (
+                                <TableRow key={`${item.invoiceId}-${index}`}>
+                                    <TableCell>{format(parseISO(item.billDate), 'dd MMM, yyyy')}</TableCell>
+                                    {selectedCompanyId === 'All' && <TableCell>{item.companyName}</TableCell>}
+                                    <TableCell>{item.billNo}</TableCell>
+                                    <TableCell className="whitespace-pre-wrap">{item.particulars}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
                                 </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-          </div>
-        ) : (
-            <div className="text-center text-muted-foreground py-10">No data available to generate report.</div>
-        )}
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={selectedCompanyId === 'All' ? 5 : 4} className="h-24 text-center">
+                                    No maintenance records found for the selected criteria.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            ) : (
+                <div className="text-center text-muted-foreground py-10">No data available to generate report.</div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );
