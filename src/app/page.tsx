@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Company, Forklift, Invoice } from "@/lib/data";
-import { Building, ReceiptText, DollarSign, Warehouse } from "lucide-react";
+import { TrendingUp, Warehouse } from "lucide-react";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
@@ -33,30 +33,24 @@ export default function Dashboard() {
   // Queries
   const forkliftsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'forklifts')) : null, [firestore]);
   const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
-  const invoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billDate', 'desc')) : null, [firestore]);
   const recentInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billDate', 'desc'), limit(5)) : null, [firestore]);
 
   // Data fetching
   const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
-  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesQuery);
   const { data: recentInvoices, isLoading: isLoadingRecentInvoices } = useCollection<Invoice>(recentInvoicesQuery);
 
-  const isLoading = isLoadingForklifts || isLoadingCompanies || isLoadingInvoices || isLoadingRecentInvoices;
+  const isLoading = isLoadingForklifts || isLoadingCompanies || isLoadingRecentInvoices;
 
   // Stats calculation
   const stats = useMemo(() => {
+    const totalFleet = forklifts?.length || 0;
     const deployedFleet = forklifts?.filter(f => f.locationType === 'On-Site').length || 0;
     const idleFleet = forklifts?.filter(f => f.locationType === 'Workshop').length || 0;
-
-    const currentMonth = format(new Date(), 'yyyy-MM');
-    const invoicesThisMonth = invoices?.filter(inv => (inv.billingMonth || format(parseISO(inv.billDate), 'yyyy-MM')) === currentMonth) || [];
+    const utilizationRate = totalFleet > 0 ? (deployedFleet / totalFleet) * 100 : 0;
     
-    const monthlyRevenue = invoicesThisMonth.reduce((acc, inv) => acc + inv.grandTotal, 0);
-    const totalInvoicesThisMonth = invoicesThisMonth.length;
-    
-    return { deployedFleet, idleFleet, monthlyRevenue, totalInvoicesThisMonth };
-  }, [forklifts, invoices]);
+    return { totalFleet, deployedFleet, idleFleet, utilizationRate };
+  }, [forklifts]);
   
   // Chart data
   const forkliftLocationData = useMemo(() => {
@@ -103,7 +97,17 @@ export default function Dashboard() {
               <p className="text-muted-foreground">An overview of your fleet's performance and profitability.</p>
             </div>
           </div>
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Fleet Utilization</CardTitle>
+              <TrendingUp className="h-5 w-5 text-white/80" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{isLoading ? '...' : `${stats.utilizationRate.toFixed(0)}%`}</div>
+              <p className="text-xs text-white/90">Percentage of fleet actively earning revenue</p>
+            </CardContent>
+          </Card>
           <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Deployed Fleet</CardTitle>
@@ -111,7 +115,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{isLoading ? '...' : stats.deployedFleet}</div>
-              <p className="text-xs text-white/90">Profit-generating units on-site</p>
+              <p className="text-xs text-white/90">Units on-site generating profit</p>
             </CardContent>
           </Card>
           <Card className={cn(cardClassName, "from-amber-500 to-orange-600 text-white shadow-amber-500/30")}>
@@ -121,27 +125,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{isLoading ? '...' : stats.idleFleet}</div>
-              <p className="text-xs text-white/90">Units in workshop (not earning)</p>
-            </CardContent>
-          </Card>
-           <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Revenue (This Month)</CardTitle>
-              <DollarSign className="h-5 w-5 text-white/80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{isLoading ? '...' : formatCurrency(stats.monthlyRevenue)}</div>
-              <p className="text-xs text-white/90">From {stats.totalInvoicesThisMonth} invoices</p>
-            </CardContent>
-          </Card>
-          <Card className={cn(cardClassName, "from-violet-500 to-purple-600 text-white shadow-violet-500/30")}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Invoices (This Month)</CardTitle>
-              <ReceiptText className="h-5 w-5 text-white/80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{isLoading ? '...' : stats.totalInvoicesThisMonth}</div>
-              <p className="text-xs text-white/90">New invoices generated</p>
+              <p className="text-xs text-white/90">Units in workshop, ready for deployment</p>
             </CardContent>
           </Card>
         </div>
