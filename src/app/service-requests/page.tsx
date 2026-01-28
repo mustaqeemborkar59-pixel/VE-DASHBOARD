@@ -300,7 +300,7 @@ export default function ServiceRequestsPage() {
       </Card>
 
       {/* New Request Dialog */}
-      <Dialog open={isNewRequestDialogOpen} onOpenChange={setIsNewRequestDialogOpen}>
+      <Dialog open={isNewRequestDialogOpen} onOpenChange={setIsNewRequestDialogOpen} modal={false}>
         <DialogContent className="sm:max-w-lg">
            <DialogHeader>
             <DialogTitle>New Service Request</DialogTitle>
