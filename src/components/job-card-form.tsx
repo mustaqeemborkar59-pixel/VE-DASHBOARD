@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from "react";
@@ -68,7 +67,11 @@ export function JobCardForm({ onSubmit, onCancel, initialData, mode, companies, 
     };
 
     const handleSelectChange = (id: keyof JobCardFormData, value: string) => {
-        setFormData(prev => ({ ...prev, [id]: value }));
+        if (id === 'employeeId' && value === '__none__') {
+            setFormData(prev => ({ ...prev, employeeId: '' }));
+        } else {
+            setFormData(prev => ({ ...prev, [id]: value }));
+        }
     }
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -92,13 +95,13 @@ export function JobCardForm({ onSubmit, onCancel, initialData, mode, companies, 
         <form id="job-card-form" onSubmit={handleSubmit} className="grid gap-6 py-4">
             <div className="grid gap-2">
                 <Label htmlFor="jobTitle">Job Title</Label>
-                <Input id="jobTitle" value={formData.jobTitle} onChange={handleInputChange} placeholder="e.g., Engine check for Forklift X" required />
+                <Input id="jobTitle" value={formData.jobTitle || ''} onChange={handleInputChange} placeholder="e.g., Engine check for Forklift X" required />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                     <Label htmlFor="companyId">Company</Label>
-                    <Select value={formData.companyId} onValueChange={(value) => handleSelectChange('companyId', value)} required>
+                    <Select value={formData.companyId || ''} onValueChange={(value) => handleSelectChange('companyId', value)} required>
                         <SelectTrigger><SelectValue placeholder="Select a company" /></SelectTrigger>
                         <SelectContent>
                             {companies.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -107,7 +110,7 @@ export function JobCardForm({ onSubmit, onCancel, initialData, mode, companies, 
                 </div>
                 <div className="grid gap-2">
                     <Label htmlFor="forkliftId">Forklift</Label>
-                    <Select value={formData.forkliftId} onValueChange={(value) => handleSelectChange('forkliftId', value)} required disabled={!formData.companyId}>
+                    <Select value={formData.forkliftId || ''} onValueChange={(value) => handleSelectChange('forkliftId', value)} required disabled={!formData.companyId}>
                         <SelectTrigger><SelectValue placeholder="Select a forklift" /></SelectTrigger>
                         <SelectContent>
                             {filteredForklifts.map(f => (
@@ -122,23 +125,23 @@ export function JobCardForm({ onSubmit, onCancel, initialData, mode, companies, 
 
             <div className="grid gap-2">
                 <Label htmlFor="jobDescription">Job Description</Label>
-                <Textarea id="jobDescription" value={formData.jobDescription} onChange={handleInputChange} placeholder="Describe the issue or work to be done." required />
+                <Textarea id="jobDescription" value={formData.jobDescription || ''} onChange={handleInputChange} placeholder="Describe the issue or work to be done." required />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <div className="grid gap-2">
                     <Label htmlFor="employeeId">Assign To</Label>
-                    <Select value={formData.employeeId} onValueChange={(value) => handleSelectChange('employeeId', value)}>
+                    <Select value={formData.employeeId || ''} onValueChange={(value) => handleSelectChange('employeeId', value)}>
                         <SelectTrigger><SelectValue placeholder="Assign a technician" /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">None</SelectItem>
+                            <SelectItem value="__none__">None</SelectItem>
                             {employees.filter(e => e.availability).map(e => <SelectItem key={e.id} value={e.id}>{e.fullName}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
                 <div className="grid gap-2">
                     <Label htmlFor="status">Status</Label>
-                    <Select value={formData.status} onValueChange={(value) => handleSelectChange('status', value)} required>
+                    <Select value={formData.status || 'Pending'} onValueChange={(value) => handleSelectChange('status', value as JobCard['status'])} required>
                         <SelectTrigger><SelectValue placeholder="Set status" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="Pending">Pending</SelectItem>
@@ -153,12 +156,12 @@ export function JobCardForm({ onSubmit, onCancel, initialData, mode, companies, 
             
             <div className="grid gap-2">
                 <Label htmlFor="technicianNotes">Technician Notes</Label>
-                <Textarea id="technicianNotes" value={formData.technicianNotes} onChange={handleInputChange} placeholder="Updates from the technician..." />
+                <Textarea id="technicianNotes" value={formData.technicianNotes || ''} onChange={handleInputChange} placeholder="Updates from the technician..." />
             </div>
             
              <div className="grid gap-2">
                 <Label htmlFor="completionDate">Completion Date</Label>
-                <Input id="completionDate" type="date" value={formData.completionDate} onChange={handleInputChange} />
+                <Input id="completionDate" type="date" value={formData.completionDate || ''} onChange={handleInputChange} />
             </div>
 
         </form>
