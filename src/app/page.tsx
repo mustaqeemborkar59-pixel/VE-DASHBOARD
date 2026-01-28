@@ -7,40 +7,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Company, Forklift, Invoice } from "@/lib/data";
+import { Company, Forklift } from "@/lib/data";
 import { TrendingUp, Warehouse } from "lucide-react";
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, limit } from "firebase/firestore";
+import { collection, query, orderBy } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import AppLayout from "@/components/app-layout";
 import { ForkliftIcon } from '@/components/icons/forklift-icon';
-import { format, parseISO } from 'date-fns';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts';
 
 export default function Dashboard() {
   const { firestore } = useFirebase();
 
   // Queries
   const forkliftsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'forklifts')) : null, [firestore]);
-  const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
-  const recentInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billDate', 'desc'), limit(5)) : null, [firestore]);
 
   // Data fetching
   const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
-  const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
-  const { data: recentInvoices, isLoading: isLoadingRecentInvoices } = useCollection<Invoice>(recentInvoicesQuery);
 
-  const isLoading = isLoadingForklifts || isLoadingCompanies || isLoadingRecentInvoices;
+  const isLoading = isLoadingForklifts;
 
   // Stats calculation
   const stats = useMemo(() => {
@@ -71,20 +56,24 @@ export default function Dashboard() {
       { name: 'Not Confirmed', value: counts['Not Confirm'] },
     ].filter(item => item.value > 0);
   }, [forklifts]);
+  
+  const equipmentTypeData = useMemo(() => {
+    if (!forklifts) return [];
+    const counts = forklifts.reduce((acc, f) => {
+        const type = f.equipmentType || 'Unknown';
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(counts).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
+  }, [forklifts]);
+
 
   const COLORS = {
       'Workshop': '#f97316', // orange-500
       'On-Site': '#22c55e', // green-500
       'Not Confirmed': '#ef4444' // red-500
   };
-
-  const getCompanyDetails = (companyId: string) => {
-    return companies?.find(c => c.id === companyId);
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
-  }
 
   const cardClassName = "border-0 bg-gradient-to-br shadow-lg";
 
@@ -131,55 +120,39 @@ export default function Dashboard() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="lg:col-span-4">
-            <CardHeader className="flex flex-row items-center">
-                <div className="grid gap-2">
-                    <CardTitle>Recent Invoices</CardTitle>
-                    <CardDescription>
-                        The last 5 invoices that were created.
-                    </CardDescription>
-                </div>
-                <Button asChild size="sm" className="ml-auto gap-1">
-                    <Link href="/billing">
-                        View All
-                    </Link>
-                </Button>
-            </CardHeader>
-            <CardContent className="p-0 md:p-3 pt-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Bill No.</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead className="hidden md:table-cell">Date</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+           <Card className="lg:col-span-4">
+              <CardHeader>
+                  <CardTitle>Fleet Composition by Type</CardTitle>
+                  <CardDescription>
+                      Breakdown of your fleet by equipment type.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent>
                   {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center">Loading recent invoices...</TableCell>
-                    </TableRow>
-                  ) : recentInvoices && recentInvoices.length > 0 ? (
-                    recentInvoices.map((invoice) => (
-                      <TableRow key={invoice.id}>
-                        <TableCell>
-                          <div className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
-                          <div className="text-sm text-muted-foreground hidden md:inline">{invoice.enterprise}</div>
-                        </TableCell>
-                        <TableCell>{getCompanyDetails(invoice.companyId)?.name || 'Unknown'}</TableCell>
-                        <TableCell className="hidden md:table-cell">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(invoice.grandTotal)}</TableCell>
-                      </TableRow>
-                    ))
+                      <div className="h-[250px] w-full flex items-center justify-center">
+                          <p className="text-muted-foreground">Loading chart...</p>
+                      </div>
+                  ) : equipmentTypeData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={250}>
+                          <BarChart data={equipmentTypeData} layout="vertical" margin={{ right: 30, left: 20 }}>
+                              <XAxis type="number" hide />
+                              <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={100} fontSize={12} />
+                              <Tooltip
+                                  cursor={{ fill: 'hsl(var(--accent))' }}
+                                  contentStyle={{
+                                      background: "hsl(var(--background))",
+                                      borderColor: "hsl(var(--border))"
+                                  }}
+                              />
+                              <Bar dataKey="value" name="Count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                          </BarChart>
+                      </ResponsiveContainer>
                   ) : (
-                     <TableRow>
-                        <TableCell colSpan={4} className="h-24 text-center">No invoices found.</TableCell>
-                     </TableRow>
+                      <div className="h-[250px] w-full flex items-center justify-center">
+                          <p className="text-muted-foreground">No equipment type data available.</p>
+                      </div>
                   )}
-                </TableBody>
-              </Table>
-            </CardContent>
+              </CardContent>
           </Card>
           
           <Card className="lg:col-span-3">
