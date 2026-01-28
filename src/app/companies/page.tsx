@@ -35,11 +35,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Trash2, ChevronDown, DollarSign, FileText } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Trash2, ChevronDown } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, OrderByDirection } from 'firebase/firestore';
-import { Company, Forklift, Invoice } from '@/lib/data';
+import { Company } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { CompanyForm, CompanyFormData } from '@/components/company-form';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -47,71 +47,24 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { ForkliftIcon } from '@/components/icons/forklift-icon';
-import { Separator } from '@/components/ui/separator';
 
 type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc';
 
-const CompanyDetailsView = ({ company, allForklifts, allInvoices }: { 
-  company: Company, 
-  allForklifts: Forklift[] | null, 
-  allInvoices: Invoice[] | null,
+const CompanyDetailsView = ({ company }: { 
+  company: Company
 }) => {
-  const companyForklifts = useMemo(() => allForklifts?.filter(f => f.siteCompany === company.name) || [], [allForklifts, company.name]);
-  const companyInvoices = useMemo(() => allInvoices?.filter(i => i.companyId === company.id) || [], [allInvoices, company.id]);
-  const totalRevenue = useMemo(() => companyInvoices.reduce((acc, inv) => acc + inv.grandTotal, 0), [companyInvoices]);
-
   return (
     <div className="p-4 bg-muted/20 border-t">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-sm">
-            <div className="space-y-1 lg:col-span-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Full Address</p>
                 <p className="font-medium break-words">{company.address}</p>
             </div>
              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Date Added</p>
-                <p className="font-medium">{format(new Date(company.createdAt), "PP")}</p>
-            </div>
-            <div className="space-y-1">
-                <p className="text-xs text-muted-foreground flex items-center"><DollarSign className="h-3 w-3 mr-1"/> Total Revenue</p>
-                <p className="font-semibold text-base">{totalRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 })}</p>
-            </div>
-            <div className="space-y-1">
-                <p className="text-xs text-muted-foreground flex items-center"><FileText className="h-3 w-3 mr-1"/> Total Invoices</p>
-                <p className="font-semibold text-base">{companyInvoices.length}</p>
-            </div>
-            <div className="space-y-1">
-                <p className="text-xs text-muted-foreground flex items-center"><ForkliftIcon className="h-3 w-3 mr-1"/> Forklifts On-site</p>
-                <p className="font-semibold text-base">{companyForklifts.length}</p>
+                <p className="text-xs text-muted-foreground">GSTIN</p>
+                <p className="font-mono font-medium">{company.gstin || 'N/A'}</p>
             </div>
         </div>
-        {companyForklifts.length > 0 && (
-            <>
-                <Separator className="my-4"/>
-                <h4 className="font-semibold mb-2 text-sm">Forklifts at {company.name}</h4>
-                <div className="max-h-48 overflow-y-auto rounded-md border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="h-10">Serial No.</TableHead>
-                                <TableHead className="h-10">Make/Model</TableHead>
-                                <TableHead className="h-10">Area</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {companyForklifts.map(f => (
-                                <TableRow key={f.id}>
-                                    <TableCell className="py-2">{f.serialNumber}</TableCell>
-                                    <TableCell className="py-2">{f.make} {f.model}</TableCell>
-                                    <TableCell className="py-2">{f.siteArea || 'N/A'}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            </>
-        )}
     </div>
   );
 };
@@ -153,14 +106,7 @@ export default function CompaniesPage() {
     return query(collection(firestore, 'companies'), orderBy(field, direction));
   }, [firestore, sortOrder]);
 
-  const forkliftsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'forklifts')) : null, [firestore]);
-  const invoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices')) : null, [firestore]);
-
-  const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
-  const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
-  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesQuery);
-
-  const isLoading = isLoadingCompanies || isLoadingForklifts || isLoadingInvoices;
+  const { data: companies, isLoading } = useCollection<Company>(companiesQuery);
 
   const filteredCompanies = useMemo(() => {
     if (!companies) return [];
@@ -339,7 +285,7 @@ export default function CompaniesPage() {
                         )}
                       </div>
                        {expandedRow === company.id && (
-                          <CompanyDetailsView company={company} allForklifts={forklifts} allInvoices={invoices} />
+                          <CompanyDetailsView company={company} />
                        )}
                     </div>
                   ))}
@@ -386,7 +332,7 @@ export default function CompaniesPage() {
                     {expandedRow === company.id && (
                       <TableRow className="bg-transparent hover:bg-transparent">
                           <TableCell colSpan={3} className="p-0">
-                              <CompanyDetailsView company={company} allForklifts={forklifts} allInvoices={invoices} />
+                              <CompanyDetailsView company={company} />
                           </TableCell>
                       </TableRow>
                     )}
