@@ -67,8 +67,8 @@ export default function ServiceRequestsPage() {
   const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
 
   const { activeRequests, completedRequests } = useMemo(() => {
-    const active = serviceRequests?.filter(r => r.status !== 'Completed') || [];
-    const completed = serviceRequests?.filter(r => r.status === 'Completed') || [];
+    const active = serviceRequests?.filter(r => r.status !== 'Completed').sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime()) || [];
+    const completed = serviceRequests?.filter(r => r.status === 'Completed').sort((a, b) => new Date(b.completionDate || 0).getTime() - new Date(a.completionDate || 0).getTime()) || [];
     return { activeRequests: active, completedRequests: completed };
   }, [serviceRequests]);
 
@@ -243,10 +243,10 @@ export default function ServiceRequestsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Completed On</TableHead>
+                    <TableHead className="w-[150px]">Dates</TableHead>
                     <TableHead>Forklift / Site</TableHead>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Work Performed</TableHead>
+                    <TableHead>Job Details</TableHead>
+                    <TableHead>Assigned To</TableHead>
                     <TableHead>Parts Used</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -258,16 +258,25 @@ export default function ServiceRequestsPage() {
                   ) : completedRequests.length > 0 ? (
                     completedRequests.map((request) => (
                       <TableRow key={request.id}>
-                        <TableCell>{request.completionDate ? format(new Date(request.completionDate), 'PP') : 'N/A'}</TableCell>
+                        <TableCell>
+                          <div className="font-medium">{request.completionDate ? format(new Date(request.completionDate), 'PP') : 'N/A'}</div>
+                          <div className="text-xs text-muted-foreground">Requested: {format(new Date(request.requestDate), 'PP')}</div>
+                        </TableCell>
                         <TableCell>
                           <div className="font-medium">{getForkliftInfo(request.forkliftId).name}</div>
                           <div className="text-sm text-muted-foreground">{getForkliftInfo(request.forkliftId).site}</div>
                         </TableCell>
-                        <TableCell>{getEmployeeName(request.assignedTechnicianId)}</TableCell>
-                        <TableCell className="max-w-xs">
-                            <p className="truncate font-medium">{request.technicianNotes || request.issueDescription}</p>
-                            {request.technicianNotes && <p className="truncate text-sm text-muted-foreground">Original: {request.issueDescription}</p>}
+                        <TableCell className="max-w-sm">
+                            <div className="font-medium text-primary">Reported Issue:</div>
+                            <p className="pl-2 text-sm text-muted-foreground whitespace-pre-wrap">{request.issueDescription}</p>
+                            {request.technicianNotes && (
+                                <>
+                                    <div className="font-medium text-primary mt-2">Work Performed:</div>
+                                    <p className="pl-2 text-sm whitespace-pre-wrap">{request.technicianNotes}</p>
+                                </>
+                            )}
                         </TableCell>
+                        <TableCell>{getEmployeeName(request.assignedTechnicianId)}</TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {request.partsUsed && request.partsUsed.length > 0
