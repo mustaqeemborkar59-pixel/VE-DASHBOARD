@@ -1,5 +1,6 @@
+
 'use client';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, Fragment } from 'react';
 import {
   Card,
   CardContent,
@@ -34,19 +35,86 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Trash2 } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Trash2, ChevronDown, DollarSign, FileText } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, OrderByDirection } from 'firebase/firestore';
-import { Company } from '@/lib/data';
+import { Company, Forklift, Invoice } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { CompanyForm, CompanyFormData } from '@/components/company-form';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { ForkliftIcon } from '@/components/icons/forklift-icon';
+import { Separator } from '@/components/ui/separator';
 
 type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc';
+
+const CompanyDetailsView = ({ company, allForklifts, allInvoices }: { 
+  company: Company, 
+  allForklifts: Forklift[] | null, 
+  allInvoices: Invoice[] | null,
+}) => {
+  const companyForklifts = useMemo(() => allForklifts?.filter(f => f.siteCompany === company.name) || [], [allForklifts, company.name]);
+  const companyInvoices = useMemo(() => allInvoices?.filter(i => i.companyId === company.id) || [], [allInvoices, company.id]);
+  const totalRevenue = useMemo(() => companyInvoices.reduce((acc, inv) => acc + inv.grandTotal, 0), [companyInvoices]);
+
+  return (
+    <div className="p-4 bg-muted/20 border-t">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-sm">
+            <div className="space-y-1 lg:col-span-2">
+                <p className="text-xs text-muted-foreground">Full Address</p>
+                <p className="font-medium break-words">{company.address}</p>
+            </div>
+             <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Date Added</p>
+                <p className="font-medium">{format(new Date(company.createdAt), "PP")}</p>
+            </div>
+            <div className="space-y-1">
+                <p className="text-xs text-muted-foreground flex items-center"><DollarSign className="h-3 w-3 mr-1"/> Total Revenue</p>
+                <p className="font-semibold text-base">{totalRevenue.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 })}</p>
+            </div>
+            <div className="space-y-1">
+                <p className="text-xs text-muted-foreground flex items-center"><FileText className="h-3 w-3 mr-1"/> Total Invoices</p>
+                <p className="font-semibold text-base">{companyInvoices.length}</p>
+            </div>
+            <div className="space-y-1">
+                <p className="text-xs text-muted-foreground flex items-center"><ForkliftIcon className="h-3 w-3 mr-1"/> Forklifts On-site</p>
+                <p className="font-semibold text-base">{companyForklifts.length}</p>
+            </div>
+        </div>
+        {companyForklifts.length > 0 && (
+            <>
+                <Separator className="my-4"/>
+                <h4 className="font-semibold mb-2 text-sm">Forklifts at {company.name}</h4>
+                <div className="max-h-48 overflow-y-auto rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="h-10">Serial No.</TableHead>
+                                <TableHead className="h-10">Make/Model</TableHead>
+                                <TableHead className="h-10">Area</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {companyForklifts.map(f => (
+                                <TableRow key={f.id}>
+                                    <TableCell className="py-2">{f.serialNumber}</TableCell>
+                                    <TableCell className="py-2">{f.make} {f.model}</TableCell>
+                                    <TableCell className="py-2">{f.siteArea || 'N/A'}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </>
+        )}
+    </div>
+  );
+};
 
 export default function CompaniesPage() {
   const { firestore } = useFirebase();
@@ -57,6 +125,7 @@ export default function CompaniesPage() {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOption>('date-desc');
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const companiesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -84,7 +153,14 @@ export default function CompaniesPage() {
     return query(collection(firestore, 'companies'), orderBy(field, direction));
   }, [firestore, sortOrder]);
 
-  const { data: companies, isLoading } = useCollection<Company>(companiesQuery);
+  const forkliftsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'forklifts')) : null, [firestore]);
+  const invoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices')) : null, [firestore]);
+
+  const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
+  const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
+  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesQuery);
+
+  const isLoading = isLoadingCompanies || isLoadingForklifts || isLoadingInvoices;
 
   const filteredCompanies = useMemo(() => {
     if (!companies) return [];
@@ -123,15 +199,17 @@ export default function CompaniesPage() {
     handleDelayedAction(() => setCompanyToDelete(company));
   }, [closeAllDialogs]);
 
+  const toggleRow = (id: string) => {
+    setExpandedRow(prev => (prev === id ? null : id));
+  };
+
   const handleFormSubmit = (formData: CompanyFormData) => {
     if (!firestore || !companies) return;
 
     const newName = formData.name.trim().toLowerCase();
     const newAddress = formData.address.trim().toLowerCase();
 
-    // Check for duplicates based on both name and address
     const isDuplicate = companies.some(company => {
-      // If we are editing, we should exclude the current company from the check
       if (selectedCompany && company.id === selectedCompany.id) {
         return false;
       }
@@ -144,14 +222,14 @@ export default function CompaniesPage() {
         title: "Duplicate Company",
         description: "A company with the same name and address already exists.",
       });
-      return; // Stop the submission
+      return;
     }
     
-    if (selectedCompany) { // Edit mode
+    if (selectedCompany) {
       const companyDocRef = doc(firestore, 'companies', selectedCompany.id);
       updateDocumentNonBlocking(companyDocRef, formData);
       toast({ title: "Success", description: "Company updated successfully." });
-    } else { // Add mode
+    } else {
       const companiesCollection = collection(firestore, 'companies');
       addDocumentNonBlocking(companiesCollection, {
         ...formData,
@@ -180,11 +258,11 @@ export default function CompaniesPage() {
   const renderActions = (company: Company) => (
     <DropdownMenu>
         <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+            <Button variant="ghost" size="icon" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
                 <EllipsisVertical className="h-4 w-4" />
             </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-40">
+        <DropdownMenuContent className="w-40" onClick={(e) => e.stopPropagation()}>
             <DropdownMenuItem onSelect={() => openAddEditDialog(company)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
@@ -244,11 +322,12 @@ export default function CompaniesPage() {
              ) : filteredCompanies && filteredCompanies.length > 0 ? (
                 <div className="space-y-4 p-4">
                   {filteredCompanies.map((company) => (
-                    <div key={company.id} className="border rounded-lg p-4 space-y-3">
+                    <div key={company.id} className="border rounded-lg overflow-hidden">
+                      <div className="p-4 space-y-3 cursor-pointer" onClick={() => toggleRow(company.id)}>
                         <div className="flex justify-between items-start">
                           <div className="space-y-1">
                             <div className="font-bold">{company.name}</div>
-                            <div className="text-sm text-muted-foreground break-all">{company.address}</div>
+                            <div className="text-sm text-muted-foreground break-words">{company.address}</div>
                           </div>
                           {renderActions(company)}
                         </div>
@@ -258,6 +337,10 @@ export default function CompaniesPage() {
                             <span className="font-mono">{company.gstin}</span>
                           </div>
                         )}
+                      </div>
+                       {expandedRow === company.id && (
+                          <CompanyDetailsView company={company} allForklifts={forklifts} allInvoices={invoices} />
+                       )}
                     </div>
                   ))}
                 </div>
@@ -280,16 +363,34 @@ export default function CompaniesPage() {
                 </TableRow>
               ) : filteredCompanies && filteredCompanies.length > 0 ? (
                 filteredCompanies.map((company) => (
-                  <TableRow key={company.id}>
-                    <TableCell>
-                      <div className="font-medium">{company.name}</div>
-                      <div className="text-sm text-muted-foreground max-w-xs truncate">{company.address}</div>
-                    </TableCell>
-                    <TableCell className="font-mono">{company.gstin}</TableCell>
-                    <TableCell className="text-right">
-                       {renderActions(company)}
-                    </TableCell>
-                  </TableRow>
+                  <Fragment key={company.id}>
+                    <TableRow 
+                      onClick={() => toggleRow(company.id)} 
+                      className="cursor-pointer"
+                      data-state={expandedRow === company.id ? 'selected' : undefined}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                           <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", expandedRow === company.id && "rotate-180")} />
+                           <div>
+                              <div className="font-medium">{company.name}</div>
+                              <div className="text-sm text-muted-foreground max-w-xs truncate">{company.address}</div>
+                           </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono">{company.gstin}</TableCell>
+                      <TableCell className="text-right">
+                         {renderActions(company)}
+                      </TableCell>
+                    </TableRow>
+                    {expandedRow === company.id && (
+                      <TableRow className="bg-transparent hover:bg-transparent">
+                          <TableCell colSpan={3} className="p-0">
+                              <CompanyDetailsView company={company} allForklifts={forklifts} allInvoices={invoices} />
+                          </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
                 ))
               ) : (
                 <TableRow>
