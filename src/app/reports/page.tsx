@@ -26,19 +26,19 @@ export default function ReportsPage() {
 
   const isLoading = isLoadingInvoices || isLoadingCompanies;
 
-  const monthlyRevenueData = useMemo(() => {
+  const monthlyRepairsData = useMemo(() => {
     if (!invoices) return [];
     
     const monthlyData = invoices.reduce((acc, invoice) => {
       const month = format(parseISO(invoice.billDate), 'yyyy-MM');
-      acc[month] = (acc[month] || 0) + invoice.grandTotal;
+      acc[month] = (acc[month] || 0) + 1; // Count invoices (repairs)
       return acc;
     }, {} as Record<string, number>);
 
     return Object.entries(monthlyData)
-      .map(([month, revenue]) => ({
+      .map(([month, repairs]) => ({
         month: format(parseISO(month), 'MMM yyyy'),
-        revenue: Math.round(revenue),
+        repairs: repairs,
       }))
       .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime())
       .slice(-12); // Show last 12 months
@@ -70,25 +70,24 @@ export default function ReportsPage() {
       <div className="flex flex-col gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Monthly Revenue</CardTitle>
-            <CardDescription>Total revenue generated per month over the last year.</CardDescription>
+            <CardTitle>Monthly Repairs</CardTitle>
+            <CardDescription>Total repair and maintenance jobs per month over the last year.</CardDescription>
           </CardHeader>
           <CardContent>
              {isLoading ? renderLoader() : (
                 <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyRevenueData}>
+                <BarChart data={monthlyRepairsData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
+                    <YAxis fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                     <Tooltip
                         cursor={{ fill: 'hsl(var(--accent))' }}
                         contentStyle={{
                             background: "hsl(var(--background))",
                             borderColor: "hsl(var(--border))"
                         }}
-                        formatter={(value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(Number(value))}
                     />
-                    <Bar dataKey="revenue" fill="hsl(var(--primary))" name="Revenue" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="repairs" fill="hsl(var(--primary))" name="Repairs" radius={[4, 4, 0, 0]} />
                 </BarChart>
                 </ResponsiveContainer>
              )}
