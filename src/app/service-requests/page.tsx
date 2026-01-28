@@ -40,19 +40,20 @@ import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query } from "firebase/firestore";
 import { useState, useMemo, useCallback } from "react";
-import Link from "next/link";
 import AppLayout from "@/components/app-layout";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ServiceRequestForm } from "@/components/service-request-form";
 
 
 export default function ServiceRequestsPage() {
   const { firestore } = useFirebase();
   const [isJobLogDialogOpen, setIsJobLogDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
+  const [isNewRequestDialogOpen, setIsNewRequestDialogOpen] = useState(false);
 
   // Form state for the job log dialog
   const [technicianNotes, setTechnicianNotes] = useState('');
@@ -103,6 +104,7 @@ export default function ServiceRequestsPage() {
   const closeAllDialogs = useCallback(() => {
     setIsJobLogDialogOpen(false);
     setSelectedRequest(null);
+    setIsNewRequestDialogOpen(false);
   }, []);
 
   const handleDelayedAction = (action: () => void) => {
@@ -157,11 +159,9 @@ export default function ServiceRequestsPage() {
               <CardTitle>Job Management</CardTitle>
               <CardDescription>Manage and track all service requests and job histories.</CardDescription>
             </div>
-            <Button asChild size="sm">
-              <Link href="/service-requests/new">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Request
-              </Link>
+            <Button size="sm" onClick={() => setIsNewRequestDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Request
             </Button>
           </div>
         </CardHeader>
@@ -298,6 +298,24 @@ export default function ServiceRequestsPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* New Request Dialog */}
+      <Dialog open={isNewRequestDialogOpen} onOpenChange={setIsNewRequestDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+           <DialogHeader>
+            <DialogTitle>New Service Request</DialogTitle>
+            <DialogDescription>
+              Fill out the form to request maintenance for a forklift.
+            </DialogDescription>
+          </DialogHeader>
+          <ServiceRequestForm
+            forklifts={forklifts || []}
+            isLoadingForklifts={isLoadingForklifts}
+            onSuccess={() => setIsNewRequestDialogOpen(false)}
+            onCancel={() => setIsNewRequestDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Log Work Dialog */}
       <Dialog open={isJobLogDialogOpen} onOpenChange={(open) => !open && closeAllDialogs()}>

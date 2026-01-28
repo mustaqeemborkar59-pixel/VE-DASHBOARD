@@ -35,7 +35,8 @@ export function setDocumentNonBlocking(docRef: DocumentReference, data: any, opt
  * Does NOT await the write operation internally.
  */
 export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
-  addDoc(colRef, data).catch(error => {
+  const promise = addDoc(colRef, data);
+  promise.catch(error => {
       errorEmitter.emit(
         'permission-error',
         new FirestorePermissionError({
@@ -45,6 +46,7 @@ export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
         })
       )
     });
+  return promise;
 }
 
 

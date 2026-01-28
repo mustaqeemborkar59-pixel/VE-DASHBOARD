@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,19 +32,34 @@ export type ServiceRequestFormData = {
 interface ServiceRequestFormProps {
   forklifts: Forklift[];
   isLoadingForklifts: boolean;
+  onSuccess: () => void;
+  onCancel: () => void;
 }
 
 export function ServiceRequestForm({
   forklifts,
   isLoadingForklifts,
+  onSuccess,
+  onCancel,
 }: ServiceRequestFormProps) {
-  const router = useRouter();
   const { firestore } = useFirebase();
   const { toast } = useToast();
   const [forkliftId, setForkliftId] = useState('');
   const [issueDescription, setIssueDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [open, setOpen] = useState(false);
+
+  const resetForm = () => {
+    setForkliftId('');
+    setIssueDescription('');
+    setOpen(false);
+    setIsSubmitting(false);
+  };
+
+  const handleCancel = () => {
+    resetForm();
+    onCancel();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +83,8 @@ export function ServiceRequestForm({
             title: "Success",
             description: "Service request submitted successfully.",
         });
-        router.push('/service-requests');
+        resetForm();
+        onSuccess();
     }).catch(err => {
         toast({
             variant: "destructive",
@@ -88,7 +103,7 @@ export function ServiceRequestForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-6">
+    <form onSubmit={handleSubmit} className="grid gap-6 py-4">
       <div className="grid gap-2">
         <Label htmlFor="forklift">Forklift</Label>
         <Popover open={open} onOpenChange={setOpen}>
@@ -150,7 +165,7 @@ export function ServiceRequestForm({
         />
       </div>
       <div className="flex justify-end gap-2 pt-4">
-        <Button variant="outline" type="button" onClick={() => router.push('/service-requests')}>
+        <Button variant="outline" type="button" onClick={handleCancel}>
           Cancel
         </Button>
         <Button type="submit" disabled={isSubmitting}>
