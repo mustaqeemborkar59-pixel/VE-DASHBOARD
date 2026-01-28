@@ -123,7 +123,6 @@ export function ServiceRequestForm({
             </PopoverTrigger>
             <PopoverContent
               className="w-[--radix-popover-trigger-width] p-0"
-              onOpenAutoFocus={(e) => e.preventDefault()}
             >
                 <Command>
                     <CommandInput placeholder="Search by make, model, or serial no..." />
