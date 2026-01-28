@@ -29,7 +29,6 @@ import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/service-requests', label: 'Service Requests', icon: Wrench },
   { href: '/forklifts', label: 'Forklifts', icon: ForkliftIcon },
   { href: '/employees', label: 'Employees', icon: User },
   { href: '/companies', label: 'Companies', icon: Building },

@@ -1,56 +1,6 @@
 
 {
   "entities": {
-    "ServiceRequest": {
-      "title": "ServiceRequest",
-      "type": "object",
-      "description": "Represents a service request for forklift maintenance.",
-      "properties": {
-        "forkliftId": {
-          "type": "string",
-          "description": "Reference to the Forklift."
-        },
-        "requestDate": {
-          "type": "string",
-          "description": "Date the service request was submitted.",
-          "format": "date-time"
-        },
-        "issueDescription": {
-          "type": "string",
-          "description": "Description of the issue reported."
-        },
-        "status": {
-          "type": "string",
-          "description": "Current status of the service request (e.g., Pending, Assigned, In Progress, Completed)."
-        },
-        "assignedTechnicianId": {
-          "type": "string",
-          "description": "Reference to the Employee assigned to the request."
-        },
-        "technicianNotes": {
-          "type": "string",
-          "description": "Notes from the technician about the work performed."
-        },
-        "partsUsed": {
-          "type": "array",
-          "description": "List of part names used for the service.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "completionDate": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The date when the service request was completed."
-        }
-      },
-      "required": [
-        "forkliftId",
-        "requestDate",
-        "issueDescription",
-        "status"
-      ]
-    },
     "Forklift": {
       "title": "Forklift",
       "type": "object",
@@ -646,12 +596,6 @@
         "$ref": "#/entities/Employee"
       },
       "description": "Stores profiles for each employee."
-    },
-    "/serviceRequests/{serviceRequestId}": {
-      "schema": {
-        "$ref": "#/entities/ServiceRequest"
-      },
-      "description": "Stores all service requests for the workshop."
     },
     "/jobCards/{jobCardId}": {
       "schema": {
