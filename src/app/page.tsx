@@ -1,4 +1,5 @@
 'use client';
+import { useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -14,54 +15,83 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { ServiceRequest, Forklift } from "@/lib/data";
-import { Activity, Wrench, CheckCircle, Clock } from "lucide-react";
+import { Company, Forklift, Invoice } from "@/lib/data";
+import { Building, ReceiptText, DollarSign } from "lucide-react";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, limit } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import AppLayout from "@/components/app-layout";
+import { ForkliftIcon } from '@/components/icons/forklift-icon';
+import { format, parseISO } from 'date-fns';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function Dashboard() {
   const { firestore } = useFirebase();
 
-  const serviceRequestsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'serviceRequests'), orderBy('requestDate', 'desc')) : null, [firestore]);
-  const recentRequestsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'serviceRequests'), orderBy('requestDate', 'desc'), limit(5)) : null, [firestore]);
-  const forkliftsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'forklifts') : null, [firestore]);
-  
-  const { data: serviceRequests, isLoading: isLoadingRequests } = useCollection<ServiceRequest>(serviceRequestsQuery);
-  const { data: recentRequests, isLoading: isLoadingRecent } = useCollection<ServiceRequest>(recentRequestsQuery);
+  // Queries
+  const forkliftsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'forklifts')) : null, [firestore]);
+  const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
+  const invoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billDate', 'desc')) : null, [firestore]);
+  const recentInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billDate', 'desc'), limit(5)) : null, [firestore]);
+
+  // Data fetching
   const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
+  const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
+  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesQuery);
+  const { data: recentInvoices, isLoading: isLoadingRecentInvoices } = useCollection<Invoice>(recentInvoicesQuery);
 
-  const totalRequests = serviceRequests?.length || 0;
-  const pendingRequests = serviceRequests?.filter(r => r.status === 'Pending').length || 0;
-  const completedRequests = serviceRequests?.filter(r => r.status === 'Completed').length || 0;
-  const inProgressRequests = serviceRequests?.filter(r => r.status === 'In Progress' || r.status === 'Assigned').length || 0;
+  const isLoading = isLoadingForklifts || isLoadingCompanies || isLoadingInvoices || isLoadingRecentInvoices;
 
-  const getForkliftModel = (id: string) => {
-    if (!forklifts) return '...';
-    const forklift = forklifts.find(f => f.id === id);
-    if (!forklift) return 'Unknown';
-    return `${forklift.make} ${forklift.model}`;
-  };
+  // Stats calculation
+  const stats = useMemo(() => {
+    const totalForklifts = forklifts?.length || 0;
+    const totalCompanies = companies?.length || 0;
 
-  const getStatusBadge = (status: 'Pending' | 'Assigned' | 'In Progress' | 'Completed') => {
-    switch (status) {
-      case 'Pending':
-        return <Badge variant="secondary">Pending</Badge>;
-      case 'Assigned':
-        return <Badge variant="outline" className="border-blue-500/40 text-blue-600 dark:border-blue-500/50 dark:text-blue-400">Assigned</Badge>;
-      case 'In Progress':
-        return <Badge variant="outline" className="border-primary/50 text-primary">In Progress</Badge>;
-      case 'Completed':
-        return <Badge className="bg-green-600/10 text-green-700 border-green-600/20 hover:bg-green-600/15 dark:text-green-400 dark:border-green-400/30">Completed</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
+    const currentMonth = format(new Date(), 'yyyy-MM');
+    const invoicesThisMonth = invoices?.filter(inv => (inv.billingMonth || format(parseISO(inv.billDate), 'yyyy-MM')) === currentMonth) || [];
+    
+    const monthlyRevenue = invoicesThisMonth.reduce((acc, inv) => acc + inv.grandTotal, 0);
+    const totalInvoicesThisMonth = invoicesThisMonth.length;
+    
+    return { totalForklifts, totalCompanies, monthlyRevenue, totalInvoicesThisMonth };
+  }, [forklifts, companies, invoices]);
   
+  // Chart data
+  const forkliftLocationData = useMemo(() => {
+    if (!forklifts) return [];
+    const counts = {
+      Workshop: 0,
+      'On-Site': 0,
+      'Not Confirm': 0,
+    };
+    forklifts.forEach(f => {
+      if (f.locationType in counts) {
+        counts[f.locationType]++;
+      }
+    });
+    return [
+      { name: 'Workshop', value: counts.Workshop },
+      { name: 'On-Site', value: counts['On-Site'] },
+      { name: 'Not Confirmed', value: counts['Not Confirm'] },
+    ].filter(item => item.value > 0);
+  }, [forklifts]);
+
+  const COLORS = {
+      'Workshop': '#22c55e', // green-500
+      'On-Site': '#f97316', // orange-500
+      'Not Confirmed': '#ef4444' // red-500
+  };
+
+  const getCompanyDetails = (companyId: string) => {
+    return companies?.find(c => c.id === companyId);
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+  }
+
   const cardClassName = "border-0 bg-gradient-to-br shadow-lg";
 
   return (
@@ -69,101 +99,159 @@ export default function Dashboard() {
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Workshop Dashboard</h1>
-              <p className="text-muted-foreground">Comprehensive overview of your workshop's operations.</p>
+              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+              <p className="text-muted-foreground">A high-level overview of your workshop's activities.</p>
             </div>
           </div>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
-              <Activity className="h-5 w-5 text-white/80" />
+              <CardTitle className="text-sm font-medium">Total Forklifts</CardTitle>
+              <ForkliftIcon className="h-5 w-5 text-white/80" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{isLoadingRequests ? '...' : totalRequests}</div>
-              <p className="text-xs text-white/90">All time service requests</p>
-            </CardContent>
-          </Card>
-          <Card className={cn(cardClassName, "from-amber-500 to-orange-600 text-white shadow-amber-500/30")}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending</CardTitle>
-              <Clock className="h-5 w-5 text-white/80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{isLoadingRequests ? '...' : pendingRequests}</div>
-              <p className="text-xs text-white/90">Requests awaiting assignment</p>
+              <div className="text-3xl font-bold">{isLoading ? '...' : stats.totalForklifts}</div>
+              <p className="text-xs text-white/90">Units in your fleet</p>
             </CardContent>
           </Card>
           <Card className={cn(cardClassName, "from-violet-500 to-purple-600 text-white shadow-violet-500/30")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-              <Wrench className="h-5 w-5 text-white/80" />
+              <CardTitle className="text-sm font-medium">Client Companies</CardTitle>
+              <Building className="h-5 w-5 text-white/80" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{isLoadingRequests ? '...' : inProgressRequests}</div>
-              <p className="text-xs text-white/90">Jobs currently being worked on</p>
+              <div className="text-3xl font-bold">{isLoading ? '...' : stats.totalCompanies}</div>
+              <p className="text-xs text-white/90">Total registered companies</p>
             </CardContent>
           </Card>
-          <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
+           <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              <CheckCircle className="h-5 w-5 text-white/80" />
+              <CardTitle className="text-sm font-medium">Revenue (This Month)</CardTitle>
+              <DollarSign className="h-5 w-5 text-white/80" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{isLoadingRequests ? '...' : completedRequests}</div>
-              <p className="text-xs text-white/90">Completed service requests</p>
+              <div className="text-3xl font-bold">{isLoading ? '...' : formatCurrency(stats.monthlyRevenue)}</div>
+              <p className="text-xs text-white/90">From {stats.totalInvoicesThisMonth} invoices</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(cardClassName, "from-amber-500 to-orange-600 text-white shadow-amber-500/30")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Invoices (This Month)</CardTitle>
+              <ReceiptText className="h-5 w-5 text-white/80" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{isLoading ? '...' : stats.totalInvoicesThisMonth}</div>
+              <p className="text-xs text-white/90">New invoices generated</p>
             </CardContent>
           </Card>
         </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center">
-              <div className="grid gap-2">
-                  <CardTitle>Recent Service Requests</CardTitle>
-                  <CardDescription>
-                      A summary of the most recent service requests.
-                  </CardDescription>
-              </div>
-              <Button asChild size="sm" className="ml-auto gap-1">
-                  <Link href="/service-requests">
-                      View All
-                  </Link>
-              </Button>
-          </CardHeader>
-          <CardContent className="p-0 md:p-3 pt-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px] hidden sm:table-cell">Sr.</TableHead>
-                  <TableHead>Forklift</TableHead>
-                  <TableHead className="hidden md:table-cell">Issue</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden lg:table-cell">Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoadingRecent || isLoadingForklifts ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+          <Card className="lg:col-span-4">
+            <CardHeader className="flex flex-row items-center">
+                <div className="grid gap-2">
+                    <CardTitle>Recent Invoices</CardTitle>
+                    <CardDescription>
+                        The last 5 invoices that were created.
+                    </CardDescription>
+                </div>
+                <Button asChild size="sm" className="ml-auto gap-1">
+                    <Link href="/billing">
+                        View All
+                    </Link>
+                </Button>
+            </CardHeader>
+            <CardContent className="p-0 md:p-3 pt-0">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center">Loading...</TableCell>
+                    <TableHead>Bill No.</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead className="hidden md:table-cell">Date</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
                   </TableRow>
-                ) : (
-                  recentRequests?.map((request, index) => (
-                    <TableRow key={request.id}>
-                      <TableCell className="font-medium hidden sm:table-cell">{index + 1}</TableCell>
-                      <TableCell>
-                        <div className="font-medium">{forklifts?.find(f => f.id === request.forkliftId)?.serialNumber || '...'}</div>
-                        <div className="text-sm text-muted-foreground">{getForkliftModel(request.forkliftId)}</div>
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate hidden md:table-cell">{request.issueDescription}</TableCell>
-                      <TableCell>{getStatusBadge(request.status)}</TableCell>
-                      <TableCell className="hidden lg:table-cell">{new Date(request.requestDate).toLocaleDateString()}</TableCell>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center">Loading recent invoices...</TableCell>
                     </TableRow>
-                  ))
+                  ) : recentInvoices && recentInvoices.length > 0 ? (
+                    recentInvoices.map((invoice) => (
+                      <TableRow key={invoice.id}>
+                        <TableCell>
+                          <div className="font-medium">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
+                          <div className="text-sm text-muted-foreground hidden md:inline">{invoice.enterprise}</div>
+                        </TableCell>
+                        <TableCell>{getCompanyDetails(invoice.companyId)?.name || 'Unknown'}</TableCell>
+                        <TableCell className="hidden md:table-cell">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(invoice.grandTotal)}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                     <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center">No invoices found.</TableCell>
+                     </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+          
+          <Card className="lg:col-span-3">
+              <CardHeader>
+                  <CardTitle>Fleet Distribution</CardTitle>
+                  <CardDescription>Overview of forklift locations.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                   <div className="h-[250px] w-full flex items-center justify-center">
+                     <p className="text-muted-foreground">Loading chart...</p>
+                   </div>
+                ) : forkliftLocationData.length > 0 ? (
+                   <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={forkliftLocationData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+                          const RADIAN = Math.PI / 180;
+                          const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                          return (
+                            <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+                              {`${(percent * 100).toFixed(0)}%`}
+                            </text>
+                          );
+                        }}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {forkliftLocationData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[entry.name as keyof typeof COLORS]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{
+                          background: "hsl(var(--background))",
+                          borderColor: "hsl(var(--border))"
+                        }}
+                      />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[250px] w-full flex items-center justify-center">
+                     <p className="text-muted-foreground">No forklift data available.</p>
+                   </div>
                 )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+              </CardContent>
+          </Card>
+        </div>
       </div>
     </AppLayout>
   );
