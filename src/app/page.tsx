@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Company, Forklift, Invoice } from "@/lib/data";
-import { Building, ReceiptText, DollarSign } from "lucide-react";
+import { Building, ReceiptText, DollarSign, Warehouse } from "lucide-react";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
@@ -46,8 +46,8 @@ export default function Dashboard() {
 
   // Stats calculation
   const stats = useMemo(() => {
-    const totalForklifts = forklifts?.length || 0;
-    const totalCompanies = companies?.length || 0;
+    const deployedFleet = forklifts?.filter(f => f.locationType === 'On-Site').length || 0;
+    const idleFleet = forklifts?.filter(f => f.locationType === 'Workshop').length || 0;
 
     const currentMonth = format(new Date(), 'yyyy-MM');
     const invoicesThisMonth = invoices?.filter(inv => (inv.billingMonth || format(parseISO(inv.billDate), 'yyyy-MM')) === currentMonth) || [];
@@ -55,8 +55,8 @@ export default function Dashboard() {
     const monthlyRevenue = invoicesThisMonth.reduce((acc, inv) => acc + inv.grandTotal, 0);
     const totalInvoicesThisMonth = invoicesThisMonth.length;
     
-    return { totalForklifts, totalCompanies, monthlyRevenue, totalInvoicesThisMonth };
-  }, [forklifts, companies, invoices]);
+    return { deployedFleet, idleFleet, monthlyRevenue, totalInvoicesThisMonth };
+  }, [forklifts, invoices]);
   
   // Chart data
   const forkliftLocationData = useMemo(() => {
@@ -79,8 +79,8 @@ export default function Dashboard() {
   }, [forklifts]);
 
   const COLORS = {
-      'Workshop': '#22c55e', // green-500
-      'On-Site': '#f97316', // orange-500
+      'Workshop': '#f97316', // orange-500
+      'On-Site': '#22c55e', // green-500
       'Not Confirmed': '#ef4444' // red-500
   };
 
@@ -99,32 +99,32 @@ export default function Dashboard() {
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-              <p className="text-muted-foreground">A high-level overview of your workshop's activities.</p>
+              <h1 className="text-3xl font-bold tracking-tight">Business Analytics</h1>
+              <p className="text-muted-foreground">An overview of your fleet's performance and profitability.</p>
             </div>
           </div>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
+          <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Forklifts</CardTitle>
+              <CardTitle className="text-sm font-medium">Deployed Fleet</CardTitle>
               <ForkliftIcon className="h-5 w-5 text-white/80" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{isLoading ? '...' : stats.totalForklifts}</div>
-              <p className="text-xs text-white/90">Units in your fleet</p>
+              <div className="text-3xl font-bold">{isLoading ? '...' : stats.deployedFleet}</div>
+              <p className="text-xs text-white/90">Profit-generating units on-site</p>
             </CardContent>
           </Card>
-          <Card className={cn(cardClassName, "from-violet-500 to-purple-600 text-white shadow-violet-500/30")}>
+          <Card className={cn(cardClassName, "from-amber-500 to-orange-600 text-white shadow-amber-500/30")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Client Companies</CardTitle>
-              <Building className="h-5 w-5 text-white/80" />
+              <CardTitle className="text-sm font-medium">Idle Fleet</CardTitle>
+              <Warehouse className="h-5 w-5 text-white/80" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{isLoading ? '...' : stats.totalCompanies}</div>
-              <p className="text-xs text-white/90">Total registered companies</p>
+              <div className="text-3xl font-bold">{isLoading ? '...' : stats.idleFleet}</div>
+              <p className="text-xs text-white/90">Units in workshop (not earning)</p>
             </CardContent>
           </Card>
-           <Card className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
+           <Card className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Revenue (This Month)</CardTitle>
               <DollarSign className="h-5 w-5 text-white/80" />
@@ -134,7 +134,7 @@ export default function Dashboard() {
               <p className="text-xs text-white/90">From {stats.totalInvoicesThisMonth} invoices</p>
             </CardContent>
           </Card>
-          <Card className={cn(cardClassName, "from-amber-500 to-orange-600 text-white shadow-amber-500/30")}>
+          <Card className={cn(cardClassName, "from-violet-500 to-purple-600 text-white shadow-violet-500/30")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Invoices (This Month)</CardTitle>
               <ReceiptText className="h-5 w-5 text-white/80" />
@@ -200,8 +200,8 @@ export default function Dashboard() {
           
           <Card className="lg:col-span-3">
               <CardHeader>
-                  <CardTitle>Fleet Distribution</CardTitle>
-                  <CardDescription>Overview of forklift locations.</CardDescription>
+                  <CardTitle>Fleet Status Distribution</CardTitle>
+                  <CardDescription>Live status of all forklifts in the fleet.</CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
