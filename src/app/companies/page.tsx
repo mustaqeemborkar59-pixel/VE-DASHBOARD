@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useCallback, useMemo, Fragment } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -35,7 +35,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Trash2, ChevronDown } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Trash2, Eye } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, OrderByDirection } from 'firebase/firestore';
@@ -46,28 +46,8 @@ import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlo
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
 
 type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc';
-
-const CompanyDetailsView = ({ company }: { 
-  company: Company
-}) => {
-  return (
-    <div className="p-4 bg-muted/20 border-t">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Full Address</p>
-                <p className="font-medium break-words">{company.address}</p>
-            </div>
-             <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">GSTIN</p>
-                <p className="font-mono font-medium">{company.gstin || 'N/A'}</p>
-            </div>
-        </div>
-    </div>
-  );
-};
 
 export default function CompaniesPage() {
   const { firestore } = useFirebase();
@@ -76,9 +56,10 @@ export default function CompaniesPage() {
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [detailsCompany, setDetailsCompany] = useState<Company | null>(null);
+
   const [sortOrder, setSortOrder] = useState<SortOption>('date-desc');
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const companiesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -128,6 +109,7 @@ export default function CompaniesPage() {
   const closeAllDialogs = useCallback(() => {
     setIsAddEditDialogOpen(false);
     setCompanyToDelete(null);
+    setDetailsCompany(null);
   }, []);
   
   const handleDelayedAction = (action: () => void) => {
@@ -145,9 +127,10 @@ export default function CompaniesPage() {
     handleDelayedAction(() => setCompanyToDelete(company));
   }, [closeAllDialogs]);
 
-  const toggleRow = (id: string) => {
-    setExpandedRow(prev => (prev === id ? null : id));
-  };
+  const openDetailsDialog = useCallback((company: Company) => {
+    closeAllDialogs();
+    handleDelayedAction(() => setDetailsCompany(company));
+  }, [closeAllDialogs]);
 
   const handleFormSubmit = (formData: CompanyFormData) => {
     if (!firestore || !companies) return;
@@ -209,6 +192,10 @@ export default function CompaniesPage() {
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-40" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onSelect={() => openDetailsDialog(company)}>
+                <Eye className="mr-2 h-4 w-4" />
+                View
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => openAddEditDialog(company)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
@@ -268,8 +255,8 @@ export default function CompaniesPage() {
              ) : filteredCompanies && filteredCompanies.length > 0 ? (
                 <div className="space-y-4 p-4">
                   {filteredCompanies.map((company) => (
-                    <div key={company.id} className="border rounded-lg overflow-hidden">
-                      <div className="p-4 space-y-3 cursor-pointer" onClick={() => toggleRow(company.id)}>
+                    <div key={company.id} className="border rounded-lg overflow-hidden cursor-pointer" onClick={() => openDetailsDialog(company)}>
+                      <div className="p-4 space-y-3">
                         <div className="flex justify-between items-start">
                           <div className="space-y-1">
                             <div className="font-bold">{company.name}</div>
@@ -284,9 +271,6 @@ export default function CompaniesPage() {
                           </div>
                         )}
                       </div>
-                       {expandedRow === company.id && (
-                          <CompanyDetailsView company={company} />
-                       )}
                     </div>
                   ))}
                 </div>
@@ -297,7 +281,8 @@ export default function CompaniesPage() {
           <Table className="hidden md:table">
             <TableHeader>
               <TableRow>
-                <TableHead>Company</TableHead>
+                <TableHead>Company Name</TableHead>
+                <TableHead>Address</TableHead>
                 <TableHead>GSTIN</TableHead>
                 <TableHead><span className="sr-only">Actions</span></TableHead>
               </TableRow>
@@ -305,48 +290,52 @@ export default function CompaniesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center">Loading companies...</TableCell>
+                  <TableCell colSpan={4} className="text-center">Loading companies...</TableCell>
                 </TableRow>
               ) : filteredCompanies && filteredCompanies.length > 0 ? (
                 filteredCompanies.map((company) => (
-                  <Fragment key={company.id}>
-                    <TableRow 
-                      onClick={() => toggleRow(company.id)} 
-                      className="cursor-pointer"
-                      data-state={expandedRow === company.id ? 'selected' : undefined}
-                    >
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                           <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", expandedRow === company.id && "rotate-180")} />
-                           <div>
-                              <div className="font-medium">{company.name}</div>
-                              <div className="text-sm text-muted-foreground max-w-xs truncate">{company.address}</div>
-                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono">{company.gstin}</TableCell>
-                      <TableCell className="text-right">
-                         {renderActions(company)}
-                      </TableCell>
-                    </TableRow>
-                    {expandedRow === company.id && (
-                      <TableRow className="bg-transparent hover:bg-transparent">
-                          <TableCell colSpan={3} className="p-0">
-                              <CompanyDetailsView company={company} />
-                          </TableCell>
-                      </TableRow>
-                    )}
-                  </Fragment>
+                  <TableRow key={company.id} onClick={() => openDetailsDialog(company)} className="cursor-pointer">
+                    <TableCell className="font-medium">{company.name}</TableCell>
+                    <TableCell className="max-w-xs truncate">{company.address}</TableCell>
+                    <TableCell className="font-mono">{company.gstin}</TableCell>
+                    <TableCell className="text-right">
+                       {renderActions(company)}
+                    </TableCell>
+                  </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center h-24">No companies found.</TableCell>
+                  <TableCell colSpan={4} className="text-center h-24">No companies found.</TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!detailsCompany} onOpenChange={(open) => { if (!open) closeAllDialogs(); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{detailsCompany?.name}</DialogTitle>
+            <DialogDescription>
+              Company contact and tax information.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+              <div className="space-y-1">
+                  <h4 className="text-sm font-semibold">Address</h4>
+                  <p className="text-sm text-muted-foreground">{detailsCompany?.address}</p>
+              </div>
+              <div className="space-y-1">
+                  <h4 className="text-sm font-semibold">GSTIN</h4>
+                  <p className="text-sm font-mono text-muted-foreground">{detailsCompany?.gstin || 'N/A'}</p>
+              </div>
+          </div>
+          <DialogFooter>
+             <Button variant="outline" onClick={() => setDetailsCompany(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isAddEditDialogOpen} onOpenChange={(open) => {if(!open) closeAllDialogs(); else setIsAddEditDialogOpen(true);}}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0">
