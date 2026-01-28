@@ -577,6 +577,18 @@
         "receivedAmount",
         "paymentMode"
       ]
+    },
+    "MonthlyRepair": {
+      "title": "MonthlyRepair",
+      "description": "Represents the total number of repairs in a given month. The document ID is the month.",
+      "type": "object",
+      "properties": {
+        "repairs": {
+          "type": "number",
+          "description": "The total number of repairs for that month."
+        }
+      },
+      "required": ["repairs"]
     }
   },
   "auth": {
@@ -644,6 +656,12 @@
             "$ref": "#/entities/Payment"
         },
         "description": "Stores all payment records for invoices."
+    },
+    "/monthlyRepairs/{monthId}": {
+      "schema": {
+        "$ref": "#/entities/MonthlyRepair"
+      },
+      "description": "Stores the manually entered count of repairs per month. The document ID is the month in YYYY-MM format."
     }
   }
 }

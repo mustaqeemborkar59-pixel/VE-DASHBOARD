@@ -8,6 +8,7 @@
 
 
 
+
 export type Employee = {
   id: string;
   fullName: string;
@@ -184,3 +185,8 @@ export type Payment = {
     paymentMode?: 'RTGS' | 'NEFT' | 'IMPS' | 'CHEQUE' | 'CASH';
     chequeDetails?: string;
 }
+
+export type MonthlyRepair = {
+  id: string; // YYYY-MM format
+  repairs: number;
+};
