@@ -524,8 +524,8 @@ export default function PaymentsPage() {
                               <div className="text-sm text-muted-foreground">{format(parseISO(invoice.billDate), 'dd-MMM-yyyy')}</div>
                             </TableCell>
                             <TableCell className="text-right">
+                              <div className="text-xs text-muted-foreground">{formatCurrency(invoice.taxableAmount)}</div>
                               <div className="font-bold">{formatCurrency(invoice.grandTotal)}</div>
-                              <div className="text-xs text-muted-foreground">({formatCurrency(invoice.taxableAmount)})</div>
                             </TableCell>
                             <TableCell className="text-center p-1">
                               <Input
