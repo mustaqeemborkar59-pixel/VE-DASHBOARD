@@ -156,57 +156,68 @@ export default function Dashboard() {
           </Card>
           
           <Card className="lg:col-span-3">
-              <CardHeader>
-                  <CardTitle>Fleet Status Distribution</CardTitle>
-                  <CardDescription>Live status of all forklifts in the fleet.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                   <div className="h-[250px] w-full flex items-center justify-center">
-                     <p className="text-muted-foreground">Loading chart...</p>
-                   </div>
-                ) : forkliftLocationData.length > 0 ? (
-                   <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
+            <CardHeader>
+                <CardTitle>Fleet Status Distribution</CardTitle>
+                <CardDescription>Live status of all forklifts in the fleet.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                 <div className="h-[250px] w-full flex items-center justify-center">
+                   <p className="text-muted-foreground">Loading chart...</p>
+                 </div>
+              ) : forkliftLocationData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--background))",
+                        borderColor: "hsl(var(--border))"
+                      }}
+                    />
+                    <Pie
                         data={forkliftLocationData}
+                        dataKey="value"
+                        nameKey="name"
                         cx="50%"
                         cy="50%"
-                        labelLine={false}
-                        label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
-                          const RADIAN = Math.PI / 180;
-                          const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                          return (
-                            <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
-                              {`${(percent * 100).toFixed(0)}%`}
-                            </text>
-                          );
-                        }}
+                        innerRadius={60}
                         outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
+                        paddingAngle={5}
+                        label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                        labelLine={false}
+                    >
                         {forkliftLocationData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[entry.name as keyof typeof COLORS]} />
+                            <Cell key={`cell-${index}`} fill={COLORS[entry.name as keyof typeof COLORS]} />
                         ))}
-                      </Pie>
-                      <Tooltip 
-                        contentStyle={{
-                          background: "hsl(var(--background))",
-                          borderColor: "hsl(var(--border))"
-                        }}
-                      />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-[250px] w-full flex items-center justify-center">
-                     <p className="text-muted-foreground">No forklift data available.</p>
-                   </div>
-                )}
-              </CardContent>
+                    </Pie>
+                    <text
+                        x="50%"
+                        y="50%"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="text-2xl font-bold fill-foreground"
+                    >
+                        {stats.totalFleet}
+                    </text>
+                    <text
+                        x="50%"
+                        y="50%"
+                        dy="1.2em"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="text-sm fill-muted-foreground"
+                    >
+                        Total Fleet
+                    </text>
+                    <Legend iconType="circle" verticalAlign="bottom" />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[250px] w-full flex items-center justify-center">
+                   <p className="text-muted-foreground">No forklift data available.</p>
+                 </div>
+              )}
+            </CardContent>
           </Card>
         </div>
       </div>
