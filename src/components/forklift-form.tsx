@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, Fragment } from "react";
@@ -25,6 +26,7 @@ export type ForkliftFormData = {
   voltage: string;
   mastHeight: string;
   locationType: 'Workshop' | 'On-Site' | 'Not Confirm';
+  locationAssignmentDate: string;
   siteCompany: string;
   siteArea: string;
   siteContactPerson: string;
@@ -54,6 +56,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
     voltage: '',
     mastHeight: '',
     locationType: 'Workshop',
+    locationAssignmentDate: '',
     siteCompany: '',
     siteArea: '',
     siteContactPerson: '',
@@ -74,6 +77,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
         voltage: initialData.voltage ?? '',
         mastHeight: initialData.mastHeight ?? '',
         locationType: initialData.locationType ?? 'Workshop',
+        locationAssignmentDate: initialData.locationAssignmentDate || new Date().toISOString(),
         siteCompany: initialData.siteCompany ?? '',
         siteArea: initialData.siteArea ?? '',
         siteContactPerson: initialData.siteContactPerson ?? '',
@@ -92,6 +96,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
             voltage: '',
             mastHeight: '',
             locationType: 'Workshop',
+            locationAssignmentDate: new Date().toISOString(),
             siteCompany: '',
             siteArea: '',
             siteContactPerson: '',
@@ -108,7 +113,11 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
   };
   
   const handleLocationChange = (value: ForkliftFormData['locationType']) => {
-    setFormData(prev => ({ ...prev, locationType: value }));
+    setFormData(prev => ({ 
+        ...prev, 
+        locationType: value,
+        locationAssignmentDate: new Date().toISOString()
+    }));
   };
 
   const handleSiteCompanyChange = (value: string) => {

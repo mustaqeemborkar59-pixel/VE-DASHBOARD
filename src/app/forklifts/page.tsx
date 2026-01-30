@@ -58,6 +58,7 @@ import { ForkliftIcon } from "@/components/icons/forklift-icon";
 import AppLayout from "@/components/app-layout";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Trash2 } from "lucide-react";
+import { format, parseISO } from "date-fns";
 
 
 type SearchField = 'All' | 'serialNumber' | 'make' | 'model' | 'siteCompany' | 'siteArea';
@@ -516,6 +517,15 @@ export default function ForkliftsPage() {
                                             <Label className="text-xs text-muted-foreground">MFG Year</Label>
                                             <span className="font-medium">{forklift.year || ''}</span>
                                           </div>
+                                          <div className="flex flex-col gap-1">
+                                                <Label className="text-xs text-muted-foreground">Location Set On</Label>
+                                                <span className="font-medium">
+                                                    {forklift.locationAssignmentDate 
+                                                        ? format(parseISO(forklift.locationAssignmentDate), 'dd MMM yyyy, p') 
+                                                        : 'N/A'
+                                                    }
+                                                </span>
+                                            </div>
                                           <div className="flex flex-col gap-1">
                                             <Label className="text-xs text-muted-foreground">Capacity</Label>
                                             <span className="font-medium">{forklift.capacity || 'N/A'}</span>

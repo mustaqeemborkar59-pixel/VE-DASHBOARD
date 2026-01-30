@@ -51,6 +51,11 @@
           ],
           "description": "Current location of the forklift."
         },
+        "locationAssignmentDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date when the current location was assigned."
+        },
         "siteCompany": {
           "type": "string",
           "description": "Company name for the site location."

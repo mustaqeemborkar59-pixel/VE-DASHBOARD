@@ -38,6 +38,7 @@ export type Forklift = {
   voltage?: string;
   mastHeight?: string;
   locationType: 'Workshop' | 'On-Site' | 'Not Confirm';
+  locationAssignmentDate?: string; // ISO DateTime
   siteCompany?: string;
   siteArea?: string;
   siteContactPerson?: string;
