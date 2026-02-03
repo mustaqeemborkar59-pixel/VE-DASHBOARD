@@ -46,6 +46,9 @@ service cloud.firestore {
     match /monthlyRepairs/{monthId} {
       allow read, write: if isSignedIn();
     }
+    match /notes/{noteId} {
+      allow read, write: if isSignedIn();
+    }
 
     // Allow users to access their bank accounts sub-collection
     match /companySettings/primary/bankAccounts/{accountId} {

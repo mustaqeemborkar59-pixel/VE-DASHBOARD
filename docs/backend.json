@@ -620,6 +620,35 @@
         }
       },
       "required": ["repairs"]
+    },
+    "Note": {
+      "title": "Note",
+      "description": "Represents a user-created note.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The title of the note."
+        },
+        "content": {
+          "type": "string",
+          "description": "The main content of the note."
+        },
+        "color": {
+          "type": "string",
+          "description": "Background color for the note card.",
+          "enum": ["yellow", "blue", "green", "pink", "purple", "default"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the note was created."
+        }
+      },
+      "required": [
+        "content",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -693,6 +722,12 @@
         "$ref": "#/entities/MonthlyRepair"
       },
       "description": "Stores the manually entered count of repairs per month. The document ID is the month in YYYY-MM format."
+    },
+    "/notes/{noteId}": {
+      "schema": {
+        "$ref": "#/entities/Note"
+      },
+      "description": "Stores user-created notes."
     }
   }
 }
