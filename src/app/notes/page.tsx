@@ -125,20 +125,26 @@ export default function NotesPage() {
 
   const { data: notes, isLoading } = useCollection<Note>(notesQuery);
 
-  const openFormDialog = useCallback((note: Note | null) => {
-    setSelectedNote(note);
-    setIsFormOpen(true);
-  }, []);
-
-  const openDeleteDialog = useCallback((note: Note) => {
-    setNoteToDelete(note);
-  }, []);
-  
   const closeAllDialogs = useCallback(() => {
       setIsFormOpen(false);
       setNoteToDelete(null);
       setSelectedNote(null);
   }, []);
+
+  const handleDelayedAction = (action: () => void) => {
+    setTimeout(action, 100);
+  };
+
+  const openFormDialog = useCallback((note: Note | null) => {
+    closeAllDialogs();
+    setSelectedNote(note);
+    handleDelayedAction(() => setIsFormOpen(true));
+  }, [closeAllDialogs]);
+
+  const openDeleteDialog = useCallback((note: Note) => {
+    closeAllDialogs();
+    handleDelayedAction(() => setNoteToDelete(note));
+  }, [closeAllDialogs]);
 
   const handleFormSubmit = (formData: Omit<Note, 'id' | 'createdAt'>) => {
     if (!firestore) return;
@@ -235,7 +241,7 @@ export default function NotesPage() {
         )}
       </div>
 
-       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+       <Dialog open={isFormOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{selectedNote ? 'Edit Note' : 'Add New Note'}</DialogTitle>
@@ -255,7 +261,7 @@ export default function NotesPage() {
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!noteToDelete} onOpenChange={(open) => !open && setNoteToDelete(null)}>
+      <AlertDialog open={!!noteToDelete} onOpenChange={(open) => !open && closeAllDialogs()}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
