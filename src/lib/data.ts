@@ -1,6 +1,5 @@
 
 
-
 export type JobCard = {
   id: string;
   jobTitle: string;
@@ -202,6 +201,6 @@ export type Note = {
   id: string;
   title?: string;
   content: string;
-  color: 'yellow' | 'blue' | 'green' | 'pink' | 'purple' | 'default';
+  color: string;
   createdAt: string;
 };

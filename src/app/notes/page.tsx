@@ -47,9 +47,9 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-type NoteColor = Note['color'];
+type PresetColor = 'default' | 'yellow' | 'blue' | 'green' | 'pink' | 'purple';
 
-const noteColorClasses: Record<NoteColor, { bg: string, text: string, border: string }> = {
+const noteColorClasses: Record<PresetColor, { bg: string, text: string, border: string }> = {
   default: { bg: 'bg-card', text: 'text-card-foreground', border: 'border-border' },
   yellow: { bg: 'bg-yellow-100 dark:bg-yellow-900/40', text: 'text-yellow-900 dark:text-yellow-200', border: 'border-yellow-200 dark:border-yellow-800' },
   blue: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-900 dark:text-blue-200', border: 'border-blue-200 dark:border-blue-800' },
@@ -68,7 +68,9 @@ const NoteForm = ({
   const { toast } = useToast();
   const [title, setTitle] = useState(initialData?.title || '');
   const [content, setContent] = useState(initialData?.content || '');
-  const [color, setColor] = useState<NoteColor>(initialData?.color || 'default');
+  const [color, setColor] = useState<string>(initialData?.color || 'default');
+
+  const isPresetColor = (c: string): c is PresetColor => Object.keys(noteColorClasses).includes(c);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,18 +95,30 @@ const NoteForm = ({
         <Label htmlFor="content">Content</Label>
         <Textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Your note here..." required  className="min-h-[150px]"/>
       </div>
-      <div className="grid gap-2">
+       <div className="grid gap-2">
         <Label>Color</Label>
-        <RadioGroup value={color} onValueChange={(value) => setColor(value as NoteColor)} className="flex flex-wrap gap-3">
-          {Object.keys(noteColorClasses).map((key) => {
-            const colorKey = key as NoteColor;
-            return (
-              <Label key={colorKey} className={cn('h-8 w-8 rounded-full cursor-pointer border-2 border-transparent', noteColorClasses[colorKey].bg, color === colorKey && 'ring-2 ring-offset-2 ring-ring ring-offset-background')}>
-                <RadioGroupItem value={colorKey} className="sr-only"/>
+        <div className="flex flex-wrap items-center gap-3">
+          <RadioGroup value={isPresetColor(color) ? color : ''} onValueChange={setColor} className="flex flex-wrap gap-3">
+            {(Object.keys(noteColorClasses) as PresetColor[]).map((key) => (
+              <Label key={key} title={key} className={cn('h-8 w-8 rounded-full cursor-pointer border-2', noteColorClasses[key].bg, color === key ? 'ring-2 ring-offset-2 ring-ring ring-offset-background' : 'border-transparent')}>
+                <RadioGroupItem value={key} className="sr-only"/>
               </Label>
-            );
-          })}
-        </RadioGroup>
+            ))}
+          </RadioGroup>
+          
+          <div className="relative h-8 w-8">
+             <Label htmlFor="custom-color" className={cn('h-8 w-8 rounded-full cursor-pointer border-2 flex items-center justify-center', !isPresetColor(color) ? 'ring-2 ring-offset-2 ring-ring ring-offset-background' : 'border-transparent', isPresetColor(color) && 'bg-muted')}>
+                <div className="w-5 h-5 rounded-full" style={{ backgroundColor: !isPresetColor(color) ? color : undefined, backgroundImage: isPresetColor(color) ? 'conic-gradient(from 90deg, violet, indigo, blue, green, yellow, orange, red, violet)' : undefined }} />
+             </Label>
+             <Input 
+                id="custom-color"
+                type="color"
+                value={isPresetColor(color) ? '#000000' : color}
+                onChange={(e) => setColor(e.target.value)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+             />
+          </div>
+        </div>
       </div>
     </form>
   );
@@ -147,7 +161,7 @@ export default function NotesPage() {
   }, [closeAllDialogs]);
 
   const handleFormSubmit = (formData: Omit<Note, 'id' | 'createdAt'>) => {
-    if (!firestore) return;
+    if (!firestore || !user) return;
 
     if (selectedNote) {
       const noteDocRef = doc(firestore, 'notes', selectedNote.id);
@@ -204,34 +218,64 @@ export default function NotesPage() {
           </div>
         ) : notes && notes.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {notes.map(note => (
-              <Card key={note.id} className={cn("flex flex-col", noteColorClasses[note.color].bg, noteColorClasses[note.color].border)}>
-                <CardHeader className="flex flex-row items-start justify-between pb-2">
-                  {note.title && <CardTitle className={cn("text-lg", noteColorClasses[note.color].text)}>{note.title}</CardTitle>}
-                   <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className={cn("h-7 w-7 -mt-2 -mr-2 shrink-0", noteColorClasses[note.color].text)}>
-                              <EllipsisVertical className="h-4 w-4" />
-                          </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                          <DropdownMenuItem onSelect={() => openFormDialog(note)}>
-                              <Pencil className="mr-2 h-4 w-4" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => openDeleteDialog(note)} className="text-destructive">
-                              <Trash2 className="mr-2 h-4 w-4" /> Delete
-                          </DropdownMenuItem>
-                      </DropdownMenuContent>
-                  </DropdownMenu>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className={cn("whitespace-pre-wrap", noteColorClasses[note.color].text)}>{note.content}</p>
-                </CardContent>
-                <CardFooter className="text-xs text-muted-foreground pt-4 pb-2">
-                  {format(new Date(note.createdAt), "dd MMM, yyyy")}
-                </CardFooter>
-              </Card>
-            ))}
+            {notes.map(note => {
+              const isPresetColor = (c: string): c is PresetColor => Object.keys(noteColorClasses).includes(c);
+              
+              let cardDynamicStyle: React.CSSProperties = {};
+              let textDynamicStyle: React.CSSProperties = {};
+              let cardDynamicClass = '';
+              let textDynamicClass = '';
+              let footerDynamicStyle: React.CSSProperties = {};
+
+              if (isPresetColor(note.color)) {
+                  const preset = noteColorClasses[note.color];
+                  cardDynamicClass = `${preset.bg} ${preset.border}`;
+                  textDynamicClass = preset.text;
+              } else {
+                  cardDynamicStyle = { backgroundColor: note.color, border: '1px solid transparent' };
+                  try {
+                      const hex = note.color.replace('#', '');
+                      const r = parseInt(hex.substring(0, 2), 16);
+                      const g = parseInt(hex.substring(2, 4), 16);
+                      const b = parseInt(hex.substring(4, 6), 16);
+                      const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                      const textColor = yiq >= 128 ? '#18181b' : '#fafafa';
+                      textDynamicStyle = { color: textColor };
+                      footerDynamicStyle = { color: textColor, opacity: 0.8 };
+                  } catch(e) {
+                      textDynamicStyle = { color: 'hsl(var(--card-foreground))' };
+                  }
+              }
+
+              return (
+                <Card key={note.id} className={cn("flex flex-col", cardDynamicClass)} style={cardDynamicStyle}>
+                  <CardHeader className="flex flex-row items-start justify-between pb-2">
+                    {note.title && <CardTitle className={cn("text-lg", textDynamicClass)} style={textDynamicStyle}>{note.title}</CardTitle>}
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className={cn("h-7 w-7 -mt-2 -mr-2 shrink-0", textDynamicClass)} style={textDynamicStyle}>
+                                <EllipsisVertical className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onSelect={() => openFormDialog(note)}>
+                                <Pencil className="mr-2 h-4 w-4" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => openDeleteDialog(note)} className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <p className={cn("whitespace-pre-wrap", textDynamicClass)} style={textDynamicStyle}>{note.content}</p>
+                  </CardContent>
+                  <CardFooter className="text-xs pt-4 pb-2" style={footerDynamicStyle}>
+                    {format(new Date(note.createdAt), "dd MMM, yyyy")}
+                  </CardFooter>
+                </Card>
+              )
+            })}
           </div>
         ) : (
           <div className="text-center py-20">
