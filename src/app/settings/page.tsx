@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useFirebase, useDoc, useMemoFirebase, useCollection } from "@/firebase";
-import { collection, doc, setDoc } from "firebase/firestore";
+import { collection, doc, query, setDoc, orderBy } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CompanySettings, PageMargin, BankAccount, InvoiceTemplate } from "@/lib/data";
@@ -311,11 +311,12 @@ const SettingsForm = ({ enterprise }: { enterprise: Enterprise }) => {
 export default function SettingsPage() {
     const { firestore, user } = useFirebase();
     const { toast } = useToast();
+    const [activeBankTab, setActiveBankTab] = useState<Enterprise>('Vithal');
     
     const bankAccountsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return collection(firestore, "companySettings", "primary", "bankAccounts");
-    }, [firestore, user]);
+        return query(collection(firestore, "companySettings", activeBankTab.toLowerCase(), "bankAccounts"), orderBy('nickname'));
+    }, [firestore, user, activeBankTab]);
     const { data: bankAccounts, isLoading: isLoadingBankAccounts } = useCollection<BankAccount>(bankAccountsQuery);
     
     const [isBankAccountDialogOpen, setIsBankAccountDialogOpen] = useState(false);
@@ -339,14 +340,16 @@ export default function SettingsPage() {
     }, [closeAllDialogs]);
 
     const handleBankAccountFormSubmit = (formData: BankAccountFormData) => {
-        if (!bankAccountsQuery) return;
+        if (!firestore) return;
+
+        const bankAccountsCollectionRef = collection(firestore, "companySettings", activeBankTab.toLowerCase(), "bankAccounts");
         
         if (selectedBankAccount) { // Edit mode
-            const accountDocRef = doc(bankAccountsQuery.firestore, bankAccountsQuery.path, selectedBankAccount.id);
+            const accountDocRef = doc(bankAccountsCollectionRef, selectedBankAccount.id);
             updateDocumentNonBlocking(accountDocRef, formData);
             toast({ title: "Success", description: "Bank account updated." });
         } else { // Add mode
-            addDocumentNonBlocking(bankAccountsQuery, formData);
+            addDocumentNonBlocking(bankAccountsCollectionRef, formData);
             toast({ title: "Success", description: "Bank account added." });
         }
         setIsBankAccountDialogOpen(false);
@@ -358,8 +361,8 @@ export default function SettingsPage() {
     }, [closeAllDialogs]);
     
     const handleDeleteBankAccount = () => {
-        if (!bankAccountsQuery || !bankAccountToDelete) return;
-        const accountDocRef = doc(bankAccountsQuery.firestore, bankAccountsQuery.path, bankAccountToDelete.id);
+        if (!firestore || !bankAccountToDelete) return;
+        const accountDocRef = doc(firestore, "companySettings", activeBankTab.toLowerCase(), "bankAccounts", bankAccountToDelete.id);
         deleteDocumentNonBlocking(accountDocRef);
         toast({ title: "Bank Account Deleted", description: `${bankAccountToDelete.nickname} has been removed.` });
         setBankAccountToDelete(null);
@@ -396,7 +399,7 @@ export default function SettingsPage() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <CardTitle>Bank Accounts</CardTitle>
-                                <CardDescription>Manage your company's bank accounts for invoices. These are shared across all enterprises.</CardDescription>
+                                <CardDescription>Manage your company's bank accounts for each enterprise.</CardDescription>
                             </div>
                             <Button onClick={() => openBankAccountDialog(null)} size="sm">
                                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -405,48 +408,54 @@ export default function SettingsPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Nickname</TableHead>
-                                    <TableHead>Bank</TableHead>
-                                    <TableHead>Account Number</TableHead>
-                                    <TableHead><span className="sr-only">Actions</span></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoadingBankAccounts ? (
-                                    <TableRow><TableCell colSpan={4} className="text-center">Loading...</TableCell></TableRow>
-                                ) : bankAccounts && bankAccounts.length > 0 ? (
-                                    bankAccounts.map(account => (
-                                        <TableRow key={account.id}>
-                                            <TableCell className="font-medium">{account.nickname}</TableCell>
-                                            <TableCell>{account.bankName}</TableCell>
-                                            <TableCell>{account.accountNumber}</TableCell>
-                                            <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
-                                                            <EllipsisVertical className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent>
-                                                        <DropdownMenuItem onSelect={() => openBankAccountDialog(account)}>
-                                                            <Pencil className="mr-2 h-4 w-4" /> Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => openDeleteDialog(account)} className="text-destructive">
-                                                            <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow><TableCell colSpan={4} className="text-center h-24">No bank accounts added yet.</TableCell></TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                        <Tabs value={activeBankTab} onValueChange={(value) => setActiveBankTab(value as Enterprise)}>
+                            <TabsList className="grid w-full grid-cols-2 mb-4">
+                                <TabsTrigger value="Vithal">Vithal Bank Accounts</TabsTrigger>
+                                <TabsTrigger value="RV">R.V Bank Accounts</TabsTrigger>
+                            </TabsList>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Nickname</TableHead>
+                                        <TableHead>Bank</TableHead>
+                                        <TableHead>Account Number</TableHead>
+                                        <TableHead><span className="sr-only">Actions</span></TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoadingBankAccounts ? (
+                                        <TableRow><TableCell colSpan={4} className="text-center">Loading...</TableCell></TableRow>
+                                    ) : bankAccounts && bankAccounts.length > 0 ? (
+                                        bankAccounts.map(account => (
+                                            <TableRow key={account.id}>
+                                                <TableCell className="font-medium">{account.nickname}</TableCell>
+                                                <TableCell>{account.bankName}</TableCell>
+                                                <TableCell>{account.accountNumber}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                                                                <EllipsisVertical className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent>
+                                                            <DropdownMenuItem onSelect={() => openBankAccountDialog(account)}>
+                                                                <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={() => openDeleteDialog(account)} className="text-destructive">
+                                                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow><TableCell colSpan={4} className="text-center h-24">No bank accounts added for {activeBankTab}.</TableCell></TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </Tabs>
                     </CardContent>
                 </Card>
             </div>
@@ -454,7 +463,7 @@ export default function SettingsPage() {
             <Dialog open={isBankAccountDialogOpen} onOpenChange={(open) => {if(!open) closeAllDialogs(); else setIsBankAccountDialogOpen(true); }}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{selectedBankAccount ? 'Edit Bank Account' : 'Add New Bank Account'}</DialogTitle>
+                        <DialogTitle>{selectedBankAccount ? 'Edit Bank Account' : `Add New ${activeBankTab} Bank Account`}</DialogTitle>
                         <DialogDescription>
                             {selectedBankAccount ? 'Update the details for this bank account.' : 'Fill in the details for the new bank account.'}
                         </DialogDescription>

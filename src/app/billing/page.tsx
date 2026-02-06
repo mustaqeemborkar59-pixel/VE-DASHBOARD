@@ -487,7 +487,8 @@ export default function BillingPage() {
   const vithalSettingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'companySettings', 'vithal') : null, [firestore]);
   const rvSettingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'companySettings', 'rv') : null, [firestore]);
 
-  const bankAccountsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companySettings', 'primary', 'bankAccounts'), orderBy('nickname')) : null, [firestore]);
+  const vithalBankAccountsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companySettings', 'vithal', 'bankAccounts'), orderBy('nickname')) : null, [firestore]);
+  const rvBankAccountsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companySettings', 'rv', 'bankAccounts'), orderBy('nickname')) : null, [firestore]);
 
 
   // Data
@@ -497,7 +498,9 @@ export default function BillingPage() {
   const { data: vithalCompanyDetails, isLoading: isLoadingVithalSettings } = useDoc<CompanySettings>(vithalSettingsRef);
   const { data: rvCompanyDetails, isLoading: isLoadingRvSettings } = useDoc<CompanySettings>(rvSettingsRef);
 
-  const { data: bankAccounts, isLoading: isLoadingBankAccounts } = useCollection<BankAccount>(bankAccountsQuery);
+  const { data: vithalBankAccounts, isLoading: isLoadingVithalBanks } = useCollection<BankAccount>(vithalBankAccountsQuery);
+  const { data: rvBankAccounts, isLoading: isLoadingRvBanks } = useCollection<BankAccount>(rvBankAccountsQuery);
+  const isLoadingBankAccounts = isLoadingVithalBanks || isLoadingRvBanks;
   
   const isLoadingSettings = isLoadingVithalSettings || isLoadingRvSettings;
   const myCompanyDetails = activeTab === 'Vithal' ? vithalCompanyDetails : rvCompanyDetails;
@@ -927,7 +930,8 @@ export default function BillingPage() {
 
     let selectedBankAccount: BankAccount | undefined;
     if (selectedBankAccountId && selectedBankAccountId !== 'no_bank') {
-        selectedBankAccount = bankAccounts?.find(b => b.id === selectedBankAccountId);
+        const sourceList = formEnterprise === 'Vithal' ? vithalBankAccounts : rvBankAccounts;
+        selectedBankAccount = sourceList?.find(b => b.id === selectedBankAccountId);
         if (!selectedBankAccount) {
             toast({ variant: 'destructive', title: 'Bank Account Error', description: 'Could not find the selected bank account.' });
             return;
@@ -1211,6 +1215,8 @@ export default function BillingPage() {
     return companyName;
   }
 
+  const bankAccountsForForm = formEnterprise === 'Vithal' ? vithalBankAccounts : rvBankAccounts;
+
   return (
     <AppLayout>
       <div className="flex flex-col gap-6">
@@ -1418,7 +1424,7 @@ export default function BillingPage() {
                                         ) : (
                                             <>
                                                 <SelectItem value="no_bank">No Bank</SelectItem>
-                                                {bankAccounts?.map(account => (
+                                                {bankAccountsForForm?.map(account => (
                                                     <SelectItem key={account.id} value={account.id}>{account.nickname}</SelectItem>
                                                 ))}
                                             </>
@@ -1738,9 +1744,3 @@ export default function BillingPage() {
     </AppLayout>
   );
 }
-
-    
-
-    
-
-    

@@ -705,11 +705,11 @@
       },
       "description": "Stores the user's own company details. Should contain one document per enterprise ('vithal', 'rv')."
     },
-    "/companySettings/primary/bankAccounts/{accountId}": {
+    "/companySettings/{docId}/bankAccounts/{accountId}": {
       "schema": {
         "$ref": "#/entities/BankAccount"
       },
-      "description": "Stores individual bank accounts for the user's company."
+      "description": "Stores individual bank accounts for a specific enterprise (Vithal or RV)."
     },
     "/payments/{paymentId}": {
         "schema": {

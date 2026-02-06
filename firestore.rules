@@ -51,7 +51,7 @@ service cloud.firestore {
     }
 
     // Allow users to access their bank accounts sub-collection
-    match /companySettings/primary/bankAccounts/{accountId} {
+    match /companySettings/{docId}/bankAccounts/{accountId} {
       allow read, write: if isSignedIn();
     }
   }
