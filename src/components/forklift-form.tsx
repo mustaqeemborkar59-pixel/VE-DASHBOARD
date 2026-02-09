@@ -217,12 +217,18 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
           </div>
            <div className="grid gap-2">
               <Label htmlFor="firm">Firm</Label>
-              <Select value={formData.firm || ''} onValueChange={(value) => setFormData(prev => ({...prev, firm: value as 'Vithal' | 'RV' | ''}))}>
+              <Select 
+                  value={formData.firm || '__none__'} 
+                  onValueChange={(value) => {
+                      const firmValue = value === '__none__' ? '' : value as 'Vithal' | 'RV';
+                      setFormData(prev => ({...prev, firm: firmValue}));
+                  }}
+              >
                   <SelectTrigger id="firm">
                       <SelectValue placeholder="Select a firm..." />
                   </SelectTrigger>
                   <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       <SelectItem value="Vithal">Vithal</SelectItem>
                       <SelectItem value="RV">RV</SelectItem>
                   </SelectContent>
