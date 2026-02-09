@@ -36,7 +36,7 @@ import { Button } from "@/components/ui/button";
 import { Forklift, JobCard, Company } from "@/lib/data";
 import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, doc, query, where, orderBy } from "firebase/firestore";
+import { collection, doc, query, where, orderBy, deleteField } from "firebase/firestore";
 import { useState, useMemo, Fragment, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ForkliftForm, ForkliftFormData } from "@/components/forklift-form";
@@ -214,17 +214,11 @@ export default function ForkliftsPage() {
 
     const { firm, ...restOfFormData } = formData;
     
-    const dataToSubmit: Partial<Forklift> = {
+    const dataToSubmit: any = {
       ...restOfFormData,
       year: formData.year ? parseInt(formData.year, 10) : new Date().getFullYear(),
     };
 
-    if (firm === 'Vithal' || firm === 'RV') {
-        dataToSubmit.firm = firm;
-    } else if (firm === '') {
-        dataToSubmit.firm = undefined;
-    }
-    
     if (formData.locationType === 'Workshop' || formData.locationType === 'Not Confirm') {
       dataToSubmit.siteCompany = '';
       dataToSubmit.siteArea = '';
@@ -233,15 +227,23 @@ export default function ForkliftsPage() {
     }
 
     if (selectedForklift) {
-      const forkliftDocRef = doc(firestore, 'forklifts', selectedForklift.id);
-      updateDocumentNonBlocking(forkliftDocRef, dataToSubmit);
-      toast({ title: "Success", description: "Forklift updated successfully." });
+        if (firm === 'Vithal' || firm === 'RV') {
+            dataToSubmit.firm = firm;
+        } else {
+            dataToSubmit.firm = deleteField();
+        }
+        const forkliftDocRef = doc(firestore, 'forklifts', selectedForklift.id);
+        updateDocumentNonBlocking(forkliftDocRef, dataToSubmit);
+        toast({ title: "Success", description: "Forklift updated successfully." });
     } else {
-      const maxSrNumber = forklifts ? Math.max(0, ...forklifts.map(f => f.srNumber || 0)) : 0;
-      dataToSubmit.srNumber = maxSrNumber + 1;
-      const forkliftsCollection = collection(firestore, 'forklifts');
-      addDocumentNonBlocking(forkliftsCollection, dataToSubmit);
-      toast({ title: "Success", description: "Forklift added successfully." });
+        if (firm === 'Vithal' || firm === 'RV') {
+            dataToSubmit.firm = firm;
+        }
+        const maxSrNumber = forklifts ? Math.max(0, ...forklifts.map(f => f.srNumber || 0)) : 0;
+        dataToSubmit.srNumber = maxSrNumber + 1;
+        const forkliftsCollection = collection(firestore, 'forklifts');
+        addDocumentNonBlocking(forkliftsCollection, dataToSubmit);
+        toast({ title: "Success", description: "Forklift added successfully." });
     }
 
     setIsAddEditDialogOpen(false);
@@ -524,7 +526,7 @@ export default function ForkliftsPage() {
                                       {forklift.firm}
                                     </Badge>
                                   ) : (
-                                    'N/A'
+                                    ''
                                   )}
                                 </TableCell>
                                 <TableCell>
@@ -554,7 +556,7 @@ export default function ForkliftsPage() {
                                                 {forklift.firm}
                                               </Badge>
                                             ) : (
-                                              <span className="font-medium">N/A</span>
+                                              <span className="font-medium">-</span>
                                             )}
                                           </div>
                                           <div className="flex flex-col gap-1">
