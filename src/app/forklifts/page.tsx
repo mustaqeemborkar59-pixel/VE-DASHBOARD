@@ -221,6 +221,8 @@ export default function ForkliftsPage() {
 
     if (firm === 'Vithal' || firm === 'RV') {
         dataToSubmit.firm = firm;
+    } else if (firm === '') {
+        dataToSubmit.firm = undefined;
     }
     
     if (formData.locationType === 'Workshop' || formData.locationType === 'Not Confirm') {
@@ -303,6 +305,17 @@ export default function ForkliftsPage() {
         return 'border-amber-500/60 bg-amber-50 text-amber-700 dark:border-amber-400/50 dark:bg-amber-900/20 dark:text-amber-400';
       case 'Not Confirm':
         return 'border-red-500/60 bg-red-50 text-red-700 dark:border-red-400/50 dark:bg-red-900/20 dark:text-red-400';
+      default:
+        return '';
+    }
+  }
+
+  const getFirmBadgeClass = (firm: Forklift['firm']) => {
+    switch (firm) {
+      case 'Vithal':
+        return 'border-red-500/60 bg-red-50 text-red-700 dark:border-red-400/50 dark:bg-red-900/20 dark:text-red-400';
+      case 'RV':
+        return 'border-blue-800/60 bg-blue-50 text-blue-900 dark:border-blue-500/50 dark:bg-blue-900/20 dark:text-blue-400';
       default:
         return '';
     }
@@ -505,7 +518,15 @@ export default function ForkliftsPage() {
                                 </TableCell>
                                 <TableCell className="hidden md:table-cell">{forklift.make}</TableCell>
                                 <TableCell className="hidden md:table-cell">{forklift.model}</TableCell>
-                                <TableCell className="hidden md:table-cell">{forklift.firm || 'N/A'}</TableCell>
+                                <TableCell className="hidden md:table-cell">
+                                  {forklift.firm ? (
+                                    <Badge variant={'outline'} className={cn('font-medium', getFirmBadgeClass(forklift.firm))}>
+                                      {forklift.firm}
+                                    </Badge>
+                                  ) : (
+                                    'N/A'
+                                  )}
+                                </TableCell>
                                 <TableCell>
                                   <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={(e) => { e.stopPropagation(); openAddEditDialog(forklift); }}>
                                     <Badge variant={'outline'} className={cn('font-medium pointer-events-none', getLocationBadgeClass(forklift.locationType))}>
@@ -528,7 +549,13 @@ export default function ForkliftsPage() {
                                           </div>
                                           <div className="flex flex-col gap-1">
                                             <Label className="text-xs text-muted-foreground">Firm</Label>
-                                            <span className="font-medium">{forklift.firm || 'N/A'}</span>
+                                            {forklift.firm ? (
+                                              <Badge variant={'outline'} className={cn('font-medium w-fit', getFirmBadgeClass(forklift.firm))}>
+                                                {forklift.firm}
+                                              </Badge>
+                                            ) : (
+                                              <span className="font-medium">N/A</span>
+                                            )}
                                           </div>
                                           <div className="flex flex-col gap-1">
                                                 <Label className="text-xs text-muted-foreground">Location Set On</Label>
