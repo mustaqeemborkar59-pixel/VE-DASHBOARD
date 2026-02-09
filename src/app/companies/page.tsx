@@ -50,7 +50,7 @@ import { Input } from '@/components/ui/input';
 type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc';
 
 export default function CompaniesPage() {
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
   const { toast } = useToast();
   
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
@@ -62,7 +62,7 @@ export default function CompaniesPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const companiesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     
     let field: string, direction: OrderByDirection;
     switch (sortOrder) {
@@ -85,7 +85,7 @@ export default function CompaniesPage() {
             break;
     }
     return query(collection(firestore, 'companies'), orderBy(field, direction));
-  }, [firestore, sortOrder]);
+  }, [firestore, user, sortOrder]);
 
   const { data: companies, isLoading } = useCollection<Company>(companiesQuery);
 

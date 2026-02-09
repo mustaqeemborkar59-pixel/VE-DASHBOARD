@@ -49,17 +49,17 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 export default function JobCardsPage() {
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
   const { toast } = useToast();
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<JobCard | null>(null);
   const [selectedJob, setSelectedJob] = useState<JobCard | null>(null);
 
-  const jobCardsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'jobCards'), orderBy('creationDate', 'desc')) : null, [firestore]);
-  const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name', 'asc')) : null, [firestore]);
-  const forkliftsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'forklifts'), orderBy('serialNumber', 'asc')) : null, [firestore]);
-  const employeesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'employees'), orderBy('fullName', 'asc')) : null, [firestore]);
+  const jobCardsQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'jobCards'), orderBy('creationDate', 'desc')) : null, [firestore, user]);
+  const companiesQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'companies'), orderBy('name', 'asc')) : null, [firestore, user]);
+  const forkliftsQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'forklifts'), orderBy('serialNumber', 'asc')) : null, [firestore, user]);
+  const employeesQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'employees'), orderBy('fullName', 'asc')) : null, [firestore, user]);
   
   const { data: jobCards, isLoading: isLoadingJobs } = useCollection<JobCard>(jobCardsQuery);
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);

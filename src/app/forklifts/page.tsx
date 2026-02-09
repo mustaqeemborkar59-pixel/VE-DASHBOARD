@@ -33,7 +33,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
-import { Forklift, ServiceRequest, Company } from "@/lib/data";
+import { Forklift, JobCard, Company } from "@/lib/data";
 import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy } from "firebase/firestore";
@@ -72,7 +72,7 @@ const searchFieldLabels: Record<SearchField, string> = {
 };
 
 export default function ForkliftsPage() {
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
   const { toast } = useToast();
   
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
@@ -87,15 +87,15 @@ export default function ForkliftsPage() {
   const [searchField, setSearchField] = useState<SearchField>('All');
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
-  const forkliftsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'forklifts'), orderBy('srNumber', 'asc')) : null, [firestore]);
-  const serviceRequestsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'serviceRequests'), where('status', '!=', 'Completed')) : null, [firestore]);
-  const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name', 'asc')) : null, [firestore]);
+  const forkliftsQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'forklifts'), orderBy('srNumber', 'asc')) : null, [firestore, user]);
+  const activeJobCardsQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'jobCards'), where('status', 'in', ['Pending', 'Assigned', 'In Progress'])) : null, [firestore, user]);
+  const companiesQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'companies'), orderBy('name', 'asc')) : null, [firestore, user]);
   
   const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
-  const { data: activeServiceRequests, isLoading: isLoadingRequests } = useCollection<ServiceRequest>(serviceRequestsQuery);
+  const { data: activeJobCards, isLoading: isLoadingJobs } = useCollection<JobCard>(activeJobCardsQuery);
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
   
-  const isLoading = isLoadingForklifts || isLoadingRequests || isLoadingCompanies;
+  const isLoading = isLoadingForklifts || isLoadingJobs || isLoadingCompanies;
   
   const stats = useMemo(() => {
     const total = forklifts?.length || 0;
@@ -303,7 +303,7 @@ export default function ForkliftsPage() {
   }
 
   const hasActiveRequest = (forkliftId: string) => {
-      return activeServiceRequests?.some(req => req.forkliftId === forkliftId);
+      return activeJobCards?.some(job => job.forkliftId === forkliftId);
   }
   
   const renderActions = (forklift: Forklift) => (
@@ -657,3 +657,4 @@ export default function ForkliftsPage() {
     
 
     
+

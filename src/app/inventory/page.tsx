@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Card,
@@ -22,9 +23,9 @@ import { collection } from "firebase/firestore";
 import AppLayout from "@/components/app-layout";
 
 export default function InventoryPage() {
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
 
-  const partsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
+  const partsQuery = useMemoFirebase(() => firestore && user ? collection(firestore, 'parts') : null, [firestore, user]);
   const { data: parts, isLoading } = useCollection<Part>(partsQuery);
 
   return (

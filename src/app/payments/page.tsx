@@ -63,13 +63,13 @@ type ProcessedInvoice = Invoice & {
 
 
 export default function PaymentsPage() {
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
   const { toast } = useToast();
 
   // Data fetching
-  const invoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billNo', 'asc')) : null, [firestore]);
-  const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
-  const paymentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'payments'), orderBy('paymentDate', 'desc')) : null, [firestore]);
+  const invoicesQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'invoices'), orderBy('billNo', 'asc')) : null, [firestore, user]);
+  const companiesQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore, user]);
+  const paymentsQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'payments'), orderBy('paymentDate', 'desc')) : null, [firestore, user]);
 
   const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesQuery);
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);

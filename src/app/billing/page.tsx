@@ -386,7 +386,7 @@ const InvoiceList = ({
 );
 
 export default function BillingPage() {
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<Enterprise>('Vithal');
@@ -481,14 +481,14 @@ export default function BillingPage() {
 
 
   // Queries
-  const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore]);
-  const allInvoicesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'invoices'), orderBy('billNo', 'asc')) : null, [firestore]);
+  const companiesQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore, user]);
+  const allInvoicesQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'invoices'), orderBy('billNo', 'asc')) : null, [firestore, user]);
   
-  const vithalSettingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'companySettings', 'vithal') : null, [firestore]);
-  const rvSettingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'companySettings', 'rv') : null, [firestore]);
+  const vithalSettingsRef = useMemoFirebase(() => firestore && user ? doc(firestore, 'companySettings', 'vithal') : null, [firestore, user]);
+  const rvSettingsRef = useMemoFirebase(() => firestore && user ? doc(firestore, 'companySettings', 'rv') : null, [firestore, user]);
 
-  const vithalBankAccountsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companySettings', 'vithal', 'bankAccounts'), orderBy('nickname')) : null, [firestore]);
-  const rvBankAccountsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companySettings', 'rv', 'bankAccounts'), orderBy('nickname')) : null, [firestore]);
+  const vithalBankAccountsQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'companySettings', 'vithal', 'bankAccounts'), orderBy('nickname')) : null, [firestore, user]);
+  const rvBankAccountsQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'companySettings', 'rv', 'bankAccounts'), orderBy('nickname')) : null, [firestore, user]);
 
 
   // Data

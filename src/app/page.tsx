@@ -1,3 +1,4 @@
+
 'use client';
 import { useMemo } from 'react';
 import {
@@ -14,13 +15,13 @@ import { collection, query, orderBy } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import AppLayout from "@/components/app-layout";
 import { ForkliftIcon } from '@/components/icons/forklift-icon';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, LabelList } from 'recharts';
 
 export default function Dashboard() {
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
 
   // Queries
-  const forkliftsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'forklifts')) : null, [firestore]);
+  const forkliftsQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'forklifts')) : null, [firestore, user]);
 
   // Data fetching
   const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
@@ -134,9 +135,9 @@ export default function Dashboard() {
                       </div>
                   ) : equipmentTypeData.length > 0 ? (
                       <ResponsiveContainer width="100%" height={250}>
-                          <BarChart data={equipmentTypeData} layout="vertical" margin={{ right: 30, left: 20 }}>
+                          <BarChart data={equipmentTypeData} layout="vertical" margin={{ right: 40, left: 20, bottom: 20 }}>
                               <XAxis type="number" hide />
-                              <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={100} fontSize={12} />
+                              <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={100} fontSize={12} interval={0} />
                               <Tooltip
                                   cursor={{ fill: 'hsl(var(--accent))' }}
                                   contentStyle={{
@@ -144,7 +145,9 @@ export default function Dashboard() {
                                       borderColor: "hsl(var(--border))"
                                   }}
                               />
-                              <Bar dataKey="value" name="Count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                               <Bar dataKey="value" name="Count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
+                                 <LabelList dataKey="value" position="right" offset={8} className="fill-foreground" fontSize={12} />
+                               </Bar>
                           </BarChart>
                       </ResponsiveContainer>
                   ) : (
