@@ -211,12 +211,17 @@ export default function ForkliftsPage() {
 
   const handleFormSubmit = (formData: Partial<ForkliftFormData>) => {
     if (!firestore) return;
+
+    const { firm, ...restOfFormData } = formData;
     
     const dataToSubmit: Partial<Forklift> = {
-      ...formData,
+      ...restOfFormData,
       year: formData.year ? parseInt(formData.year, 10) : new Date().getFullYear(),
-      firm: formData.firm || undefined,
     };
+
+    if (firm === 'Vithal' || firm === 'RV') {
+        dataToSubmit.firm = firm;
+    }
     
     if (formData.locationType === 'Workshop' || formData.locationType === 'Not Confirm') {
       dataToSubmit.siteCompany = '';
@@ -659,13 +664,3 @@ export default function ForkliftsPage() {
     </AppLayout>
   );
 }
-
-    
-
-    
-
-    
-
-
-
-  
