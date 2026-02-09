@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronDown } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 
 export type ForkliftFormData = {
@@ -23,6 +24,7 @@ export type ForkliftFormData = {
   year: string;
   capacity: string;
   equipmentType: string;
+  firm: 'Vithal' | 'RV' | '';
   voltage: string;
   mastHeight: string;
   locationType: 'Workshop' | 'On-Site' | 'Not Confirm';
@@ -53,6 +55,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
     year: '',
     capacity: '',
     equipmentType: '',
+    firm: '',
     voltage: '',
     mastHeight: '',
     locationType: 'Workshop',
@@ -74,6 +77,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
         year: initialData.year?.toString() ?? '',
         capacity: initialData.capacity ?? '',
         equipmentType: initialData.equipmentType ?? '',
+        firm: initialData.firm ?? '',
         voltage: initialData.voltage ?? '',
         mastHeight: initialData.mastHeight ?? '',
         locationType: initialData.locationType ?? 'Workshop',
@@ -93,6 +97,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
             year: '',
             capacity: '',
             equipmentType: '',
+            firm: '',
             voltage: '',
             mastHeight: '',
             locationType: 'Workshop',
@@ -210,6 +215,18 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
               <Label htmlFor="equipmentType">Equipment Type</Label>
               <Input id="equipmentType" value={formData.equipmentType} onChange={handleInputChange} placeholder="e.g., Reach Truck" />
           </div>
+           <div className="grid gap-2">
+              <Label htmlFor="firm">Firm</Label>
+              <Select value={formData.firm || ''} onValueChange={(value) => setFormData(prev => ({...prev, firm: value as 'Vithal' | 'RV'}))}>
+                  <SelectTrigger id="firm">
+                      <SelectValue placeholder="Select a firm..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="Vithal">Vithal</SelectItem>
+                      <SelectItem value="RV">RV</SelectItem>
+                  </SelectContent>
+              </Select>
+          </div>
         </div>
         
         <Separator />
@@ -307,3 +324,5 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
     </form>
   );
 }
+
+  

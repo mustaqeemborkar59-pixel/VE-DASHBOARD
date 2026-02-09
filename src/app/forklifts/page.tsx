@@ -215,6 +215,7 @@ export default function ForkliftsPage() {
     const dataToSubmit: Partial<Forklift> = {
       ...formData,
       year: formData.year ? parseInt(formData.year, 10) : new Date().getFullYear(),
+      firm: formData.firm || undefined,
     };
     
     if (formData.locationType === 'Workshop' || formData.locationType === 'Not Confirm') {
@@ -303,6 +304,7 @@ export default function ForkliftsPage() {
   }
 
   const hasActiveRequest = (forkliftId: string) => {
+      if (!user) return false;
       return activeJobCards?.some(job => job.forkliftId === forkliftId);
   }
   
@@ -474,6 +476,7 @@ export default function ForkliftsPage() {
                         <TableHead>Serial Number</TableHead>
                         <TableHead className="hidden md:table-cell">Make</TableHead>
                         <TableHead className="hidden md:table-cell">Model</TableHead>
+                        <TableHead className="hidden md:table-cell">Firm</TableHead>
                         <TableHead>Location</TableHead>
                         <TableHead className="w-[50px] text-right"><span className="sr-only">Actions</span></TableHead>
                         </TableRow>
@@ -493,10 +496,11 @@ export default function ForkliftsPage() {
                                       )}
                                       <span className="font-medium">{forklift.serialNumber}</span>
                                   </div>
-                                  <div className="text-sm text-muted-foreground md:hidden">{forklift.make} {forklift.model}</div>
+                                  <div className="text-sm text-muted-foreground md:hidden">{forklift.make} {forklift.model} {forklift.firm ? `(${forklift.firm})` : ''}</div>
                                 </TableCell>
                                 <TableCell className="hidden md:table-cell">{forklift.make}</TableCell>
                                 <TableCell className="hidden md:table-cell">{forklift.model}</TableCell>
+                                <TableCell className="hidden md:table-cell">{forklift.firm || 'N/A'}</TableCell>
                                 <TableCell>
                                   <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={(e) => { e.stopPropagation(); openAddEditDialog(forklift); }}>
                                     <Badge variant={'outline'} className={cn('font-medium pointer-events-none', getLocationBadgeClass(forklift.locationType))}>
@@ -511,11 +515,15 @@ export default function ForkliftsPage() {
                             </TableRow>
                             {expandedRow === forklift.id && (
                                 <TableRow className="hover:bg-transparent">
-                                    <TableCell colSpan={7} className="p-0 border-y border-x-2 border-accent bg-accent/20">
+                                    <TableCell colSpan={8} className="p-0 border-y border-x-2 border-accent bg-accent/20">
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-background/50">
                                           <div className="flex flex-col gap-1">
                                             <Label className="text-xs text-muted-foreground">MFG Year</Label>
                                             <span className="font-medium">{forklift.year || ''}</span>
+                                          </div>
+                                          <div className="flex flex-col gap-1">
+                                            <Label className="text-xs text-muted-foreground">Firm</Label>
+                                            <span className="font-medium">{forklift.firm || 'N/A'}</span>
                                           </div>
                                           <div className="flex flex-col gap-1">
                                                 <Label className="text-xs text-muted-foreground">Location Set On</Label>
@@ -658,3 +666,6 @@ export default function ForkliftsPage() {
 
     
 
+
+
+  

@@ -35,6 +35,7 @@ export type Forklift = {
   srNumber?: number;
   capacity?: string;
   equipmentType?: string;
+  firm?: 'Vithal' | 'RV';
   voltage?: string;
   mastHeight?: string;
   locationType: 'Workshop' | 'On-Site' | 'Not Confirm';
@@ -204,3 +205,5 @@ export type Note = {
   color: string;
   createdAt: string;
 };
+
+  

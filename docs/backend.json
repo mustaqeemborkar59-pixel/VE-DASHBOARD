@@ -34,6 +34,11 @@
           "type": "string",
           "description": "The type of equipment (e.g., Reach Truck, Pallet Jack)."
         },
+        "firm": {
+          "type": "string",
+          "enum": ["Vithal", "RV"],
+          "description": "The enterprise (firm) through which the forklift is managed or deployed."
+        },
         "voltage": {
           "type": "string",
           "description": "Voltage of the forklift's battery (e.g., '36V', '48V')."
@@ -636,8 +641,7 @@
         },
         "color": {
           "type": "string",
-          "description": "Background color for the note card.",
-          "enum": ["yellow", "blue", "green", "pink", "purple", "default"]
+          "description": "Background color for the note card."
         },
         "createdAt": {
           "type": "string",
@@ -731,3 +735,5 @@
     }
   }
 }
+
+  
