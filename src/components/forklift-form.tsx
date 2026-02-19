@@ -247,15 +247,15 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
                     onValueChange={handleLocationChange}
                     className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-1"
                 >
-                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-orange-200 bg-orange-50/50">
+                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-orange-200 bg-transparent">
                         <RadioGroupItem value="Workshop" id="Workshop" />
                         <Label htmlFor="Workshop" className="cursor-pointer font-medium text-orange-800">Workshop</Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-green-200 bg-green-50/50">
+                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-green-200 bg-transparent">
                         <RadioGroupItem value="On-Site" id="On-Site" />
                         <Label htmlFor="On-Site" className="cursor-pointer font-medium text-green-800">On-Site</Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-red-200 bg-red-50/50">
+                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-red-200 bg-transparent">
                         <RadioGroupItem value="Not Confirm" id="Not Confirm" />
                         <Label htmlFor="Not Confirm" className="cursor-pointer font-medium text-red-800">Not Confirmed</Label>
                     </div>
