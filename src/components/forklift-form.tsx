@@ -14,7 +14,8 @@ import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronDown } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
+import { format, parseISO } from "date-fns";
 
 
 export type ForkliftFormData = {
@@ -165,7 +166,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
   };
   
   const radioCardBaseClasses = "flex w-auto items-center space-x-2 rounded-lg border p-3 cursor-pointer transition-all";
-  const radioCardSelectedClasses = "ring-2 ring-offset-2 ring-offset-background";
+  const radioCardSelectedClasses = ""; // Removed ring/border color override to keep it simple as requested
 
 
   return (
@@ -217,22 +218,27 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
           </div>
            <div className="grid gap-2">
               <Label htmlFor="firm">Firm</Label>
-              <Select 
-                  value={formData.firm || '__none__'} 
+              <RadioGroup
+                  value={formData.firm || '__none__'}
                   onValueChange={(value) => {
                       const firmValue = value === '__none__' ? '' : value as 'Vithal' | 'RV';
                       setFormData(prev => ({...prev, firm: firmValue}));
                   }}
+                  className="flex flex-wrap gap-2"
               >
-                  <SelectTrigger id="firm">
-                      <SelectValue placeholder="Select a firm..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="__none__">None</SelectItem>
-                      <SelectItem value="Vithal">Vithal</SelectItem>
-                      <SelectItem value="RV">RV</SelectItem>
-                  </SelectContent>
-              </Select>
+                  <Label className={cn(radioCardBaseClasses, "border-muted bg-muted/50 text-muted-foreground", formData.firm === '' && "bg-muted text-foreground border-foreground/20")}>
+                      <RadioGroupItem value="__none__" id="firm-none" className="sr-only" />
+                      <span>None</span>
+                  </Label>
+                  <Label className={cn(radioCardBaseClasses, "border-red-200 bg-red-50 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400", formData.firm === 'Vithal' && "bg-red-100 border-red-500/50")}>
+                      <RadioGroupItem value="Vithal" id="firm-vithal" className="sr-only" />
+                      <span>Vithal</span>
+                  </Label>
+                  <Label className={cn(radioCardBaseClasses, "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-400", formData.firm === 'RV' && "bg-blue-100 border-blue-500/50")}>
+                      <RadioGroupItem value="RV" id="firm-rv" className="sr-only" />
+                      <span>RV</span>
+                  </Label>
+              </RadioGroup>
           </div>
         </div>
         
@@ -246,20 +252,36 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
                     onValueChange={handleLocationChange}
                     className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                 >
-                    <Label className={cn(radioCardBaseClasses, 'border-orange-200 bg-orange-100 text-orange-800 dark:border-orange-800 dark:bg-orange-950/50 dark:text-orange-300', formData.locationType === 'Workshop' && cn(radioCardSelectedClasses, 'ring-orange-500'))}>
-                        <RadioGroupItem value="Workshop" id="Workshop" className="border-orange-300 text-orange-700 ring-offset-orange-500" />
+                    <Label className={cn(radioCardBaseClasses, 'border-orange-200 bg-orange-100 text-orange-800 dark:border-orange-800 dark:bg-orange-950/50 dark:text-orange-300', formData.locationType === 'Workshop' && 'bg-orange-200 border-orange-500/50')}>
+                        <RadioGroupItem value="Workshop" id="Workshop" className="sr-only" />
                         <span className="font-medium">Workshop</span>
                     </Label>
-                     <Label className={cn(radioCardBaseClasses, 'border-green-200 bg-green-100 text-green-800 dark:border-green-800 dark:bg-green-950/50 dark:text-green-300', formData.locationType === 'On-Site' && cn(radioCardSelectedClasses, 'ring-green-600'))}>
-                        <RadioGroupItem value="On-Site" id="On-Site" className="border-green-300 text-green-700 ring-offset-green-600" />
+                     <Label className={cn(radioCardBaseClasses, 'border-green-200 bg-green-100 text-green-800 dark:border-green-800 dark:bg-green-950/50 dark:text-green-300', formData.locationType === 'On-Site' && 'bg-green-200 border-green-500/50')}>
+                        <RadioGroupItem value="On-Site" id="On-Site" className="sr-only" />
                         <span className="font-medium">On-Site</span>
                     </Label>
-                    <Label className={cn(radioCardBaseClasses, 'border-red-200 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-950/50 dark:text-red-300', formData.locationType === 'Not Confirm' && cn(radioCardSelectedClasses, 'ring-red-600'))}>
-                        <RadioGroupItem value="Not Confirm" id="Not Confirm" className="border-red-300 text-red-700 ring-offset-red-600" />
+                    <Label className={cn(radioCardBaseClasses, 'border-red-200 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-950/50 dark:text-red-300', formData.locationType === 'Not Confirm' && 'bg-red-200 border-red-500/50')}>
+                        <RadioGroupItem value="Not Confirm" id="Not Confirm" className="sr-only" />
                         <span className="font-medium">Not Confirmed</span>
                     </Label>
                 </RadioGroup>
            </div>
+
+           <div className="grid gap-2 max-w-xs">
+                <Label htmlFor="locationAssignmentDate">Location Set Date</Label>
+                <Input
+                    id="locationAssignmentDate"
+                    type="datetime-local"
+                    value={formData.locationAssignmentDate ? format(parseISO(formData.locationAssignmentDate), "yyyy-MM-dd'T'HH:mm") : ''}
+                    onChange={(e) => {
+                        const date = new Date(e.target.value);
+                        if (!isNaN(date.getTime())) {
+                            setFormData(prev => ({ ...prev, locationAssignmentDate: date.toISOString() }));
+                        }
+                    }}
+                />
+                <p className="text-[10px] text-muted-foreground">Changes automatically when location type changes, or set manually.</p>
+            </div>
 
           {formData.locationType === 'On-Site' && (
             <div className="grid gap-4 mt-2 border-l-2 border-primary pl-4">
@@ -331,5 +353,3 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
     </form>
   );
 }
-
-  
