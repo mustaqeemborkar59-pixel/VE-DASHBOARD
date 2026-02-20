@@ -233,19 +233,24 @@ const renderSingleSlip = (
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
 
-    // --- Signature Section ---
+    // --- Signature / Footer Section ---
     const sigY = currentY + 20;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text("________________________", 50, sigY, { align: 'center' });
-    doc.text("Employee Signature", 50, sigY + 4, { align: 'center' });
-
-    doc.text("________________________", 160, sigY, { align: 'center' });
-    doc.text("Authorized Signatory", 160, sigY + 4, { align: 'center' });
+    
+    // Position signature labels
+    doc.text("Employee Signature", 50, sigY, { align: 'center' });
+    doc.text("Authorized Signatory", 160, sigY, { align: 'center' });
+    
+    // Note about system generation
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(80, 80, 80);
+    doc.text("Note: This is a system generated document and does not require a physical signature.", 105, sigY + 8, { align: 'center' });
     
     doc.setFontSize(6);
     doc.setTextColor(100, 100, 100);
-    doc.text(`System Generated on ${format(new Date(), 'dd MMM yyyy, p')}`, 105, sigY + 10, { align: 'center' });
+    doc.text(`System Generated on ${format(new Date(), 'dd MMM yyyy, p')}`, 105, sigY + 13, { align: 'center' });
 };
 
 export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, company: CompanySettings) => {
