@@ -242,7 +242,7 @@ export default function NotesPage() {
           </div>
         ) : filteredNotes.length > 0 ? (
           <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
-            {filteredNotes.map(note => {
+            {filteredNotes.map((note, index) => {
               const isPresetColor = (c: string): c is PresetColor => Object.keys(noteColorClasses).includes(c);
               
               let cardDynamicStyle: React.CSSProperties = {};
@@ -282,11 +282,9 @@ export default function NotesPage() {
                   >
                     <CardHeader className="flex flex-row items-start justify-between pb-1 pt-3 px-4">
                       <div className="flex-1 pr-6">
-                          {note.title ? (
-                              <CardTitle className={cn("text-sm font-bold leading-tight", textDynamicClass)} style={textDynamicStyle}>
-                                  {note.title}
-                              </CardTitle>
-                          ) : null}
+                          <span className={cn("text-[10px] font-black uppercase tracking-widest opacity-50", textDynamicClass)} style={textDynamicStyle}>
+                              Note #{index + 1}
+                          </span>
                       </div>
                        <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -305,6 +303,11 @@ export default function NotesPage() {
                       </DropdownMenu>
                     </CardHeader>
                     <CardContent className="py-1 px-4">
+                      {note.title && (
+                        <h4 className={cn("text-sm font-bold mb-1 leading-tight", textDynamicClass)} style={textDynamicStyle}>
+                          {note.title}
+                        </h4>
+                      )}
                       <p className={cn("whitespace-pre-wrap text-xs sm:text-sm leading-snug", textDynamicClass)} style={textDynamicStyle}>
                           {note.content}
                       </p>
