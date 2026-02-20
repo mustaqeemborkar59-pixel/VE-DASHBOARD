@@ -223,15 +223,15 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
               >
                   <div className="flex items-center space-x-2">
                       <RadioGroupItem value="__none__" id="firm-none" />
-                      <Label htmlFor="firm-none" className="cursor-pointer font-normal">None</Label>
+                      <Label htmlFor="firm-none" className="cursor-pointer font-normal text-foreground">None</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Vithal" id="firm-vithal" className="text-red-600 border-red-600" />
-                      <Label htmlFor="firm-vithal" className="cursor-pointer text-red-700 font-medium">Vithal</Label>
+                      <RadioGroupItem value="Vithal" id="firm-vithal" className="text-red-600 border-red-600 dark:text-red-400 dark:border-red-400" />
+                      <Label htmlFor="firm-vithal" className="cursor-pointer text-red-700 dark:text-red-400 font-medium">Vithal</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="RV" id="firm-rv" className="text-blue-800 border-blue-800" />
-                      <Label htmlFor="firm-rv" className="cursor-pointer text-blue-900 font-medium">RV</Label>
+                      <RadioGroupItem value="RV" id="firm-rv" className="text-blue-800 border-blue-800 dark:text-blue-400 dark:border-blue-400" />
+                      <Label htmlFor="firm-rv" className="cursor-pointer text-blue-900 dark:text-blue-400 font-medium">RV</Label>
                   </div>
               </RadioGroup>
           </div>
@@ -240,24 +240,24 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
         <Separator />
         
         <div className="grid gap-4">
-          <h3 className="text-lg font-medium">Location Details</h3>
+          <h3 className="text-lg font-medium text-foreground">Location Details</h3>
            <div className="grid gap-2">
                 <RadioGroup
                     value={formData.locationType}
                     onValueChange={handleLocationChange}
                     className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-1"
                 >
-                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-orange-200 bg-transparent">
+                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-orange-200 dark:border-orange-900/50 bg-transparent">
                         <RadioGroupItem value="Workshop" id="Workshop" />
-                        <Label htmlFor="Workshop" className="cursor-pointer font-medium text-orange-800">Workshop</Label>
+                        <Label htmlFor="Workshop" className="cursor-pointer font-medium text-orange-800 dark:text-orange-400">Workshop</Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-green-200 bg-transparent">
+                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-green-200 dark:border-green-900/50 bg-transparent">
                         <RadioGroupItem value="On-Site" id="On-Site" />
-                        <Label htmlFor="On-Site" className="cursor-pointer font-medium text-green-800">On-Site</Label>
+                        <Label htmlFor="On-Site" className="cursor-pointer font-medium text-green-800 dark:text-green-400">On-Site</Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-red-200 bg-transparent">
+                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-red-200 dark:border-red-900/50 bg-transparent">
                         <RadioGroupItem value="Not Confirm" id="Not Confirm" />
-                        <Label htmlFor="Not Confirm" className="cursor-pointer font-medium text-red-800">Not Confirmed</Label>
+                        <Label htmlFor="Not Confirm" className="cursor-pointer font-medium text-red-800 dark:text-red-400">Not Confirmed</Label>
                     </div>
                 </RadioGroup>
            </div>
@@ -274,6 +274,7 @@ export function ForkliftForm({ onSubmit, onCancel, initialData, mode, companies,
                             setFormData(prev => ({ ...prev, locationAssignmentDate: date.toISOString() }));
                         }
                     }}
+                    className="bg-background text-foreground"
                 />
                 <p className="text-[10px] text-muted-foreground">Changes automatically when location type changes, or set manually.</p>
             </div>

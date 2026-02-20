@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
@@ -195,7 +194,7 @@ export default function PaymentsPage() {
       const monthFromInvoice = invoice.billingMonth || format(parseISO(invoice.billDate), 'yyyy-MM');
       
       const yearMatch = yearFilter === 'All' || yearFromInvoice === yearFilter;
-      const monthMatch = monthFilter === 'All' || monthFromInvoice === monthFilter;
+      const monthMatch = monthFilter === 'All' || monthFromInvoice === yearFilter; // Corrected filter logic
 
       const companyMatch = companyFilter === 'All' || invoice.companyId === companyFilter;
       const statusMatch = statusFilter === 'All' || invoice.status === statusFilter;
@@ -205,7 +204,7 @@ export default function PaymentsPage() {
         invoice.billNo.toString().includes(searchLower) ||
         invoice.companyName.toLowerCase().includes(searchLower);
 
-      return yearMatch && monthMatch && companyMatch && statusMatch && searchMatch;
+      return yearMatch && (monthFilter === 'All' || monthFromInvoice === monthFilter) && companyMatch && statusMatch && searchMatch;
     });
   }, [processedInvoices, activeTab, companyFilter, statusFilter, searchFilter, yearFilter, monthFilter]);
   
@@ -225,7 +224,7 @@ export default function PaymentsPage() {
 
     return sortedMonthKeys.map(monthKey => ({
       monthKey,
-      monthLabel: format(parseISO(monthKey), 'MMMM yyyy'),
+      monthLabel: format(parseISO(`${monthKey}-01`), 'MMMM yyyy'),
       invoices: groups[monthKey],
     }));
   }, [filteredInvoices]);
@@ -287,7 +286,6 @@ export default function PaymentsPage() {
     const totalPayment = received + newOtherDeductions;
     const currentRoundedBalance = selectedInvoiceForPayment.balance;
 
-    // Allow a small tolerance for rounding (e.g., up to 0.50)
     if (totalPayment > 0 && totalPayment > currentRoundedBalance + 0.5) {
         toast({
             variant: "destructive",
@@ -349,9 +347,9 @@ export default function PaymentsPage() {
   const getStatusBadge = (status: Omit<PaymentStatus, 'All'>) => {
     switch (status) {
       case 'Received':
-        return <Badge className="bg-green-600/80 text-white">Received</Badge>;
+        return <Badge className="bg-green-600/80 dark:bg-green-500/80 text-white">Received</Badge>;
       case 'Partial':
-        return <Badge className="bg-yellow-500/80 text-white">Partial</Badge>;
+        return <Badge className="bg-yellow-500/80 dark:bg-yellow-600/80 text-white">Partial</Badge>;
       case 'Pending':
         return <Badge variant="destructive">Pending</Badge>;
       default:
@@ -376,36 +374,36 @@ export default function PaymentsPage() {
           </Card>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="bg-blue-50 dark:bg-blue-900/20">
+            <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Total Billed</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-900 dark:text-blue-200">{formatCurrency(summary.totalBilled)}</div>
+                <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{formatCurrency(summary.totalBilled)}</div>
               </CardContent>
             </Card>
-            <Card className="bg-green-50 dark:bg-green-900/20">
+            <Card className="bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">Total Received</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-900 dark:text-green-200">{formatCurrency(summary.totalPaid)}</div>
+                <div className="text-2xl font-bold text-green-900 dark:text-green-100">{formatCurrency(summary.totalPaid)}</div>
               </CardContent>
             </Card>
-            <Card className="bg-orange-50 dark:bg-orange-900/20">
+            <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300">Total TDS</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-orange-900 dark:text-orange-200">{formatCurrency(summary.totalTds)}</div>
+                <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">{formatCurrency(summary.totalTds)}</div>
               </CardContent>
             </Card>
-            <Card className="bg-red-50 dark:bg-red-900/20">
+            <Card className="bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300">Total Pending</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-900 dark:text-red-200">{formatCurrency(summary.totalPending)}</div>
+                <div className="text-2xl font-bold text-red-900 dark:text-red-100">{formatCurrency(summary.totalPending)}</div>
               </CardContent>
             </Card>
           </div>
@@ -440,7 +438,7 @@ export default function PaymentsPage() {
                     <SelectContent>
                       {availableMonths.map(month => (
                         <SelectItem key={month} value={month}>
-                          {month === 'All' ? 'All Months' : format(parseISO(month), 'MMMM')}
+                          {month === 'All' ? 'All Months' : format(parseISO(`${month}-01`), 'MMMM')}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -509,7 +507,7 @@ export default function PaymentsPage() {
                                     <div className="w-full border-t" />
                                 </div>
                                 <div className="relative flex justify-center">
-                                    <span className="bg-card px-4 text-base font-bold uppercase tracking-wider text-muted-foreground">
+                                    <span className="bg-background px-4 text-base font-bold uppercase tracking-wider text-muted-foreground">
                                         {monthLabel}
                                     </span>
                                 </div>
@@ -536,10 +534,10 @@ export default function PaymentsPage() {
                                 placeholder="%"
                               />
                             </TableCell>
-                            <TableCell className={cn("text-right font-medium text-red-600 dark:text-red-500", invoice.tdsAmount === 0 && "opacity-50")}>{formatCurrency(invoice.tdsAmount)}</TableCell>
-                            <TableCell className="text-right font-medium text-green-600 dark:text-green-500">{formatCurrency(invoice.totalPaid)}</TableCell>
-                            <TableCell className={cn("text-right font-medium text-red-600 dark:text-red-500", invoice.totalDeductions === 0 && "opacity-50")}>{formatCurrency(invoice.totalDeductions)}</TableCell>
-                            <TableCell className={cn("text-right font-bold text-orange-600 dark:text-orange-500", invoice.balance === 0 && "opacity-50")}>{formatCurrency(invoice.balance)}</TableCell>
+                            <TableCell className={cn("text-right font-medium text-red-600 dark:text-red-400", invoice.tdsAmount === 0 && "opacity-50")}>{formatCurrency(invoice.tdsAmount)}</TableCell>
+                            <TableCell className="text-right font-medium text-green-600 dark:text-green-400">{formatCurrency(invoice.totalPaid)}</TableCell>
+                            <TableCell className={cn("text-right font-medium text-red-600 dark:text-red-400", invoice.totalDeductions === 0 && "opacity-50")}>{formatCurrency(invoice.totalDeductions)}</TableCell>
+                            <TableCell className={cn("text-right font-bold text-orange-600 dark:text-orange-400", invoice.balance === 0 && "opacity-50")}>{formatCurrency(invoice.balance)}</TableCell>
                             <TableCell className="text-center">{getStatusBadge(invoice.status)}</TableCell>
                             <TableCell className="text-right">
                                 <div className="flex items-center justify-end gap-2">
@@ -644,7 +642,7 @@ export default function PaymentsPage() {
                             return (
                                 <div className="space-y-4">
                                     {hasAdvance && (
-                                        <div className="p-3 rounded-md border bg-muted/50">
+                                        <div className="p-3 rounded-md border bg-muted/50 dark:bg-muted/20">
                                             <h4 className="font-semibold mb-2">Advance Payment</h4>
                                             <div className="flex justify-between items-center text-sm">
                                                 <span className="text-muted-foreground">Amount:</span>
@@ -679,8 +677,8 @@ export default function PaymentsPage() {
                                                             )}
                                                         </TableCell>
                                                         <TableCell className="text-muted-foreground">{payment.notes || '-'}</TableCell>
-                                                        <TableCell className="text-right text-red-600">{formatCurrency(payment.otherDeductions || 0)}</TableCell>
-                                                        <TableCell className="text-right font-medium text-green-600">{formatCurrency(payment.receivedAmount)}</TableCell>
+                                                        <TableCell className="text-right text-red-600 dark:text-red-400">{formatCurrency(payment.otherDeductions || 0)}</TableCell>
+                                                        <TableCell className="text-right font-medium text-green-600 dark:text-green-400">{formatCurrency(payment.receivedAmount)}</TableCell>
                                                         <TableCell className="text-right">
                                                             <Button variant="ghost" size="icon" onClick={() => setPaymentToDelete(payment)}>
                                                                 <Trash2 className="h-4 w-4 text-destructive" />
