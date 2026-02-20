@@ -14,8 +14,6 @@ service cloud.firestore {
     }
 
     // Allow any authenticated user to read/write all primary collections.
-    // This is a starting point. For production, you should implement
-    // more granular, per-user, or role-based security rules.
     match /forklifts/{forkliftId} {
       allow read, write: if isSignedIn();
     }
