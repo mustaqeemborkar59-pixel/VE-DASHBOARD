@@ -235,13 +235,13 @@ export default function NotesPage() {
         </Card>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-48 rounded-xl bg-muted animate-pulse border border-border/50"></div>
+          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="break-inside-avoid h-48 rounded-xl bg-muted animate-pulse border border-border/50"></div>
             ))}
           </div>
         ) : filteredNotes.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
             {filteredNotes.map(note => {
               const isPresetColor = (c: string): c is PresetColor => Object.keys(noteColorClasses).includes(c);
               
@@ -272,50 +272,51 @@ export default function NotesPage() {
               }
 
               return (
-                <Card 
-                  key={note.id} 
-                  className={cn(
-                    "group relative flex flex-col transition-all duration-300 hover:shadow-md hover:-translate-y-1 rounded-xl overflow-hidden", 
-                    cardDynamicClass
-                  )} 
-                  style={cardDynamicStyle}
-                >
-                  <CardHeader className="flex flex-row items-start justify-between pb-0 pt-3 px-4">
-                    <div className="flex-1 pr-6">
-                        {note.title ? (
-                            <CardTitle className={cn("text-sm font-bold leading-tight", textDynamicClass)} style={textDynamicStyle}>
-                                {note.title}
-                            </CardTitle>
-                        ) : null}
-                    </div>
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className={cn("h-7 w-7 -mt-1 -mr-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5", textDynamicClass)} style={textDynamicStyle}>
-                                <EllipsisVertical className="h-3.5 w-3.5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-36">
-                            <DropdownMenuItem onSelect={() => openFormDialog(note)} className="cursor-pointer">
-                                <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => openDeleteDialog(note)} className="text-destructive focus:bg-destructive/10 cursor-pointer">
-                                <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                  </CardHeader>
-                  <CardContent className="py-1 px-4">
-                    <p className={cn("whitespace-pre-wrap text-xs sm:text-sm leading-snug", textDynamicClass)} style={textDynamicStyle}>
-                        {note.content}
-                    </p>
-                  </CardContent>
-                  <CardFooter className="pt-0 pb-3 px-4 flex items-center justify-between mt-auto">
-                    <span className="text-[9px] font-bold uppercase tracking-tight" style={footerDynamicStyle}>
-                        {format(new Date(note.createdAt), "dd MMM yyyy")}
-                    </span>
-                    <Pin className="h-2.5 w-2.5 opacity-20 group-hover:opacity-100 transition-opacity" style={textDynamicStyle}/>
-                  </CardFooter>
-                </Card>
+                <div key={note.id} className="break-inside-avoid">
+                  <Card 
+                    className={cn(
+                      "group relative flex flex-col transition-all duration-300 hover:shadow-md hover:-translate-y-1 rounded-xl overflow-hidden", 
+                      cardDynamicClass
+                    )} 
+                    style={cardDynamicStyle}
+                  >
+                    <CardHeader className="flex flex-row items-start justify-between pb-1 pt-3 px-4">
+                      <div className="flex-1 pr-6">
+                          {note.title ? (
+                              <CardTitle className={cn("text-sm font-bold leading-tight", textDynamicClass)} style={textDynamicStyle}>
+                                  {note.title}
+                              </CardTitle>
+                          ) : null}
+                      </div>
+                       <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className={cn("h-7 w-7 -mt-1 -mr-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5", textDynamicClass)} style={textDynamicStyle}>
+                                  <EllipsisVertical className="h-3.5 w-3.5" />
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-36">
+                              <DropdownMenuItem onSelect={() => openFormDialog(note)} className="cursor-pointer">
+                                  <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => openDeleteDialog(note)} className="text-destructive focus:bg-destructive/10 cursor-pointer">
+                                  <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                              </DropdownMenuItem>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                    </CardHeader>
+                    <CardContent className="py-1 px-4">
+                      <p className={cn("whitespace-pre-wrap text-xs sm:text-sm leading-snug", textDynamicClass)} style={textDynamicStyle}>
+                          {note.content}
+                      </p>
+                    </CardContent>
+                    <CardFooter className="pt-1 pb-3 px-4 flex items-center justify-between mt-auto">
+                      <span className="text-[9px] font-bold uppercase tracking-tight" style={footerDynamicStyle}>
+                          {format(new Date(note.createdAt), "dd MMM yyyy")}
+                      </span>
+                      <Pin className="h-2.5 w-2.5 opacity-20 group-hover:opacity-100 transition-opacity" style={textDynamicStyle}/>
+                    </CardFooter>
+                  </Card>
+                </div>
               )
             })}
           </div>
