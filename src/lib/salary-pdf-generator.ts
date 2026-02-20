@@ -46,11 +46,11 @@ const renderSingleSlip = (
     
     // --- Header Section ---
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(14); 
+    doc.setFontSize(14); // Reduced from 16
     doc.setFont('helvetica', 'bold');
     doc.text(company.companyName.toUpperCase(), 105, yOffset + 12, { align: 'center' });
     
-    doc.setFontSize(7); 
+    doc.setFontSize(7); // Reduced from 9
     doc.setFont('helvetica', 'normal');
     const addressLines = company.address ? doc.splitTextToSize(company.address, 170) : [];
     let currentY = yOffset + 17;
@@ -65,13 +65,13 @@ const renderSingleSlip = (
         currentY += 5;
     }
 
-    doc.setFontSize(10); 
+    doc.setFontSize(10); // Reduced from 12
     doc.setFont('helvetica', 'bold');
     doc.text(`SALARY SLIP - ${monthDisplay}`, 105, currentY, { align: 'center' });
     currentY += 8;
 
     // --- Employee Info Section (Two-Column Layout) ---
-    doc.setFontSize(8); 
+    doc.setFontSize(8); // Reduced from 10
     
     // Left Column
     const leftX = 14;
@@ -196,17 +196,34 @@ const renderSingleSlip = (
     });
 
     // --- Final Summary Section ---
-    // Reduced gap here from +8 to +4
     currentY = (doc as any).lastAutoTable.finalY + 4;
-    
-    doc.setDrawColor(0, 0, 0);
-    doc.rect(14, currentY, 182, 10, 'S');
-    doc.setFontSize(13); 
-    doc.setFont('helvetica', 'bold');
     const formattedNetPay = salary.netSalary.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    doc.text(`NET PAYABLE SALARY: Rs. ${formattedNetPay}/-`, 105, currentY + 7, { align: 'center' });
+    
+    // Render Net Payable as a Table Row matching headers font size
+    autoTable(doc, {
+        startY: currentY,
+        body: [[
+            { 
+                content: `NET PAYABLE SALARY: Rs. ${formattedNetPay}/-`, 
+                styles: { 
+                    halign: 'center', 
+                    fontStyle: 'bold',
+                    fontSize: 8, 
+                    lineWidth: 0.1,
+                    lineColor: [0, 0, 0]
+                } 
+            }
+        ]],
+        theme: 'grid',
+        styles: { 
+            cellPadding: 1.5, 
+            minCellHeight: 6, 
+            textColor: [0, 0, 0],
+            font: 'helvetica'
+        }
+    });
 
-    currentY += 15;
+    currentY = (doc as any).lastAutoTable.finalY + 10;
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
