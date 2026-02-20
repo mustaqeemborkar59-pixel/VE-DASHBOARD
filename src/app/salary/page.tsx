@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -12,7 +11,7 @@ import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Employee, Salary, CompanySettings } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, User, Calendar, WalletCards, XCircle } from 'lucide-react';
+import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, FileText, WalletCards, XCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -21,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { generateSalarySlip } from '@/lib/salary-generator';
+import { generateSalaryPdfSlip } from '@/lib/salary-pdf-generator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Enterprise = 'Vithal' | 'RV';
@@ -164,6 +164,24 @@ export default function SalaryPage() {
     }
   };
 
+  const handleDownloadPdfSlip = async (salary: Salary) => {
+    const employee = employees?.find(e => e.id === salary.employeeId);
+    const settings = salary.enterprise === 'Vithal' ? vithalSettings : rvSettings;
+
+    if (!employee || !settings) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Employee or Company settings missing.' });
+      return;
+    }
+
+    try {
+      await generateSalaryPdfSlip(salary, employee, settings);
+      toast({ title: 'Success', description: 'PDF Salary slip generated.' });
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to generate PDF.' });
+    }
+  };
+
   return (
     <AppLayout>
       <div className="flex flex-col gap-4 sm:gap-6 animate-in fade-in duration-500">
@@ -248,8 +266,11 @@ export default function SalaryPage() {
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right pr-6 space-x-1">
-                              <Button variant="ghost" size="icon" onClick={() => handleDownloadSlip(salary)} className="h-8 w-8 text-primary hover:bg-primary/10">
+                              <Button variant="ghost" title="Download Word" size="icon" onClick={() => handleDownloadSlip(salary)} className="h-8 w-8 text-primary hover:bg-primary/10">
                                 <Download className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" title="Download PDF" size="icon" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 w-8 text-red-500 hover:bg-red-50">
+                                <FileText className="h-4 w-4" />
                               </Button>
                               <Button variant="ghost" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500 hover:bg-amber-50">
                                 <Pencil className="h-4 w-4" />
@@ -289,8 +310,11 @@ export default function SalaryPage() {
                             {salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                           </div>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => handleDownloadSlip(salary)} className="h-8 px-2 text-[10px]">
-                              <Download className="mr-1 h-3 w-3" /> Slip
+                            <Button variant="outline" size="sm" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 px-2 text-[10px] text-red-600 border-red-200">
+                              <FileText className="mr-1 h-3 w-3" /> PDF
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleDownloadSlip(salary)} className="h-8 px-2 text-[10px] text-primary border-primary/20">
+                              <Download className="mr-1 h-3 w-3" /> DOC
                             </Button>
                             <Button variant="outline" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500">
                               <Pencil className="h-3 w-3" />
