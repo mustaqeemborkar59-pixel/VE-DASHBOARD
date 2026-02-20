@@ -211,9 +211,15 @@ export type Salary = {
   employeeId: string;
   enterprise: 'Vithal' | 'RV';
   month: string; // YYYY-MM
-  baseSalary: number;
-  bonus: number;
-  deductions: number;
+  baseSalary: number; // Basic
+  da: number;
+  hra: number;
+  ot: number;
+  pf: number;
+  esic: number;
+  pt: number;
+  lwf: number;
+  advance: number;
   netSalary: number;
   paymentDate: string; // YYYY-MM-DD
   status: 'Paid' | 'Pending';

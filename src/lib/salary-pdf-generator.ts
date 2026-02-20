@@ -17,8 +17,8 @@ const toWords = new ToWords({
 });
 
 /**
- * Renders a single salary slip at a specific Y offset on the document.
- * Optimized for a compact layout.
+ * Renders a compact and professional salary slip.
+ * Updated to include Basic, DA, HRA, OT, PF, ESIC, PT, LWF, Advance.
  */
 const renderSingleSlip = (
     doc: jsPDF,
@@ -30,6 +30,9 @@ const renderSingleSlip = (
     const netSalaryWords = toWords.convert(salary.netSalary).toUpperCase();
     const monthDisplay = format(parseISO(`${salary.month}-01`), 'MMMM yyyy').toUpperCase();
     const paymentDateDisplay = salary.paymentDate ? format(parseISO(salary.paymentDate), 'dd/MM/yyyy') : 'N/A';
+
+    const grossEarnings = (salary.baseSalary || 0) + (salary.da || 0) + (salary.hra || 0) + (salary.ot || 0);
+    const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.lwf || 0) + (salary.advance || 0);
 
     // --- Background Watermark "VE" ---
     doc.setTextColor(245, 245, 245); 
@@ -75,7 +78,7 @@ const renderSingleSlip = (
                 { content: `Month: ${monthDisplay}`, styles: { fontStyle: 'bold', fontSize: 10 } }
             ],
             [
-                { content: `Role: ${employee.specialization || 'N/A'}`, styles: { fontSize: 9 } },
+                { content: `Designation: ${employee.specialization || 'N/A'}`, styles: { fontSize: 9 } },
                 { content: `Payment Date: ${paymentDateDisplay}`, styles: { fontSize: 9 } }
             ]
         ],
@@ -84,33 +87,45 @@ const renderSingleSlip = (
         columnStyles: { 0: { cellWidth: 91 }, 1: { cellWidth: 91 } }
     });
 
-    // --- Salary Table Section ---
+    // --- Combined Earnings and Deductions Table ---
     const tableStartY = (doc as any).lastAutoTable.finalY + 3;
     autoTable(doc, {
         startY: tableStartY,
-        head: [['Particulars', 'Amount (INR)']],
+        head: [['Earnings', 'Amount (INR)', 'Deductions', 'Amount (INR)']],
         body: [
-            ['Basic Salary', { content: salary.baseSalary.toLocaleString('en-IN'), styles: { halign: 'right' } }],
-            ['Bonus / Incentives', { content: salary.bonus.toLocaleString('en-IN'), styles: { halign: 'right' } }],
-            ['Deductions', { content: `(-) ${salary.deductions.toLocaleString('en-IN')}`, styles: { halign: 'right', textColor: [200, 0, 0] } }],
+            ['Basic Salary', (salary.baseSalary || 0).toLocaleString('en-IN'), 'P.F.', (salary.pf || 0).toLocaleString('en-IN')],
+            ['D.A.', (salary.da || 0).toLocaleString('en-IN'), 'E.S.I.C.', (salary.esic || 0).toLocaleString('en-IN')],
+            ['H.R.A.', (salary.hra || 0).toLocaleString('en-IN'), 'P.T. (Prof. Tax)', (salary.pt || 0).toLocaleString('en-IN')],
+            ['O.T. (Overtime)', (salary.ot || 0).toLocaleString('en-IN'), 'L.W.F.', (salary.lwf || 0).toLocaleString('en-IN')],
+            ['', '', 'Advance', (salary.advance || 0).toLocaleString('en-IN')],
             [
-                { content: 'Net Salary Payable', styles: { fontStyle: 'bold', fontSize: 11 } }, 
-                { content: salary.netSalary.toLocaleString('en-IN'), styles: { fontStyle: 'bold', halign: 'right', fontSize: 11 } }
+                { content: 'Gross Earnings', styles: { fontStyle: 'bold' } },
+                { content: grossEarnings.toLocaleString('en-IN'), styles: { fontStyle: 'bold', halign: 'right' } },
+                { content: 'Gross Deductions', styles: { fontStyle: 'bold' } },
+                { content: totalDeductions.toLocaleString('en-IN'), styles: { fontStyle: 'bold', halign: 'right' } }
             ]
         ],
         theme: 'grid',
-        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', fontSize: 10 },
-        styles: { fontSize: 10, cellPadding: 3 }
+        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', fontSize: 9 },
+        styles: { fontSize: 9, cellPadding: 2 },
+        columnStyles: {
+            1: { halign: 'right' },
+            3: { halign: 'right' }
+        }
     });
 
-    // --- Amount in Words ---
-    const finalTableY = (doc as any).lastAutoTable.finalY;
+    // --- Final Net Pay Section ---
+    const summaryStartY = (doc as any).lastAutoTable.finalY + 2;
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`NET PAYABLE: ${salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`, 105, summaryStartY + 5, { align: 'center' });
+
     doc.setFontSize(9);
     doc.setFont('helvetica', 'italic');
-    doc.text(`In words: ${netSalaryWords}`, 14, finalTableY + 7);
+    doc.text(`In words: ${netSalaryWords}`, 14, summaryStartY + 12);
 
     // --- Signature Section ---
-    const sigY = finalTableY + 22;
+    const sigY = summaryStartY + 30;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.text("________________________", 50, sigY, { align: 'center' });
@@ -127,7 +142,7 @@ const renderSingleSlip = (
 export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, company: CompanySettings) => {
     const doc = new jsPDF('p', 'mm', 'a4');
 
-    // Render single slip at the top
+    // Render single slip
     renderSingleSlip(doc, 0, salary, employee, company);
 
     const fileName = `SalarySlip_${employee.fullName.replace(/\s+/g, '_')}_${salary.month}.pdf`;

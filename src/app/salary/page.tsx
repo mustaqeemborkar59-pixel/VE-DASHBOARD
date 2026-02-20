@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -11,7 +12,7 @@ import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Employee, Salary, CompanySettings } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, FileText, WalletCards, XCircle } from 'lucide-react';
+import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, FileText, WalletCards, XCircle, Calculator } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -19,9 +20,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { generateSalarySlip } from '@/lib/salary-generator';
 import { generateSalaryPdfSlip } from '@/lib/salary-pdf-generator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from '@/components/ui/separator';
 
 type Enterprise = 'Vithal' | 'RV';
 
@@ -40,9 +41,20 @@ export default function SalaryPage() {
   // Form State
   const [employeeId, setEmployeeId] = useState('');
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
-  const [baseSalary, setBaseSalary] = useState('');
-  const [bonus, setBonus] = useState('0');
-  const [deductions, setDeductions] = useState('0');
+  
+  // Earnings
+  const [baseSalary, setBaseSalary] = useState('0'); // Basic
+  const [da, setDa] = useState('0');
+  const [hra, setHra] = useState('0');
+  const [ot, setOt] = useState('0');
+  
+  // Deductions
+  const [pf, setPf] = useState('0');
+  const [esic, setEsic] = useState('0');
+  const [pt, setPt] = useState('0');
+  const [lwf, setLwf] = useState('0');
+  const [advance, setAdvance] = useState('0');
+
   const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [status, setStatus] = useState<'Paid' | 'Pending'>('Paid');
   const [notes, setNotes] = useState('');
@@ -59,12 +71,24 @@ export default function SalaryPage() {
   const { data: vithalSettings } = useDoc<CompanySettings>(vithalSettingsRef);
   const { data: rvSettings } = useDoc<CompanySettings>(rvSettingsRef);
 
-  const netSalary = useMemo(() => {
-    const base = parseFloat(baseSalary) || 0;
-    const extra = parseFloat(bonus) || 0;
-    const cut = parseFloat(deductions) || 0;
-    return Math.max(0, base + extra - cut);
-  }, [baseSalary, bonus, deductions]);
+  const calculations = useMemo(() => {
+    const basic = parseFloat(baseSalary) || 0;
+    const v_da = parseFloat(da) || 0;
+    const v_hra = parseFloat(hra) || 0;
+    const v_ot = parseFloat(ot) || 0;
+    
+    const v_pf = parseFloat(pf) || 0;
+    const v_esic = parseFloat(esic) || 0;
+    const v_pt = parseFloat(pt) || 0;
+    const v_lwf = parseFloat(lwf) || 0;
+    const v_advance = parseFloat(advance) || 0;
+
+    const grossEarnings = basic + v_da + v_hra + v_ot;
+    const grossDeductions = v_pf + v_esic + v_pt + v_lwf + v_advance;
+    const netPay = Math.max(0, grossEarnings - grossDeductions);
+
+    return { grossEarnings, grossDeductions, netPay };
+  }, [baseSalary, da, hra, ot, pf, esic, pt, lwf, advance]);
 
   const filteredSalaries = useMemo(() => {
     if (!salaries) return [];
@@ -80,9 +104,15 @@ export default function SalaryPage() {
   const resetForm = useCallback(() => {
     setEmployeeId('');
     setMonth(format(new Date(), 'yyyy-MM'));
-    setBaseSalary('');
-    setBonus('0');
-    setDeductions('0');
+    setBaseSalary('0');
+    setDa('0');
+    setHra('0');
+    setOt('0');
+    setPf('0');
+    setEsic('0');
+    setPt('0');
+    setLwf('0');
+    setAdvance('0');
     setPaymentDate(format(new Date(), 'yyyy-MM-dd'));
     setStatus('Paid');
     setNotes('');
@@ -94,9 +124,15 @@ export default function SalaryPage() {
       setEditingSalary(salary);
       setEmployeeId(salary.employeeId);
       setMonth(salary.month);
-      setBaseSalary(salary.baseSalary.toString());
-      setBonus(salary.bonus.toString());
-      setDeductions(salary.deductions.toString());
+      setBaseSalary(salary.baseSalary?.toString() || '0');
+      setDa(salary.da?.toString() || '0');
+      setHra(salary.hra?.toString() || '0');
+      setOt(salary.ot?.toString() || '0');
+      setPf(salary.pf?.toString() || '0');
+      setEsic(salary.esic?.toString() || '0');
+      setPt(salary.pt?.toString() || '0');
+      setLwf(salary.lwf?.toString() || '0');
+      setAdvance(salary.advance?.toString() || '0');
       setPaymentDate(salary.paymentDate || '');
       setStatus(salary.status);
       setNotes(salary.notes || '');
@@ -107,7 +143,7 @@ export default function SalaryPage() {
   };
 
   const handleFormSubmit = async () => {
-    if (!employeeId || !month || !baseSalary) {
+    if (!employeeId || !month) {
       toast({ variant: 'destructive', title: 'Error', description: 'Please fill required fields.' });
       return;
     }
@@ -116,10 +152,16 @@ export default function SalaryPage() {
       employeeId,
       enterprise: activeTab,
       month,
-      baseSalary: parseFloat(baseSalary),
-      bonus: parseFloat(bonus),
-      deductions: parseFloat(deductions),
-      netSalary,
+      baseSalary: parseFloat(baseSalary) || 0,
+      da: parseFloat(da) || 0,
+      hra: parseFloat(hra) || 0,
+      ot: parseFloat(ot) || 0,
+      pf: parseFloat(pf) || 0,
+      esic: parseFloat(esic) || 0,
+      pt: parseFloat(pt) || 0,
+      lwf: parseFloat(lwf) || 0,
+      advance: parseFloat(advance) || 0,
+      netSalary: calculations.netPay,
       paymentDate,
       status,
       notes,
@@ -143,24 +185,6 @@ export default function SalaryPage() {
       deleteDocumentNonBlocking(doc(firestore, 'salaries', salaryToDelete.id));
       toast({ title: 'Deleted', description: 'Salary record removed.' });
       setSalaryToDelete(null);
-    }
-  };
-
-  const handleDownloadSlip = async (salary: Salary) => {
-    const employee = employees?.find(e => e.id === salary.employeeId);
-    const settings = salary.enterprise === 'Vithal' ? vithalSettings : rvSettings;
-
-    if (!employee || !settings) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Employee or Company settings missing.' });
-      return;
-    }
-
-    try {
-      await generateSalarySlip(salary, employee, settings);
-      toast({ title: 'Success', description: 'Salary slip generated.' });
-    } catch (e) {
-      console.error(e);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to generate slip.' });
     }
   };
 
@@ -266,9 +290,6 @@ export default function SalaryPage() {
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right pr-6 space-x-1">
-                              <Button variant="ghost" title="Download Word" size="icon" onClick={() => handleDownloadSlip(salary)} className="h-8 w-8 text-primary hover:bg-primary/10">
-                                <Download className="h-4 w-4" />
-                              </Button>
                               <Button variant="ghost" title="Download PDF" size="icon" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 w-8 text-red-500 hover:bg-red-50">
                                 <FileText className="h-4 w-4" />
                               </Button>
@@ -313,9 +334,6 @@ export default function SalaryPage() {
                             <Button variant="outline" size="sm" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 px-2 text-[10px] text-red-600 border-red-200">
                               <FileText className="mr-1 h-3 w-3" /> PDF
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => handleDownloadSlip(salary)} className="h-8 px-2 text-[10px] text-primary border-primary/20">
-                              <Download className="mr-1 h-3 w-3" /> DOC
-                            </Button>
                             <Button variant="outline" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500">
                               <Pencil className="h-3 w-3" />
                             </Button>
@@ -337,10 +355,10 @@ export default function SalaryPage() {
 
         {/* Add/Edit Salary Dialog */}
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
             <DialogHeader className="p-6 pb-0">
               <DialogTitle className="text-xl font-black">{editingSalary ? 'Modify Salary Record' : 'Record Monthly Salary'}</DialogTitle>
-              <DialogDescription className="text-xs">Setting up payroll for {activeTab} Enterprises.</DialogDescription>
+              <DialogDescription className="text-xs">Setting up detailed payroll for {activeTab} Enterprises.</DialogDescription>
             </DialogHeader>
             <div className="flex-grow overflow-y-auto px-6 py-4 space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -361,25 +379,76 @@ export default function SalaryPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Base Salary</Label>
-                  <Input type="number" value={baseSalary} onChange={(e) => setBaseSalary(e.target.value)} placeholder="0.00" className="h-10 font-mono" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Earnings Column */}
+                <div className="space-y-4">
+                  <h3 className="font-bold text-sm text-green-600 flex items-center gap-2">
+                    <Calculator className="h-4 w-4" /> Earnings
+                  </h3>
+                  <div className="grid gap-3">
+                    <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">Basic Salary</Label>
+                      <Input type="number" value={baseSalary} onChange={(e) => setBaseSalary(e.target.value)} className="h-8 font-mono" />
+                    </div>
+                    <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">D.A.</Label>
+                      <Input type="number" value={da} onChange={(e) => setDa(e.target.value)} className="h-8 font-mono" />
+                    </div>
+                    <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">H.R.A.</Label>
+                      <Input type="number" value={hra} onChange={(e) => setHra(e.target.value)} className="h-8 font-mono" />
+                    </div>
+                    <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">O.T.</Label>
+                      <Input type="number" value={ot} onChange={(e) => setOt(e.target.value)} className="h-8 font-mono" />
+                    </div>
+                    <Separator />
+                    <div className="grid grid-cols-2 items-center gap-4 font-bold">
+                      <Label className="text-xs">Gross Earnings</Label>
+                      <div className="text-right text-sm">{calculations.grossEarnings.toLocaleString('en-IN')}</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Bonus / Extras</Label>
-                  <Input type="number" value={bonus} onChange={(e) => setBonus(e.target.value)} placeholder="0.00" className="h-10 font-mono text-green-600" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Deductions</Label>
-                  <Input type="number" value={deductions} onChange={(e) => setDeductions(e.target.value)} placeholder="0.00" className="h-10 font-mono text-destructive" />
+
+                {/* Deductions Column */}
+                <div className="space-y-4">
+                  <h3 className="font-bold text-sm text-red-600 flex items-center gap-2">
+                    <Calculator className="h-4 w-4" /> Deductions
+                  </h3>
+                  <div className="grid gap-3">
+                    <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">P.F.</Label>
+                      <Input type="number" value={pf} onChange={(e) => setPf(e.target.value)} className="h-8 font-mono" />
+                    </div>
+                    <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">E.S.I.C.</Label>
+                      <Input type="number" value={esic} onChange={(e) => setEsic(e.target.value)} className="h-8 font-mono" />
+                    </div>
+                    <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">P.T. (Prof. Tax)</Label>
+                      <Input type="number" value={pt} onChange={(e) => setPt(e.target.value)} className="h-8 font-mono" />
+                    </div>
+                    <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">L.W.F.</Label>
+                      <Input type="number" value={lwf} onChange={(e) => setLwf(e.target.value)} className="h-8 font-mono" />
+                    </div>
+                    <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">Advance</Label>
+                      <Input type="number" value={advance} onChange={(e) => setAdvance(e.target.value)} className="h-8 font-mono text-destructive" />
+                    </div>
+                    <Separator />
+                    <div className="grid grid-cols-2 items-center gap-4 font-bold">
+                      <Label className="text-xs">Gross Deductions</Label>
+                      <div className="text-right text-sm text-destructive">{calculations.grossDeductions.toLocaleString('en-IN')}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-between">
                 <div>
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Net Payable Salary</p>
-                  <p className="text-2xl font-black text-primary">{netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</p>
+                  <p className="text-2xl font-black text-primary">{calculations.netPay.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</p>
                 </div>
                 <WalletCards className="h-10 w-10 text-primary opacity-20" />
               </div>
