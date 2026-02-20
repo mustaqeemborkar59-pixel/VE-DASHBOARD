@@ -45,7 +45,8 @@ import {
   MapPin, 
   Fingerprint, 
   ArrowUpDown,
-  UserCircle2
+  UserCircle2,
+  CalendarDays
 } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
@@ -66,6 +67,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { format, parseISO } from 'date-fns';
 
 type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc';
 
@@ -123,8 +126,6 @@ export default function CompaniesPage() {
     });
   }, [companies, searchTerm]);
 
-  const companiesCount = useMemo(() => filteredCompanies?.length, [filteredCompanies]);
-  
   const closeAllDialogs = useCallback(() => {
     setIsAddEditDialogOpen(false);
     setCompanyToDelete(null);
@@ -203,6 +204,10 @@ export default function CompaniesPage() {
     setCompanyToDelete(null);
   };
 
+  const getCompanyInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
   const renderActions = (company: Company) => (
     <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -250,7 +255,7 @@ export default function CompaniesPage() {
         <Card className="border-none shadow-sm bg-card/50 backdrop-blur-sm">
           <CardHeader className="pb-3 border-b border-border/50">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
-              <div className="relative flex-1 w-full max-w-md group">
+              <div className="relative flex-1 w-full max-md:max-w-none group">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <Input
                       type="search"
@@ -295,16 +300,28 @@ export default function CompaniesPage() {
                       >
                         <div className="p-4 space-y-3">
                           <div className="flex justify-between items-start">
-                            <div className="space-y-1 pr-8">
-                              <h3 className="text-sm font-bold text-foreground leading-tight line-clamp-1">{company.name}</h3>
-                              <div className="flex items-start gap-1.5">
-                                <MapPin className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
-                                <span className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">{company.address}</span>
+                            <div className="flex items-center gap-3 pr-8">
+                              <Avatar className="h-10 w-10 rounded-lg border-2 border-primary/10">
+                                <AvatarFallback className="bg-primary/5 text-primary font-bold text-xs">
+                                  {getCompanyInitials(company.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="space-y-0.5">
+                                <h3 className="text-sm font-bold text-foreground leading-tight line-clamp-1">{company.name}</h3>
+                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                  <CalendarDays className="h-2.5 w-2.5" />
+                                  <span>{company.createdAt ? format(parseISO(company.createdAt), 'MMM dd, yyyy') : 'N/A'}</span>
+                                </div>
                               </div>
                             </div>
                             <div className="absolute top-2 right-2">
                                 {renderActions(company)}
                             </div>
+                          </div>
+                          
+                          <div className="flex items-start gap-1.5">
+                            <MapPin className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+                            <span className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">{company.address}</span>
                           </div>
                           
                           {company.gstin && (
@@ -333,20 +350,30 @@ export default function CompaniesPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30 border-b border-border/50">
-                    <TableHead className="w-[30%] py-4 font-semibold text-foreground pl-6">Company Name</TableHead>
-                    <TableHead className="w-[45%] py-4 font-semibold text-foreground">Address</TableHead>
-                    <TableHead className="w-[15%] py-4 font-semibold text-foreground">GSTIN</TableHead>
-                    <TableHead className="w-[10%] py-4 text-right pr-6"><span className="sr-only">Actions</span></TableHead>
+                    <TableHead className="w-[30%] py-4 font-semibold text-foreground pl-6">Company Profile</TableHead>
+                    <TableHead className="w-[35%] py-4 font-semibold text-foreground">Registered Address</TableHead>
+                    <TableHead className="w-[15%] py-4 font-semibold text-foreground">Tax ID (GSTIN)</TableHead>
+                    <TableHead className="w-[12%] py-4 font-semibold text-foreground">Joined On</TableHead>
+                    <TableHead className="w-[8%] py-4 text-right pr-6"><span className="sr-only">Actions</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={i}>
-                            <TableCell className="pl-6"><div className="h-4 w-32 bg-muted animate-pulse rounded" /></TableCell>
-                            <TableCell><div className="h-4 w-64 bg-muted animate-pulse rounded" /></TableCell>
-                            <TableCell><div className="h-4 w-24 bg-muted animate-pulse rounded" /></TableCell>
-                            <TableCell className="pr-6"><div className="h-8 w-8 ml-auto bg-muted animate-pulse rounded-full" /></TableCell>
+                            <TableCell className="pl-6">
+                              <div className="flex items-center gap-3">
+                                <Skeleton className="h-10 w-10 rounded-lg" />
+                                <div className="space-y-2">
+                                  <Skeleton className="h-4 w-32" />
+                                  <Skeleton className="h-3 w-20" />
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell><Skeleton className="h-4 w-64" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                            <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                            <TableCell className="pr-6"><Skeleton className="h-8 w-8 ml-auto rounded-full" /></TableCell>
                         </TableRow>
                     ))
                   ) : filteredCompanies.length > 0 ? (
@@ -356,18 +383,39 @@ export default function CompaniesPage() {
                         onClick={() => openDetailsDialog(company)} 
                         className="cursor-pointer group hover:bg-muted/30 transition-colors"
                       >
-                        <TableCell className="font-bold text-foreground py-4 pl-6">{company.name}</TableCell>
-                        <TableCell className="max-w-xs py-4">
-                            <div className="text-muted-foreground truncate" title={company.address}>{company.address}</div>
+                        <TableCell className="py-4 pl-6">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 rounded-lg border-2 border-primary/10 transition-transform group-hover:scale-105">
+                              <AvatarFallback className="bg-primary/5 text-primary font-bold text-xs">
+                                {getCompanyInitials(company.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="font-bold text-foreground leading-tight">{company.name}</span>
+                              <span className="text-[10px] text-muted-foreground uppercase tracking-tight font-medium">Client Account</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4">
+                            <div className="flex items-center gap-2 max-w-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                              <MapPin className="h-3 w-3 shrink-0" />
+                              <span className="truncate text-sm" title={company.address}>{company.address}</span>
+                            </div>
                         </TableCell>
                         <TableCell className="py-4">
                             {company.gstin ? (
-                                <Badge variant="outline" className="font-mono text-[11px] bg-background/50 group-hover:border-primary/30 transition-colors">
+                                <Badge variant="outline" className="font-mono text-[11px] px-2 py-0.5 bg-background/50 border-muted-foreground/20 group-hover:border-primary/30 transition-colors">
                                     {company.gstin}
                                 </Badge>
                             ) : (
                                 <span className="text-xs text-muted-foreground italic">N/A</span>
                             )}
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <CalendarDays className="h-3.5 w-3.5" />
+                            <span>{company.createdAt ? format(parseISO(company.createdAt), 'dd MMM yyyy') : 'N/A'}</span>
+                          </div>
                         </TableCell>
                         <TableCell className="text-right py-4 pr-6">
                            {renderActions(company)}
@@ -376,7 +424,7 @@ export default function CompaniesPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-64 text-center">
+                      <TableCell colSpan={5} className="h-64 text-center">
                         <div className="flex flex-col items-center justify-center space-y-3">
                             <Building2 className="h-12 w-12 text-muted-foreground opacity-20" />
                             <div className="text-lg font-medium text-muted-foreground">No companies found</div>
