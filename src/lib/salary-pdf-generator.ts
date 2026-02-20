@@ -66,15 +66,17 @@ const renderSingleSlip = (
         currentY += 5;
     }
 
-    // --- Main Salary Slip Title ---
+    // --- Title with Dashed Lines Above and Below ---
+    doc.setLineDash([1, 1], 0);
+    doc.line(14, currentY, 196, currentY); // Line Above
+    currentY += 5;
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text(`SALARY SLIP - ${monthDisplay}`, 105, currentY, { align: 'center' });
-    currentY += 3;
+    currentY += 2;
 
-    // --- Dashed Separator Line ---
-    doc.setLineDash([1, 1], 0);
-    doc.line(14, currentY, 196, currentY);
+    doc.line(14, currentY, 196, currentY); // Line Below
     doc.setLineDash([], 0);
     currentY += 8;
 
@@ -213,7 +215,7 @@ const renderSingleSlip = (
     doc.setFont('helvetica', 'bold');
     doc.text(`NET PAYABLE SALARY: Rs. ${formattedNetPay}/-`, 14, currentY + 4);
 
-    currentY += 8; // Reduced gap
+    currentY += 8;
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
