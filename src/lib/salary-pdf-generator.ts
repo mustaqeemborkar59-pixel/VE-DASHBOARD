@@ -1,4 +1,3 @@
-
 'use client';
 
 import jsPDF from 'jspdf';
@@ -47,11 +46,11 @@ const renderSingleSlip = (
     
     // --- Header Section ---
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(14); // Reduced from 16
+    doc.setFontSize(14); 
     doc.setFont('helvetica', 'bold');
     doc.text(company.companyName.toUpperCase(), 105, yOffset + 12, { align: 'center' });
     
-    doc.setFontSize(7); // Reduced from 9
+    doc.setFontSize(7); 
     doc.setFont('helvetica', 'normal');
     const addressLines = company.address ? doc.splitTextToSize(company.address, 170) : [];
     let currentY = yOffset + 17;
@@ -66,13 +65,13 @@ const renderSingleSlip = (
         currentY += 5;
     }
 
-    doc.setFontSize(10); // Reduced from 12
+    doc.setFontSize(10); 
     doc.setFont('helvetica', 'bold');
     doc.text(`SALARY SLIP - ${monthDisplay}`, 105, currentY, { align: 'center' });
     currentY += 8;
 
     // --- Employee Info Section (Two-Column Layout) ---
-    doc.setFontSize(8); // Reduced from 10
+    doc.setFontSize(8); 
     
     // Left Column
     const leftX = 14;
@@ -83,7 +82,7 @@ const renderSingleSlip = (
     currentY += 5;
 
     doc.setFont('helvetica', 'bold');
-    doc.text("Bank A/C No:", leftX, currentY); // Swapped
+    doc.text("Bank A/C No:", leftX, currentY); 
     doc.setFont('helvetica', 'normal');
     doc.text(employee.bankAccountNumber || 'N/A', leftX + 35, currentY);
     currentY += 5;
@@ -116,7 +115,7 @@ const renderSingleSlip = (
     currentY += 5;
 
     doc.setFont('helvetica', 'bold');
-    doc.text("PF No:", rightX, currentY); // Swapped
+    doc.text("PF No:", rightX, currentY); 
     doc.setFont('helvetica', 'normal');
     doc.text(employee.pfNumber || 'N/A', rightX + 40, currentY);
     currentY += 5;
@@ -128,11 +127,10 @@ const renderSingleSlip = (
 
     currentY += 10;
 
-    // --- Earnings Header with Border ---
+    // --- Earnings Header (Border Removed) ---
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.rect(14, currentY - 4, 30, 6);
-    doc.text("EARNINGS", 16, currentY);
+    doc.text("EARNINGS", 14, currentY);
     currentY += 2;
     
     autoTable(doc, {
@@ -162,12 +160,11 @@ const renderSingleSlip = (
         }
     });
 
-    // --- Deductions Header with Border ---
+    // --- Deductions Header (Border Removed) ---
     currentY = (doc as any).lastAutoTable.finalY + 6;
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.rect(14, currentY - 4, 30, 6);
-    doc.text("DEDUCTIONS", 16, currentY);
+    doc.text("DEDUCTIONS", 14, currentY);
     currentY += 2;
 
     autoTable(doc, {
@@ -203,7 +200,7 @@ const renderSingleSlip = (
     
     doc.setDrawColor(0, 0, 0);
     doc.rect(14, currentY, 182, 10, 'S');
-    doc.setFontSize(13); // Reduced from 15 as requested (-2pt)
+    doc.setFontSize(13); 
     doc.setFont('helvetica', 'bold');
     const formattedNetPay = salary.netSalary.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     doc.text(`NET PAYABLE SALARY: Rs. ${formattedNetPay}/-`, 105, currentY + 7, { align: 'center' });
