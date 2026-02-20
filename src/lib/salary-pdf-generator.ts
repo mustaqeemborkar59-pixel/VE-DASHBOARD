@@ -31,20 +31,18 @@ const renderSingleSlip = (
     const paymentDateDisplay = salary.paymentDate ? format(parseISO(salary.paymentDate), 'dd/MM/yyyy') : 'N/A';
 
     // --- Background Watermark "VE" ---
-    doc.saveGraphicsState();
-    doc.setGState(new (doc as any).GState({ opacity: 0.05 })); // Set very low opacity
-    doc.setTextColor(150, 150, 150);
-    doc.setFontSize(80);
+    // Using a very light grey color for watermark compatibility
+    doc.setTextColor(248, 248, 248); 
+    doc.setFontSize(100);
     doc.setFont('helvetica', 'bold');
-    doc.text("VE", 105, yOffset + 70, { 
+    doc.text("VE", 105, yOffset + 75, { 
         align: 'center', 
         angle: 45 
     });
-    doc.restoreGraphicsState();
     
     // --- Header Section ---
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(16);
+    doc.setFontSize(16); // Company Name
     doc.setFont('helvetica', 'bold');
     doc.text(company.companyName.toUpperCase(), 105, yOffset + 15, { align: 'center' });
     
@@ -54,7 +52,7 @@ const renderSingleSlip = (
     let currentY = yOffset + 21;
     addressLines.forEach((line: string) => {
         doc.text(line, 105, currentY, { align: 'center' });
-        currentY += 4;
+        currentY += 4.5;
     });
 
     if (company.gstin || company.pan) {
@@ -63,28 +61,28 @@ const renderSingleSlip = (
         currentY += 6;
     }
 
-    doc.setFontSize(13);
+    doc.setFontSize(14); // Slip Title
     doc.setFont('helvetica', 'bold');
     doc.text(`SALARY SLIP - ${monthDisplay}`, 105, currentY, { align: 'center' });
     doc.setLineWidth(0.5);
-    doc.line(70, currentY + 1, 140, currentY + 1); 
-    currentY += 8;
+    doc.line(65, currentY + 1.5, 145, currentY + 1.5); 
+    currentY += 9;
 
     // --- Employee & Month Info Section ---
     autoTable(doc, {
         startY: currentY,
         body: [
             [
-                { content: `Employee: ${employee.fullName}`, styles: { fontStyle: 'bold', fontSize: 11 } },
-                { content: `Month: ${monthDisplay}`, styles: { fontStyle: 'bold', fontSize: 11 } }
+                { content: `Employee: ${employee.fullName}`, styles: { fontStyle: 'bold', fontSize: 12 } },
+                { content: `Month: ${monthDisplay}`, styles: { fontStyle: 'bold', fontSize: 12 } }
             ],
             [
-                { content: `Role: ${employee.specialization || 'N/A'}`, styles: { fontSize: 10 } },
-                { content: `Payment Date: ${paymentDateDisplay}`, styles: { fontSize: 10 } }
+                { content: `Role: ${employee.specialization || 'N/A'}`, styles: { fontSize: 11 } },
+                { content: `Payment Date: ${paymentDateDisplay}`, styles: { fontSize: 11 } }
             ]
         ],
         theme: 'grid',
-        styles: { cellPadding: 2, cellWidth: 'wrap' },
+        styles: { cellPadding: 2.5, cellWidth: 'wrap' },
         columnStyles: { 0: { cellWidth: 95 }, 1: { cellWidth: 95 } }
     });
 
@@ -98,25 +96,25 @@ const renderSingleSlip = (
             ['Bonus / Incentives', { content: salary.bonus.toLocaleString('en-IN'), styles: { halign: 'right' } }],
             ['Deductions', { content: `(-) ${salary.deductions.toLocaleString('en-IN')}`, styles: { halign: 'right', textColor: [200, 0, 0] } }],
             [
-                { content: 'Net Salary Payable', styles: { fontStyle: 'bold', fontSize: 12 } }, 
-                { content: salary.netSalary.toLocaleString('en-IN'), styles: { fontStyle: 'bold', halign: 'right', fontSize: 12 } }
+                { content: 'Net Salary Payable', styles: { fontStyle: 'bold', fontSize: 13 } }, 
+                { content: salary.netSalary.toLocaleString('en-IN'), styles: { fontStyle: 'bold', halign: 'right', fontSize: 13 } }
             ]
         ],
         theme: 'grid',
-        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', fontSize: 10 },
-        styles: { fontSize: 10, cellPadding: 3 }
+        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', fontSize: 12 },
+        styles: { fontSize: 12, cellPadding: 3.5 }
     });
 
     // --- Amount in Words ---
     const finalTableY = (doc as any).lastAutoTable.finalY;
-    doc.setFontSize(10);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'italic');
-    doc.text(`In words: ${netSalaryWords}`, 14, finalTableY + 8);
+    doc.text(`In words: ${netSalaryWords}`, 14, finalTableY + 9);
 
     // --- Signature Section ---
-    const sigY = finalTableY + 25;
+    const sigY = finalTableY + 28;
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
+    doc.setFontSize(11);
     doc.text("________________________", 50, sigY, { align: 'center' });
     doc.text("Employee Signature", 50, sigY + 5, { align: 'center' });
 
@@ -125,7 +123,7 @@ const renderSingleSlip = (
     
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
-    doc.text(`Generated on ${format(new Date(), 'dd MMM yyyy, p')}`, 105, yOffset + 142, { align: 'center' });
+    doc.text(`Generated on ${format(new Date(), 'dd MMM yyyy, p')}`, 105, yOffset + 143, { align: 'center' });
 };
 
 export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, company: CompanySettings) => {
@@ -134,11 +132,18 @@ export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, 
     // Render first copy (Top)
     renderSingleSlip(doc, 0, salary, employee, company);
 
-    // Draw a dotted cutting line in the middle
-    doc.setDash([2, 2], 0);
+    // Draw a dashed cutting line in the middle
+    // Fix: Using setLineDash function instead of setDash
+    if (typeof doc.setLineDash === 'function') {
+        doc.setLineDash([2, 2], 0);
+    }
     doc.setDrawColor(200, 200, 200);
     doc.line(0, 148.5, 210, 148.5);
-    doc.setDash([], 0); // reset to solid line
+    
+    // Reset to solid line
+    if (typeof doc.setLineDash === 'function') {
+        doc.setLineDash([], 0);
+    }
 
     // Render second copy (Bottom)
     renderSingleSlip(doc, 148.5, salary, employee, company);
