@@ -17,7 +17,7 @@ const toWords = new ToWords({
 });
 
 /**
- * Renders a compact horizontal salary slip.
+ * Renders a compact horizontal salary slip in Black and White.
  * Headers on top, values below for salary components.
  */
 const renderSingleSlip = (
@@ -29,14 +29,14 @@ const renderSingleSlip = (
 ) => {
     const netSalaryWords = toWords.convert(salary.netSalary).toUpperCase();
     const monthDisplay = format(parseISO(`${salary.month}-01`), 'MMMM yyyy').toUpperCase();
-    const paymentDateDisplay = salary.paymentDate ? format(parseISO(salary.paymentDate), 'dd/MM/yyyy') : 'N/A';
 
     const grossEarnings = (salary.baseSalary || 0) + (salary.da || 0) + (salary.hra || 0) + (salary.ot || 0);
     const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.lwf || 0) + (salary.advance || 0);
 
-    // --- Background Watermark "VE" ---
+    // --- Background Watermark "VE" (Very Light Gray for B&W consistency) ---
     doc.saveGraphicsState();
-    doc.setGState(new (doc as any).GState({ opacity: 0.05 }));
+    const gState = new (doc as any).GState({ opacity: 0.05 });
+    doc.setGState(gState);
     doc.setTextColor(150, 150, 150); 
     doc.setFontSize(100);
     doc.setFont('helvetica', 'bold');
@@ -129,7 +129,7 @@ const renderSingleSlip = (
 
     currentY += 10;
 
-    // --- Earnings Table (Horizontal Strip) ---
+    // --- Earnings Table (Horizontal Strip - Black and White) ---
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text("EARNINGS", 14, currentY);
@@ -146,11 +146,11 @@ const renderSingleSlip = (
             { content: grossEarnings.toLocaleString('en-IN'), styles: { fontStyle: 'bold' } }
         ]],
         theme: 'grid',
-        styles: { cellPadding: 2, fontSize: 10, halign: 'center', minCellHeight: 8 },
-        headStyles: { fillColor: [230, 245, 230], textColor: [0, 0, 0], fontStyle: 'bold' }
+        styles: { cellPadding: 2, fontSize: 10, halign: 'center', minCellHeight: 8, textColor: [0, 0, 0] },
+        headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1 }
     });
 
-    // --- Deductions Table (Horizontal Strip) ---
+    // --- Deductions Table (Horizontal Strip - Black and White) ---
     currentY = (doc as any).lastAutoTable.finalY + 6;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
@@ -169,16 +169,16 @@ const renderSingleSlip = (
             { content: totalDeductions.toLocaleString('en-IN'), styles: { fontStyle: 'bold' } }
         ]],
         theme: 'grid',
-        styles: { cellPadding: 2, fontSize: 10, halign: 'center', minCellHeight: 8 },
-        headStyles: { fillColor: [255, 235, 235], textColor: [0, 0, 0], fontStyle: 'bold' }
+        styles: { cellPadding: 2, fontSize: 10, halign: 'center', minCellHeight: 8, textColor: [0, 0, 0] },
+        headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1 }
     });
 
-    // --- Final Summary Section ---
+    // --- Final Summary Section (Black and White Box) ---
     currentY = (doc as any).lastAutoTable.finalY + 8;
     
-    // Rectangle for Net Payable
-    doc.setFillColor(240, 240, 240);
-    doc.rect(14, currentY, 182, 14, 'F');
+    // Rectangle for Net Payable (Border only)
+    doc.setDrawColor(0, 0, 0);
+    doc.rect(14, currentY, 182, 14, 'S');
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text(`NET PAYABLE SALARY: ${salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`, 105, currentY + 9, { align: 'center' });
@@ -199,7 +199,7 @@ const renderSingleSlip = (
     doc.text("Authorized Signatory", 160, sigY + 5, { align: 'center' });
     
     doc.setFontSize(7);
-    doc.setTextColor(150, 150, 150);
+    doc.setTextColor(100, 100, 100);
     doc.text(`System Generated on ${format(new Date(), 'dd MMM yyyy, p')}`, 105, sigY + 12, { align: 'center' });
 };
 
