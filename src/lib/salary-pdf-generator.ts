@@ -47,7 +47,7 @@ const renderSingleSlip = (
     
     // --- Header Section ---
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(14);
+    doc.setFontSize(19); // Increased from 14 to 19 (5pt increase)
     doc.setFont('helvetica', 'bold');
     doc.text(company.companyName.toUpperCase(), 105, yOffset + 12, { align: 'center' });
     
