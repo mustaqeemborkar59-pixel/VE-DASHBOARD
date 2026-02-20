@@ -17,6 +17,7 @@ const toWords = new ToWords({
 
 /**
  * Renders a clean, compact, Black and White horizontal salary slip.
+ * Uses Helvetica for a modern sans-serif look similar to Poppins.
  */
 const renderSingleSlip = (
     doc: jsPDF,
@@ -69,11 +70,6 @@ const renderSingleSlip = (
     doc.setLineDash([1, 1], 0);
     doc.line(14, currentY, 196, currentY);
     doc.setLineDash([], 0);
-    currentY += 6;
-
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`SALARY SLIP - ${monthDisplay}`, 105, currentY, { align: 'center' });
     currentY += 8;
 
     // --- Employee Info Section (Two Columns) ---
@@ -151,18 +147,19 @@ const renderSingleSlip = (
         ]],
         theme: 'grid',
         styles: { 
-            cellPadding: 1.2, 
+            cellPadding: 1.5, 
             fontSize: 8, 
             halign: 'center', 
-            minCellHeight: 5, 
+            minCellHeight: 6, 
             textColor: [0, 0, 0],
-            font: 'helvetica'
+            font: 'helvetica',
+            lineColor: [0, 0, 0],
+            lineWidth: 0.1
         },
         headStyles: { 
             fillColor: [255, 255, 255], 
             textColor: [0, 0, 0], 
-            fontStyle: 'bold', 
-            lineWidth: 0.1 
+            fontStyle: 'bold'
         }
     });
 
@@ -186,18 +183,19 @@ const renderSingleSlip = (
         ]],
         theme: 'grid',
         styles: { 
-            cellPadding: 1.2, 
+            cellPadding: 1.5, 
             fontSize: 8, 
             halign: 'center', 
-            minCellHeight: 5, 
+            minCellHeight: 6, 
             textColor: [0, 0, 0],
-            font: 'helvetica'
+            font: 'helvetica',
+            lineColor: [0, 0, 0],
+            lineWidth: 0.1
         },
         headStyles: { 
             fillColor: [255, 255, 255], 
             textColor: [0, 0, 0], 
-            fontStyle: 'bold', 
-            lineWidth: 0.1 
+            fontStyle: 'bold'
         }
     });
 
@@ -214,7 +212,7 @@ const renderSingleSlip = (
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
 
-    // --- System Generated Note (No Signatures) ---
+    // --- System Generated Note ---
     const sigY = currentY + 15;
     doc.setFontSize(7);
     doc.setFont('helvetica', 'italic');
