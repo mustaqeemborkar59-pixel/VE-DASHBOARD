@@ -119,6 +119,7 @@ export type DocumentSettings = {
 export type CompanySettings = {
     id?: string;
     companyName: string;
+    address: string;
     pan: string;
     gstin: string;
     sacCode: string;

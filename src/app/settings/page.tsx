@@ -21,6 +21,7 @@ import { EllipsisVertical, Pencil, PlusCircle, Trash2, AlignLeft, AlignCenter, A
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 
 
 type Enterprise = 'Vithal' | 'RV';
@@ -106,8 +107,8 @@ const SettingsForm = ({ enterprise }: { enterprise: Enterprise }) => {
         }
     }, [initialSettings]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { id, value, type } = e.target;
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { id, value, type } = e.target as HTMLInputElement;
         if (type === 'number') {
             const numValue = value === '' ? null : parseFloat(value);
             if (numValue === null || !isNaN(numValue as number)) {
@@ -207,6 +208,10 @@ const SettingsForm = ({ enterprise }: { enterprise: Enterprise }) => {
                     <div className="space-y-2">
                         <Label htmlFor="companyName">Company Name</Label>
                         <Input id="companyName" value={settings.companyName || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="address">Registered Address</Label>
+                        <Textarea id="address" value={settings.address || ''} onChange={handleInputChange} placeholder="Full address for documents" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="pan">PAN Number</Label>

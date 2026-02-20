@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Forklift": {
@@ -501,6 +502,9 @@
       "type": "object",
       "properties": {
         "companyName": {
+          "type": "string"
+        },
+        "address": {
           "type": "string"
         },
         "pan": {
