@@ -37,9 +37,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, EllipsisVertical, Pencil, Trash2 } from 'lucide-react';
-import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { PlusCircle, EllipsisVertical, Pencil, Trash2, Search, StickyNote, XCircle, Pin } from 'lucide-react';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
+import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { Note } from '@/lib/data';
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
@@ -48,13 +49,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 type PresetColor = 'default' | 'yellow' | 'blue' | 'green' | 'pink' | 'purple';
 
-const noteColorClasses: Record<PresetColor, { bg: string, text: string, border: string }> = {
-  default: { bg: 'bg-card', text: 'text-card-foreground', border: 'border-border' },
-  yellow: { bg: 'bg-yellow-100 dark:bg-yellow-900/40', text: 'text-yellow-900 dark:text-yellow-200', border: 'border-yellow-200 dark:border-yellow-800' },
-  blue: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-900 dark:text-blue-200', border: 'border-blue-200 dark:border-blue-800' },
-  green: { bg: 'bg-green-100 dark:bg-green-900/40', text: 'text-green-900 dark:text-green-200', border: 'border-green-200 dark:border-green-800' },
-  pink: { bg: 'bg-pink-100 dark:bg-pink-900/40', text: 'text-pink-900 dark:text-pink-200', border: 'border-pink-200 dark:border-pink-800' },
-  purple: { bg: 'bg-purple-100 dark:bg-purple-900/40', text: 'text-purple-900 dark:text-purple-200', border: 'border-purple-200 dark:border-purple-800' },
+const noteColorClasses: Record<PresetColor, { bg: string, text: string, border: string, shadow: string }> = {
+  default: { bg: 'bg-card', text: 'text-card-foreground', border: 'border-border', shadow: 'shadow-sm' },
+  yellow: { bg: 'bg-yellow-50 dark:bg-yellow-900/20', text: 'text-yellow-900 dark:text-yellow-200', border: 'border-yellow-200/50 dark:border-yellow-800/50', shadow: 'shadow-yellow-500/5' },
+  blue: { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-900 dark:text-blue-200', border: 'border-blue-200/50 dark:border-blue-800/50', shadow: 'shadow-blue-500/5' },
+  green: { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-900 dark:text-green-200', border: 'border-green-200/50 dark:border-green-800/50', shadow: 'shadow-green-500/5' },
+  pink: { bg: 'bg-pink-50 dark:bg-pink-900/20', text: 'text-pink-900 dark:text-pink-200', border: 'border-pink-200/50 dark:border-pink-800/50', shadow: 'shadow-pink-500/5' },
+  purple: { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-900 dark:text-purple-200', border: 'border-purple-200/50 dark:border-purple-800/50', shadow: 'shadow-purple-500/5' },
 };
 
 const NoteForm = ({
@@ -85,29 +86,29 @@ const NoteForm = ({
   };
 
   return (
-    <form id="note-form" onSubmit={handleSubmit} className="grid gap-4 py-2">
+    <form id="note-form" onSubmit={handleSubmit} className="grid gap-5 py-2">
       <div className="grid gap-1.5">
-        <Label htmlFor="title" className="text-xs">Title (Optional)</Label>
-        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Note title" className="h-9 text-sm" />
+        <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Title (Optional)</Label>
+        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Give your note a title..." className="h-10 text-sm font-medium focus-visible:ring-primary/20" />
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor="content" className="text-xs">Content</Label>
-        <Textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Your note here..." required  className="min-h-[120px] text-sm"/>
+        <Label htmlFor="content" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Content</Label>
+        <Textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Type something important..." required  className="min-h-[150px] text-sm leading-relaxed resize-none focus-visible:ring-primary/20"/>
       </div>
        <div className="grid gap-1.5">
-        <Label className="text-xs">Color</Label>
-        <div className="flex flex-wrap items-center gap-2">
+        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Note Color</Label>
+        <div className="flex flex-wrap items-center gap-3 pt-1">
           <RadioGroup value={isPresetColor(color) ? color : ''} onValueChange={setColor} className="flex flex-wrap gap-2">
             {(Object.keys(noteColorClasses) as PresetColor[]).map((key) => (
-              <Label key={key} title={key} className={cn('h-7 w-7 rounded-full cursor-pointer border-2', noteColorClasses[key].bg, color === key ? 'ring-2 ring-offset-2 ring-ring ring-offset-background' : 'border-transparent')}>
+              <Label key={key} title={key} className={cn('h-8 w-8 rounded-full cursor-pointer border-2 transition-all hover:scale-110 active:scale-95', noteColorClasses[key].bg, color === key ? 'ring-2 ring-offset-2 ring-primary ring-offset-background border-primary/50' : 'border-transparent')}>
                 <RadioGroupItem value={key} className="sr-only"/>
               </Label>
             ))}
           </RadioGroup>
           
-          <div className="relative h-7 w-7">
-             <Label htmlFor="custom-color" className={cn('h-7 w-7 rounded-full cursor-pointer border-2 flex items-center justify-center', !isPresetColor(color) ? 'ring-2 ring-offset-2 ring-ring ring-offset-background' : 'border-transparent', isPresetColor(color) && 'bg-muted')}>
-                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: !isPresetColor(color) ? color : undefined, backgroundImage: isPresetColor(color) ? 'conic-gradient(from 90deg, violet, indigo, blue, green, yellow, orange, red, violet)' : undefined }} />
+          <div className="relative h-8 w-8">
+             <Label htmlFor="custom-color" className={cn('h-8 w-8 rounded-full cursor-pointer border-2 flex items-center justify-center transition-all hover:scale-110 active:scale-95', !isPresetColor(color) ? 'ring-2 ring-offset-2 ring-primary ring-offset-background border-primary/50' : 'border-transparent', isPresetColor(color) && 'bg-muted/50')}>
+                <div className="w-5 h-5 rounded-full" style={{ backgroundColor: !isPresetColor(color) ? color : undefined, backgroundImage: isPresetColor(color) ? 'conic-gradient(from 90deg, #ff0000, #ff00ff, #0000ff, #00ffff, #00ff00, #ffff00, #ff0000)' : undefined }} />
              </Label>
              <Input 
                 id="custom-color"
@@ -130,6 +131,7 @@ export default function NotesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const notesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -137,6 +139,16 @@ export default function NotesPage() {
   }, [firestore, user]);
 
   const { data: notes, isLoading } = useCollection<Note>(notesQuery);
+
+  const filteredNotes = useMemo(() => {
+    if (!notes) return [];
+    if (!searchTerm.trim()) return notes;
+    const lower = searchTerm.toLowerCase();
+    return notes.filter(n => 
+      n.title?.toLowerCase().includes(lower) || 
+      n.content.toLowerCase().includes(lower)
+    );
+  }, [notes, searchTerm]);
 
   const closeAllDialogs = useCallback(() => {
       setIsFormOpen(false);
@@ -165,14 +177,14 @@ export default function NotesPage() {
     if (selectedNote) {
       const noteDocRef = doc(firestore, 'notes', selectedNote.id);
       updateDocumentNonBlocking(noteDocRef, formData);
-      toast({ title: "Success", description: "Note updated successfully." });
+      toast({ title: "Updated", description: "Note successfully updated." });
     } else {
       const notesCollection = collection(firestore, 'notes');
       addDocumentNonBlocking(notesCollection, {
         ...formData,
         createdAt: new Date().toISOString(),
       });
-      toast({ title: "Success", description: "Note added successfully." });
+      toast({ title: "Added", description: "New note saved." });
     }
     closeAllDialogs();
   };
@@ -184,8 +196,8 @@ export default function NotesPage() {
     deleteDocumentNonBlocking(noteDocRef);
 
     toast({
-      title: "Note Deleted",
-      description: `The note has been deleted.`,
+      title: "Deleted",
+      description: "The note has been removed.",
     });
 
     setNoteToDelete(null);
@@ -193,31 +205,45 @@ export default function NotesPage() {
   
   return (
     <AppLayout>
-      <div className="flex flex-col gap-4 sm:gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Notes</CardTitle>
-                <CardDescription className="hidden sm:block">Your personal space for thoughts and reminders.</CardDescription>
-              </div>
-              <Button onClick={() => openFormDialog(null)} size="sm" className="h-8 text-xs">
-                <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
+      <div className="flex flex-col gap-4 sm:gap-6 animate-in fade-in duration-500">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                    <StickyNote className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
+                    Quick Notes
+                </h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">Keep your thoughts and workshop reminders in one place.</p>
+            </div>
+            <Button onClick={() => openFormDialog(null)} className="shadow-lg shadow-primary/20 h-10 px-4 group">
+                <PlusCircle className="mr-2 h-4 w-4 transition-transform group-hover:rotate-90" />
                 Add Note
-              </Button>
+            </Button>
+        </div>
+
+        <Card className="border-none shadow-sm bg-card/50 backdrop-blur-sm">
+          <CardHeader className="p-4 border-b border-border/50">
+            <div className="relative group max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Input
+                    type="search"
+                    placeholder="Search titles or content..."
+                    className="pl-9 w-full h-10 border-muted focus-visible:ring-primary/30"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
           </CardHeader>
         </Card>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i} className="h-40 sm:h-56 animate-pulse"></Card>
+              <div key={i} className="h-48 rounded-xl bg-muted animate-pulse border border-border/50"></div>
             ))}
           </div>
-        ) : notes && notes.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-            {notes.map(note => {
+        ) : filteredNotes.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredNotes.map(note => {
               const isPresetColor = (c: string): c is PresetColor => Object.keys(noteColorClasses).includes(c);
               
               let cardDynamicStyle: React.CSSProperties = {};
@@ -228,7 +254,7 @@ export default function NotesPage() {
 
               if (isPresetColor(note.color)) {
                   const preset = noteColorClasses[note.color];
-                  cardDynamicClass = `${preset.bg} ${preset.border}`;
+                  cardDynamicClass = `${preset.bg} ${preset.border} ${preset.shadow}`;
                   textDynamicClass = preset.text;
               } else {
                   cardDynamicStyle = { backgroundColor: note.color, border: '1px solid transparent' };
@@ -240,81 +266,121 @@ export default function NotesPage() {
                       const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
                       const textColor = yiq >= 128 ? '#18181b' : '#fafafa';
                       textDynamicStyle = { color: textColor };
-                      footerDynamicStyle = { color: textColor, opacity: 0.8 };
+                      footerDynamicStyle = { color: textColor, opacity: 0.7 };
                   } catch(e) {
                       textDynamicStyle = { color: 'hsl(var(--card-foreground))' };
                   }
               }
 
               return (
-                <Card key={note.id} className={cn("flex flex-col", cardDynamicClass)} style={cardDynamicStyle}>
-                  <CardHeader className="flex flex-row items-start justify-between pb-1 pt-3 sm:pt-6">
-                    {note.title && <CardTitle className={cn("text-sm sm:text-lg", textDynamicClass)} style={textDynamicStyle}>{note.title}</CardTitle>}
+                <Card 
+                  key={note.id} 
+                  className={cn(
+                    "group relative flex flex-col transition-all duration-300 hover:shadow-md hover:-translate-y-1 rounded-xl overflow-hidden", 
+                    cardDynamicClass
+                  )} 
+                  style={cardDynamicStyle}
+                >
+                  <CardHeader className="flex flex-row items-start justify-between pb-2 pt-4 px-4">
+                    <div className="flex-1 pr-6">
+                        {note.title ? (
+                            <CardTitle className={cn("text-base font-bold leading-tight line-clamp-1", textDynamicClass)} style={textDynamicStyle}>
+                                {note.title}
+                            </CardTitle>
+                        ) : (
+                            <div className="h-2 w-8 rounded bg-muted/20"></div>
+                        )}
+                    </div>
                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className={cn("h-7 w-7 -mt-1 -mr-1 shrink-0", textDynamicClass)} style={textDynamicStyle}>
-                                <EllipsisVertical className="h-3.5 w-3.5" />
+                            <Button variant="ghost" size="icon" className={cn("h-8 w-8 -mt-1 -mr-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5", textDynamicClass)} style={textDynamicStyle}>
+                                <EllipsisVertical className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => openFormDialog(note)} className="text-xs">
+                        <DropdownMenuContent align="end" className="w-36">
+                            <DropdownMenuItem onSelect={() => openFormDialog(note)} className="cursor-pointer">
                                 <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => openDeleteDialog(note)} className="text-destructive text-xs">
+                            <DropdownMenuItem onSelect={() => openDeleteDialog(note)} className="text-destructive focus:bg-destructive/10 cursor-pointer">
                                 <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                   </CardHeader>
-                  <CardContent className="flex-grow pt-1">
-                    <p className={cn("whitespace-pre-wrap text-xs sm:text-sm", textDynamicClass)} style={textDynamicStyle}>{note.content}</p>
+                  <CardContent className="flex-grow pt-0 px-4 pb-2">
+                    <p className={cn("whitespace-pre-wrap text-sm leading-relaxed", textDynamicClass)} style={textDynamicStyle}>
+                        {note.content}
+                    </p>
                   </CardContent>
-                  <CardFooter className="text-[10px] pt-2 pb-2" style={footerDynamicStyle}>
-                    {format(new Date(note.createdAt), "dd MMM, yyyy")}
+                  <CardFooter className="pt-2 pb-3 px-4 flex items-center justify-between">
+                    <span className="text-[10px] font-semibold uppercase tracking-tight" style={footerDynamicStyle}>
+                        {format(new Date(note.createdAt), "dd MMM yyyy")}
+                    </span>
+                    <Pin className="h-3 w-3 opacity-20 group-hover:opacity-100 transition-opacity" style={textDynamicStyle}/>
                   </CardFooter>
                 </Card>
               )
             })}
           </div>
         ) : (
-          <div className="text-center py-20">
-            <h3 className="text-xl sm:text-2xl font-semibold">No notes yet</h3>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-2">Click "Add Note" to create your first one.</p>
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="h-20 w-20 rounded-full bg-primary/5 flex items-center justify-center mb-4">
+                <StickyNote className="h-10 w-10 text-primary opacity-20" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground">
+                {searchTerm ? 'No matching notes' : 'No notes captured yet'}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
+                {searchTerm ? 'Try a different search term or clear the filter.' : 'Start recording important ideas or workshop reminders by clicking "Add Note".'}
+            </p>
+            {searchTerm && (
+                <Button variant="link" onClick={() => setSearchTerm('')} className="mt-2 text-primary font-bold">
+                    Clear Search
+                </Button>
+            )}
           </div>
         )}
       </div>
 
        <Dialog open={isFormOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle>{selectedNote ? 'Edit Note' : 'Add New Note'}</DialogTitle>
+        <DialogContent className="max-w-[95vw] sm:max-w-lg p-0 rounded-2xl overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="p-6 sm:p-8 pb-0">
+            <DialogTitle className="text-2xl font-black text-foreground">{selectedNote ? 'Modify Note' : 'Capture Thought'}</DialogTitle>
+            <DialogDescription className="text-sm font-medium text-muted-foreground pt-1">
+                {selectedNote ? 'Update your existing note details.' : 'Quickly jot down something important for later.'}
+            </DialogDescription>
           </DialogHeader>
-          <NoteForm
-            onSubmit={handleFormSubmit}
-            initialData={selectedNote || undefined}
-          />
-           <DialogFooter className="gap-2 sm:gap-0 pt-2">
-              <Button variant="outline" type="button" onClick={closeAllDialogs} className="h-9">
-                Cancel
+          <div className="px-6 sm:p-8 py-4">
+            <NoteForm
+                onSubmit={handleFormSubmit}
+                initialData={selectedNote || undefined}
+            />
+          </div>
+           <DialogFooter className="p-6 sm:p-8 pt-4 border-t border-border/50 bg-muted/10 gap-3">
+              <Button variant="ghost" type="button" onClick={closeAllDialogs} className="h-11 rounded-xl font-bold text-muted-foreground hover:text-foreground">
+                Discard
               </Button>
-              <Button type="submit" form="note-form" className="h-9">
-                {selectedNote ? 'Save Changes' : 'Add Note'}
+              <Button type="submit" form="note-form" className="h-11 rounded-xl font-bold bg-primary px-8 shadow-lg shadow-primary/20">
+                {selectedNote ? 'Confirm Update' : 'Save Note'}
               </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
       <AlertDialog open={!!noteToDelete} onOpenChange={(open) => !open && closeAllDialogs()}>
-        <AlertDialogContent className="max-w-[90vw] sm:max-w-md p-4 sm:p-6">
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md p-6 rounded-2xl border-none shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs">
-              This will permanently delete this note.
+            <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2 mx-auto sm:mx-0">
+                <Trash2 className="h-6 w-6 text-destructive" />
+            </div>
+            <AlertDialogTitle className="text-xl font-black">Delete Note?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm font-medium leading-relaxed">
+              This will permanently erase this note. You cannot undo this action.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-0">
-            <AlertDialogCancel className="h-9">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90 h-9">Delete</AlertDialogAction>
+          <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="h-11 rounded-xl font-bold border-muted">Keep Note</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="h-11 rounded-xl font-bold bg-destructive hover:bg-destructive/90 shadow-lg shadow-destructive/20">Yes, Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
