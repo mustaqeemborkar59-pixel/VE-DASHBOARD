@@ -233,23 +233,17 @@ const renderSingleSlip = (
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
 
     // --- Signature / Footer Section ---
-    const sigY = currentY + 20;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    
-    // Position signature labels
-    doc.text("Employee Signature", 50, sigY, { align: 'center' });
-    doc.text("Authorized Signatory", 160, sigY, { align: 'center' });
+    const sigY = currentY + 12;
     
     // Note about system generation
     doc.setFontSize(7);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(80, 80, 80);
-    doc.text("Note: This is a system generated salary slip and does not require a physical signature.", 105, sigY + 8, { align: 'center' });
+    doc.text("Note: This is a system generated salary slip and does not require a physical signature.", 105, sigY, { align: 'center' });
     
     doc.setFontSize(6);
     doc.setTextColor(100, 100, 100);
-    doc.text(`System Generated on ${format(new Date(), 'dd MMM yyyy, p')}`, 105, sigY + 13, { align: 'center' });
+    doc.text(`System Generated on ${format(new Date(), 'dd MMM yyyy, p')}`, 105, sigY + 5, { align: 'center' });
 };
 
 export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, company: CompanySettings) => {
