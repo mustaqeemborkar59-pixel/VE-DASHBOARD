@@ -69,6 +69,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { format, parseISO } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc';
 
