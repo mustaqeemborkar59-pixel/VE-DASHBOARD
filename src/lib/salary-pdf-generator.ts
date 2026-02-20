@@ -16,7 +16,8 @@ const toWords = new ToWords({
 });
 
 /**
- * Renders a compact horizontal salary slip in Black and White with reduced font sizes.
+ * Renders a clean, compact, Black and White horizontal salary slip.
+ * Optimized for a professional look with Poppins-like clean typography.
  */
 const renderSingleSlip = (
     doc: jsPDF,
@@ -33,7 +34,7 @@ const renderSingleSlip = (
 
     // --- Background Watermark "VE" ---
     doc.saveGraphicsState();
-    const gState = new (doc as any).GState({ opacity: 0.05 });
+    const gState = new (doc as any).GState({ opacity: 0.03 });
     doc.setGState(gState);
     doc.setTextColor(150, 150, 150); 
     doc.setFontSize(100);
@@ -46,11 +47,11 @@ const renderSingleSlip = (
     
     // --- Header Section ---
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(14);
+    doc.setFontSize(14); // Reduced from 16
     doc.setFont('helvetica', 'bold');
     doc.text(company.companyName.toUpperCase(), 105, yOffset + 12, { align: 'center' });
     
-    doc.setFontSize(7);
+    doc.setFontSize(7); // Reduced from 9
     doc.setFont('helvetica', 'normal');
     const addressLines = company.address ? doc.splitTextToSize(company.address, 170) : [];
     let currentY = yOffset + 17;
@@ -71,13 +72,13 @@ const renderSingleSlip = (
     doc.setLineDash([], 0);
     currentY += 6;
 
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text(`SALARY SLIP - ${monthDisplay}`, 105, currentY, { align: 'center' });
     currentY += 8;
 
-    // --- Employee Info Section (Two-Column Layout) ---
-    doc.setFontSize(8);
+    // --- Employee Info Section (Swapped Column Layout) ---
+    doc.setFontSize(8); // Reduced from 10
     
     // Left Column
     const leftX = 14;
@@ -201,41 +202,21 @@ const renderSingleSlip = (
         }
     });
 
-    // --- Final Summary Section ---
+    // --- Final Summary Section (Left Aligned, No Border) ---
     currentY = (doc as any).lastAutoTable.finalY + 4;
     const formattedNetPay = salary.netSalary.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
-    autoTable(doc, {
-        startY: currentY,
-        body: [[
-            { 
-                content: `NET PAYABLE SALARY: Rs. ${formattedNetPay}/-`, 
-                styles: { 
-                    halign: 'left', 
-                    fontStyle: 'bold',
-                    fontSize: 8, 
-                    lineWidth: 0,
-                } 
-            }
-        ]],
-        theme: 'plain',
-        styles: { 
-            cellPadding: 1.5, 
-            minCellHeight: 6, 
-            textColor: [0, 0, 0],
-            font: 'helvetica'
-        }
-    });
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`NET PAYABLE SALARY: Rs. ${formattedNetPay}/-`, 14, currentY + 4);
 
-    currentY = (doc as any).lastAutoTable.finalY + 4;
+    currentY += 10;
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
 
-    // --- Signature / Footer Section ---
-    const sigY = currentY + 12;
-    
-    // Note about system generation
+    // --- System Generated Note (No Signatures) ---
+    const sigY = currentY + 15;
     doc.setFontSize(7);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(80, 80, 80);
