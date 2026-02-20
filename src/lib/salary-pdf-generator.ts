@@ -21,6 +21,19 @@ export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, 
     const monthDisplay = format(parseISO(`${salary.month}-01`), 'MMMM yyyy').toUpperCase();
     const paymentDateDisplay = salary.paymentDate ? format(parseISO(salary.paymentDate), 'dd/MM/yyyy') : 'N/A';
 
+    // --- Background Watermark "VE" ---
+    // Using a very light gray color [245, 245, 245] for the faded effect
+    doc.setTextColor(245, 245, 245);
+    doc.setFontSize(150);
+    doc.setFont('helvetica', 'bold');
+    // Rotate 45 degrees and place in the center of the A4 page (105, 150)
+    doc.text("VE", 105, 150, { 
+        align: 'center', 
+        angle: 45 
+    });
+    // Reset text color to black for the rest of the content
+    doc.setTextColor(0, 0, 0);
+
     // Header
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
