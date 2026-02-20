@@ -276,25 +276,23 @@ export default function NotesPage() {
                 <Card 
                   key={note.id} 
                   className={cn(
-                    "group relative flex flex-col transition-all duration-300 hover:shadow-md hover:-translate-y-1 rounded-xl overflow-hidden", 
+                    "group relative flex flex-col transition-all duration-300 hover:shadow-md hover:-translate-y-1 rounded-xl overflow-hidden min-h-[140px]", 
                     cardDynamicClass
                   )} 
                   style={cardDynamicStyle}
                 >
-                  <CardHeader className="flex flex-row items-start justify-between pb-2 pt-4 px-4">
+                  <CardHeader className="flex flex-row items-start justify-between pb-1 pt-3 px-4">
                     <div className="flex-1 pr-6">
                         {note.title ? (
-                            <CardTitle className={cn("text-base font-bold leading-tight line-clamp-1", textDynamicClass)} style={textDynamicStyle}>
+                            <CardTitle className={cn("text-sm font-bold leading-tight line-clamp-1", textDynamicClass)} style={textDynamicStyle}>
                                 {note.title}
                             </CardTitle>
-                        ) : (
-                            <div className="h-2 w-8 rounded bg-muted/20"></div>
-                        )}
+                        ) : null}
                     </div>
                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className={cn("h-8 w-8 -mt-1 -mr-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5", textDynamicClass)} style={textDynamicStyle}>
-                                <EllipsisVertical className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className={cn("h-7 w-7 -mt-1 -mr-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5", textDynamicClass)} style={textDynamicStyle}>
+                                <EllipsisVertical className="h-3.5 w-3.5" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-36">
@@ -307,16 +305,16 @@ export default function NotesPage() {
                         </DropdownMenuContent>
                     </DropdownMenu>
                   </CardHeader>
-                  <CardContent className="flex-grow pt-0 px-4 pb-2">
-                    <p className={cn("whitespace-pre-wrap text-sm leading-relaxed", textDynamicClass)} style={textDynamicStyle}>
+                  <CardContent className="pt-0 px-4 pb-1">
+                    <p className={cn("whitespace-pre-wrap text-xs sm:text-sm leading-snug", textDynamicClass)} style={textDynamicStyle}>
                         {note.content}
                     </p>
                   </CardContent>
-                  <CardFooter className="pt-2 pb-3 px-4 flex items-center justify-between">
-                    <span className="text-[10px] font-semibold uppercase tracking-tight" style={footerDynamicStyle}>
+                  <CardFooter className="pt-1 pb-3 px-4 flex items-center justify-between mt-auto">
+                    <span className="text-[9px] font-bold uppercase tracking-tight" style={footerDynamicStyle}>
                         {format(new Date(note.createdAt), "dd MMM yyyy")}
                     </span>
-                    <Pin className="h-3 w-3 opacity-20 group-hover:opacity-100 transition-opacity" style={textDynamicStyle}/>
+                    <Pin className="h-2.5 w-2.5 opacity-20 group-hover:opacity-100 transition-opacity" style={textDynamicStyle}/>
                   </CardFooter>
                 </Card>
               )
