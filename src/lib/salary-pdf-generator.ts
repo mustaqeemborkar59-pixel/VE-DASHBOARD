@@ -127,7 +127,7 @@ const renderSingleSlip = (
 
     currentY += 10;
 
-    // --- Earnings Header (Border Removed) ---
+    // --- Earnings Header ---
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.text("EARNINGS", 14, currentY);
@@ -160,7 +160,7 @@ const renderSingleSlip = (
         }
     });
 
-    // --- Deductions Header (Border Removed) ---
+    // --- Deductions Header ---
     currentY = (doc as any).lastAutoTable.finalY + 6;
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
@@ -196,7 +196,8 @@ const renderSingleSlip = (
     });
 
     // --- Final Summary Section ---
-    currentY = (doc as any).lastAutoTable.finalY + 8;
+    // Reduced gap here from +8 to +4
+    currentY = (doc as any).lastAutoTable.finalY + 4;
     
     doc.setDrawColor(0, 0, 0);
     doc.rect(14, currentY, 182, 10, 'S');
