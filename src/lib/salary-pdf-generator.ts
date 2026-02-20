@@ -18,7 +18,6 @@ const toWords = new ToWords({
 
 /**
  * Renders a compact horizontal salary slip in Black and White.
- * Reduced padding and height for extra compactness.
  */
 const renderSingleSlip = (
     doc: jsPDF,
@@ -100,7 +99,7 @@ const renderSingleSlip = (
     doc.setFont('helvetica', 'normal');
     doc.text(employee.uanNumber || 'N/A', leftX + 40, currentY);
 
-    // Reset currentY for Right Column
+    // Right Column
     currentY -= 18;
     const rightX = 110;
 
@@ -129,7 +128,7 @@ const renderSingleSlip = (
 
     currentY += 10;
 
-    // --- Earnings Table (Horizontal Strip - Ultra Compact) ---
+    // --- Earnings Table (Horizontal Strip) ---
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text("EARNINGS", 14, currentY);
@@ -139,11 +138,11 @@ const renderSingleSlip = (
         startY: currentY,
         head: [['Basic Salary', 'D.A.', 'H.R.A.', 'O.T.', 'Gross Earnings']],
         body: [[
-            (salary.baseSalary || 0).toLocaleString('en-IN'),
-            (salary.da || 0).toLocaleString('en-IN'),
-            (salary.hra || 0).toLocaleString('en-IN'),
-            (salary.ot || 0).toLocaleString('en-IN'),
-            { content: grossEarnings.toLocaleString('en-IN'), styles: { fontStyle: 'bold' } }
+            (salary.baseSalary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+            (salary.da || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+            (salary.hra || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+            (salary.ot || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+            { content: grossEarnings.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }
         ]],
         theme: 'grid',
         styles: { 
@@ -151,7 +150,8 @@ const renderSingleSlip = (
             fontSize: 10, 
             halign: 'center', 
             minCellHeight: 6, 
-            textColor: [0, 0, 0] 
+            textColor: [0, 0, 0],
+            font: 'helvetica'
         },
         headStyles: { 
             fillColor: [255, 255, 255], 
@@ -161,7 +161,7 @@ const renderSingleSlip = (
         }
     });
 
-    // --- Deductions Table (Horizontal Strip - Ultra Compact) ---
+    // --- Deductions Table (Horizontal Strip) ---
     currentY = (doc as any).lastAutoTable.finalY + 5;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
@@ -172,12 +172,12 @@ const renderSingleSlip = (
         startY: currentY,
         head: [['P.F.', 'E.S.I.C.', 'P.T.', 'L.W.F.', 'Advance', 'Total Deductions']],
         body: [[
-            (salary.pf || 0).toLocaleString('en-IN'),
-            (salary.esic || 0).toLocaleString('en-IN'),
-            (salary.pt || 0).toLocaleString('en-IN'),
-            (salary.lwf || 0).toLocaleString('en-IN'),
-            (salary.advance || 0).toLocaleString('en-IN'),
-            { content: totalDeductions.toLocaleString('en-IN'), styles: { fontStyle: 'bold' } }
+            (salary.pf || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+            (salary.esic || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+            (salary.pt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+            (salary.lwf || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+            (salary.advance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+            { content: totalDeductions.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }
         ]],
         theme: 'grid',
         styles: { 
@@ -185,7 +185,8 @@ const renderSingleSlip = (
             fontSize: 10, 
             halign: 'center', 
             minCellHeight: 6, 
-            textColor: [0, 0, 0] 
+            textColor: [0, 0, 0],
+            font: 'helvetica'
         },
         headStyles: { 
             fillColor: [255, 255, 255], 
@@ -198,12 +199,12 @@ const renderSingleSlip = (
     // --- Final Summary Section ---
     currentY = (doc as any).lastAutoTable.finalY + 8;
     
-    // Rectangle for Net Payable (Compact)
     doc.setDrawColor(0, 0, 0);
     doc.rect(14, currentY, 182, 12, 'S');
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text(`NET PAYABLE SALARY: ${salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`, 105, currentY + 8, { align: 'center' });
+    const formattedNetPay = salary.netSalary.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    doc.text(`NET PAYABLE SALARY: Rs. ${formattedNetPay}/-`, 105, currentY + 8, { align: 'center' });
 
     currentY += 18;
     doc.setFontSize(9);
