@@ -18,7 +18,7 @@ const toWords = new ToWords({
 
 /**
  * Renders a compact horizontal salary slip in Black and White.
- * Headers on top, values below for salary components.
+ * Reduced padding and height for extra compactness.
  */
 const renderSingleSlip = (
     doc: jsPDF,
@@ -33,7 +33,7 @@ const renderSingleSlip = (
     const grossEarnings = (salary.baseSalary || 0) + (salary.da || 0) + (salary.hra || 0) + (salary.ot || 0);
     const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.lwf || 0) + (salary.advance || 0);
 
-    // --- Background Watermark "VE" (Very Light Gray for B&W consistency) ---
+    // --- Background Watermark "VE" ---
     doc.saveGraphicsState();
     const gState = new (doc as any).GState({ opacity: 0.05 });
     doc.setGState(gState);
@@ -129,7 +129,7 @@ const renderSingleSlip = (
 
     currentY += 10;
 
-    // --- Earnings Table (Horizontal Strip - Black and White) ---
+    // --- Earnings Table (Horizontal Strip - Ultra Compact) ---
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text("EARNINGS", 14, currentY);
@@ -146,12 +146,23 @@ const renderSingleSlip = (
             { content: grossEarnings.toLocaleString('en-IN'), styles: { fontStyle: 'bold' } }
         ]],
         theme: 'grid',
-        styles: { cellPadding: 2, fontSize: 10, halign: 'center', minCellHeight: 8, textColor: [0, 0, 0] },
-        headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1 }
+        styles: { 
+            cellPadding: 1.5, 
+            fontSize: 10, 
+            halign: 'center', 
+            minCellHeight: 6, 
+            textColor: [0, 0, 0] 
+        },
+        headStyles: { 
+            fillColor: [255, 255, 255], 
+            textColor: [0, 0, 0], 
+            fontStyle: 'bold', 
+            lineWidth: 0.1 
+        }
     });
 
-    // --- Deductions Table (Horizontal Strip - Black and White) ---
-    currentY = (doc as any).lastAutoTable.finalY + 6;
+    // --- Deductions Table (Horizontal Strip - Ultra Compact) ---
+    currentY = (doc as any).lastAutoTable.finalY + 5;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text("DEDUCTIONS", 14, currentY);
@@ -169,27 +180,38 @@ const renderSingleSlip = (
             { content: totalDeductions.toLocaleString('en-IN'), styles: { fontStyle: 'bold' } }
         ]],
         theme: 'grid',
-        styles: { cellPadding: 2, fontSize: 10, halign: 'center', minCellHeight: 8, textColor: [0, 0, 0] },
-        headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1 }
+        styles: { 
+            cellPadding: 1.5, 
+            fontSize: 10, 
+            halign: 'center', 
+            minCellHeight: 6, 
+            textColor: [0, 0, 0] 
+        },
+        headStyles: { 
+            fillColor: [255, 255, 255], 
+            textColor: [0, 0, 0], 
+            fontStyle: 'bold', 
+            lineWidth: 0.1 
+        }
     });
 
-    // --- Final Summary Section (Black and White Box) ---
+    // --- Final Summary Section ---
     currentY = (doc as any).lastAutoTable.finalY + 8;
     
-    // Rectangle for Net Payable (Border only)
+    // Rectangle for Net Payable (Compact)
     doc.setDrawColor(0, 0, 0);
-    doc.rect(14, currentY, 182, 14, 'S');
+    doc.rect(14, currentY, 182, 12, 'S');
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text(`NET PAYABLE SALARY: ${salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`, 105, currentY + 9, { align: 'center' });
+    doc.text(`NET PAYABLE SALARY: ${salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`, 105, currentY + 8, { align: 'center' });
 
-    currentY += 20;
+    currentY += 18;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
 
     // --- Signature Section ---
-    const sigY = currentY + 30;
+    const sigY = currentY + 25;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.text("________________________", 50, sigY, { align: 'center' });
