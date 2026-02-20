@@ -43,6 +43,7 @@ import { Badge } from "@/components/ui/badge";
 import AppLayout from "@/components/app-layout";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { cn } from "@/lib/utils";
 
 export default function EmployeesPage() {
   const { firestore, user } = useFirebase();
