@@ -1,9 +1,10 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, Settings, User, ReceiptText, Building, Banknote, ScrollText, StickyNote } from 'lucide-react';
+import { LogOut, Settings, User, ReceiptText, Building, Banknote, ScrollText, StickyNote, WalletCards } from 'lucide-react';
 import { useEffect } from 'react';
 
 import {
@@ -36,6 +37,7 @@ const navItems = [
   { href: '/inventory', label: 'Inventory', icon: Warehouse },
   { href: '/billing', label: 'Billing', icon: ReceiptText },
   { href: '/payments', label: 'Payments', icon: Banknote },
+  { href: '/salary', label: 'Salary', icon: WalletCards },
   { href: '/notes', label: 'Notes', icon: StickyNote },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];

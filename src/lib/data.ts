@@ -1,5 +1,4 @@
 
-
 export type JobCard = {
   id: string;
   jobTitle: string;
@@ -206,4 +205,17 @@ export type Note = {
   createdAt: string;
 };
 
-  
+export type Salary = {
+  id: string;
+  employeeId: string;
+  enterprise: 'Vithal' | 'RV';
+  month: string; // YYYY-MM
+  baseSalary: number;
+  bonus: number;
+  deductions: number;
+  netSalary: number;
+  paymentDate: string; // YYYY-MM-DD
+  status: 'Paid' | 'Pending';
+  notes?: string;
+  createdAt: string;
+};

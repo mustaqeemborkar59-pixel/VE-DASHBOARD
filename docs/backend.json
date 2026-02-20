@@ -653,6 +653,25 @@
         "content",
         "createdAt"
       ]
+    },
+    "Salary": {
+      "title": "Salary",
+      "description": "Represents a monthly salary record for an employee.",
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string" },
+        "enterprise": { "type": "string", "enum": ["Vithal", "RV"] },
+        "month": { "type": "string", "description": "YYYY-MM format" },
+        "baseSalary": { "type": "number" },
+        "bonus": { "type": "number" },
+        "deductions": { "type": "number" },
+        "netSalary": { "type": "number" },
+        "paymentDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["Paid", "Pending"] },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["employeeId", "month", "baseSalary", "netSalary", "status", "enterprise"]
     }
   },
   "auth": {
@@ -732,8 +751,12 @@
         "$ref": "#/entities/Note"
       },
       "description": "Stores user-created notes."
+    },
+    "/salaries/{salaryId}": {
+      "schema": {
+        "$ref": "#/entities/Salary"
+      },
+      "description": "Stores monthly salary records for employees."
     }
   }
 }
-
-  
