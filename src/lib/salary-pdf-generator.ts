@@ -46,11 +46,11 @@ const renderSingleSlip = (
     
     // --- Header Section ---
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(14); // Reduced from 16
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text(company.companyName.toUpperCase(), 105, yOffset + 12, { align: 'center' });
     
-    doc.setFontSize(7); // Reduced from 9
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     const addressLines = company.address ? doc.splitTextToSize(company.address, 170) : [];
     let currentY = yOffset + 17;
@@ -65,13 +65,19 @@ const renderSingleSlip = (
         currentY += 5;
     }
 
-    doc.setFontSize(10); // Reduced from 12
+    // --- Dashed Separator Line ---
+    doc.setLineDash([1, 1], 0);
+    doc.line(14, currentY, 196, currentY);
+    doc.setLineDash([], 0);
+    currentY += 6;
+
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text(`SALARY SLIP - ${monthDisplay}`, 105, currentY, { align: 'center' });
     currentY += 8;
 
     // --- Employee Info Section (Two-Column Layout) ---
-    doc.setFontSize(8); // Reduced from 10
+    doc.setFontSize(8);
     
     // Left Column
     const leftX = 14;
@@ -127,7 +133,7 @@ const renderSingleSlip = (
 
     currentY += 10;
 
-    // --- Earnings Header ---
+    // --- Earnings Section ---
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.text("EARNINGS", 14, currentY);
@@ -160,7 +166,7 @@ const renderSingleSlip = (
         }
     });
 
-    // --- Deductions Header ---
+    // --- Deductions Section ---
     currentY = (doc as any).lastAutoTable.finalY + 6;
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
@@ -199,7 +205,6 @@ const renderSingleSlip = (
     currentY = (doc as any).lastAutoTable.finalY + 4;
     const formattedNetPay = salary.netSalary.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
-    // Render Net Payable as a Table Row matching headers font size
     autoTable(doc, {
         startY: currentY,
         body: [[
