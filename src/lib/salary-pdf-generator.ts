@@ -17,7 +17,6 @@ const toWords = new ToWords({
 
 /**
  * Renders a clean, compact, Black and White horizontal salary slip.
- * Optimized for a professional look with Poppins-like clean typography.
  */
 const renderSingleSlip = (
     doc: jsPDF,
@@ -47,11 +46,11 @@ const renderSingleSlip = (
     
     // --- Header Section ---
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(14); // Reduced from 16
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text(company.companyName.toUpperCase(), 105, yOffset + 12, { align: 'center' });
     
-    doc.setFontSize(7); // Reduced from 9
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     const addressLines = company.address ? doc.splitTextToSize(company.address, 170) : [];
     let currentY = yOffset + 17;
@@ -77,8 +76,8 @@ const renderSingleSlip = (
     doc.text(`SALARY SLIP - ${monthDisplay}`, 105, currentY, { align: 'center' });
     currentY += 8;
 
-    // --- Employee Info Section (Swapped Column Layout) ---
-    doc.setFontSize(8); // Reduced from 10
+    // --- Employee Info Section (Two Columns) ---
+    doc.setFontSize(8);
     
     // Left Column
     const leftX = 14;
@@ -89,15 +88,15 @@ const renderSingleSlip = (
     currentY += 5;
 
     doc.setFont('helvetica', 'bold');
-    doc.text("Bank A/C No:", leftX, currentY); 
-    doc.setFont('helvetica', 'normal');
-    doc.text(employee.bankAccountNumber || 'N/A', leftX + 35, currentY);
-    currentY += 5;
-
-    doc.setFont('helvetica', 'bold');
     doc.text("Bank Name:", leftX, currentY);
     doc.setFont('helvetica', 'normal');
     doc.text(employee.bankName || 'N/A', leftX + 35, currentY);
+    currentY += 5;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text("Bank A/C No:", leftX, currentY); 
+    doc.setFont('helvetica', 'normal');
+    doc.text(employee.bankAccountNumber || 'N/A', leftX + 35, currentY);
     currentY += 5;
 
     doc.setFont('helvetica', 'bold');
@@ -106,8 +105,14 @@ const renderSingleSlip = (
     doc.text(employee.uanNumber || 'N/A', leftX + 35, currentY);
 
     // Right Column
-    currentY -= 15;
+    currentY -= 15; // Reset back to top of info section
     const rightX = 110;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text("Month:", rightX, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(monthDisplay, rightX + 40, currentY);
+    currentY += 5;
 
     doc.setFont('helvetica', 'bold');
     doc.text("Designation:", rightX, currentY);
@@ -125,12 +130,6 @@ const renderSingleSlip = (
     doc.text("PF No:", rightX, currentY); 
     doc.setFont('helvetica', 'normal');
     doc.text(employee.pfNumber || 'N/A', rightX + 40, currentY);
-    currentY += 5;
-
-    doc.setFont('helvetica', 'bold');
-    doc.text("Month:", rightX, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(monthDisplay, rightX + 40, currentY);
 
     currentY += 10;
 
