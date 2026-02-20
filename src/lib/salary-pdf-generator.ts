@@ -211,15 +211,14 @@ const renderSingleSlip = (
             { 
                 content: `NET PAYABLE SALARY: Rs. ${formattedNetPay}/-`, 
                 styles: { 
-                    halign: 'center', 
+                    halign: 'left', 
                     fontStyle: 'bold',
                     fontSize: 8, 
-                    lineWidth: 0.1,
-                    lineColor: [0, 0, 0]
+                    lineWidth: 0,
                 } 
             }
         ]],
-        theme: 'grid',
+        theme: 'plain',
         styles: { 
             cellPadding: 1.5, 
             minCellHeight: 6, 
@@ -228,7 +227,7 @@ const renderSingleSlip = (
         }
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 10;
+    currentY = (doc as any).lastAutoTable.finalY + 4;
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
@@ -246,7 +245,7 @@ const renderSingleSlip = (
     doc.setFontSize(7);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(80, 80, 80);
-    doc.text("Note: This is a system generated document and does not require a physical signature.", 105, sigY + 8, { align: 'center' });
+    doc.text("Note: This is a system generated salary slip and does not require a physical signature.", 105, sigY + 8, { align: 'center' });
     
     doc.setFontSize(6);
     doc.setTextColor(100, 100, 100);
