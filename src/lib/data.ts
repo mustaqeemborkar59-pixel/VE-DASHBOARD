@@ -20,6 +20,11 @@ export type Employee = {
   contactNumber: string;
   workLocation: string;
   availability: boolean;
+  pfNumber?: string;
+  uanNumber?: string;
+  esicNumber?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
   createdAt?: string;
 };
 

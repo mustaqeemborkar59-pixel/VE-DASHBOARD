@@ -1,3 +1,4 @@
+
 'use client';
 
 import jsPDF from 'jspdf';
@@ -71,31 +72,62 @@ const renderSingleSlip = (
     doc.text(`SALARY SLIP - ${monthDisplay}`, 105, currentY, { align: 'center' });
     currentY += 10;
 
-    // --- Employee Info Section (Text-based, not a table column) ---
+    // --- Employee Info Section (Two-Column Layout) ---
     doc.setFontSize(10);
+    
+    // Left Column
+    const leftX = 14;
     doc.setFont('helvetica', 'bold');
-    doc.text("Employee Name:", 14, currentY);
+    doc.text("Name of Employee:", leftX, currentY);
     doc.setFont('helvetica', 'normal');
-    doc.text(employee.fullName, 45, currentY);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text("Month:", 130, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(monthDisplay, 155, currentY);
-
+    doc.text(employee.fullName, leftX + 40, currentY);
     currentY += 6;
 
     doc.setFont('helvetica', 'bold');
-    doc.text("Designation:", 14, currentY);
+    doc.text("PF No:", leftX, currentY);
     doc.setFont('helvetica', 'normal');
-    doc.text(employee.specialization || 'N/A', 45, currentY);
+    doc.text(employee.pfNumber || 'N/A', leftX + 40, currentY);
+    currentY += 6;
 
     doc.setFont('helvetica', 'bold');
-    doc.text("Payment Date:", 130, currentY);
+    doc.text("Bank Name:", leftX, currentY);
     doc.setFont('helvetica', 'normal');
-    doc.text(paymentDateDisplay, 155, currentY);
+    doc.text(employee.bankName || 'N/A', leftX + 40, currentY);
+    currentY += 6;
 
-    currentY += 8;
+    doc.setFont('helvetica', 'bold');
+    doc.text("UAN Number:", leftX, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(employee.uanNumber || 'N/A', leftX + 40, currentY);
+
+    // Reset currentY for Right Column
+    currentY -= 18;
+    const rightX = 110;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text("Designation:", rightX, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(employee.specialization || 'N/A', rightX + 45, currentY);
+    currentY += 6;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text("ESIC NO:", rightX, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(employee.esicNumber || 'N/A', rightX + 45, currentY);
+    currentY += 6;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text("Bank A/C No:", rightX, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(employee.bankAccountNumber || 'N/A', rightX + 45, currentY);
+    currentY += 6;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text("Month:", rightX, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(monthDisplay, rightX + 45, currentY);
+
+    currentY += 10;
 
     // --- Earnings Table (Horizontal Strip) ---
     doc.setFontSize(10);

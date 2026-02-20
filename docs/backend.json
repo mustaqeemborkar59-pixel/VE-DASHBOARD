@@ -119,6 +119,26 @@
           "type": "boolean",
           "description": "Indicates if the employee is currently available for assignment."
         },
+        "pfNumber": {
+          "type": "string",
+          "description": "Provident Fund (PF) account number."
+        },
+        "uanNumber": {
+          "type": "string",
+          "description": "Universal Account Number (UAN) for PF."
+        },
+        "esicNumber": {
+          "type": "string",
+          "description": "ESIC registration number."
+        },
+        "bankName": {
+          "type": "string",
+          "description": "Name of the employee's bank."
+        },
+        "bankAccountNumber": {
+          "type": "string",
+          "description": "Employee's bank account number."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",

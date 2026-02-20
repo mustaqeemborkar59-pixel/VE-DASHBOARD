@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from "react";
@@ -7,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import type { Employee } from "@/lib/data";
+import { Separator } from "./ui/separator";
 
 export type EmployeeFormData = {
   fullName: string;
@@ -14,6 +16,11 @@ export type EmployeeFormData = {
   contactNumber: string;
   workLocation: string;
   availability: boolean;
+  pfNumber: string;
+  uanNumber: string;
+  esicNumber: string;
+  bankName: string;
+  bankAccountNumber: string;
 };
 
 interface EmployeeFormProps {
@@ -31,6 +38,11 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
     contactNumber: '',
     workLocation: '',
     availability: true,
+    pfNumber: '',
+    uanNumber: '',
+    esicNumber: '',
+    bankName: '',
+    bankAccountNumber: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,6 +54,11 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
         contactNumber: initialData.contactNumber || '',
         workLocation: initialData.workLocation || '',
         availability: initialData.availability,
+        pfNumber: initialData.pfNumber || '',
+        uanNumber: initialData.uanNumber || '',
+        esicNumber: initialData.esicNumber || '',
+        bankName: initialData.bankName || '',
+        bankAccountNumber: initialData.bankAccountNumber || '',
       });
     } else {
         setFormData({
@@ -50,6 +67,11 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
             contactNumber: '',
             workLocation: '',
             availability: true,
+            pfNumber: '',
+            uanNumber: '',
+            esicNumber: '',
+            bankName: '',
+            bankAccountNumber: '',
         });
     }
   }, [initialData, mode]);
@@ -94,6 +116,39 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
               <Input id="contactNumber" value={formData.contactNumber} onChange={handleInputChange} placeholder="e.g., +1 234 567 890" />
           </div>
         </div>
+        
+        <Separator />
+        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Statutory & Bank Details</h3>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-2">
+              <Label htmlFor="pfNumber">PF No.</Label>
+              <Input id="pfNumber" value={formData.pfNumber} onChange={handleInputChange} placeholder="PF Account No." />
+          </div>
+          <div className="grid gap-2">
+              <Label htmlFor="uanNumber">UAN Number</Label>
+              <Input id="uanNumber" value={formData.uanNumber} onChange={handleInputChange} placeholder="UAN Number" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-2">
+              <Label htmlFor="esicNumber">ESIC No.</Label>
+              <Input id="esicNumber" value={formData.esicNumber} onChange={handleInputChange} placeholder="ESIC Number" />
+          </div>
+          <div className="grid gap-2">
+              <Label htmlFor="bankName">Bank Name</Label>
+              <Input id="bankName" value={formData.bankName} onChange={handleInputChange} placeholder="e.g., HDFC Bank" />
+          </div>
+        </div>
+
+        <div className="grid gap-2">
+            <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
+            <Input id="bankAccountNumber" value={formData.bankAccountNumber} onChange={handleInputChange} placeholder="Account Number" />
+        </div>
+
+        <Separator />
+
         <div className="grid gap-2">
             <Label htmlFor="workLocation">Work Location</Label>
             <Input id="workLocation" value={formData.workLocation} onChange={handleInputChange} placeholder="e.g., Workshop, On-Site" />
