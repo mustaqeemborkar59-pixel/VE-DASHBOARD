@@ -84,9 +84,9 @@ const renderSingleSlip = (
     currentY += 6;
 
     doc.setFont('helvetica', 'bold');
-    doc.text("PF No:", leftX, currentY);
+    doc.text("Bank A/C No:", leftX, currentY);
     doc.setFont('helvetica', 'normal');
-    doc.text(employee.pfNumber || 'N/A', leftX + 40, currentY);
+    doc.text(employee.bankAccountNumber || 'N/A', leftX + 40, currentY);
     currentY += 6;
 
     doc.setFont('helvetica', 'bold');
@@ -117,9 +117,9 @@ const renderSingleSlip = (
     currentY += 6;
 
     doc.setFont('helvetica', 'bold');
-    doc.text("Bank A/C No:", rightX, currentY);
+    doc.text("PF No:", rightX, currentY);
     doc.setFont('helvetica', 'normal');
-    doc.text(employee.bankAccountNumber || 'N/A', rightX + 45, currentY);
+    doc.text(employee.pfNumber || 'N/A', rightX + 45, currentY);
     currentY += 6;
 
     doc.setFont('helvetica', 'bold');
