@@ -17,7 +17,7 @@ const toWords = new ToWords({
 
 /**
  * Renders a clean, compact, Black and White horizontal salary slip.
- * Uses Helvetica for a modern sans-serif look similar to Poppins.
+ * Uses Helvetica for a modern sans-serif look.
  */
 const renderSingleSlip = (
     doc: jsPDF,
@@ -47,7 +47,7 @@ const renderSingleSlip = (
     
     // --- Header Section ---
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(19); // Increased from 14 to 19 (5pt increase)
+    doc.setFontSize(19); // 19pt Company Name
     doc.setFont('helvetica', 'bold');
     doc.text(company.companyName.toUpperCase(), 105, yOffset + 12, { align: 'center' });
     
@@ -65,6 +65,12 @@ const renderSingleSlip = (
         doc.text(details, 105, currentY, { align: 'center' });
         currentY += 5;
     }
+
+    // --- Main Salary Slip Title ---
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`SALARY SLIP - ${monthDisplay}`, 105, currentY, { align: 'center' });
+    currentY += 3;
 
     // --- Dashed Separator Line ---
     doc.setLineDash([1, 1], 0);
@@ -207,7 +213,7 @@ const renderSingleSlip = (
     doc.setFont('helvetica', 'bold');
     doc.text(`NET PAYABLE SALARY: Rs. ${formattedNetPay}/-`, 14, currentY + 4);
 
-    currentY += 10;
+    currentY += 8; // Reduced gap
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
