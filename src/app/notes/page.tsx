@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   CardFooter,
@@ -276,15 +275,15 @@ export default function NotesPage() {
                 <Card 
                   key={note.id} 
                   className={cn(
-                    "group relative flex flex-col transition-all duration-300 hover:shadow-md hover:-translate-y-1 rounded-xl overflow-hidden min-h-[140px]", 
+                    "group relative flex flex-col transition-all duration-300 hover:shadow-md hover:-translate-y-1 rounded-xl overflow-hidden", 
                     cardDynamicClass
                   )} 
                   style={cardDynamicStyle}
                 >
-                  <CardHeader className="flex flex-row items-start justify-between pb-1 pt-3 px-4">
+                  <CardHeader className="flex flex-row items-start justify-between pb-0 pt-3 px-4">
                     <div className="flex-1 pr-6">
                         {note.title ? (
-                            <CardTitle className={cn("text-sm font-bold leading-tight line-clamp-1", textDynamicClass)} style={textDynamicStyle}>
+                            <CardTitle className={cn("text-sm font-bold leading-tight", textDynamicClass)} style={textDynamicStyle}>
                                 {note.title}
                             </CardTitle>
                         ) : null}
@@ -305,12 +304,12 @@ export default function NotesPage() {
                         </DropdownMenuContent>
                     </DropdownMenu>
                   </CardHeader>
-                  <CardContent className="pt-0 px-4 pb-1">
+                  <CardContent className="py-1 px-4">
                     <p className={cn("whitespace-pre-wrap text-xs sm:text-sm leading-snug", textDynamicClass)} style={textDynamicStyle}>
                         {note.content}
                     </p>
                   </CardContent>
-                  <CardFooter className="pt-1 pb-3 px-4 flex items-center justify-between mt-auto">
+                  <CardFooter className="pt-0 pb-3 px-4 flex items-center justify-between mt-auto">
                     <span className="text-[9px] font-bold uppercase tracking-tight" style={footerDynamicStyle}>
                         {format(new Date(note.createdAt), "dd MMM yyyy")}
                     </span>
