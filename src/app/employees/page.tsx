@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Card,
@@ -110,7 +109,7 @@ export default function EmployeesPage() {
                   <EllipsisVertical className="h-4 w-4" />
               </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-40" onMouseLeave={(e) => (e.currentTarget as HTMLElement).blur()}>
+          <DropdownMenuContent className="w-40" align="end" onMouseLeave={(e) => (e.currentTarget as HTMLElement).blur()}>
               <DropdownMenuItem onSelect={() => handleDelayedAction(() => openAddEditDialog(employee))}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
@@ -125,92 +124,97 @@ export default function EmployeesPage() {
 
   return (
     <AppLayout>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Employees</CardTitle>
-              <CardDescription>Manage your workshop employees.</CardDescription>
+      <div className="flex flex-col gap-4 sm:gap-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Employees</CardTitle>
+                <CardDescription className="hidden sm:block">Manage your workshop employees.</CardDescription>
+              </div>
+              <Button onClick={() => openAddEditDialog(null)} size="sm" className="h-8 text-xs">
+                <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
+                Add Employee
+              </Button>
             </div>
-            <Button onClick={() => openAddEditDialog(null)} size="sm">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Employee
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0 md:p-3 pt-0">
-          <div className="md:hidden">
-            {isLoading ? (
-                <div className="text-center p-6 text-muted-foreground">Loading employees...</div>
-             ) : employees && employees.length > 0 ? (
-                <div className="space-y-4 p-4">
-                  {employees.map((employee) => (
-                    <div key={employee.id} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-1">
-                            <div className="font-bold">{employee.fullName}</div>
-                            <div className="text-sm text-muted-foreground">{employee.specialization || 'N/A'}</div>
+          </CardHeader>
+          <CardContent className="p-0 md:p-3 pt-0">
+            <div className="md:hidden">
+              {isLoading ? (
+                  <div className="text-center p-6 text-muted-foreground">Loading employees...</div>
+               ) : employees && employees.length > 0 ? (
+                  <div className="space-y-3 p-3">
+                    {employees.map((employee) => (
+                      <div key={employee.id} className="border rounded-lg p-3 space-y-2 bg-card">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-0.5">
+                              <div className="text-sm font-bold">{employee.fullName}</div>
+                              <div className="text-[10px] text-muted-foreground">{employee.specialization || 'N/A'}</div>
+                            </div>
+                             {renderActions(employee)}
                           </div>
-                           {renderActions(employee)}
-                        </div>
+                          <div className="flex justify-between items-center">
+                            <Badge variant={employee.availability ? 'outline' : 'secondary'} className={cn('text-[10px] py-0 h-5', employee.availability ? 'border-green-600/40 text-green-700' : '')}>
+                              {employee.availability ? 'Available' : 'Unavailable'}
+                            </Badge>
+                            <span className="text-[10px] text-muted-foreground italic">{employee.contactNumber || ''}</span>
+                          </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center p-10 text-muted-foreground">No employees found.</div>
+                )}
+            </div>
+            <Table className="hidden md:table">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employee</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Availability</TableHead>
+                  <TableHead><span className="sr-only">Actions</span></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">Loading...</TableCell>
+                  </TableRow>
+                ) : employees && employees.length > 0 ? (
+                  employees.map((employee) => (
+                    <TableRow key={employee.id}>
+                      <TableCell>
+                        <div className="font-medium">{employee.fullName}</div>
+                        <div className="text-sm text-muted-foreground">{employee.contactNumber || 'No contact'}</div>
+                      </TableCell>
+                      <TableCell>{employee.specialization}</TableCell>
+                      <TableCell>
                         <Badge variant={employee.availability ? 'outline' : 'secondary'} className={employee.availability ? 'border-green-600/40 text-green-700' : ''}>
                           {employee.availability ? 'Available' : 'Unavailable'}
                         </Badge>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center p-10 text-muted-foreground">No employees found.</div>
-              )}
-          </div>
-          <Table className="hidden md:table">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Availability</TableHead>
-                <TableHead><span className="sr-only">Actions</span></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center">Loading...</TableCell>
-                </TableRow>
-              ) : employees && employees.length > 0 ? (
-                employees.map((employee) => (
-                  <TableRow key={employee.id}>
-                    <TableCell>
-                      <div className="font-medium">{employee.fullName}</div>
-                      <div className="text-sm text-muted-foreground">{employee.contactNumber || 'No contact'}</div>
-                    </TableCell>
-                    <TableCell>{employee.specialization}</TableCell>
-                    <TableCell>
-                      <Badge variant={employee.availability ? 'outline' : 'secondary'} className={employee.availability ? 'border-green-600/40 text-green-700' : ''}>
-                        {employee.availability ? 'Available' : 'Unavailable'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                       {renderActions(employee)}
-                    </TableCell>
+                      </TableCell>
+                      <TableCell className="text-right">
+                         {renderActions(employee)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">No employees found.</TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">No employees found.</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
 
       <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>{selectedEmployee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
-            <DialogDescription>
-              {selectedEmployee ? 'Update the details of the employee.' : 'Fill out the form to add a new employee.'}
+            <DialogDescription className="text-xs">
+              {selectedEmployee ? 'Update technician details.' : 'Fill out the form below.'}
             </DialogDescription>
           </DialogHeader>
           <EmployeeForm
@@ -223,16 +227,16 @@ export default function EmployeesPage() {
       </Dialog>
       
       <AlertDialog open={!!employeeToDelete} onOpenChange={(open) => !open && setEmployeeToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md p-4 sm:p-6">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to delete this employee?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete <span className="font-medium">{employeeToDelete?.fullName}</span>. This action cannot be undone.
+              Delete <span className="font-medium">{employeeToDelete?.fullName}</span>?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="h-9">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="h-9 bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

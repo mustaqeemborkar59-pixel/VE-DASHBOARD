@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 import AppLayout from "@/components/app-layout";
@@ -213,7 +212,7 @@ const InvoiceActions = ({ invoice, openPreviewDialog, handleDownloadWord, openFo
                 <EllipsisVertical className="h-4 w-4" />
             </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-40">
+        <DropdownMenuContent className="w-40" align="end">
             <DropdownMenuItem onSelect={() => openPreviewDialog(invoice)}>
                 <Eye className="mr-2 h-4 w-4" />Preview
             </DropdownMenuItem>
@@ -262,9 +261,9 @@ const InvoiceList = ({
         <Accordion type="multiple" className="w-full" value={openYearAccordions} onValueChange={setOpenYearAccordions}>
             {invoices.map((year: any, yearIndex: number) => (
                  <AccordionItem value={`year-${year.key}`} key={year.key} className="mb-2 border-0">
-                    <AccordionTrigger className="px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-sm font-medium hover:no-underline">
-                        <div className="flex items-center gap-3">
-                          <Folder className="h-5 w-5 text-amber-500 fill-amber-500/20" />
+                    <AccordionTrigger className="px-3 sm:px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-xs sm:text-sm font-medium hover:no-underline">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <Folder className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500 fill-amber-500/20" />
                           <span>{year.label}</span>
                         </div>
                     </AccordionTrigger>
@@ -273,20 +272,20 @@ const InvoiceList = ({
                             {year.months.map((month: any) => {
                                 return (
                                 <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
-                                    <AccordionTrigger className="flex items-center justify-between flex-1 text-xs font-medium hover:no-underline p-3 bg-muted/50 hover:bg-muted/80 rounded-md">
+                                    <AccordionTrigger className="flex items-center justify-between flex-1 text-[10px] sm:text-xs font-medium hover:no-underline p-2 sm:p-3 bg-muted/50 hover:bg-muted/80 rounded-md">
                                          <div className="flex items-center gap-2">
-                                              <Folder className="h-4 w-4 text-amber-500 fill-amber-500/20" />
+                                              <Folder className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500 fill-amber-500/20" />
                                               <span>{month.label}</span>
                                          </div>
                                     </AccordionTrigger>
                                     <AccordionContent className="pt-2">
                                         <div className="md:hidden">
-                                            <div className="space-y-4 p-4">
+                                            <div className="space-y-3 p-2">
                                             {month.invoices.map((invoice: Invoice) => {
                                                 const isSelected = selectedInvoices.includes(invoice.id);
                                                 const selectionIndex = isSelected ? selectedInvoices.indexOf(invoice.id) + 1 : 0;
                                                 return (
-                                                    <div key={invoice.id} className="border rounded-lg p-3 space-y-3">
+                                                    <div key={invoice.id} className="border rounded-lg p-3 space-y-2 bg-card">
                                                         <div className="flex justify-between items-start">
                                                             <div className="flex items-start gap-3">
                                                                 <div
@@ -304,15 +303,15 @@ const InvoiceList = ({
                                                                         <span className="text-[10px] font-bold leading-none">{selectionIndex}</span>
                                                                     )}
                                                                 </div>
-                                                              <div className="space-y-1 cursor-pointer" onClick={() => actionProps.openPreviewDialog(invoice)}>
-                                                                  <div className="font-bold">Bill No: {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
-                                                                  <div className="text-sm text-muted-foreground">{getCompanyDisplay(invoice)}</div>
+                                                              <div className="space-y-0.5 cursor-pointer" onClick={() => actionProps.openPreviewDialog(invoice)}>
+                                                                  <div className="text-xs font-bold">Bill No: {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
+                                                                  <div className="text-[10px] text-muted-foreground">{getCompanyDisplay(invoice)}</div>
                                                               </div>
                                                             </div>
                                                             <InvoiceActions invoice={invoice} {...actionProps} />
                                                         </div>
-                                                        <div className="text-sm space-y-1" onClick={() => actionProps.openPreviewDialog(invoice)}>
-                                                            <div><span className="font-medium text-muted-foreground">Date: </span>{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</div>
+                                                        <div className="text-[10px] flex justify-between items-center" onClick={() => actionProps.openPreviewDialog(invoice)}>
+                                                            <div><span className="font-medium text-muted-foreground">Date: </span>{format(parseISO(invoice.billDate), 'dd MMM, yy')}</div>
                                                             <div><span className="font-medium text-muted-foreground">Amount: </span>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</div>
                                                         </div>
                                                     </div>
@@ -1219,42 +1218,41 @@ export default function BillingPage() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4 sm:gap-6">
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Enterprise)} className="w-full">
             <Card>
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <CardHeader className="pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                         <div>
                             <CardTitle>Invoices</CardTitle>
-                            <CardDescription>View, edit, and create new invoices organized by financial year.</CardDescription>
+                            <CardDescription>View and manage your professional invoices.</CardDescription>
                         </div>
-                        <div className="flex items-center gap-2 self-start sm:self-center">
+                        <div className="flex items-center gap-2 flex-wrap">
                             {selectedInvoices.length > 0 && (
-                                <div className="flex items-center gap-2">
-                                    <Button variant="outline" size="sm" onClick={handleBulkDownload}>
-                                        <Download className="mr-2 h-4 w-4" />
+                                <div className="flex items-center gap-1.5">
+                                    <Button variant="outline" size="sm" onClick={handleBulkDownload} className="h-8 px-2 text-xs">
+                                        <Download className="mr-1.5 h-3.5 w-3.5" />
                                         Download ({selectedInvoices.length})
                                     </Button>
-                                    <Button variant="outline" size="sm" onClick={openBulkDuplicateDialog}>
-                                        <Copy className="mr-2 h-4 w-4" />
-                                        Duplicate ({selectedInvoices.length})
+                                    <Button variant="outline" size="sm" onClick={openBulkDuplicateDialog} className="h-8 px-2 text-xs">
+                                        <Copy className="mr-1.5 h-3.5 w-3.5" />
+                                        Duplicate
                                     </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => setSelectedInvoices([])} className="h-9 w-9">
-                                        <X className="h-4 w-4" />
-                                        <span className="sr-only">Clear selection</span>
+                                    <Button variant="ghost" size="icon" onClick={() => setSelectedInvoices([])} className="h-8 w-8">
+                                        <X className="h-3.5 w-3.5" />
                                     </Button>
                                 </div>
                             )}
                             <Popover open={isSettingsPopoverOpen} onOpenChange={setIsSettingsPopoverOpen}>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" size="icon">
-                                        <Settings className="h-4 w-4" />
+                                    <Button variant="outline" size="icon" className="h-8 w-8">
+                                        <Settings className="h-3.5 w-3.5" />
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-96">
+                                <PopoverContent className="w-80 sm:w-96">
                                     <div className="space-y-4">
                                         <h4 className="font-medium leading-none">Default Document Settings</h4>
-                                        <p className="text-sm text-muted-foreground">Set the default layout for new invoices for <span className="font-bold">{activeTab} Enterprises</span>.</p>
+                                        <p className="text-xs text-muted-foreground">Set the default layout for new invoices for <span className="font-bold">{activeTab} Enterprises</span>.</p>
                                         <DocumentSettingsFields 
                                             settings={globalPageSettings} 
                                             onSettingsChange={handleGlobalSettingsChange}
@@ -1262,7 +1260,7 @@ export default function BillingPage() {
                                             onFontSizeChange={handleGlobalFontSizeChange}
                                             prefix="global"
                                         />
-                                        <Button onClick={handleSaveDefaultSettings} disabled={isSubmittingSettings} className="w-full">
+                                        <Button onClick={handleSaveDefaultSettings} disabled={isSubmittingSettings} className="w-full h-9">
                                             {isSubmittingSettings ? 'Saving...' : 'Save Defaults'}
                                         </Button>
                                     </div>
@@ -1270,36 +1268,36 @@ export default function BillingPage() {
                             </Popover>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm" disabled={skippedBillNumbers.length === 0}>
-                                        <FilePlus2 className="mr-2 h-4 w-4" />
+                                    <Button variant="outline" size="sm" disabled={skippedBillNumbers.length === 0} className="h-8 text-xs">
+                                        <FilePlus2 className="mr-1.5 h-3.5 w-3.5" />
                                         Fill Missing
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent>
-                                    <DropdownMenuLabel>Select a missing bill no.</DropdownMenuLabel>
+                                    <DropdownMenuLabel className="text-xs">Select a missing bill no.</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    <ScrollArea className="h-72">
+                                    <ScrollArea className="h-60 sm:h-72">
                                         {skippedBillNumbers.map(num => (
-                                            <DropdownMenuItem key={num} onSelect={() => openFormDialog(null, num)}>
+                                            <DropdownMenuItem key={num} onSelect={() => openFormDialog(null, num)} className="text-xs">
                                                 Invoice No. {num}
                                             </DropdownMenuItem>
                                         ))}
                                     </ScrollArea>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Button onClick={() => openFormDialog(null)} size="sm">
-                                <PlusCircle className="mr-2 h-4 w-4" />
+                            <Button onClick={() => openFormDialog(null)} size="sm" className="h-8 text-xs">
+                                <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
                                 Add Invoice
                             </Button>
                         </div>
                     </div>
-                     <TabsList className="grid w-full grid-cols-2 mt-4">
-                        <TabsTrigger value="Vithal">Vithal Enterprises</TabsTrigger>
-                        <TabsTrigger value="RV">R.V Enterprises</TabsTrigger>
+                     <TabsList className="grid w-full grid-cols-2 mt-4 h-9">
+                        <TabsTrigger value="Vithal" className="text-xs">Vithal</TabsTrigger>
+                        <TabsTrigger value="RV" className="text-xs">RV</TabsTrigger>
                     </TabsList>
                 </CardHeader>
                 <CardContent>
-                    <p className="px-1 py-2 text-sm text-muted-foreground">The next bill number will be automatically set to <span className='font-bold'>{nextBillNumber || '1'}</span>.</p>
+                    <p className="px-1 py-1 text-[10px] sm:text-sm text-muted-foreground">Next bill number: <span className='font-bold'>{nextBillNumber || '1'}</span>.</p>
                     <TabsContent value="Vithal">
                       <InvoiceList 
                         invoices={organizedInvoices}
@@ -1342,41 +1340,41 @@ export default function BillingPage() {
 
         <Dialog open={isFormDialogOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
-                <DialogHeader className="p-6 pr-14 pb-0">
+                <DialogHeader className="p-4 sm:p-6 pr-14 pb-0">
                     <div className="flex items-start justify-between">
-                        <div className="space-y-1.5">
-                            <DialogTitle>
-                                {editingInvoice ? 'Edit Invoice' : (billNoOverride ? `Fill Missing Invoice (No. ${billNoOverride})` : 'New Invoice')}
+                        <div className="space-y-1">
+                            <DialogTitle className="text-lg sm:text-xl">
+                                {editingInvoice ? 'Edit Invoice' : (billNoOverride ? `Fill Missing No. ${billNoOverride}` : 'New Invoice')}
                             </DialogTitle>
-                            <DialogDescription>
-                                {editingInvoice ? `Updating Invoice No. ${editingInvoice.billNo}-MHE` : (billNoOverride ? `Creating an invoice for the missing bill number for ${formEnterprise} Enterprises.` : `Creating a new invoice for ${formEnterprise} Enterprises.`)}
+                            <DialogDescription className="text-xs sm:text-sm">
+                                {editingInvoice ? `Updating No. ${editingInvoice.billNo}-MHE` : `Creating for ${formEnterprise} Enterprises.`}
                             </DialogDescription>
                         </div>
                         {!editingInvoice && !billNoOverride && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="ml-4 shrink-0">
+                                    <Button variant="outline" size="sm" className="ml-4 shrink-0 h-8 text-xs">
                                         {formEnterprise}
-                                        <ChevronDown className="ml-2 h-4 w-4" />
+                                        <ChevronDown className="ml-1.5 h-3 w-3" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuRadioGroup value={formEnterprise} onValueChange={(value) => setFormEnterprise(value as Enterprise)}>
-                                        <DropdownMenuRadioItem value="Vithal">Vithal</DropdownMenuRadioItem>
-                                        <DropdownMenuRadioItem value="RV">RV</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="Vithal" className="text-xs">Vithal</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="RV" className="text-xs">RV</DropdownMenuRadioItem>
                                     </DropdownMenuRadioGroup>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         )}
                     </div>
                 </DialogHeader>
-                <div className="flex-grow overflow-y-auto px-6">
+                <div className="flex-grow overflow-y-auto px-4 sm:px-6 py-4">
                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                             <div className="space-y-2 md:col-span-2">
-                                <Label htmlFor="company">Bill To</Label>
+                                <Label htmlFor="company" className="text-xs sm:text-sm">Bill To</Label>
                                 <Select value={companyId} onValueChange={setCompanyId} disabled={isLoadingCompanies}>
-                                    <SelectTrigger id="company" className="w-full">
+                                    <SelectTrigger id="company" className="w-full h-9 text-xs sm:text-sm">
                                         <SelectValue placeholder="Select a company..." />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1384,7 +1382,7 @@ export default function BillingPage() {
                                             <SelectItem value="loading" disabled>Loading companies...</SelectItem>
                                         ) : (
                                             companies?.map(company => (
-                                                <SelectItem key={company.id} value={company.id}>
+                                                <SelectItem key={company.id} value={company.id} className="text-xs sm:text-sm">
                                                     {company.name}
                                                 </SelectItem>
                                             ))
@@ -1393,29 +1391,29 @@ export default function BillingPage() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="billDate">Bill Date</Label>
+                                <Label htmlFor="billDate" className="text-xs sm:text-sm">Bill Date</Label>
                                 <Input
                                     id="billDate"
                                     type="date"
                                     value={billDate}
                                     onChange={(e) => setBillDate(e.target.value)}
-                                    className="w-full"
+                                    className="w-full h-9 text-xs sm:text-sm"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="billingMonth">Billing Month</Label>
+                                <Label htmlFor="billingMonth" className="text-xs sm:text-sm">Billing Month</Label>
                                 <Input
                                     id="billingMonth"
                                     type="month"
                                     value={billingMonth}
                                     onChange={(e) => setBillingMonth(e.target.value)}
-                                    className="w-full"
+                                    className="w-full h-9 text-xs sm:text-sm"
                                 />
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor="bankAccount">Bank Account</Label>
+                                <Label htmlFor="bankAccount" className="text-xs sm:text-sm">Bank Account</Label>
                                 <Select value={selectedBankAccountId} onValueChange={setSelectedBankAccountId} disabled={isLoadingBankAccounts}>
-                                    <SelectTrigger id="bankAccount">
+                                    <SelectTrigger id="bankAccount" className="h-9 text-xs sm:text-sm">
                                         <SelectValue placeholder="Select bank account" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1423,9 +1421,9 @@ export default function BillingPage() {
                                             <SelectItem value="loading" disabled>Loading accounts...</SelectItem>
                                         ) : (
                                             <>
-                                                <SelectItem value="no_bank">No Bank</SelectItem>
+                                                <SelectItem value="no_bank" className="text-xs sm:text-sm">No Bank</SelectItem>
                                                 {bankAccountsForForm?.map(account => (
-                                                    <SelectItem key={account.id} value={account.id}>{account.nickname}</SelectItem>
+                                                    <SelectItem key={account.id} value={account.id} className="text-xs sm:text-sm">{account.nickname}</SelectItem>
                                                 ))}
                                             </>
                                         )}
@@ -1433,34 +1431,34 @@ export default function BillingPage() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="poNumber">PO.NO</Label>
-                                <Input id="poNumber" value={poNumber} onChange={e => setPoNumber(e.target.value)} />
+                                <Label htmlFor="poNumber" className="text-xs sm:text-sm">PO.NO</Label>
+                                <Input id="poNumber" value={poNumber} onChange={e => setPoNumber(e.target.value)} className="h-9 text-xs sm:text-sm" />
                             </div>
                             <div className="space-y-2 md:col-span-2">
-                                <Label htmlFor="site">Site</Label>
-                                <Input id="site" value={site} onChange={e => setSite(e.target.value)} placeholder="e.g., THANE DEPOT" />
+                                <Label htmlFor="site" className="text-xs sm:text-sm">Site</Label>
+                                <Input id="site" value={site} onChange={e => setSite(e.target.value)} placeholder="e.g., THANE DEPOT" className="h-9 text-xs sm:text-sm" />
                             </div>
                         </div>
 
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
-                                <Label>Particulars</Label>
+                                <Label className="text-xs sm:text-sm">Particulars</Label>
                                 <div className="flex items-center gap-1 border rounded-md p-1 bg-muted/50">
                                     <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => applyMarkdown('bold')}>
-                                        <Bold className="h-4 w-4" />
+                                        <Bold className="h-3.5 w-3.5" />
                                     </Button>
 
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button type="button" variant="outline" className="h-7 px-2 text-xs">
-                                                <Pilcrow className="h-4 w-4 mr-1" />
-                                                Font Size
+                                            <Button type="button" variant="outline" className="h-7 px-2 text-[10px] sm:text-xs">
+                                                <Pilcrow className="h-3 w-3 mr-1" />
+                                                Size
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent>
                                             <DropdownMenuRadioGroup onValueChange={(size) => applyMarkdown('size', parseInt(size, 10))}>
                                                 {[9, 10, 11, 12, 14].map(s => (
-                                                    <DropdownMenuRadioItem key={s} value={String(s)}>{s} pt</DropdownMenuRadioItem>
+                                                    <DropdownMenuRadioItem key={s} value={String(s)} className="text-xs">{s} pt</DropdownMenuRadioItem>
                                                 ))}
                                             </DropdownMenuRadioGroup>
                                         </DropdownMenuContent>
@@ -1468,14 +1466,14 @@ export default function BillingPage() {
                                 </div>
                             </div>
                             {items.map((item, index) => (
-                                <div key={item.key} className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                                <div key={item.key} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 border sm:border-0 rounded-lg p-2 sm:p-0">
                                     <AutoHeightTextarea
                                         id={`particulars-${item.key}`}
                                         value={item.particulars}
                                         onChange={(e) => handleItemChange(item.key, 'particulars', e.target.value)}
                                         onFocus={() => setActiveInput({ key: item.key, field: 'particulars' })}
                                         placeholder="Item description"
-                                        className="flex-grow resize-none overflow-hidden"
+                                        className="flex-grow resize-none overflow-hidden text-xs sm:text-sm"
                                         rows={1}
                                     />
                                     <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -1485,7 +1483,7 @@ export default function BillingPage() {
                                             onChange={(e) => handleItemChange(item.key, 'rate', e.target.value)}
                                             onFocus={() => setActiveInput({ key: item.key, field: 'rate' })}
                                             placeholder="Rate"
-                                            className="w-full sm:w-40 resize-none overflow-hidden"
+                                            className="w-full sm:w-32 md:w-40 resize-none overflow-hidden text-xs sm:text-sm"
                                             rows={1}
                                         />
                                         <Input
@@ -1493,66 +1491,70 @@ export default function BillingPage() {
                                             placeholder="Amount"
                                             value={item.amount ? new Intl.NumberFormat('en-IN').format(item.amount) : (item.amount === 0 ? '0' : '')}
                                             onChange={(e) => handleItemChange(item.key, 'amount', e.target.value)}
-                                            className="w-full sm:w-48 text-right"
+                                            className="w-full sm:w-32 md:w-48 text-right h-9 text-xs sm:text-sm"
                                         />
-                                        <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.key)} disabled={items.length === 1}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.key)} disabled={items.length === 1} className="h-8 w-8">
+                                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                         </Button>
                                     </div>
                                 </div>
                             ))}
-                            <Button variant="outline" size="sm" onClick={handleAddItem}>
-                                <Plus className="mr-2 h-4 w-4" /> Add Item
+                            <Button variant="outline" size="sm" onClick={handleAddItem} className="h-8 text-xs">
+                                <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Item
                             </Button>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                             <div className="space-y-4">
                                <div className="space-y-2">
-                                    <Label htmlFor="discount">Discount</Label>
-                                    <div className="flex gap-2">
+                                    <Label htmlFor="discount" className="text-xs sm:text-sm">Discount</Label>
+                                    <div className="flex flex-col sm:flex-row gap-2">
                                         <Input 
                                             id="discount"
                                             type="text"
-                                            placeholder="Enter discount amount" 
+                                            placeholder="Amount" 
                                             value={discount} 
                                             onChange={(e) => setDiscount(e.target.value)}
-                                            className="flex-1"
+                                            className="flex-1 h-9 text-xs sm:text-sm"
                                         />
-                                        <RadioGroup value={discountType} onValueChange={(v) => setDiscountType(v as DiscountType)} className="flex items-center gap-2 rounded-md border p-1 h-10 bg-muted/50">
-                                            <Label htmlFor="before_gst" className={cn("flex items-center gap-1 cursor-pointer text-xs px-2 py-1 rounded-sm", discountType === 'before_gst' && "bg-background shadow")}>
+                                        <RadioGroup value={discountType} onValueChange={(v) => setDiscountType(v as DiscountType)} className="flex items-center gap-1 rounded-md border p-1 h-9 bg-muted/50">
+                                            <Label htmlFor="before_gst" className={cn("flex-1 text-center cursor-pointer text-[10px] px-2 py-1 rounded-sm transition-colors", discountType === 'before_gst' && "bg-background shadow font-bold")}>
                                                 <RadioGroupItem value="before_gst" id="before_gst" className="sr-only"/>
                                                 Before GST
                                             </Label>
-                                            <Label htmlFor="after_gst" className={cn("flex items-center gap-1 cursor-pointer text-xs px-2 py-1 rounded-sm", discountType === 'after_gst' && "bg-background shadow")}>
+                                            <Label htmlFor="after_gst" className={cn("flex-1 text-center cursor-pointer text-[10px] px-2 py-1 rounded-sm transition-colors", discountType === 'after_gst' && "bg-background shadow font-bold")}>
                                                 <RadioGroupItem value="after_gst" id="after_gst" className="sr-only"/>
                                                 After GST
                                             </Label>
                                         </RadioGroup>
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="advanceReceived">Advance Received</Label>
-                                    <Input 
-                                        id="advanceReceived" 
-                                        type="text"
-                                        placeholder="Enter advance amount" 
-                                        value={advanceReceived} 
-                                        onChange={(e) => setAdvanceReceived(e.target.value)} 
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="tdsPercentage">TDS Percentage (%)</Label>
-                                    <Input 
-                                        id="tdsPercentage" 
-                                        type="number"
-                                        placeholder="e.g., 2" 
-                                        value={tdsPercentage} 
-                                        onChange={(e) => setTdsPercentage(e.target.value)} 
-                                    />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="advanceReceived" className="text-xs sm:text-sm">Advance</Label>
+                                        <Input 
+                                            id="advanceReceived" 
+                                            type="text"
+                                            placeholder="0" 
+                                            value={advanceReceived} 
+                                            onChange={(e) => setAdvanceReceived(e.target.value)} 
+                                            className="h-9 text-xs sm:text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="tdsPercentage" className="text-xs sm:text-sm">TDS %</Label>
+                                        <Input 
+                                            id="tdsPercentage" 
+                                            type="number"
+                                            placeholder="e.g., 2" 
+                                            value={tdsPercentage} 
+                                            onChange={(e) => setTdsPercentage(e.target.value)} 
+                                            className="h-9 text-xs sm:text-sm"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                           <div className="w-full space-y-2 pt-2 self-end">
+                           <div className="w-full space-y-1.5 pt-2 self-end text-xs sm:text-sm">
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Net Total</span>
                                     <span>{calculations.netTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
@@ -1567,12 +1569,12 @@ export default function BillingPage() {
                                 
                                 {discountType === 'before_gst' && calculations.discountAmount > 0 && (
                                     <>
-                                    <Separator/>
+                                    <Separator className="my-1"/>
                                     <div className="flex justify-between font-medium">
                                         <span className="text-muted-foreground">Taxable Amount</span>
                                         <span>{calculations.taxableAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
                                     </div>
-                                    <Separator/>
+                                    <Separator className="my-1"/>
                                     </>
                                 )}
 
@@ -1591,9 +1593,9 @@ export default function BillingPage() {
                                         <span>- {calculations.discountAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
                                     </div>
                                 )}
-                                <Separator />
-                                <div className="flex justify-between font-bold text-lg">
-                                    <span>{calculations.advanceAmount > 0 ? 'Grand Total' : 'Total Amount Payable'}</span>
+                                <Separator className="my-1" />
+                                <div className="flex justify-between font-bold text-sm sm:text-lg">
+                                    <span>{calculations.advanceAmount > 0 ? 'Grand Total' : 'Amount Payable'}</span>
                                     <span>{calculations.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
                                 </div>
                                 {calculations.advanceAmount > 0 && (
@@ -1602,14 +1604,14 @@ export default function BillingPage() {
                                             <span className="text-muted-foreground">Advance Received</span>
                                             <span>- {calculations.advanceAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
                                         </div>
-                                        <Separator />
-                                        <div className="flex justify-between font-bold text-lg">
+                                        <Separator className="my-1" />
+                                        <div className="flex justify-between font-bold text-sm sm:text-lg">
                                             <span>Total Amount Payable</span>
                                             <span>{calculations.balanceDue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
                                         </div>
                                     </>
                                 )}
-                                <div className="text-sm text-muted-foreground pt-1">
+                                <div className="text-[10px] sm:text-xs text-muted-foreground pt-1 italic">
                                     In words: <span className="font-medium text-foreground">{amountInWords}</span>
                                 </div>
                             </div>
@@ -1620,12 +1622,9 @@ export default function BillingPage() {
                           <>
                             <Separator />
                             <div className="space-y-4">
-                                <h3 className="text-lg font-medium">Document Settings</h3>
-                                <p className="text-sm text-muted-foreground">
-                                    Adjust layout and display options. These settings will be saved with the invoice.
-                                </p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                    <div className="p-4 border rounded-lg">
+                                <h3 className="text-base sm:text-lg font-medium">Document Settings</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div className="p-3 sm:p-4 border rounded-lg bg-card/50">
                                       <DocumentSettingsFields 
                                          settings={invoicePageSettings} 
                                          onSettingsChange={handleDocSettingsChange}
@@ -1633,10 +1632,10 @@ export default function BillingPage() {
                                          onFontSizeChange={handleDocFontSizeChange}
                                       />
                                     </div>
-                                    <div className="p-4 border rounded-lg">
+                                    <div className="p-3 sm:p-4 border rounded-lg bg-card/50">
                                       <DownloadOptionsFields options={formDownloadOptions} setOptions={setFormDownloadOptions} />
                                     </div>
-                                     <div className="p-4 border rounded-lg">
+                                     <div className="p-3 sm:p-4 border rounded-lg bg-card/50">
                                       <ColumnAlignmentFields template={formTemplate} onTemplateChange={handleTemplateChange} onTemplateFontSizeChange={handleTemplateFontSizeChange} items={items} />
                                     </div>
                                 </div>
@@ -1645,9 +1644,9 @@ export default function BillingPage() {
                         )}
                     </div>
                 </div>
-                <DialogFooter className="p-6 pt-4 border-t">
-                    <Button variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleFormSubmit}>
+                <DialogFooter className="p-4 sm:p-6 pt-4 border-t flex gap-2">
+                    <Button variant="outline" onClick={() => setIsFormDialogOpen(false)} className="h-9 text-xs sm:text-sm">Cancel</Button>
+                    <Button onClick={handleFormSubmit} className="h-9 text-xs sm:text-sm">
                         {editingInvoice ? 'Update Invoice' : 'Save Invoice'}
                     </Button>
                 </DialogFooter>
@@ -1655,81 +1654,79 @@ export default function BillingPage() {
         </Dialog>
 
         <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && closeAllDialogs()}>
-            <AlertDialogContent>
+            <AlertDialogContent className="max-w-[90vw] sm:max-w-md p-4 sm:p-6">
                 <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete Invoice No. <span className="font-medium">{invoiceToDelete?.billNo}-MHE</span>.
+                    This will permanently delete Invoice No. <span className="font-medium">{invoiceToDelete?.billNo}-MHE</span>.
                 </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDeleteInvoice(); }}>Delete</AlertDialogAction>
+                <AlertDialogFooter className="gap-2 sm:gap-0">
+                <AlertDialogCancel className="h-9">Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDeleteInvoice(); }} className="h-9">Delete</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
 
         <AlertDialog open={!!invoiceToDuplicate} onOpenChange={(open) => !open && closeAllDialogs()}>
-            <AlertDialogContent>
+            <AlertDialogContent className="max-w-[90vw] sm:max-w-md p-4 sm:p-6">
                 <AlertDialogHeader>
                     <AlertDialogTitle>Duplicate Invoice</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Select a new bill date for the duplicated invoice. The next available bill number ({nextBillNumber}) will be used.
+                        Select a new bill date for the duplicated invoice.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                <div className="py-4">
-                    <Label htmlFor="newBillDate">New Bill Date</Label>
+                <div className="py-2">
+                    <Label htmlFor="newBillDate" className="text-xs">New Bill Date</Label>
                     <Input
                         id="newBillDate"
                         type="date"
                         value={newBillDateForDuplicate}
                         onChange={(e) => setNewBillDateForDuplicate(e.target.value)}
-                        className="w-full mt-2"
+                        className="w-full mt-1.5 h-9 text-sm"
                     />
                 </div>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleConfirmDuplicate}>Duplicate</AlertDialogAction>
+                <AlertDialogFooter className="gap-2 sm:gap-0">
+                    <AlertDialogCancel className="h-9">Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmDuplicate} className="h-9">Duplicate</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
 
         <AlertDialog open={isBulkDuplicateDialogOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
-            <AlertDialogContent>
+            <AlertDialogContent className="max-w-[95vw] sm:max-w-md p-4 sm:p-6">
                 <AlertDialogHeader>
                     <AlertDialogTitle>Bulk Duplicate Invoices</AlertDialogTitle>
                     <AlertDialogDescription>
-                        You are about to duplicate <span className="font-bold">{selectedInvoices.length}</span> invoices. 
-                        The new invoices will be assigned bill numbers starting from <span className="font-bold">{nextBillNumber}</span>. 
-                        Please select a common bill date for all new invoices.
+                        You are about to duplicate <span className="font-bold">{selectedInvoices.length}</span> invoices starting from <span className="font-bold">{nextBillNumber}</span>.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                <div className="py-4">
-                    <Label htmlFor="newBulkBillDate">New Bill Date</Label>
+                <div className="py-2">
+                    <Label htmlFor="newBulkBillDate" className="text-xs">New Bill Date</Label>
                     <Input
                         id="newBulkBillDate"
                         type="date"
                         value={newBillDateForBulk}
                         onChange={(e) => setNewBillDateForBulk(e.target.value)}
-                        className="w-full mt-2"
+                        className="w-full mt-1.5 h-9 text-sm"
                     />
                 </div>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleConfirmBulkDuplicate}>Duplicate {selectedInvoices.length} Invoices</AlertDialogAction>
+                <AlertDialogFooter className="gap-2 sm:gap-0">
+                    <AlertDialogCancel className="h-9">Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmBulkDuplicate} className="h-9 text-xs">Duplicate {selectedInvoices.length} Invoices</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
         
         <Dialog open={isPreviewOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
             <DialogContent className="max-w-4xl p-0">
-                 <DialogHeader className="p-6 pb-2">
+                 <DialogHeader className="p-4 sm:p-6 pb-2">
                     <DialogTitle>Invoice Preview</DialogTitle>
-                    <DialogDescription>
-                        A preview of Invoice No. {invoiceForPreview?.billNo}-{invoiceForPreview?.billNoSuffix || 'MHE'}.
+                    <DialogDescription className="text-xs">
+                        No. {invoiceForPreview?.billNo}-{invoiceForPreview?.billNoSuffix || 'MHE'}.
                     </DialogDescription>
                 </DialogHeader>
-                <div className={cn("px-6 pb-6 overflow-y-auto max-h-[80vh]", "hide-scrollbar")}>
+                <div className={cn("px-4 sm:px-6 pb-6 overflow-y-auto max-h-[80vh]", "hide-scrollbar")}>
                    <InvoicePreview 
                     invoice={invoiceForPreview} 
                     company={invoiceForPreview?.clientCompanyDetails || null} 

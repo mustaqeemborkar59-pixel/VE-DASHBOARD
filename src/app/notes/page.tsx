@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useMemo, useCallback } from 'react';
 import AppLayout from "@/components/app-layout";
@@ -86,29 +85,29 @@ const NoteForm = ({
   };
 
   return (
-    <form id="note-form" onSubmit={handleSubmit} className="grid gap-6 py-4">
-      <div className="grid gap-2">
-        <Label htmlFor="title">Title (Optional)</Label>
-        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Note title" />
+    <form id="note-form" onSubmit={handleSubmit} className="grid gap-4 py-2">
+      <div className="grid gap-1.5">
+        <Label htmlFor="title" className="text-xs">Title (Optional)</Label>
+        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Note title" className="h-9 text-sm" />
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor="content">Content</Label>
-        <Textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Your note here..." required  className="min-h-[150px]"/>
+      <div className="grid gap-1.5">
+        <Label htmlFor="content" className="text-xs">Content</Label>
+        <Textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Your note here..." required  className="min-h-[120px] text-sm"/>
       </div>
-       <div className="grid gap-2">
-        <Label>Color</Label>
-        <div className="flex flex-wrap items-center gap-3">
-          <RadioGroup value={isPresetColor(color) ? color : ''} onValueChange={setColor} className="flex flex-wrap gap-3">
+       <div className="grid gap-1.5">
+        <Label className="text-xs">Color</Label>
+        <div className="flex flex-wrap items-center gap-2">
+          <RadioGroup value={isPresetColor(color) ? color : ''} onValueChange={setColor} className="flex flex-wrap gap-2">
             {(Object.keys(noteColorClasses) as PresetColor[]).map((key) => (
-              <Label key={key} title={key} className={cn('h-8 w-8 rounded-full cursor-pointer border-2', noteColorClasses[key].bg, color === key ? 'ring-2 ring-offset-2 ring-ring ring-offset-background' : 'border-transparent')}>
+              <Label key={key} title={key} className={cn('h-7 w-7 rounded-full cursor-pointer border-2', noteColorClasses[key].bg, color === key ? 'ring-2 ring-offset-2 ring-ring ring-offset-background' : 'border-transparent')}>
                 <RadioGroupItem value={key} className="sr-only"/>
               </Label>
             ))}
           </RadioGroup>
           
-          <div className="relative h-8 w-8">
-             <Label htmlFor="custom-color" className={cn('h-8 w-8 rounded-full cursor-pointer border-2 flex items-center justify-center', !isPresetColor(color) ? 'ring-2 ring-offset-2 ring-ring ring-offset-background' : 'border-transparent', isPresetColor(color) && 'bg-muted')}>
-                <div className="w-5 h-5 rounded-full" style={{ backgroundColor: !isPresetColor(color) ? color : undefined, backgroundImage: isPresetColor(color) ? 'conic-gradient(from 90deg, violet, indigo, blue, green, yellow, orange, red, violet)' : undefined }} />
+          <div className="relative h-7 w-7">
+             <Label htmlFor="custom-color" className={cn('h-7 w-7 rounded-full cursor-pointer border-2 flex items-center justify-center', !isPresetColor(color) ? 'ring-2 ring-offset-2 ring-ring ring-offset-background' : 'border-transparent', isPresetColor(color) && 'bg-muted')}>
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: !isPresetColor(color) ? color : undefined, backgroundImage: isPresetColor(color) ? 'conic-gradient(from 90deg, violet, indigo, blue, green, yellow, orange, red, violet)' : undefined }} />
              </Label>
              <Input 
                 id="custom-color"
@@ -194,16 +193,16 @@ export default function NotesPage() {
   
   return (
     <AppLayout>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4 sm:gap-6">
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Notes</CardTitle>
-                <CardDescription>Your personal space for thoughts and reminders.</CardDescription>
+                <CardDescription className="hidden sm:block">Your personal space for thoughts and reminders.</CardDescription>
               </div>
-              <Button onClick={() => openFormDialog(null)} size="sm">
-                <PlusCircle className="mr-2 h-4 w-4" />
+              <Button onClick={() => openFormDialog(null)} size="sm" className="h-8 text-xs">
+                <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
                 Add Note
               </Button>
             </div>
@@ -211,13 +210,13 @@ export default function NotesPage() {
         </Card>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i} className="h-56 animate-pulse"></Card>
+              <Card key={i} className="h-40 sm:h-56 animate-pulse"></Card>
             ))}
           </div>
         ) : notes && notes.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {notes.map(note => {
               const isPresetColor = (c: string): c is PresetColor => Object.keys(noteColorClasses).includes(c);
               
@@ -249,28 +248,28 @@ export default function NotesPage() {
 
               return (
                 <Card key={note.id} className={cn("flex flex-col", cardDynamicClass)} style={cardDynamicStyle}>
-                  <CardHeader className="flex flex-row items-start justify-between pb-2">
-                    {note.title && <CardTitle className={cn("text-lg", textDynamicClass)} style={textDynamicStyle}>{note.title}</CardTitle>}
+                  <CardHeader className="flex flex-row items-start justify-between pb-1 pt-3 sm:pt-6">
+                    {note.title && <CardTitle className={cn("text-sm sm:text-lg", textDynamicClass)} style={textDynamicStyle}>{note.title}</CardTitle>}
                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className={cn("h-7 w-7 -mt-2 -mr-2 shrink-0", textDynamicClass)} style={textDynamicStyle}>
-                                <EllipsisVertical className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className={cn("h-7 w-7 -mt-1 -mr-1 shrink-0", textDynamicClass)} style={textDynamicStyle}>
+                                <EllipsisVertical className="h-3.5 w-3.5" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuItem onSelect={() => openFormDialog(note)}>
-                                <Pencil className="mr-2 h-4 w-4" /> Edit
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => openFormDialog(note)} className="text-xs">
+                                <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => openDeleteDialog(note)} className="text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            <DropdownMenuItem onSelect={() => openDeleteDialog(note)} className="text-destructive text-xs">
+                                <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                   </CardHeader>
-                  <CardContent className="flex-grow">
-                    <p className={cn("whitespace-pre-wrap", textDynamicClass)} style={textDynamicStyle}>{note.content}</p>
+                  <CardContent className="flex-grow pt-1">
+                    <p className={cn("whitespace-pre-wrap text-xs sm:text-sm", textDynamicClass)} style={textDynamicStyle}>{note.content}</p>
                   </CardContent>
-                  <CardFooter className="text-xs pt-4 pb-2" style={footerDynamicStyle}>
+                  <CardFooter className="text-[10px] pt-2 pb-2" style={footerDynamicStyle}>
                     {format(new Date(note.createdAt), "dd MMM, yyyy")}
                   </CardFooter>
                 </Card>
@@ -279,14 +278,14 @@ export default function NotesPage() {
           </div>
         ) : (
           <div className="text-center py-20">
-            <h3 className="text-2xl font-semibold">No notes yet</h3>
-            <p className="text-muted-foreground mt-2">Click "Add Note" to create your first one.</p>
+            <h3 className="text-xl sm:text-2xl font-semibold">No notes yet</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-2">Click "Add Note" to create your first one.</p>
           </div>
         )}
       </div>
 
        <Dialog open={isFormOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-md p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>{selectedNote ? 'Edit Note' : 'Add New Note'}</DialogTitle>
           </DialogHeader>
@@ -294,11 +293,11 @@ export default function NotesPage() {
             onSubmit={handleFormSubmit}
             initialData={selectedNote || undefined}
           />
-           <DialogFooter>
-              <Button variant="outline" type="button" onClick={closeAllDialogs}>
+           <DialogFooter className="gap-2 sm:gap-0 pt-2">
+              <Button variant="outline" type="button" onClick={closeAllDialogs} className="h-9">
                 Cancel
               </Button>
-              <Button type="submit" form="note-form">
+              <Button type="submit" form="note-form" className="h-9">
                 {selectedNote ? 'Save Changes' : 'Add Note'}
               </Button>
           </DialogFooter>
@@ -306,16 +305,16 @@ export default function NotesPage() {
       </Dialog>
       
       <AlertDialog open={!!noteToDelete} onOpenChange={(open) => !open && closeAllDialogs()}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md p-4 sm:p-6">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this note. This action cannot be undone.
+            <AlertDialogDescription className="text-xs">
+              This will permanently delete this note.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="h-9">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90 h-9">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

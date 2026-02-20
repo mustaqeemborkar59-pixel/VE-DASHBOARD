@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useCallback, useMemo } from 'react';
 import {
@@ -133,7 +132,7 @@ export default function JobCardsPage() {
         Completed: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
         Cancelled: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
     };
-    return <Badge variant="outline" className={cn(statusClasses[status])}>{status}</Badge>;
+    return <Badge variant="outline" className={cn("text-[10px] sm:text-xs", statusClasses[status])}>{status}</Badge>;
   }
 
   const renderActions = (job: JobCard) => (
@@ -143,7 +142,7 @@ export default function JobCardsPage() {
                 <EllipsisVertical className="h-4 w-4" />
             </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-40">
+        <DropdownMenuContent className="w-40" align="end">
             <DropdownMenuItem onSelect={() => openFormDialog(job)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
@@ -158,71 +157,76 @@ export default function JobCardsPage() {
 
   return (
     <AppLayout>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Job Cards</CardTitle>
-              <CardDescription>Manage all service and repair jobs for your fleet.</CardDescription>
+      <div className="flex flex-col gap-4 sm:gap-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Job Cards</CardTitle>
+                <CardDescription className="hidden sm:block">Manage all service and repair jobs.</CardDescription>
+              </div>
+              <Button onClick={() => openFormDialog(null)} size="sm" className="h-8 text-xs">
+                <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
+                Add Job Card
+              </Button>
             </div>
-            <Button onClick={() => openFormDialog(null)} size="sm">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Job Card
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0 md:p-3 pt-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Job Title</TableHead>
-                <TableHead>Company</TableHead>
-                <TableHead>Forklift</TableHead>
-                <TableHead>Assigned To</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead><span className="sr-only">Actions</span></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">Loading job cards...</TableCell>
-                </TableRow>
-              ) : jobCards && jobCards.length > 0 ? (
-                jobCards.map((job) => (
-                  <TableRow key={job.id}>
-                    <TableCell>
-                      <div className="font-medium">{job.jobTitle}</div>
-                      <div className="text-sm text-muted-foreground">{format(new Date(job.creationDate), "PP")}</div>
-                    </TableCell>
-                    <TableCell>{companyMap.get(job.companyId) || 'N/A'}</TableCell>
-                    <TableCell>{forkliftMap.get(job.forkliftId) || 'N/A'}</TableCell>
-                    <TableCell>{job.employeeId ? employeeMap.get(job.employeeId) : 'Unassigned'}</TableCell>
-                    <TableCell>{getStatusBadge(job.status)}</TableCell>
-                    <TableCell className="text-right">
-                       {renderActions(job)}
-                    </TableCell>
+          </CardHeader>
+          <CardContent className="p-0 md:p-3 pt-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="px-3 sm:px-4">Job Title</TableHead>
+                    <TableHead className="hidden sm:table-cell">Company</TableHead>
+                    <TableHead className="hidden md:table-cell">Forklift</TableHead>
+                    <TableHead className="hidden lg:table-cell">Assigned To</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right w-[50px]"><span className="sr-only">Actions</span></TableHead>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">No job cards found.</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center h-24">Loading...</TableCell>
+                    </TableRow>
+                  ) : jobCards && jobCards.length > 0 ? (
+                    jobCards.map((job) => (
+                      <TableRow key={job.id}>
+                        <TableCell className="px-3 sm:px-4">
+                          <div className="font-medium text-xs sm:text-sm">{job.jobTitle}</div>
+                          <div className="text-[10px] text-muted-foreground">{format(new Date(job.creationDate), "PP")}</div>
+                          <div className="text-[10px] text-muted-foreground sm:hidden">{companyMap.get(job.companyId) || ''}</div>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">{companyMap.get(job.companyId) || 'N/A'}</TableCell>
+                        <TableCell className="hidden md:table-cell">{forkliftMap.get(job.forkliftId) || 'N/A'}</TableCell>
+                        <TableCell className="hidden lg:table-cell">{job.employeeId ? employeeMap.get(job.employeeId) : 'Unassigned'}</TableCell>
+                        <TableCell className="px-3 sm:px-4">{getStatusBadge(job.status)}</TableCell>
+                        <TableCell className="text-right px-3 sm:px-4">
+                           {renderActions(job)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center h-24">No job cards found.</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Dialog open={isFormOpen} onOpenChange={(open) => {if(!open) closeAllDialogs()}}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
-          <DialogHeader className="p-6 pb-0">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-4 sm:p-6 pb-0">
             <DialogTitle>{selectedJob ? 'Edit Job Card' : 'Add New Job Card'}</DialogTitle>
-            <DialogDescription>
-              {selectedJob ? 'Update the details of this service job.' : 'Fill out the form to create a new job card.'}
+            <DialogDescription className="text-xs">
+              {selectedJob ? 'Update service details.' : 'Fill out the form.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-grow overflow-y-auto px-6">
+          <div className="flex-grow overflow-y-auto px-4 sm:px-6">
             <JobCardForm 
               onSubmit={handleFormSubmit}
               onCancel={closeAllDialogs}
@@ -233,28 +237,28 @@ export default function JobCardsPage() {
               employees={employees || []}
             />
           </div>
-          <DialogFooter className="p-6 pt-4 border-t">
-              <Button variant="outline" type="button" onClick={closeAllDialogs}>
+          <DialogFooter className="p-4 sm:p-6 pt-4 border-t flex gap-2">
+              <Button variant="outline" type="button" onClick={closeAllDialogs} className="h-9">
                 Cancel
               </Button>
-              <Button type="submit" form="job-card-form">
-                {selectedJob ? 'Update Job Card' : 'Save Job Card'}
+              <Button type="submit" form="job-card-form" className="h-9">
+                {selectedJob ? 'Update' : 'Save'}
               </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
       <AlertDialog open={!!jobToDelete} onOpenChange={(open) => { if (!open) closeAllDialogs(); }}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md p-4 sm:p-6">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the job card: <span className="font-medium">{jobToDelete?.jobTitle}</span>.
+            <AlertDialogDescription className="text-xs">
+              Delete job card: <span className="font-medium">{jobToDelete?.jobTitle}</span>?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="h-9">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="h-9 bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

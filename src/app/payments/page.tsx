@@ -347,24 +347,24 @@ export default function PaymentsPage() {
   const getStatusBadge = (status: Omit<PaymentStatus, 'All'>) => {
     switch (status) {
       case 'Received':
-        return <Badge className="bg-green-600/80 dark:bg-green-500/80 text-white">Received</Badge>;
+        return <Badge className="bg-green-600/80 dark:bg-green-500/80 text-white text-[10px] sm:text-xs">Received</Badge>;
       case 'Partial':
-        return <Badge className="bg-yellow-500/80 dark:bg-yellow-600/80 text-white">Partial</Badge>;
+        return <Badge className="bg-yellow-500/80 dark:bg-yellow-600/80 text-white text-[10px] sm:text-xs">Partial</Badge>;
       case 'Pending':
-        return <Badge variant="destructive">Pending</Badge>;
+        return <Badge variant="destructive" className="text-[10px] sm:text-xs">Pending</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary" className="text-[10px] sm:text-xs">{status}</Badge>;
     }
   }
 
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-6">
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Enterprise)} className="space-y-6">
+      <div className="flex flex-col gap-4 sm:gap-6">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Enterprise)} className="space-y-4 sm:space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Payment Tracking & Reconciliation</CardTitle>
+              <CardTitle>Payment Tracking</CardTitle>
               <CardDescription>Monitor and manage invoice payments.</CardDescription>
               <TabsList className="grid w-full grid-cols-2 mt-4">
                   <TabsTrigger value="Vithal">Vithal Enterprises</TabsTrigger>
@@ -373,57 +373,57 @@ export default function PaymentsPage() {
             </CardHeader>
           </Card>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Total Billed</CardTitle>
+              <CardHeader className="pb-1 sm:pb-2">
+                <CardTitle className="text-[10px] sm:text-sm font-medium text-blue-700 dark:text-blue-300 uppercase">Total Billed</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{formatCurrency(summary.totalBilled)}</div>
+                <div className="text-xl sm:text-2xl font-bold text-blue-900 dark:text-blue-100">{formatCurrency(summary.totalBilled)}</div>
               </CardContent>
             </Card>
             <Card className="bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">Total Received</CardTitle>
+              <CardHeader className="pb-1 sm:pb-2">
+                <CardTitle className="text-[10px] sm:text-sm font-medium text-green-700 dark:text-green-300 uppercase">Total Received</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-900 dark:text-green-100">{formatCurrency(summary.totalPaid)}</div>
+                <div className="text-xl sm:text-2xl font-bold text-green-900 dark:text-green-100">{formatCurrency(summary.totalPaid)}</div>
               </CardContent>
             </Card>
             <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300">Total TDS</CardTitle>
+              <CardHeader className="pb-1 sm:pb-2">
+                <CardTitle className="text-[10px] sm:text-sm font-medium text-orange-700 dark:text-orange-300 uppercase">Total TDS</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">{formatCurrency(summary.totalTds)}</div>
+                <div className="text-xl sm:text-2xl font-bold text-orange-900 dark:text-orange-100">{formatCurrency(summary.totalTds)}</div>
               </CardContent>
             </Card>
             <Card className="bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300">Total Pending</CardTitle>
+              <CardHeader className="pb-1 sm:pb-2">
+                <CardTitle className="text-[10px] sm:text-sm font-medium text-red-700 dark:text-red-300 uppercase">Total Pending</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-900 dark:text-red-100">{formatCurrency(summary.totalPending)}</div>
+                <div className="text-xl sm:text-2xl font-bold text-red-900 dark:text-red-100">{formatCurrency(summary.totalPending)}</div>
               </CardContent>
             </Card>
           </div>
 
           <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full flex-wrap">
+            <CardHeader className="pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full flex-wrap">
                   <div className="relative flex-1 min-w-[200px]">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input 
                         placeholder="Search by Bill No. or Company..."
-                        className="pl-8 w-full"
+                        className="pl-8 w-full h-9"
                         value={searchFilter}
                         onChange={(e) => setSearchFilter(e.target.value)}
                     />
                   </div>
                    <Select value={yearFilter} onValueChange={setYearFilter}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue placeholder="Filter by Year" />
+                    <SelectTrigger className="w-full sm:w-[150px] h-9">
+                      <SelectValue placeholder="Year" />
                     </SelectTrigger>
                     <SelectContent>
                       {availableYears.map(year => (
@@ -432,8 +432,8 @@ export default function PaymentsPage() {
                     </SelectContent>
                   </Select>
                   <Select value={monthFilter} onValueChange={setMonthFilter} disabled={yearFilter === 'All'}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue placeholder="Filter by Month" />
+                    <SelectTrigger className="w-full sm:w-[150px] h-9">
+                      <SelectValue placeholder="Month" />
                     </SelectTrigger>
                     <SelectContent>
                       {availableMonths.map(month => (
@@ -444,8 +444,8 @@ export default function PaymentsPage() {
                     </SelectContent>
                   </Select>
                   <Select value={companyFilter} onValueChange={setCompanyFilter}>
-                    <SelectTrigger className="w-full sm:w-[200px]">
-                      <SelectValue placeholder="Filter by Company" />
+                    <SelectTrigger className="w-full sm:w-[180px] h-9">
+                      <SelectValue placeholder="Company" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="All">All Companies</SelectItem>
@@ -453,8 +453,8 @@ export default function PaymentsPage() {
                     </SelectContent>
                   </Select>
                   <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as PaymentStatus)}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue placeholder="Filter by Status" />
+                    <SelectTrigger className="w-full sm:w-[150px] h-9">
+                      <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="All">All Statuses</SelectItem>
@@ -463,127 +463,127 @@ export default function PaymentsPage() {
                       <SelectItem value="Pending">Pending</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button variant="ghost" onClick={clearFilters} className="w-full sm:w-auto">
+                  <Button variant="ghost" onClick={clearFilters} className="w-full sm:w-auto h-9">
                       <XCircle className="mr-2 h-4 w-4"/> Clear
                   </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-0 md:p-3 pt-0">
-               <div className="px-4 md:px-1 py-3 text-sm text-muted-foreground">
+               <div className="px-4 md:px-1 py-2 text-[10px] sm:text-sm text-muted-foreground">
                 {isLoading
                     ? 'Loading records...'
                     : `Showing ${filteredInvoices.length} of ${
                         processedInvoices.filter(inv => inv.enterprise === activeTab).length
-                        } invoices for ${activeTab} Enterprises.`}
+                        } invoices.`}
               </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-center">Bill No.</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead className="text-right">Total / Taxable</TableHead>
-                    <TableHead className="text-center w-28">TDS %</TableHead>
-                    <TableHead className="text-right">TDS Amount</TableHead>
-                    <TableHead className="text-right">Amount Received</TableHead>
-                    <TableHead className="text-right">Deducted</TableHead>
-                    <TableHead className="text-right">Balance</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-right w-[100px]"><span className="sr-only">Actions</span></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={10} className="h-24 text-center">Loading payments...</TableCell>
+                      <TableHead className="text-center">Bill No.</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead className="text-right">Total / Taxable</TableHead>
+                      <TableHead className="text-center w-20 sm:w-28">TDS %</TableHead>
+                      <TableHead className="text-right">TDS Amt</TableHead>
+                      <TableHead className="text-right">Received</TableHead>
+                      <TableHead className="text-right">Balance</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
+                      <TableHead className="text-right w-[80px] sm:w-[100px]"><span className="sr-only">Actions</span></TableHead>
                     </TableRow>
-                  ) : monthlyGroupedInvoices.length > 0 ? (
-                    monthlyGroupedInvoices.map(({ monthKey, monthLabel, invoices: monthInvoices }) => (
-                      <React.Fragment key={monthKey}>
-                        <TableRow className="border-b-0 hover:bg-transparent">
-                          <TableCell colSpan={10} className="pt-10 pb-1">
-                            <div className="relative">
-                                <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                                    <div className="w-full border-t" />
-                                </div>
-                                <div className="relative flex justify-center">
-                                    <span className="bg-background px-4 text-base font-bold uppercase tracking-wider text-muted-foreground">
-                                        {monthLabel}
-                                    </span>
-                                </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                        {monthInvoices.map((invoice) => (
-                           <TableRow key={invoice.id}>
-                            <TableCell className="font-medium text-center">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
-                            <TableCell>
-                              <div className="font-medium truncate max-w-[200px]">{invoice.companyName}</div>
-                              <div className="text-sm text-muted-foreground">{format(parseISO(invoice.billDate), 'dd-MMM-yyyy')}</div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="text-xs text-muted-foreground">{formatCurrency(invoice.taxableAmount)}</div>
-                              <div className="font-bold">{formatCurrency(invoice.grandTotal)}</div>
-                            </TableCell>
-                            <TableCell className="text-center p-1">
-                              <Input
-                                type="number"
-                                defaultValue={invoice.tdsPercentage || ''}
-                                onBlur={(e) => handleTdsUpdate(invoice.id, e.target.value)}
-                                className="h-8 w-16 text-center mx-auto"
-                                placeholder="%"
-                              />
-                            </TableCell>
-                            <TableCell className={cn("text-right font-medium text-red-600 dark:text-red-400", invoice.tdsAmount === 0 && "opacity-50")}>{formatCurrency(invoice.tdsAmount)}</TableCell>
-                            <TableCell className="text-right font-medium text-green-600 dark:text-green-400">{formatCurrency(invoice.totalPaid)}</TableCell>
-                            <TableCell className={cn("text-right font-medium text-red-600 dark:text-red-400", invoice.totalDeductions === 0 && "opacity-50")}>{formatCurrency(invoice.totalDeductions)}</TableCell>
-                            <TableCell className={cn("text-right font-bold text-orange-600 dark:text-orange-400", invoice.balance === 0 && "opacity-50")}>{formatCurrency(invoice.balance)}</TableCell>
-                            <TableCell className="text-center">{getStatusBadge(invoice.status)}</TableCell>
-                            <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                    <Button variant="outline" size="icon" onClick={() => handleOpenDetailsDialog(invoice)} className="h-8 w-8">
-                                        <Info className="h-4 w-4" />
-                                        <span className="sr-only">View Payment History</span>
-                                    </Button>
-                                    <Button variant="outline" size="icon" onClick={() => handleOpenPaymentDialog(invoice)} className="h-8 w-8">
-                                        <PlusCircle className="h-4 w-4" />
-                                        <span className="sr-only">Add Payment</span>
-                                    </Button>
-                                </div>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="h-24 text-center">Loading payments...</TableCell>
+                      </TableRow>
+                    ) : monthlyGroupedInvoices.length > 0 ? (
+                      monthlyGroupedInvoices.map(({ monthKey, monthLabel, invoices: monthInvoices }) => (
+                        <React.Fragment key={monthKey}>
+                          <TableRow className="border-b-0 hover:bg-transparent">
+                            <TableCell colSpan={9} className="pt-6 sm:pt-10 pb-1">
+                              <div className="relative">
+                                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                                      <div className="w-full border-t" />
+                                  </div>
+                                  <div className="relative flex justify-center">
+                                      <span className="bg-background px-3 sm:px-4 text-[10px] sm:text-base font-bold uppercase tracking-wider text-muted-foreground">
+                                          {monthLabel}
+                                      </span>
+                                  </div>
+                              </div>
                             </TableCell>
                           </TableRow>
-                        ))}
-                      </React.Fragment>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={10} className="h-24 text-center">No matching invoices found.</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                          {monthInvoices.map((invoice) => (
+                             <TableRow key={invoice.id}>
+                              <TableCell className="font-medium text-center p-2 text-xs sm:text-sm">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
+                              <TableCell className="p-2">
+                                <div className="font-medium truncate max-w-[120px] sm:max-w-[200px] text-xs sm:text-sm">{invoice.companyName}</div>
+                                <div className="text-[10px] text-muted-foreground">{format(parseISO(invoice.billDate), 'dd-MMM-yyyy')}</div>
+                              </TableCell>
+                              <TableCell className="text-right p-2 text-xs">
+                                <div className="text-[10px] text-muted-foreground">{formatCurrency(invoice.taxableAmount)}</div>
+                                <div className="font-bold">{formatCurrency(invoice.grandTotal)}</div>
+                              </TableCell>
+                              <TableCell className="text-center p-1">
+                                <Input
+                                  type="number"
+                                  defaultValue={invoice.tdsPercentage || ''}
+                                  onBlur={(e) => handleTdsUpdate(invoice.id, e.target.value)}
+                                  className="h-7 w-12 sm:w-16 text-center mx-auto text-xs"
+                                  placeholder="%"
+                                />
+                              </TableCell>
+                              <TableCell className={cn("text-right p-2 text-xs font-medium text-red-600 dark:text-red-400", invoice.tdsAmount === 0 && "opacity-50")}>{formatCurrency(invoice.tdsAmount)}</TableCell>
+                              <TableCell className="text-right p-2 text-xs font-medium text-green-600 dark:text-green-400">{formatCurrency(invoice.totalPaid)}</TableCell>
+                              <TableCell className={cn("text-right p-2 text-xs font-bold text-orange-600 dark:text-orange-400", invoice.balance === 0 && "opacity-50")}>{formatCurrency(invoice.balance)}</TableCell>
+                              <TableCell className="text-center p-2">{getStatusBadge(invoice.status)}</TableCell>
+                              <TableCell className="text-right p-2">
+                                  <div className="flex items-center justify-end gap-1 sm:gap-2">
+                                      <Button variant="outline" size="icon" onClick={() => handleOpenDetailsDialog(invoice)} className="h-7 w-7 sm:h-8 sm:w-8">
+                                          <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                          <span className="sr-only">View</span>
+                                      </Button>
+                                      <Button variant="outline" size="icon" onClick={() => handleOpenPaymentDialog(invoice)} className="h-7 w-7 sm:h-8 sm:w-8">
+                                          <PlusCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                          <span className="sr-only">Add</span>
+                                      </Button>
+                                  </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </React.Fragment>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={9} className="h-24 text-center">No matching invoices found.</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </Tabs>
         
         <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-            <DialogContent>
+            <DialogContent className="max-w-[95vw] sm:max-w-md p-4 sm:p-6">
                 <DialogHeader>
                     <DialogTitle>Record Payment</DialogTitle>
                     <DialogDescription>
-                        Record a payment for Bill No. {selectedInvoiceForPayment?.billNo} to {selectedInvoiceForPayment?.companyName}. <br/>
-                        <span className="font-bold">Amount Due: {formatCurrency(selectedInvoiceForPayment?.balance || 0)}</span>
+                        Bill No. {selectedInvoiceForPayment?.billNo} to {selectedInvoiceForPayment?.companyName}. <br/>
+                        <span className="font-bold">Pending: {formatCurrency(selectedInvoiceForPayment?.balance || 0)}</span>
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="paymentDate" className="text-right">Payment Date</Label>
-                        <Input id="paymentDate" type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="col-span-3" />
+                <div className="grid gap-3 sm:gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-3">
+                        <Label htmlFor="paymentDate" className="text-right text-xs">Date</Label>
+                        <Input id="paymentDate" type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="col-span-3 h-9 text-sm" />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="paymentMode" className="text-right">Payment Mode</Label>
+                    <div className="grid grid-cols-4 items-center gap-3">
+                        <Label htmlFor="paymentMode" className="text-right text-xs">Mode</Label>
                         <Select value={paymentMode} onValueChange={(value) => setPaymentMode(value as PaymentMode)}>
-                            <SelectTrigger className="col-span-3">
+                            <SelectTrigger className="col-span-3 h-9 text-sm">
                                 <SelectValue placeholder="Select mode" />
                             </SelectTrigger>
                             <SelectContent>
@@ -596,61 +596,57 @@ export default function PaymentsPage() {
                         </Select>
                     </div>
                     {paymentMode === 'CHEQUE' && (
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="chequeDetails" className="text-right">Cheque Details</Label>
-                            <Input id="chequeDetails" value={chequeDetails} onChange={(e) => setChequeDetails(e.target.value)} className="col-span-3" placeholder="Cheque no., date, bank" />
+                        <div className="grid grid-cols-4 items-center gap-3">
+                            <Label htmlFor="chequeDetails" className="text-right text-xs">Details</Label>
+                            <Input id="chequeDetails" value={chequeDetails} onChange={(e) => setChequeDetails(e.target.value)} className="col-span-3 h-9 text-sm" placeholder="No., bank" />
                         </div>
                     )}
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="receivedAmount" className="text-right">Amount Received</Label>
-                        <Input id="receivedAmount" value={receivedAmount} onChange={(e) => setReceivedAmount(e.target.value)} className="col-span-3" placeholder="e.g., 50000" />
+                    <div className="grid grid-cols-4 items-center gap-3">
+                        <Label htmlFor="receivedAmount" className="text-right text-xs">Amount</Label>
+                        <Input id="receivedAmount" value={receivedAmount} onChange={(e) => setReceivedAmount(e.target.value)} className="col-span-3 h-9 text-sm" placeholder="e.g., 50000" />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="otherDeductions" className="text-right">Other Deductions</Label>
-                        <Input id="otherDeductions" value={otherDeductions} onChange={(e) => setOtherDeductions(e.target.value)} className="col-span-3" placeholder="e.g., 20" />
+                    <div className="grid grid-cols-4 items-center gap-3">
+                        <Label htmlFor="otherDeductions" className="text-right text-xs">Deductions</Label>
+                        <Input id="otherDeductions" value={otherDeductions} onChange={(e) => setOtherDeductions(e.target.value)} className="col-span-3 h-9 text-sm" placeholder="e.g., 20" />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="notes" className="text-right">Notes</Label>
-                        <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="col-span-3" placeholder="Optional notes about the payment" />
+                    <div className="grid grid-cols-4 items-start gap-3">
+                        <Label htmlFor="notes" className="text-right text-xs mt-2">Notes</Label>
+                        <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="col-span-3 text-sm min-h-[60px]" placeholder="Optional notes" />
                     </div>
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleAddPayment}>Save Payment</Button>
+                <DialogFooter className="gap-2 sm:gap-0">
+                    <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)} className="h-9">Cancel</Button>
+                    <Button onClick={handleAddPayment} className="h-9">Save</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
 
         <Dialog open={isDetailsDialogOpen} onOpenChange={(open) => { if (!open) closeAllDialogs()}}>
-            <DialogContent className="sm:max-w-2xl">
+            <DialogContent className="max-w-[95vw] sm:max-w-2xl p-4 sm:p-6">
                 <DialogHeader>
                     <DialogTitle>Payment History</DialogTitle>
                     <DialogDescription>
-                        Detailed payment history for Bill No. {invoiceForDetails?.billNo}-{invoiceForDetails?.billNoSuffix || 'MHE'}.
+                        Bill No. {invoiceForDetails?.billNo}-{invoiceForDetails?.billNoSuffix || 'MHE'}.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4 max-h-[60vh] overflow-y-auto">
+                <div className="py-2 max-h-[50vh] overflow-y-auto">
                     {invoiceForDetails ? (
                         (() => {
                             const invoicePayments = payments?.filter(p => p.invoiceId === invoiceForDetails.id) || [];
                             const hasAdvance = invoiceForDetails.advanceReceived && invoiceForDetails.advanceReceived > 0;
                             
                             if (invoicePayments.length === 0 && !hasAdvance) {
-                                return <p className="text-sm text-muted-foreground text-center py-4">No payments recorded yet for this invoice.</p>;
+                                return <p className="text-xs sm:text-sm text-muted-foreground text-center py-8">No records found.</p>;
                             }
 
                             return (
-                                <div className="space-y-4">
+                                <div className="space-y-3 sm:space-y-4">
                                     {hasAdvance && (
                                         <div className="p-3 rounded-md border bg-muted/50 dark:bg-muted/20">
-                                            <h4 className="font-semibold mb-2">Advance Payment</h4>
-                                            <div className="flex justify-between items-center text-sm">
+                                            <h4 className="text-xs sm:text-sm font-semibold mb-1">Advance Payment</h4>
+                                            <div className="flex justify-between items-center text-xs">
                                                 <span className="text-muted-foreground">Amount:</span>
                                                 <span className="font-medium">{formatCurrency(invoiceForDetails.advanceReceived!)}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center text-sm">
-                                                <span className="text-muted-foreground">Note:</span>
-                                                <span className="font-medium">Received with invoice</span>
                                             </div>
                                         </div>
                                     )}
@@ -658,30 +654,23 @@ export default function PaymentsPage() {
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
-                                                    <TableHead>Date</TableHead>
-                                                    <TableHead>Mode</TableHead>
-                                                    <TableHead>Notes</TableHead>
-                                                    <TableHead className="text-right">Deductions</TableHead>
-                                                    <TableHead className="text-right">Amount</TableHead>
-                                                    <TableHead className="text-right">Actions</TableHead>
+                                                    <TableHead className="p-2 h-8 text-[10px] sm:text-xs">Date</TableHead>
+                                                    <TableHead className="p-2 h-8 text-[10px] sm:text-xs">Mode</TableHead>
+                                                    <TableHead className="p-2 h-8 text-right text-[10px] sm:text-xs">Amount</TableHead>
+                                                    <TableHead className="p-2 h-8 text-right text-[10px] sm:text-xs">Actions</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
                                                 {invoicePayments.map(payment => (
                                                     <TableRow key={payment.id}>
-                                                        <TableCell>{format(parseISO(payment.paymentDate), 'dd-MMM-yyyy')}</TableCell>
-                                                         <TableCell>
+                                                        <TableCell className="p-2 text-[10px] sm:text-xs">{format(parseISO(payment.paymentDate), 'dd-MMM-yy')}</TableCell>
+                                                         <TableCell className="p-2 text-[10px] sm:text-xs">
                                                             <div className="font-medium">{payment.paymentMode}</div>
-                                                            {payment.paymentMode === 'CHEQUE' && payment.chequeDetails && (
-                                                                <div className="text-xs text-muted-foreground">{payment.chequeDetails}</div>
-                                                            )}
                                                         </TableCell>
-                                                        <TableCell className="text-muted-foreground">{payment.notes || '-'}</TableCell>
-                                                        <TableCell className="text-right text-red-600 dark:text-red-400">{formatCurrency(payment.otherDeductions || 0)}</TableCell>
-                                                        <TableCell className="text-right font-medium text-green-600 dark:text-green-400">{formatCurrency(payment.receivedAmount)}</TableCell>
-                                                        <TableCell className="text-right">
-                                                            <Button variant="ghost" size="icon" onClick={() => setPaymentToDelete(payment)}>
-                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                        <TableCell className="p-2 text-right text-[10px] sm:text-xs font-medium text-green-600 dark:text-green-400">{formatCurrency(payment.receivedAmount)}</TableCell>
+                                                        <TableCell className="p-2 text-right">
+                                                            <Button variant="ghost" size="icon" onClick={() => setPaymentToDelete(payment)} className="h-6 w-6">
+                                                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                                             </Button>
                                                         </TableCell>
                                                     </TableRow>
@@ -693,26 +682,26 @@ export default function PaymentsPage() {
                             )
                         })()
                     ) : (
-                        <p>Loading details...</p>
+                        <p className="text-center py-4">Loading details...</p>
                     )}
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>Close</Button>
+                    <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)} className="h-9">Close</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
 
         <Dialog open={!!paymentToDelete} onOpenChange={(open) => { if (!open) setPaymentToDelete(null); }}>
-            <DialogContent>
+            <DialogContent className="max-w-[90vw] sm:max-w-md p-4">
                 <DialogHeader>
-                    <DialogTitle>Are you absolutely sure?</DialogTitle>
+                    <DialogTitle>Delete Payment?</DialogTitle>
                     <DialogDescription>
-                        This action cannot be undone. This will permanently delete this payment record.
+                        This action cannot be undone.
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setPaymentToDelete(null)}>Cancel</Button>
-                    <Button variant="destructive" onClick={handleDeletePayment}>Delete</Button>
+                <DialogFooter className="gap-2 sm:gap-0">
+                    <Button variant="outline" onClick={() => setPaymentToDelete(null)} className="h-9">Cancel</Button>
+                    <Button variant="destructive" onClick={handleDeletePayment} className="h-9">Delete</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
