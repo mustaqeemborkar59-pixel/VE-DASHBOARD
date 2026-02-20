@@ -17,7 +17,7 @@ const toWords = new ToWords({
 });
 
 /**
- * Renders a compact horizontal salary slip in Black and White.
+ * Renders a compact horizontal salary slip in Black and White with reduced font sizes.
  */
 const renderSingleSlip = (
     doc: jsPDF,
@@ -47,91 +47,92 @@ const renderSingleSlip = (
     
     // --- Header Section ---
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(16);
+    doc.setFontSize(14); // Reduced from 16
     doc.setFont('helvetica', 'bold');
-    doc.text(company.companyName.toUpperCase(), 105, yOffset + 15, { align: 'center' });
+    doc.text(company.companyName.toUpperCase(), 105, yOffset + 12, { align: 'center' });
     
-    doc.setFontSize(9);
+    doc.setFontSize(7); // Reduced from 9
     doc.setFont('helvetica', 'normal');
     const addressLines = company.address ? doc.splitTextToSize(company.address, 170) : [];
-    let currentY = yOffset + 21;
+    let currentY = yOffset + 17;
     addressLines.forEach((line: string) => {
         doc.text(line, 105, currentY, { align: 'center' });
-        currentY += 4;
+        currentY += 3.5;
     });
 
     if (company.gstin || company.pan) {
         const details = `${company.gstin ? `GSTIN: ${company.gstin}` : ''} ${company.pan ? ` | PAN: ${company.pan}` : ''}`;
         doc.text(details, 105, currentY, { align: 'center' });
-        currentY += 6;
+        currentY += 5;
     }
 
-    doc.setFontSize(12);
+    doc.setFontSize(10); // Reduced from 12
     doc.setFont('helvetica', 'bold');
     doc.text(`SALARY SLIP - ${monthDisplay}`, 105, currentY, { align: 'center' });
-    currentY += 10;
+    currentY += 8;
 
     // --- Employee Info Section (Two-Column Layout) ---
-    doc.setFontSize(10);
+    doc.setFontSize(8); // Reduced from 10
     
     // Left Column
     const leftX = 14;
     doc.setFont('helvetica', 'bold');
     doc.text("Name of Employee:", leftX, currentY);
     doc.setFont('helvetica', 'normal');
-    doc.text(employee.fullName, leftX + 40, currentY);
-    currentY += 6;
+    doc.text(employee.fullName, leftX + 35, currentY);
+    currentY += 5;
 
     doc.setFont('helvetica', 'bold');
-    doc.text("Bank A/C No:", leftX, currentY);
+    doc.text("Bank A/C No:", leftX, currentY); // Swapped
     doc.setFont('helvetica', 'normal');
-    doc.text(employee.bankAccountNumber || 'N/A', leftX + 40, currentY);
-    currentY += 6;
+    doc.text(employee.bankAccountNumber || 'N/A', leftX + 35, currentY);
+    currentY += 5;
 
     doc.setFont('helvetica', 'bold');
     doc.text("Bank Name:", leftX, currentY);
     doc.setFont('helvetica', 'normal');
-    doc.text(employee.bankName || 'N/A', leftX + 40, currentY);
-    currentY += 6;
+    doc.text(employee.bankName || 'N/A', leftX + 35, currentY);
+    currentY += 5;
 
     doc.setFont('helvetica', 'bold');
     doc.text("UAN Number:", leftX, currentY);
     doc.setFont('helvetica', 'normal');
-    doc.text(employee.uanNumber || 'N/A', leftX + 40, currentY);
+    doc.text(employee.uanNumber || 'N/A', leftX + 35, currentY);
 
     // Right Column
-    currentY -= 18;
+    currentY -= 15;
     const rightX = 110;
 
     doc.setFont('helvetica', 'bold');
     doc.text("Designation:", rightX, currentY);
     doc.setFont('helvetica', 'normal');
-    doc.text(employee.specialization || 'N/A', rightX + 45, currentY);
-    currentY += 6;
+    doc.text(employee.specialization || 'N/A', rightX + 40, currentY);
+    currentY += 5;
 
     doc.setFont('helvetica', 'bold');
     doc.text("ESIC NO:", rightX, currentY);
     doc.setFont('helvetica', 'normal');
-    doc.text(employee.esicNumber || 'N/A', rightX + 45, currentY);
-    currentY += 6;
+    doc.text(employee.esicNumber || 'N/A', rightX + 40, currentY);
+    currentY += 5;
 
     doc.setFont('helvetica', 'bold');
-    doc.text("PF No:", rightX, currentY);
+    doc.text("PF No:", rightX, currentY); // Swapped
     doc.setFont('helvetica', 'normal');
-    doc.text(employee.pfNumber || 'N/A', rightX + 45, currentY);
-    currentY += 6;
+    doc.text(employee.pfNumber || 'N/A', rightX + 40, currentY);
+    currentY += 5;
 
     doc.setFont('helvetica', 'bold');
     doc.text("Month:", rightX, currentY);
     doc.setFont('helvetica', 'normal');
-    doc.text(monthDisplay, rightX + 45, currentY);
+    doc.text(monthDisplay, rightX + 40, currentY);
 
     currentY += 10;
 
-    // --- Earnings Table (Horizontal Strip) ---
-    doc.setFontSize(10);
+    // --- Earnings Header with Border ---
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text("EARNINGS", 14, currentY);
+    doc.rect(14, currentY - 4, 30, 6);
+    doc.text("EARNINGS", 16, currentY);
     currentY += 2;
     
     autoTable(doc, {
@@ -146,10 +147,10 @@ const renderSingleSlip = (
         ]],
         theme: 'grid',
         styles: { 
-            cellPadding: 1.5, 
-            fontSize: 10, 
+            cellPadding: 1.2, 
+            fontSize: 8, 
             halign: 'center', 
-            minCellHeight: 6, 
+            minCellHeight: 5, 
             textColor: [0, 0, 0],
             font: 'helvetica'
         },
@@ -161,11 +162,12 @@ const renderSingleSlip = (
         }
     });
 
-    // --- Deductions Table (Horizontal Strip) ---
-    currentY = (doc as any).lastAutoTable.finalY + 5;
-    doc.setFontSize(10);
+    // --- Deductions Header with Border ---
+    currentY = (doc as any).lastAutoTable.finalY + 6;
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text("DEDUCTIONS", 14, currentY);
+    doc.rect(14, currentY - 4, 30, 6);
+    doc.text("DEDUCTIONS", 16, currentY);
     currentY += 2;
 
     autoTable(doc, {
@@ -181,10 +183,10 @@ const renderSingleSlip = (
         ]],
         theme: 'grid',
         styles: { 
-            cellPadding: 1.5, 
-            fontSize: 10, 
+            cellPadding: 1.2, 
+            fontSize: 8, 
             halign: 'center', 
-            minCellHeight: 6, 
+            minCellHeight: 5, 
             textColor: [0, 0, 0],
             font: 'helvetica'
         },
@@ -200,30 +202,30 @@ const renderSingleSlip = (
     currentY = (doc as any).lastAutoTable.finalY + 8;
     
     doc.setDrawColor(0, 0, 0);
-    doc.rect(14, currentY, 182, 12, 'S');
-    doc.setFontSize(12);
+    doc.rect(14, currentY, 182, 10, 'S');
+    doc.setFontSize(13); // Reduced from 15 as requested (-2pt)
     doc.setFont('helvetica', 'bold');
     const formattedNetPay = salary.netSalary.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    doc.text(`NET PAYABLE SALARY: Rs. ${formattedNetPay}/-`, 105, currentY + 8, { align: 'center' });
+    doc.text(`NET PAYABLE SALARY: Rs. ${formattedNetPay}/-`, 105, currentY + 7, { align: 'center' });
 
-    currentY += 18;
-    doc.setFontSize(9);
+    currentY += 15;
+    doc.setFontSize(7.5);
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
 
     // --- Signature Section ---
-    const sigY = currentY + 25;
+    const sigY = currentY + 20;
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
+    doc.setFontSize(8);
     doc.text("________________________", 50, sigY, { align: 'center' });
-    doc.text("Employee Signature", 50, sigY + 5, { align: 'center' });
+    doc.text("Employee Signature", 50, sigY + 4, { align: 'center' });
 
     doc.text("________________________", 160, sigY, { align: 'center' });
-    doc.text("Authorized Signatory", 160, sigY + 5, { align: 'center' });
+    doc.text("Authorized Signatory", 160, sigY + 4, { align: 'center' });
     
-    doc.setFontSize(7);
+    doc.setFontSize(6);
     doc.setTextColor(100, 100, 100);
-    doc.text(`System Generated on ${format(new Date(), 'dd MMM yyyy, p')}`, 105, sigY + 12, { align: 'center' });
+    doc.text(`System Generated on ${format(new Date(), 'dd MMM yyyy, p')}`, 105, sigY + 10, { align: 'center' });
 };
 
 export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, company: CompanySettings) => {
