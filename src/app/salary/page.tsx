@@ -310,13 +310,13 @@ export default function SalaryPage() {
                 </Table>
               </div>
 
-              {/* Mobile List View - Reduced side padding */}
+              {/* Mobile List View - Optimized Padding */}
               <div className="md:hidden px-1 py-4 space-y-3">
                 {filteredSalaries.length > 0 ? (
                   filteredSalaries.map(salary => {
                     const employee = employees?.find(e => e.id === salary.employeeId);
                     return (
-                      <div key={salary.id} className="border rounded-xl p-4 bg-card shadow-sm space-y-3">
+                      <div key={salary.id} className="border rounded-xl p-3 bg-card shadow-sm space-y-3">
                         <div className="flex justify-between items-start">
                           <div>
                             <div className="font-bold text-sm">{employee?.fullName || 'Unknown'}</div>
@@ -331,7 +331,7 @@ export default function SalaryPage() {
                             {salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                           </div>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 px-2 text-[10px] text-red-600 border-red-200 hover:bg-red-500/10 hover:text-red-700">
+                            <Button variant="outline" size="sm" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 px-2 text-[10px] text-red-600 hover:bg-red-500/10 hover:text-red-700">
                               <FileText className="mr-1 h-3 w-3" /> PDF
                             </Button>
                             <Button variant="outline" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500 hover:bg-amber-500/10">
