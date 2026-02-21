@@ -185,9 +185,10 @@ const renderSingleSlip = (
             textColor: [0, 0, 0],
             font: 'helvetica',
             lineColor: [0, 0, 0],
-            lineWidth: 0.1
+            lineWidth: 0.1,
+            fillColor: false // Transparent background
         },
-        headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' }
+        headStyles: { fillColor: false, textColor: [0, 0, 0], fontStyle: 'bold' }
     });
 
     // --- Deductions Table ---
@@ -217,9 +218,10 @@ const renderSingleSlip = (
             textColor: [0, 0, 0],
             font: 'helvetica',
             lineColor: [0, 0, 0],
-            lineWidth: 0.1
+            lineWidth: 0.1,
+            fillColor: false // Transparent background
         },
-        headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' }
+        headStyles: { fillColor: false, textColor: [0, 0, 0], fontStyle: 'bold' }
     });
 
     // --- Final Summary ---
