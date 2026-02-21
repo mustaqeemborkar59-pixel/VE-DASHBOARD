@@ -266,11 +266,11 @@ export default function ForkliftsPage() {
   const getLocationIcon = (locationType: Forklift['locationType']) => {
     switch (locationType) {
       case 'Workshop':
-        return <Warehouse className="mr-2 h-3.5 w-3.5" />;
+        return <Warehouse className="mr-1.5 h-3 w-3" />;
       case 'On-Site':
-        return <ForkliftIcon className="mr-2 h-3.5 w-3.5" />;
+        return <ForkliftIcon className="mr-1.5 h-3 w-3" />;
       case 'Not Confirm':
-        return <AlertTriangle className="mr-2 h-3.5 w-3.5" />;
+        return <AlertTriangle className="mr-1.5 h-3 w-3" />;
       default:
         return null;
     }
@@ -492,7 +492,7 @@ export default function ForkliftsPage() {
                         <TableHead className="text-xs">Serial Number</TableHead>
                         <TableHead className="hidden md:table-cell text-xs">Make/Model</TableHead>
                         <TableHead className="hidden md:table-cell text-xs">Firm</TableHead>
-                        <TableHead className="text-xs">Location</TableHead>
+                        <TableHead className="text-xs w-[120px] sm:w-auto">Location</TableHead>
                         <TableHead className="w-[50px] text-right"><span className="sr-only">Actions</span></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -523,11 +523,19 @@ export default function ForkliftsPage() {
                                     ''
                                   )}
                                 </TableCell>
-                                <TableCell className="p-3">
-                                    <Badge variant={'outline'} className={cn('font-medium pointer-events-none text-[9px] sm:text-[10px] whitespace-nowrap', getLocationBadgeClass(forklift.locationType))}>
-                                      {getLocationIcon(forklift.locationType)}
-                                      <span className="truncate max-w-[80px] sm:max-w-none">{getLocationText(forklift)}</span>
-                                    </Badge>
+                                <TableCell className="p-2">
+                                    <div className="flex items-center">
+                                        <Badge 
+                                            variant={'outline'} 
+                                            className={cn(
+                                                'font-medium pointer-events-none text-[9px] sm:text-[10px] flex items-center max-w-[110px] sm:max-w-none rounded-md px-2 py-1', 
+                                                getLocationBadgeClass(forklift.locationType)
+                                            )}
+                                        >
+                                            {getLocationIcon(forklift.locationType)}
+                                            <span className="truncate">{getLocationText(forklift)}</span>
+                                        </Badge>
+                                    </div>
                                 </TableCell>
                                 <TableCell className="text-right p-3">
                                     {renderActions(forklift)}
