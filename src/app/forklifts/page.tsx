@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Forklift, JobCard, Company } from "@/lib/data";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle, Share2, MapPin } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle, Share2, MapPin, CalendarDays, Zap, Ruler, Hash } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy, deleteField } from "firebase/firestore";
 import { useState, useMemo, Fragment, useCallback } from "react";
@@ -271,7 +271,7 @@ export default function ForkliftsPage() {
     try {
       const blob = await toBlob(node, { 
         backgroundColor: '#FFFFFF',
-        pixelRatio: 3, // Increased for ultra-sharp text
+        pixelRatio: 3, 
         width: 600,
         style: {
           display: 'block'
@@ -286,7 +286,7 @@ export default function ForkliftsPage() {
         await navigator.share({
           files: [file],
           title: `Forklift Details: ${forklift.serialNumber}`,
-          text: `VE Dashboard - Details for ${forklift.make} ${forklift.model}`
+          text: `Details for ${forklift.make} ${forklift.model} - Shared via VE Dashboard`
         });
       } else {
         const link = document.createElement('a');
@@ -709,7 +709,7 @@ export default function ForkliftsPage() {
           </CardContent>
         </Card>
 
-        {/* Professional Share Image Template - optimized for high-contrast output */}
+        {/* Professional Share Image Template - updated with requested fields */}
         <div className="fixed -left-[9999px] top-0 pointer-events-none" aria-hidden="true">
             {forklifts?.map(f => (
                 <div 
@@ -737,9 +737,9 @@ export default function ForkliftsPage() {
                         )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-x-10 gap-y-8">
+                    <div className="grid grid-cols-2 gap-x-10 gap-y-10">
                         <div className="space-y-1.5">
-                            <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em]">Serial Number</Label>
+                            <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] flex items-center gap-1.5"><Hash className="h-3 w-3"/> Serial Number</Label>
                             <p className="text-3xl font-black text-slate-900 leading-none">{f.serialNumber}</p>
                         </div>
                         <div className="space-y-1.5">
@@ -755,28 +755,43 @@ export default function ForkliftsPage() {
                                 </div>
                             </div>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em]">Make / Model</Label>
-                            <p className="text-lg font-bold text-slate-800">{f.make} {f.model}</p>
+                        
+                        <div className="col-span-2 grid grid-cols-2 gap-x-10 gap-y-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] uppercase font-black text-slate-400 tracking-wider">MFG Year</Label>
+                                <p className="text-lg font-bold text-slate-900">{f.year || '-'}</p>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Firm</Label>
+                                <p className="text-lg font-bold text-slate-900">{f.firm || '-'}</p>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] uppercase font-black text-slate-400 tracking-wider flex items-center gap-1"><CalendarDays className="h-3 w-3"/> Location Set On</Label>
+                                <p className="text-lg font-bold text-slate-900">{f.locationAssignmentDate ? format(parseISO(f.locationAssignmentDate), 'dd MMM yyyy') : '-'}</p>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] uppercase font-black text-slate-400 tracking-wider">PO/PI No.</Label>
+                                <p className="text-lg font-bold text-slate-900">{f.poPiNumber || 'N/A'}</p>
+                            </div>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em]">Manufacturing Year</Label>
-                            <p className="text-lg font-bold text-slate-800">{f.year || 'N/A'}</p>
-                        </div>
-                    </div>
 
-                    <div className="grid grid-cols-3 gap-4 mt-10 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                        <div className="space-y-1.5 text-center border-r border-slate-200">
-                            <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Capacity</Label>
-                            <p className="text-sm font-black text-slate-900">{f.capacity || '-'}</p>
-                        </div>
-                        <div className="space-y-1.5 text-center border-r border-slate-200">
-                            <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Equipment</Label>
-                            <p className="text-sm font-black text-slate-900">{f.equipmentType || '-'}</p>
-                        </div>
-                        <div className="space-y-1.5 text-center">
-                            <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Voltage</Label>
-                            <p className="text-sm font-black text-slate-900">{f.voltage || '-'}</p>
+                        <div className="col-span-2 grid grid-cols-4 gap-4">
+                            <div className="space-y-1.5 text-center border-r border-slate-100">
+                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Capacity</Label>
+                                <p className="text-sm font-black text-slate-900">{f.capacity || '-'}</p>
+                            </div>
+                            <div className="space-y-1.5 text-center border-r border-slate-100">
+                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Type</Label>
+                                <p className="text-sm font-black text-slate-900">{f.equipmentType || '-'}</p>
+                            </div>
+                            <div className="space-y-1.5 text-center border-r border-slate-100">
+                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider flex items-center justify-center gap-1"><Zap className="h-2.5 w-2.5"/> Voltage</Label>
+                                <p className="text-sm font-black text-slate-900">{f.voltage || '-'}</p>
+                            </div>
+                            <div className="space-y-1.5 text-center">
+                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider flex items-center justify-center gap-1"><Ruler className="h-2.5 w-2.5"/> Mast Height</Label>
+                                <p className="text-sm font-black text-slate-900">{f.mastHeight || '-'}</p>
+                            </div>
                         </div>
                     </div>
 
@@ -807,7 +822,7 @@ export default function ForkliftsPage() {
                     )}
 
                     <div className="mt-10 pt-6 border-t border-slate-100 flex justify-between items-center italic text-[10px] text-slate-400">
-                        <span>Generated via VE Dashboard Workshop Management</span>
+                        <span>Generated via VE Dashboard</span>
                         <span className="font-medium">{format(new Date(), 'dd MMM yyyy, p')}</span>
                     </div>
                 </div>
