@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Forklift, JobCard, Company } from "@/lib/data";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle, Share2, Printer, MapPin } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy, deleteField } from "firebase/firestore";
 import { useState, useMemo, Fragment, useCallback } from "react";
@@ -58,6 +58,7 @@ import AppLayout from "@/components/app-layout";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { toPng, toBlob } from 'html-to-image';
 
 
 type SearchField = 'All' | 'serialNumber' | 'make' | 'model' | 'siteCompany' | 'siteArea';
@@ -85,6 +86,7 @@ export default function ForkliftsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchField, setSearchField] = useState<SearchField>('All');
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [isSharing, setIsSharing] = useState<string | null>(null);
 
   const forkliftsQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'forklifts'), orderBy('srNumber', 'asc')) : null, [firestore, user]);
   const activeJobCardsQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'jobCards'), where('status', 'in', ['Pending', 'Assigned', 'In Progress'])) : null, [firestore, user]);
@@ -260,6 +262,46 @@ export default function ForkliftsPage() {
   const toggleRow = (id: string) => {
     setExpandedRow(expandedRow === id ? null : id);
   };
+
+  const handleShare = async (forklift: Forklift) => {
+    const node = document.getElementById(`share-card-${forklift.id}`);
+    if (!node) return;
+
+    setIsSharing(forklift.id);
+    try {
+      const blob = await toBlob(node, { 
+        backgroundColor: 'white',
+        pixelRatio: 2,
+        width: 600,
+        style: {
+          display: 'block'
+        }
+      });
+      
+      if (!blob) throw new Error("Failed to generate image");
+
+      const file = new File([blob], `forklift-${forklift.serialNumber}.png`, { type: 'image/png' });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Forklift Details: ${forklift.serialNumber}`,
+          text: `VE Dashboard - Details for ${forklift.make} ${forklift.model}`
+        });
+      } else {
+        const link = document.createElement('a');
+        link.download = `forklift-${forklift.serialNumber}.png`;
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        toast({ title: "Image Generated", description: "Image downloaded. You can now send it manually." });
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      toast({ variant: 'destructive', title: "Share Error", description: "Failed to create shareable image." });
+    } finally {
+      setIsSharing(null);
+    }
+  };
   
   const cardClassName = "border-0 bg-gradient-to-br shadow-lg transition-transform hover:scale-[1.02] cursor-pointer";
   
@@ -332,6 +374,10 @@ export default function ForkliftsPage() {
               </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-40" align="end" onMouseLeave={(e) => (e.currentTarget as HTMLElement).blur()}>
+              <DropdownMenuItem onSelect={() => handleShare(forklift)} disabled={isSharing === forklift.id}>
+                  <Share2 className="mr-2 h-4 w-4" />
+                  {isSharing === forklift.id ? 'Generating...' : 'Share Card'}
+              </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => openAddEditDialog(forklift)}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
@@ -545,6 +591,18 @@ export default function ForkliftsPage() {
                                 <TableRow className="hover:bg-transparent">
                                     <TableCell colSpan={8} className="p-0 border-b bg-muted/10">
                                         <div className="p-4 space-y-4">
+                                          <div className="flex justify-end gap-2">
+                                              <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                className="h-8 text-[10px] sm:text-xs" 
+                                                onClick={(e) => { e.stopPropagation(); handleShare(forklift); }}
+                                                disabled={isSharing === forklift.id}
+                                              >
+                                                  <Share2 className="mr-1.5 h-3.5 w-3.5" />
+                                                  {isSharing === forklift.id ? 'Generating...' : 'Share Details'}
+                                              </Button>
+                                          </div>
                                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             <div className="space-y-1">
                                               <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">MFG Year</Label>
@@ -650,6 +708,103 @@ export default function ForkliftsPage() {
           )}
           </CardContent>
         </Card>
+
+        {/* Hidden area for generating share images */}
+        <div className="fixed -left-[9999px] top-0 pointer-events-none" aria-hidden="true">
+            {forklifts?.map(f => (
+                <div 
+                  key={`share-card-${f.id}`} 
+                  id={`share-card-${f.id}`} 
+                  className="bg-white p-8 w-[600px] border-2 border-primary rounded-2xl shadow-none overflow-hidden text-black"
+                >
+                    <div className="flex items-center justify-between mb-6 border-b border-primary/20 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-primary/10 p-2 rounded-lg">
+                                <ForkliftIcon className="h-8 w-8 text-primary" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-black text-primary uppercase tracking-tight">Forklift Details</h2>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">VE Dashboard Fleet Management</p>
+                            </div>
+                        </div>
+                        {f.firm && (
+                            <Badge variant="outline" className={cn("text-xs px-3 py-1 border-2", getFirmBadgeClass(f.firm))}>
+                                {f.firm} Enterprises
+                            </Badge>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                        <div className="space-y-1">
+                            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Serial Number</Label>
+                            <p className="text-2xl font-black text-foreground leading-none">{f.serialNumber}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Make / Model</Label>
+                            <p className="text-base font-bold text-foreground">{f.make} {f.model}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Current Status</Label>
+                            <div className="flex items-center mt-1">
+                                <Badge variant="outline" className={cn("text-[10px] font-bold py-1 px-3", getLocationBadgeClass(f.locationType))}>
+                                    {getLocationText(f).toUpperCase()}
+                                </Badge>
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">MFG Year</Label>
+                            <p className="text-base font-bold text-foreground">{f.year || 'N/A'}</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-dashed border-border">
+                        <div className="space-y-1 text-center border-r border-border">
+                            <Label className="text-[9px] uppercase font-bold text-muted-foreground">Capacity</Label>
+                            <p className="text-xs font-black">{f.capacity || '-'}</p>
+                        </div>
+                        <div className="space-y-1 text-center border-r border-border">
+                            <Label className="text-[9px] uppercase font-bold text-muted-foreground">Type</Label>
+                            <p className="text-xs font-black">{f.equipmentType || '-'}</p>
+                        </div>
+                        <div className="space-y-1 text-center">
+                            <Label className="text-[9px] uppercase font-bold text-muted-foreground">Voltage</Label>
+                            <p className="text-xs font-black">{f.voltage || '-'}</p>
+                        </div>
+                    </div>
+
+                    {f.locationType === 'On-Site' && (
+                        <div className="mt-8 p-4 bg-muted/30 rounded-xl border border-border">
+                            <h4 className="text-[10px] font-black text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <MapPin className="h-3 w-3" /> Deployed Site Info
+                            </h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-0.5">
+                                    <Label className="text-[9px] font-bold text-muted-foreground">Company</Label>
+                                    <p className="text-xs font-bold truncate">{f.siteCompany}</p>
+                                </div>
+                                <div className="space-y-0.5">
+                                    <Label className="text-[9px] font-bold text-muted-foreground">Area</Label>
+                                    <p className="text-xs font-bold">{f.siteArea || '-'}</p>
+                                </div>
+                                <div className="space-y-0.5">
+                                    <Label className="text-[9px] font-bold text-muted-foreground">Contact</Label>
+                                    <p className="text-xs font-bold truncate">{f.siteContactPerson}</p>
+                                </div>
+                                <div className="space-y-0.5">
+                                    <Label className="text-[9px] font-bold text-muted-foreground">Mobile</Label>
+                                    <p className="text-xs font-bold">{f.siteContactNumber}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mt-8 pt-4 border-t border-primary/10 flex justify-between items-center italic text-[9px] text-muted-foreground">
+                        <span>Generated via VE Dashboard Workshop Management</span>
+                        <span>{format(new Date(), 'dd MMM yyyy, p')}</span>
+                    </div>
+                </div>
+            ))}
+        </div>
 
         <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
           <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] flex flex-col p-0 rounded-xl overflow-hidden border-none shadow-2xl">
