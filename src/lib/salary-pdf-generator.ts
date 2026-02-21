@@ -23,7 +23,10 @@ const loadImage = (url: string): Promise<HTMLImageElement> => {
         const img = new Image();
         img.crossOrigin = 'Anonymous';
         img.onload = () => resolve(img);
-        img.onerror = reject;
+        img.onerror = (err) => {
+            console.error("Image load error for " + url, err);
+            reject(err);
+        };
         img.src = url;
     });
 };
@@ -102,13 +105,12 @@ const renderSingleSlip = (
     const leftX = 14;
     const rightX = 110;
     
-    // Left Column
+    // Order: LEFT (Name, Bank, A/C, UAN) | RIGHT (Month, Designation, ESIC, PF)
     doc.setFont('helvetica', 'bold');
     doc.text("Name of Employee:", leftX, currentY);
     doc.setFont('helvetica', 'normal');
     doc.text(employee.fullName, leftX + 35, currentY);
     
-    // Right Column
     doc.setFont('helvetica', 'bold');
     doc.text("Month:", rightX, currentY);
     doc.setFont('helvetica', 'normal');
@@ -116,13 +118,11 @@ const renderSingleSlip = (
     
     currentY += 5;
 
-    // Left Column
     doc.setFont('helvetica', 'bold');
     doc.text("Bank Name:", leftX, currentY);
     doc.setFont('helvetica', 'normal');
     doc.text(employee.bankName || 'N/A', leftX + 35, currentY);
     
-    // Right Column
     doc.setFont('helvetica', 'bold');
     doc.text("Designation:", rightX, currentY);
     doc.setFont('helvetica', 'normal');
@@ -130,13 +130,11 @@ const renderSingleSlip = (
     
     currentY += 5;
 
-    // Left Column
     doc.setFont('helvetica', 'bold');
     doc.text("Bank A/C No:", leftX, currentY); 
     doc.setFont('helvetica', 'normal');
     doc.text(employee.bankAccountNumber || 'N/A', leftX + 35, currentY);
     
-    // Right Column
     doc.setFont('helvetica', 'bold');
     doc.text("ESIC NO:", rightX, currentY);
     doc.setFont('helvetica', 'normal');
@@ -144,13 +142,11 @@ const renderSingleSlip = (
     
     currentY += 5;
 
-    // Left Column
     doc.setFont('helvetica', 'bold');
     doc.text("UAN Number:", leftX, currentY);
     doc.setFont('helvetica', 'normal');
     doc.text(employee.uanNumber || 'N/A', leftX + 35, currentY);
     
-    // Right Column
     doc.setFont('helvetica', 'bold');
     doc.text("PF No:", rightX, currentY); 
     doc.setFont('helvetica', 'normal');
@@ -222,19 +218,20 @@ const renderSingleSlip = (
         headStyles: { fillColor: false, textColor: [0, 0, 0], fontStyle: 'bold' }
     });
 
-    // --- Final Summary ---
-    currentY = (doc as any).lastAutoTable.finalY + 4;
+    // --- Final Summary Section with Space ---
+    currentY = (doc as any).lastAutoTable.finalY + 12; // Increased gap from table
     const formattedNetPay = salary.netSalary.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text(`NET PAYABLE SALARY: Rs. ${formattedNetPay}/-`, 14, currentY + 4);
+    doc.text(`NET PAYABLE SALARY: Rs. ${formattedNetPay}/-`, 14, currentY);
 
-    currentY += 8;
+    currentY += 7; // Gap between salary and words
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
 
+    // --- Footer Notes ---
     const sigY = currentY + 15;
     doc.setFontSize(7);
     doc.setFont('helvetica', 'italic');
