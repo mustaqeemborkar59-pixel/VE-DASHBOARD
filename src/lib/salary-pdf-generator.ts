@@ -45,16 +45,14 @@ const renderSingleSlip = (
     const grossEarnings = (salary.baseSalary || 0) + (salary.da || 0) + (salary.hra || 0) + (salary.ot || 0);
     const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.lwf || 0) + (salary.advance || 0);
 
-    // --- Background Watermark Image (Rendered with 15% transparency) ---
+    // --- Background Watermark Image (Rendered with 10% transparency) ---
     // Positioned within the upper 50% area of the A4 page
     if (logoImg) {
         doc.saveGraphicsState();
-        // Use GState for native PDF transparency
-        const gState = new (doc as any).GState({ opacity: 0.15 });
+        // Use GState for native PDF transparency - Set to 0.10 (10%)
+        const gState = new (doc as any).GState({ opacity: 0.10 });
         doc.setGState(gState);
         
-        // Centering the logo horizontally on A4 (210mm)
-        // Positioning it in the upper half
         const imgWidth = 120;
         const imgHeight = 120;
         const x = (210 - imgWidth) / 2;
@@ -110,7 +108,7 @@ const renderSingleSlip = (
     doc.setFont('helvetica', 'normal');
     doc.text(employee.fullName, leftX + 35, currentY);
     
-    // Right Column (aligned with left)
+    // Right Column
     doc.setFont('helvetica', 'bold');
     doc.text("Month:", rightX, currentY);
     doc.setFont('helvetica', 'normal');
@@ -160,7 +158,7 @@ const renderSingleSlip = (
 
     currentY += 10;
 
-    // --- Earnings Table ---
+    // --- Earnings Table (Transparent Background) ---
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.text("EARNINGS", 14, currentY);
@@ -191,7 +189,7 @@ const renderSingleSlip = (
         headStyles: { fillColor: false, textColor: [0, 0, 0], fontStyle: 'bold' }
     });
 
-    // --- Deductions Table ---
+    // --- Deductions Table (Transparent Background) ---
     currentY = (doc as any).lastAutoTable.finalY + 6;
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
