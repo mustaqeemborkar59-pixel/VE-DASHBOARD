@@ -46,17 +46,19 @@ const renderSingleSlip = (
     const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.lwf || 0) + (salary.advance || 0);
 
     // --- Background Watermark Image (Rendered with 15% transparency) ---
+    // Positioned within the upper 50% area of the A4 page
     if (logoImg) {
         doc.saveGraphicsState();
         // Use GState for native PDF transparency
         const gState = new (doc as any).GState({ opacity: 0.15 });
         doc.setGState(gState);
         
-        // Centering the logo on A4 (210mm x 297mm)
+        // Centering the logo horizontally on A4 (210mm)
+        // Positioning it in the upper half
         const imgWidth = 120;
         const imgHeight = 120;
         const x = (210 - imgWidth) / 2;
-        const y = yOffset + 80; 
+        const y = yOffset + 15; 
         
         doc.addImage(logoImg, 'PNG', x, y, imgWidth, imgHeight);
         doc.restoreGraphicsState();
