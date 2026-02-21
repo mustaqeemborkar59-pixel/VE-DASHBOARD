@@ -45,10 +45,10 @@ const renderSingleSlip = (
     const grossEarnings = (salary.baseSalary || 0) + (salary.da || 0) + (salary.hra || 0) + (salary.ot || 0);
     const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.lwf || 0) + (salary.advance || 0);
 
-    // --- Background Watermark Image (Render first to be at back) ---
+    // --- Background Watermark Image (Rendered with 15% transparency) ---
     if (logoImg) {
         doc.saveGraphicsState();
-        // Set opacity to 15% (0.15)
+        // Use GState for native PDF transparency
         const gState = new (doc as any).GState({ opacity: 0.15 });
         doc.setGState(gState);
         
@@ -97,54 +97,64 @@ const renderSingleSlip = (
     doc.setLineDash([], 0);
     currentY += 8;
 
-    // --- Employee Info ---
+    // --- Employee Info (Two Columns) ---
     doc.setFontSize(8);
     const leftX = 14;
+    const rightX = 110;
+    
+    // Left Column
     doc.setFont('helvetica', 'bold');
     doc.text("Name of Employee:", leftX, currentY);
     doc.setFont('helvetica', 'normal');
     doc.text(employee.fullName, leftX + 35, currentY);
+    
+    // Right Column (aligned with left)
+    doc.setFont('helvetica', 'bold');
+    doc.text("Month:", rightX, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(monthDisplay, rightX + 40, currentY);
+    
     currentY += 5;
 
+    // Left Column
     doc.setFont('helvetica', 'bold');
     doc.text("Bank Name:", leftX, currentY);
     doc.setFont('helvetica', 'normal');
     doc.text(employee.bankName || 'N/A', leftX + 35, currentY);
+    
+    // Right Column
+    doc.setFont('helvetica', 'bold');
+    doc.text("Designation:", rightX, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(employee.specialization || 'N/A', rightX + 40, currentY);
+    
     currentY += 5;
 
+    // Left Column
     doc.setFont('helvetica', 'bold');
     doc.text("Bank A/C No:", leftX, currentY); 
     doc.setFont('helvetica', 'normal');
     doc.text(employee.bankAccountNumber || 'N/A', leftX + 35, currentY);
+    
+    // Right Column
+    doc.setFont('helvetica', 'bold');
+    doc.text("ESIC NO:", rightX, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(employee.esicNumber || 'N/A', rightX + 40, currentY);
+    
     currentY += 5;
 
+    // Left Column
     doc.setFont('helvetica', 'bold');
     doc.text("UAN Number:", leftX, currentY);
     doc.setFont('helvetica', 'normal');
     doc.text(employee.uanNumber || 'N/A', leftX + 35, currentY);
-
-    const infoSectionY = currentY - 15;
-    const rightX = 110;
-
-    doc.setFont('helvetica', 'bold');
-    doc.text("Month:", rightX, infoSectionY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(monthDisplay, rightX + 40, infoSectionY);
     
+    // Right Column
     doc.setFont('helvetica', 'bold');
-    doc.text("Designation:", rightX, infoSectionY + 5);
+    doc.text("PF No:", rightX, currentY); 
     doc.setFont('helvetica', 'normal');
-    doc.text(employee.specialization || 'N/A', rightX + 40, infoSectionY + 5);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text("ESIC NO:", rightX, infoSectionY + 10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(employee.esicNumber || 'N/A', rightX + 40, infoSectionY + 10);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text("PF No:", rightX, infoSectionY + 15); 
-    doc.setFont('helvetica', 'normal');
-    doc.text(employee.pfNumber || 'N/A', rightX + 40, infoSectionY + 15);
+    doc.text(employee.pfNumber || 'N/A', rightX + 40, currentY);
 
     currentY += 10;
 
@@ -239,7 +249,7 @@ export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, 
     
     let logoImg: HTMLImageElement | undefined;
     try {
-        // Logo must be placed in public/velogo.png
+        // Logo is stored in public/velogo.png
         logoImg = await loadImage('/velogo.png');
     } catch (e) {
         console.warn("Logo image could not be loaded for watermark. Ensure public/velogo.png exists.");
