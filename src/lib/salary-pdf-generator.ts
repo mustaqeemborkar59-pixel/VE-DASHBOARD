@@ -16,6 +16,20 @@ const toWords = new ToWords({
 });
 
 /**
+ * Helper to load an image from a URL and return a promise.
+ * Assumes the image is in the public folder (e.g., /velogo.png).
+ */
+const loadImage = (url: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
+    });
+};
+
+/**
  * Renders a clean, compact, Black and White horizontal salary slip.
  * Uses Helvetica for a modern sans-serif look.
  */
@@ -24,7 +38,8 @@ const renderSingleSlip = (
     yOffset: number,
     salary: Salary,
     employee: Employee,
-    company: CompanySettings
+    company: CompanySettings,
+    logoImg?: HTMLImageElement
 ) => {
     const netSalaryWords = toWords.convert(salary.netSalary).toUpperCase();
     const monthDisplay = format(parseISO(`${salary.month}-01`), 'MMMM yyyy').toUpperCase();
@@ -32,18 +47,22 @@ const renderSingleSlip = (
     const grossEarnings = (salary.baseSalary || 0) + (salary.da || 0) + (salary.hra || 0) + (salary.ot || 0);
     const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.lwf || 0) + (salary.advance || 0);
 
-    // --- Background Watermark "VE" ---
-    doc.saveGraphicsState();
-    const gState = new (doc as any).GState({ opacity: 0.03 });
-    doc.setGState(gState);
-    doc.setTextColor(150, 150, 150); 
-    doc.setFontSize(100);
-    doc.setFont('helvetica', 'bold');
-    doc.text("VE", 105, yOffset + 70, { 
-        align: 'center', 
-        angle: 45 
-    });
-    doc.restoreGraphicsState();
+    // --- Background Watermark Image ---
+    if (logoImg) {
+        doc.saveGraphicsState();
+        // Set opacity to 15% (0.15)
+        const gState = new (doc as any).GState({ opacity: 0.15 });
+        doc.setGState(gState);
+        
+        // Center the logo (A4 width is 210mm)
+        const imgWidth = 100;
+        const imgHeight = 100;
+        const x = (210 - imgWidth) / 2;
+        const y = yOffset + 60; // Adjusted for center positioning
+        
+        doc.addImage(logoImg, 'PNG', x, y, imgWidth, imgHeight);
+        doc.restoreGraphicsState();
+    }
     
     // --- Header Section ---
     doc.setTextColor(0, 0, 0);
@@ -234,7 +253,16 @@ const renderSingleSlip = (
 
 export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, company: CompanySettings) => {
     const doc = new jsPDF('p', 'mm', 'a4');
-    renderSingleSlip(doc, 0, salary, employee, company);
+    
+    let logoImg: HTMLImageElement | undefined;
+    try {
+        // Load the logo from the public folder
+        logoImg = await loadImage('/velogo.png');
+    } catch (e) {
+        console.warn("Logo image could not be loaded for watermark. Using text fallback.");
+    }
+
+    renderSingleSlip(doc, 0, salary, employee, company, logoImg);
     const fileName = `SalarySlip_${employee.fullName.replace(/\s+/g, '_')}_${salary.month}.pdf`;
     doc.save(fileName);
 };
