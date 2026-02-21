@@ -48,7 +48,7 @@ const renderSingleSlip = (
     // --- Background Watermark Image (Render first to be at back) ---
     if (logoImg) {
         doc.saveGraphicsState();
-        // Set opacity to 15%
+        // Set opacity to 15% (0.15)
         const gState = new (doc as any).GState({ opacity: 0.15 });
         doc.setGState(gState);
         
@@ -239,9 +239,10 @@ export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, 
     
     let logoImg: HTMLImageElement | undefined;
     try {
+        // Logo must be placed in public/velogo.png
         logoImg = await loadImage('/velogo.png');
     } catch (e) {
-        console.warn("Logo image could not be loaded for watermark.");
+        console.warn("Logo image could not be loaded for watermark. Ensure public/velogo.png exists.");
     }
 
     renderSingleSlip(doc, 0, salary, employee, company, logoImg);
