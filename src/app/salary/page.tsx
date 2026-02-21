@@ -310,8 +310,8 @@ export default function SalaryPage() {
                 </Table>
               </div>
 
-              {/* Mobile List View */}
-              <div className="md:hidden p-4 space-y-3">
+              {/* Mobile List View - Reduced side padding */}
+              <div className="md:hidden px-1 py-4 space-y-3">
                 {filteredSalaries.length > 0 ? (
                   filteredSalaries.map(salary => {
                     const employee = employees?.find(e => e.id === salary.employeeId);
