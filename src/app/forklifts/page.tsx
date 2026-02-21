@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Forklift, JobCard, Company } from "@/lib/data";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle, Share2, Printer, MapPin } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle, Share2, MapPin } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy, deleteField } from "firebase/firestore";
 import { useState, useMemo, Fragment, useCallback } from "react";
@@ -58,7 +58,7 @@ import AppLayout from "@/components/app-layout";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
-import { toPng, toBlob } from 'html-to-image';
+import { toBlob } from 'html-to-image';
 
 
 type SearchField = 'All' | 'serialNumber' | 'make' | 'model' | 'siteCompany' | 'siteArea';
@@ -270,8 +270,8 @@ export default function ForkliftsPage() {
     setIsSharing(forklift.id);
     try {
       const blob = await toBlob(node, { 
-        backgroundColor: 'white',
-        pixelRatio: 2,
+        backgroundColor: '#FFFFFF',
+        pixelRatio: 3, // Increased for ultra-sharp text
         width: 600,
         style: {
           display: 'block'
@@ -709,98 +709,106 @@ export default function ForkliftsPage() {
           </CardContent>
         </Card>
 
-        {/* Hidden area for generating share images */}
+        {/* Professional Share Image Template - optimized for high-contrast output */}
         <div className="fixed -left-[9999px] top-0 pointer-events-none" aria-hidden="true">
             {forklifts?.map(f => (
                 <div 
                   key={`share-card-${f.id}`} 
                   id={`share-card-${f.id}`} 
-                  className="bg-white p-8 w-[600px] border-2 border-primary rounded-2xl shadow-none overflow-hidden text-black"
+                  className="bg-white p-8 w-[600px] border-4 border-[#10b981] rounded-2xl shadow-none overflow-hidden text-black font-sans"
                 >
-                    <div className="flex items-center justify-between mb-6 border-b border-primary/20 pb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-primary/10 p-2 rounded-lg">
-                                <ForkliftIcon className="h-8 w-8 text-primary" />
+                    <div className="flex items-center justify-between mb-8 border-b-2 border-slate-100 pb-6">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-[#10b981]/10 p-3 rounded-xl">
+                                <ForkliftIcon className="h-10 w-10 text-[#10b981]" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-black text-primary uppercase tracking-tight">Forklift Details</h2>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">VE Dashboard Fleet Management</p>
+                                <h2 className="text-2xl font-black text-[#10b981] uppercase tracking-tight leading-none">Forklift Details</h2>
+                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">Fleet Management System</p>
                             </div>
                         </div>
                         {f.firm && (
-                            <Badge variant="outline" className={cn("text-xs px-3 py-1 border-2", getFirmBadgeClass(f.firm))}>
+                            <div className={cn(
+                                "px-4 py-1.5 rounded-lg border-2 text-xs font-black uppercase tracking-wider",
+                                f.firm === 'Vithal' ? "border-red-500 text-red-600 bg-red-50" : "border-blue-600 text-blue-700 bg-blue-50"
+                            )}>
                                 {f.firm} Enterprises
-                            </Badge>
+                            </div>
                         )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-                        <div className="space-y-1">
-                            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Serial Number</Label>
-                            <p className="text-2xl font-black text-foreground leading-none">{f.serialNumber}</p>
+                    <div className="grid grid-cols-2 gap-x-10 gap-y-8">
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em]">Serial Number</Label>
+                            <p className="text-3xl font-black text-slate-900 leading-none">{f.serialNumber}</p>
                         </div>
-                        <div className="space-y-1">
-                            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Make / Model</Label>
-                            <p className="text-base font-bold text-foreground">{f.make} {f.model}</p>
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Current Status</Label>
-                            <div className="flex items-center mt-1">
-                                <Badge variant="outline" className={cn("text-[10px] font-bold py-1 px-3", getLocationBadgeClass(f.locationType))}>
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em]">Current Status</Label>
+                            <div className="flex items-center">
+                                <div className={cn(
+                                    "text-[11px] font-black py-1.5 px-4 rounded-full border-2",
+                                    f.locationType === 'Workshop' ? "border-green-500 text-green-700 bg-green-50" : 
+                                    f.locationType === 'On-Site' ? "border-amber-500 text-amber-700 bg-amber-50" : 
+                                    "border-red-500 text-red-700 bg-red-50"
+                                )}>
                                     {getLocationText(f).toUpperCase()}
-                                </Badge>
+                                </div>
                             </div>
                         </div>
-                        <div className="space-y-1">
-                            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">MFG Year</Label>
-                            <p className="text-base font-bold text-foreground">{f.year || 'N/A'}</p>
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em]">Make / Model</Label>
+                            <p className="text-lg font-bold text-slate-800">{f.make} {f.model}</p>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em]">Manufacturing Year</Label>
+                            <p className="text-lg font-bold text-slate-800">{f.year || 'N/A'}</p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-dashed border-border">
-                        <div className="space-y-1 text-center border-r border-border">
-                            <Label className="text-[9px] uppercase font-bold text-muted-foreground">Capacity</Label>
-                            <p className="text-xs font-black">{f.capacity || '-'}</p>
+                    <div className="grid grid-cols-3 gap-4 mt-10 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div className="space-y-1.5 text-center border-r border-slate-200">
+                            <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Capacity</Label>
+                            <p className="text-sm font-black text-slate-900">{f.capacity || '-'}</p>
                         </div>
-                        <div className="space-y-1 text-center border-r border-border">
-                            <Label className="text-[9px] uppercase font-bold text-muted-foreground">Type</Label>
-                            <p className="text-xs font-black">{f.equipmentType || '-'}</p>
+                        <div className="space-y-1.5 text-center border-r border-slate-200">
+                            <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Equipment</Label>
+                            <p className="text-sm font-black text-slate-900">{f.equipmentType || '-'}</p>
                         </div>
-                        <div className="space-y-1 text-center">
-                            <Label className="text-[9px] uppercase font-bold text-muted-foreground">Voltage</Label>
-                            <p className="text-xs font-black">{f.voltage || '-'}</p>
+                        <div className="space-y-1.5 text-center">
+                            <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Voltage</Label>
+                            <p className="text-sm font-black text-slate-900">{f.voltage || '-'}</p>
                         </div>
                     </div>
 
                     {f.locationType === 'On-Site' && (
-                        <div className="mt-8 p-4 bg-muted/30 rounded-xl border border-border">
-                            <h4 className="text-[10px] font-black text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <MapPin className="h-3 w-3" /> Deployed Site Info
+                        <div className="mt-8 p-6 bg-white rounded-2xl border-2 border-slate-100">
+                            <h4 className="text-[11px] font-black text-[#10b981] uppercase tracking-[0.2em] mb-5 flex items-center gap-2.5">
+                                <MapPin className="h-4 w-4" /> Deployed Site Information
                             </h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-0.5">
-                                    <Label className="text-[9px] font-bold text-muted-foreground">Company</Label>
-                                    <p className="text-xs font-bold truncate">{f.siteCompany}</p>
+                            <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                                <div className="space-y-1">
+                                    <Label className="text-[9px] font-black text-slate-400 uppercase">Site / Company</Label>
+                                    <p className="text-sm font-bold text-slate-900 truncate">{f.siteCompany}</p>
                                 </div>
-                                <div className="space-y-0.5">
-                                    <Label className="text-[9px] font-bold text-muted-foreground">Area</Label>
-                                    <p className="text-xs font-bold">{f.siteArea || '-'}</p>
+                                <div className="space-y-1">
+                                    <Label className="text-[9px] font-black text-slate-400 uppercase">Geographical Area</Label>
+                                    <p className="text-sm font-bold text-slate-900">{f.siteArea || '-'}</p>
                                 </div>
-                                <div className="space-y-0.5">
-                                    <Label className="text-[9px] font-bold text-muted-foreground">Contact</Label>
-                                    <p className="text-xs font-bold truncate">{f.siteContactPerson}</p>
+                                <div className="space-y-1">
+                                    <Label className="text-[9px] font-black text-slate-400 uppercase">Contact Person</Label>
+                                    <p className="text-sm font-bold text-slate-900 truncate">{f.siteContactPerson || '-'}</p>
                                 </div>
-                                <div className="space-y-0.5">
-                                    <Label className="text-[9px] font-bold text-muted-foreground">Mobile</Label>
-                                    <p className="text-xs font-bold">{f.siteContactNumber}</p>
+                                <div className="space-y-1">
+                                    <Label className="text-[9px] font-black text-slate-400 uppercase">Mobile Number</Label>
+                                    <p className="text-sm font-bold text-slate-900">{f.siteContactNumber || '-'}</p>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    <div className="mt-8 pt-4 border-t border-primary/10 flex justify-between items-center italic text-[9px] text-muted-foreground">
+                    <div className="mt-10 pt-6 border-t border-slate-100 flex justify-between items-center italic text-[10px] text-slate-400">
                         <span>Generated via VE Dashboard Workshop Management</span>
-                        <span>{format(new Date(), 'dd MMM yyyy, p')}</span>
+                        <span className="font-medium">{format(new Date(), 'dd MMM yyyy, p')}</span>
                     </div>
                 </div>
             ))}
