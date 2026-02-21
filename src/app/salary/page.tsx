@@ -290,10 +290,10 @@ export default function SalaryPage() {
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right pr-6 space-x-1">
-                              <Button variant="ghost" title="Download PDF" size="icon" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 w-8 text-red-500 hover:bg-red-50">
+                              <Button variant="ghost" title="Download PDF" size="icon" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 w-8 text-red-500 hover:bg-red-500/10">
                                 <FileText className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500 hover:bg-amber-50">
+                              <Button variant="ghost" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500 hover:bg-amber-500/10">
                                 <Pencil className="h-4 w-4" />
                               </Button>
                               <Button variant="ghost" size="icon" onClick={() => setSalaryToDelete(salary)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
@@ -331,13 +331,13 @@ export default function SalaryPage() {
                             {salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                           </div>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 px-2 text-[10px] text-red-600 border-red-200">
+                            <Button variant="outline" size="sm" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 px-2 text-[10px] text-red-600 border-red-200 hover:bg-red-500/10 hover:text-red-700">
                               <FileText className="mr-1 h-3 w-3" /> PDF
                             </Button>
-                            <Button variant="outline" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500">
+                            <Button variant="outline" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500 hover:bg-amber-500/10">
                               <Pencil className="h-3 w-3" />
                             </Button>
-                            <Button variant="outline" size="icon" onClick={() => setSalaryToDelete(salary)} className="h-8 w-8 text-destructive">
+                            <Button variant="outline" size="icon" onClick={() => setSalaryToDelete(salary)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
