@@ -208,7 +208,15 @@ const InvoiceActions = ({ invoice, openPreviewDialog, handleDownloadWord, openFo
 }) => (
     <DropdownMenu>
         <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 p-0"
+                onPointerDown={(e) => {
+                    // Prevent immediate opening on pointer down for touch devices to avoid accidental item selection on release
+                    if (e.pointerType === 'touch') e.preventDefault();
+                }}
+            >
                 <EllipsisVertical className="h-4 w-4" />
             </Button>
         </DropdownMenuTrigger>
@@ -274,7 +282,7 @@ const InvoiceList = ({
                                 <AccordionItem value={`month-${month.key}`} key={month.key} className="border-l-0 md:border-l-2 border-dashed border-border pl-0 md:pl-4 py-1">
                                     <AccordionTrigger className="flex items-center justify-between flex-1 text-[10px] sm:text-xs font-medium hover:no-underline p-2 sm:p-3 bg-muted/50 hover:bg-muted/80 rounded-md">
                                          <div className="flex items-center gap-2">
-                                              <Folder className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500 fill-amber-500/20" />
+                                              <Folder className="h-3.5 w-3.5 sm:h-4 w-4 text-amber-500 fill-amber-500/20" />
                                               <span>{month.label}</span>
                                          </div>
                                     </AccordionTrigger>
@@ -579,8 +587,8 @@ export default function BillingPage() {
           pageOrientation: invoice.documentSettings?.pageOrientation || liveDefaultPageSettings.pageOrientation,
           pageMargins: invoice.documentSettings?.pageMargins || liveDefaultPageSettings.pageMargins,
           pageFontSize: invoice.documentSettings?.pageFontSize || liveDefaultPageSettings.pageFontSize,
-          addressFontSize: invoice.documentSettings?.addressFontSize || liveDefaultPageSettings.addressFontSize,
-          tableBodyFontSize: invoice.documentSettings?.tableBodyFontSize || liveDefaultPageSettings.tableBodyFontSize,
+          addressFontSize: invoice.addressFontSize || liveDefaultPageSettings.addressFontSize,
+          tableBodyFontSize: invoice.tableBodyFontSize || liveDefaultPageSettings.tableBodyFontSize,
       });
       setFormDownloadOptions(invoice.downloadOptions || defaultDownloadOptions);
       setFormTemplate(invoice.template || liveDefaultTemplate);
@@ -1268,7 +1276,15 @@ export default function BillingPage() {
                             </Popover>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm" disabled={skippedBillNumbers.length === 0} className="h-8 text-xs">
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        disabled={skippedBillNumbers.length === 0} 
+                                        className="h-8 text-xs"
+                                        onPointerDown={(e) => {
+                                            if (e.pointerType === 'touch') e.preventDefault();
+                                        }}
+                                    >
                                         <FilePlus2 className="mr-1.5 h-3.5 w-3.5" />
                                         Fill Missing
                                     </Button>
@@ -1353,7 +1369,14 @@ export default function BillingPage() {
                         {!editingInvoice && !billNoOverride && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm" className="ml-4 shrink-0 h-8 text-xs">
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="ml-4 shrink-0 h-8 text-xs"
+                                        onPointerDown={(e) => {
+                                            if (e.pointerType === 'touch') e.preventDefault();
+                                        }}
+                                    >
                                         {formEnterprise}
                                         <ChevronDown className="ml-1.5 h-3 w-3" />
                                     </Button>
@@ -1450,7 +1473,14 @@ export default function BillingPage() {
 
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button type="button" variant="outline" className="h-7 px-2 text-[10px] sm:text-xs">
+                                            <Button 
+                                                type="button" 
+                                                variant="outline" 
+                                                className="h-7 px-2 text-[10px] sm:text-xs"
+                                                onPointerDown={(e) => {
+                                                    if (e.pointerType === 'touch') e.preventDefault();
+                                                }}
+                                            >
                                                 <Pilcrow className="h-3 w-3 mr-1" />
                                                 Size
                                             </Button>
