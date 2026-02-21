@@ -709,7 +709,7 @@ export default function ForkliftsPage() {
           </CardContent>
         </Card>
 
-        {/* Professional Share Image Template - updated with requested fields */}
+        {/* Professional Share Image Template */}
         <div className="fixed -left-[9999px] top-0 pointer-events-none" aria-hidden="true">
             {forklifts?.map(f => (
                 <div 
@@ -756,41 +756,43 @@ export default function ForkliftsPage() {
                             </div>
                         </div>
                         
-                        <div className="col-span-2 grid grid-cols-2 gap-x-10 gap-y-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                        {/* Detail Row 1: General Info (4 columns in one line) */}
+                        <div className="col-span-2 grid grid-cols-4 gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] uppercase font-black text-slate-400 tracking-wider">MFG Year</Label>
-                                <p className="text-lg font-bold text-slate-900">{f.year || '-'}</p>
+                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">MFG Year</Label>
+                                <p className="text-sm font-bold text-slate-900">{f.year || '-'}</p>
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Firm</Label>
-                                <p className="text-lg font-bold text-slate-900">{f.firm || '-'}</p>
+                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Firm</Label>
+                                <p className="text-sm font-bold text-slate-900">{f.firm || '-'}</p>
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] uppercase font-black text-slate-400 tracking-wider flex items-center gap-1"><CalendarDays className="h-3 w-3"/> Location Set On</Label>
-                                <p className="text-lg font-bold text-slate-900">{f.locationAssignmentDate ? format(parseISO(f.locationAssignmentDate), 'dd MMM yyyy') : '-'}</p>
+                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider flex items-center gap-1"><CalendarDays className="h-2.5 w-2.5"/> Location Set</Label>
+                                <p className="text-sm font-bold text-slate-900 truncate">{f.locationAssignmentDate ? format(parseISO(f.locationAssignmentDate), 'dd MMM yyyy') : '-'}</p>
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] uppercase font-black text-slate-400 tracking-wider">PO/PI No.</Label>
-                                <p className="text-lg font-bold text-slate-900">{f.poPiNumber || 'N/A'}</p>
+                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">PO/PI No.</Label>
+                                <p className="text-sm font-bold text-slate-900 truncate">{f.poPiNumber || 'N/A'}</p>
                             </div>
                         </div>
 
-                        <div className="col-span-2 grid grid-cols-4 gap-4">
-                            <div className="space-y-1.5 text-center border-r border-slate-100">
+                        {/* Detail Row 2: Specs (4 columns in one line) */}
+                        <div className="col-span-2 grid grid-cols-4 gap-2">
+                            <div className="space-y-1.5 text-center border-r border-slate-100 px-1">
                                 <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Capacity</Label>
-                                <p className="text-sm font-black text-slate-900">{f.capacity || '-'}</p>
+                                <p className="text-[13px] font-black text-slate-900">{f.capacity || '-'}</p>
                             </div>
-                            <div className="space-y-1.5 text-center border-r border-slate-100">
+                            <div className="space-y-1.5 text-center border-r border-slate-100 px-1">
                                 <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Type</Label>
-                                <p className="text-sm font-black text-slate-900">{f.equipmentType || '-'}</p>
+                                <p className="text-[13px] font-black text-slate-900 truncate">{f.equipmentType || '-'}</p>
                             </div>
-                            <div className="space-y-1.5 text-center border-r border-slate-100">
+                            <div className="space-y-1.5 text-center border-r border-slate-100 px-1">
                                 <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider flex items-center justify-center gap-1"><Zap className="h-2.5 w-2.5"/> Voltage</Label>
-                                <p className="text-sm font-black text-slate-900">{f.voltage || '-'}</p>
+                                <p className="text-[13px] font-black text-slate-900">{f.voltage || '-'}</p>
                             </div>
-                            <div className="space-y-1.5 text-center">
+                            <div className="space-y-1.5 text-center px-1">
                                 <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider flex items-center justify-center gap-1"><Ruler className="h-2.5 w-2.5"/> Mast Height</Label>
-                                <p className="text-sm font-black text-slate-900">{f.mastHeight || '-'}</p>
+                                <p className="text-[13px] font-black text-slate-900">{f.mastHeight || '-'}</p>
                             </div>
                         </div>
                     </div>
