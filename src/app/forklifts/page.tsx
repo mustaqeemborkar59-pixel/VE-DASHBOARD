@@ -943,7 +943,7 @@ export default function ForkliftsPage() {
 
         {/* Download Customization Dialog */}
         <Dialog open={isDownloadSettingsOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
-            <DialogContent className="max-w-[95vw] sm:max-w-lg p-0 overflow-hidden rounded-2xl border-none shadow-2xl">
+            <DialogContent className="max-w-[95vw] sm:max-w-lg p-0 overflow-hidden rounded-2xl border-none shadow-2xl max-h-[90vh] flex flex-col">
                 <DialogHeader className="p-6 pb-0">
                     <DialogTitle className="text-xl font-black flex items-center gap-2">
                         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -955,77 +955,75 @@ export default function ForkliftsPage() {
                         Choose details to display for <span className="font-bold text-foreground">{forkliftToDownload?.serialNumber}</span>. Your preferences are saved automatically.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="p-6 pt-4">
-                    <ScrollArea className="max-h-[50vh] pr-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
-                            <div className="space-y-4">
-                                <h4 className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-[0.2em]">Main Details</h4>
-                                <div className="space-y-3">
-                                    <div className="flex items-center space-x-3 group">
-                                        <Checkbox id="field-serial" checked={visibleFields.serialNumber} onCheckedChange={(c) => updateVisibleFields({serialNumber: !!c})} className="h-5 w-5" />
-                                        <Label htmlFor="field-serial" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors">Serial Number</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-3 group">
-                                        <Checkbox id="field-status" checked={visibleFields.status} onCheckedChange={(c) => updateVisibleFields({status: !!c})} className="h-5 w-5" />
-                                        <Label htmlFor="field-status" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors">Current Status</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-3 group">
-                                        <Checkbox id="field-mfg" checked={visibleFields.mfgYear} onCheckedChange={(c) => updateVisibleFields({mfgYear: !!c})} className="h-5 w-5" />
-                                        <Label htmlFor="field-mfg" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors">MFG Year</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-3 group">
-                                        <Checkbox id="field-firm" checked={visibleFields.firm} onCheckedChange={(c) => updateVisibleFields({firm: !!c})} className="h-5 w-5" />
-                                        <Label htmlFor="field-firm" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors">Enterprise Firm</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-3 group">
-                                        <Checkbox id="field-date" checked={visibleFields.locationDate} onCheckedChange={(c) => updateVisibleFields({locationDate: !!c})} className="h-5 w-5" />
-                                        <Label htmlFor="field-date" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors">Location Set Date</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-3 group">
-                                        <Checkbox id="field-po" checked={visibleFields.poNo} onCheckedChange={(c) => updateVisibleFields({poNo: !!c})} className="h-5 w-5" />
-                                        <Label htmlFor="field-po" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors">PO/PI Number</Label>
-                                    </div>
+                <div className="flex-grow overflow-y-auto p-6 pt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-[0.2em]">Main Details</h4>
+                            <div className="space-y-3">
+                                <div className="flex items-center space-x-3 group">
+                                    <Checkbox id="field-serial" checked={visibleFields.serialNumber} onCheckedChange={(c) => updateVisibleFields({serialNumber: !!c})} className="h-5 w-5" />
+                                    <Label htmlFor="field-serial" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">Serial Number</Label>
                                 </div>
-                            </div>
-                            <div className="space-y-4">
-                                <h4 className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-[0.2em]">Specifications</h4>
-                                <div className="space-y-3">
-                                    <div className="flex items-center space-x-3 group">
-                                        <Checkbox id="field-capacity" checked={visibleFields.capacity} onCheckedChange={(c) => updateVisibleFields({capacity: !!c})} className="h-5 w-5" />
-                                        <Label htmlFor="field-capacity" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors">Lifting Capacity</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-3 group">
-                                        <Checkbox id="field-type" checked={visibleFields.type} onCheckedChange={(c) => updateVisibleFields({type: !!c})} className="h-5 w-5" />
-                                        <Label htmlFor="field-type" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors">Equipment Type</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-3 group">
-                                        <Checkbox id="field-voltage" checked={visibleFields.voltage} onCheckedChange={(c) => updateVisibleFields({voltage: !!c})} className="h-5 w-5" />
-                                        <Label htmlFor="field-voltage" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors">Battery Voltage</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-3 group">
-                                        <Checkbox id="field-mast" checked={visibleFields.mastHeight} onCheckedChange={(c) => updateVisibleFields({mastHeight: !!c})} className="h-5 w-5" />
-                                        <Label htmlFor="field-mast" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors">Mast Height</Label>
-                                    </div>
-                                    <div className="pt-2">
-                                        <div className="flex items-center space-x-3 group p-2 rounded-lg bg-primary/5 border border-primary/10">
-                                            <Checkbox id="field-site" checked={visibleFields.siteInfo} onCheckedChange={(c) => updateVisibleFields({siteInfo: !!c})} className="h-5 w-5" />
-                                            <Label htmlFor="field-site" className="text-xs font-black uppercase tracking-tight cursor-pointer text-primary">Include Site Info</Label>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center space-x-3 group p-2 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20">
-                                        <Checkbox id="field-remarks" checked={visibleFields.remarks} onCheckedChange={(c) => updateVisibleFields({remarks: !!c})} className="h-5 w-5" />
-                                        <Label htmlFor="field-remarks" className="text-xs font-black uppercase tracking-tight cursor-pointer text-amber-700 dark:text-amber-400">Include Remarks</Label>
-                                    </div>
+                                <div className="flex items-center space-x-3 group">
+                                    <Checkbox id="field-status" checked={visibleFields.status} onCheckedChange={(c) => updateVisibleFields({status: !!c})} className="h-5 w-5" />
+                                    <Label htmlFor="field-status" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">Current Status</Label>
+                                </div>
+                                <div className="flex items-center space-x-3 group">
+                                    <Checkbox id="field-mfg" checked={visibleFields.mfgYear} onCheckedChange={(c) => updateVisibleFields({mfgYear: !!c})} className="h-5 w-5" />
+                                    <Label htmlFor="field-mfg" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">MFG Year</Label>
+                                </div>
+                                <div className="flex items-center space-x-3 group">
+                                    <Checkbox id="field-firm" checked={visibleFields.firm} onCheckedChange={(c) => updateVisibleFields({firm: !!c})} className="h-5 w-5" />
+                                    <Label htmlFor="field-firm" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">Enterprise Firm</Label>
+                                </div>
+                                <div className="flex items-center space-x-3 group">
+                                    <Checkbox id="field-date" checked={visibleFields.locationDate} onCheckedChange={(c) => updateVisibleFields({locationDate: !!c})} className="h-5 w-5" />
+                                    <Label htmlFor="field-date" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">Location Set Date</Label>
+                                </div>
+                                <div className="flex items-center space-x-3 group">
+                                    <Checkbox id="field-po" checked={visibleFields.poNo} onCheckedChange={(c) => updateVisibleFields({poNo: !!c})} className="h-5 w-5" />
+                                    <Label htmlFor="field-po" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">PO/PI Number</Label>
                                 </div>
                             </div>
                         </div>
-                    </ScrollArea>
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-[0.2em]">Specifications</h4>
+                            <div className="space-y-3">
+                                <div className="flex items-center space-x-3 group">
+                                    <Checkbox id="field-capacity" checked={visibleFields.capacity} onCheckedChange={(c) => updateVisibleFields({capacity: !!c})} className="h-5 w-5" />
+                                    <Label htmlFor="field-capacity" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">Lifting Capacity</Label>
+                                </div>
+                                <div className="flex items-center space-x-3 group">
+                                    <Checkbox id="field-type" checked={visibleFields.type} onCheckedChange={(c) => updateVisibleFields({type: !!c})} className="h-5 w-5" />
+                                    <Label htmlFor="field-type" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">Equipment Type</Label>
+                                </div>
+                                <div className="flex items-center space-x-3 group">
+                                    <Checkbox id="field-voltage" checked={visibleFields.voltage} onCheckedChange={(c) => updateVisibleFields({voltage: !!c})} className="h-5 w-5" />
+                                    <Label htmlFor="field-voltage" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">Battery Voltage</Label>
+                                </div>
+                                <div className="flex items-center space-x-3 group">
+                                    <Checkbox id="field-mast" checked={visibleFields.mastHeight} onCheckedChange={(c) => updateVisibleFields({mastHeight: !!c})} className="h-5 w-5" />
+                                    <Label htmlFor="field-mast" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">Mast Height</Label>
+                                </div>
+                                <div className="pt-2">
+                                    <div className="flex items-center space-x-3 group p-2 rounded-lg bg-primary/5 border border-primary/10">
+                                        <Checkbox id="field-site" checked={visibleFields.siteInfo} onCheckedChange={(c) => updateVisibleFields({siteInfo: !!c})} className="h-5 w-5" />
+                                        <Label htmlFor="field-site" className="text-xs font-black uppercase tracking-tight cursor-pointer text-primary">Include Site Info</Label>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-3 group p-2 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20">
+                                    <Checkbox id="field-remarks" checked={visibleFields.remarks} onCheckedChange={(c) => updateVisibleFields({remarks: !!c})} className="h-5 w-5" />
+                                    <Label htmlFor="field-remarks" className="text-xs font-black uppercase tracking-tight cursor-pointer text-amber-700 dark:text-amber-400">Include Remarks</Label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <DialogFooter className="p-6 pt-4 border-t border-border/50 bg-muted/10 flex gap-2">
-                    <Button variant="ghost" onClick={() => setIsDownloadSettingsOpen(false)} className="h-11 rounded-xl font-bold text-muted-foreground hover:text-foreground">Cancel</Button>
-                    <Button onClick={executeDownload} className="h-11 rounded-xl font-bold bg-primary px-8 shadow-lg shadow-primary/20 flex-1 sm:flex-none">
+                <DialogFooter className="p-6 pt-4 border-t border-border/50 bg-muted/10 flex flex-row gap-2">
+                    <Button variant="ghost" onClick={() => setIsDownloadSettingsOpen(false)} className="flex-1 h-11 rounded-xl font-bold text-muted-foreground hover:text-foreground">Cancel</Button>
+                    <Button onClick={executeDownload} className="flex-1 h-11 rounded-xl font-bold bg-primary shadow-lg shadow-primary/20">
                         <Download className="mr-2 h-4 w-4" />
-                        Download Card
+                        Download
                     </Button>
                 </DialogFooter>
             </DialogContent>
