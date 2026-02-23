@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Forklift, JobCard, Company } from "@/lib/data";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle, Download, MapPin, CalendarDays, Zap, Ruler, Hash } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle, Download, MapPin, CalendarDays, Zap, Ruler, Hash, CheckSquare } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy, deleteField } from "firebase/firestore";
 import { useState, useMemo, Fragment, useCallback } from "react";
@@ -59,6 +59,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toBlob } from 'html-to-image';
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 
 type SearchField = 'All' | 'serialNumber' | 'make' | 'model' | 'siteCompany' | 'siteArea';
@@ -71,6 +73,36 @@ const searchFieldLabels: Record<SearchField, string> = {
   siteArea: 'Site Area'
 };
 
+type VisibleFields = {
+    serialNumber: boolean;
+    status: boolean;
+    mfgYear: boolean;
+    firm: boolean;
+    locationDate: boolean;
+    poNo: boolean;
+    capacity: boolean;
+    type: boolean;
+    voltage: boolean;
+    mastHeight: boolean;
+    siteInfo: boolean;
+    remarks: boolean;
+};
+
+const defaultVisibleFields: VisibleFields = {
+    serialNumber: true,
+    status: true,
+    mfgYear: true,
+    firm: true,
+    locationDate: true,
+    poNo: true,
+    capacity: true,
+    type: true,
+    voltage: true,
+    mastHeight: true,
+    siteInfo: true,
+    remarks: true,
+};
+
 export default function ForkliftsPage() {
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
@@ -79,6 +111,11 @@ export default function ForkliftsPage() {
   const [forkliftToDelete, setForkliftToDelete] = useState<Forklift | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedForklift, setSelectedForklift] = useState<Forklift | null>(null);
+
+  // Download Settings
+  const [isDownloadSettingsOpen, setIsDownloadSettingsOpen] = useState(false);
+  const [forkliftToDownload, setForkliftToDownload] = useState<Forklift | null>(null);
+  const [visibleFields, setVisibleFields] = useState<VisibleFields>(defaultVisibleFields);
 
   const [locationFilter, setLocationFilter] = useState('All');
   const [equipmentTypeFilter, setEquipmentTypeFilter] = useState('All');
@@ -263,11 +300,21 @@ export default function ForkliftsPage() {
     setExpandedRow(expandedRow === id ? null : id);
   };
 
-  const handleDownloadImage = async (forklift: Forklift) => {
+  const openDownloadSettings = (forklift: Forklift) => {
+      setForkliftToDownload(forklift);
+      setVisibleFields(defaultVisibleFields);
+      setIsDownloadSettingsOpen(true);
+  }
+
+  const executeDownload = async () => {
+    if (!forkliftToDownload) return;
+    const forklift = forkliftToDownload;
     const node = document.getElementById(`share-card-${forklift.id}`);
     if (!node) return;
 
     setIsDownloading(forklift.id);
+    setIsDownloadSettingsOpen(false); // Close settings first
+
     try {
       const blob = await toBlob(node, { 
         backgroundColor: '#FFFFFF',
@@ -286,7 +333,6 @@ export default function ForkliftsPage() {
       link.href = url;
       link.click();
       
-      // Clean up the URL to free memory
       setTimeout(() => URL.revokeObjectURL(url), 100);
       
       toast({ title: "Success", description: "Image downloaded successfully." });
@@ -295,6 +341,7 @@ export default function ForkliftsPage() {
       toast({ variant: 'destructive', title: "Download Error", description: "Failed to create image." });
     } finally {
       setIsDownloading(null);
+      setForkliftToDownload(null);
     }
   };
   
@@ -369,9 +416,9 @@ export default function ForkliftsPage() {
               </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-40" align="end" onMouseLeave={(e) => (e.currentTarget as HTMLElement).blur()}>
-              <DropdownMenuItem onSelect={() => handleDownloadImage(forklift)} disabled={isDownloading === forklift.id}>
+              <DropdownMenuItem onSelect={() => openDownloadSettings(forklift)} disabled={isDownloading === forklift.id}>
                   <Download className="mr-2 h-4 w-4" />
-                  {isDownloading === forklift.id ? 'Generating...' : 'Download Card'}
+                  Download Card
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => openAddEditDialog(forklift)}>
                   <Pencil className="mr-2 h-4 w-4" />
@@ -591,7 +638,7 @@ export default function ForkliftsPage() {
                                                 variant="outline" 
                                                 size="sm" 
                                                 className="h-8 text-[10px] sm:text-xs" 
-                                                onClick={(e) => { e.stopPropagation(); handleDownloadImage(forklift); }}
+                                                onClick={(e) => { e.stopPropagation(); openDownloadSettings(forklift); }}
                                                 disabled={isDownloading === forklift.id}
                                               >
                                                   <Download className="mr-1.5 h-3.5 w-3.5" />
@@ -706,10 +753,9 @@ export default function ForkliftsPage() {
 
         {/* Professional Download Image Template (Hidden) */}
         <div className="fixed -left-[9999px] top-0 pointer-events-none" aria-hidden="true">
-            {forklifts?.map(f => (
+            {forkliftToDownload && (
                 <div 
-                  key={`share-card-${f.id}`} 
-                  id={`share-card-${f.id}`} 
+                  id={`share-card-${forkliftToDownload.id}`} 
                   className="bg-white p-8 w-[600px] border-4 border-[#10b981] rounded-2xl shadow-none overflow-hidden text-black font-sans"
                 >
                     <div className="flex items-center justify-between mb-8 border-b-2 border-slate-100 pb-6">
@@ -722,77 +768,97 @@ export default function ForkliftsPage() {
                                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">Fleet Management System</p>
                             </div>
                         </div>
-                        {f.firm && (
+                        {visibleFields.firm && forkliftToDownload.firm && (
                             <div className={cn(
                                 "px-4 py-1.5 rounded-lg border-2 text-xs font-black uppercase tracking-wider",
-                                f.firm === 'Vithal' ? "border-red-500 text-red-600 bg-red-50" : "border-blue-600 text-blue-700 bg-blue-50"
+                                forkliftToDownload.firm === 'Vithal' ? "border-red-500 text-red-600 bg-red-50" : "border-blue-600 text-blue-700 bg-blue-50"
                             )}>
-                                {f.firm} Enterprises
+                                {forkliftToDownload.firm} Enterprises
                             </div>
                         )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-x-10 gap-y-10">
-                        <div className="space-y-1.5">
-                            <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] flex items-center gap-1.5"><Hash className="h-3 w-3"/> Serial Number</Label>
-                            <p className="text-3xl font-black text-slate-900 leading-none">{f.serialNumber}</p>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em]">Current Status</Label>
-                            <div className="flex items-center">
-                                <div className={cn(
-                                    "text-[11px] font-black py-1.5 px-4 rounded-full border-2",
-                                    f.locationType === 'Workshop' ? "border-green-500 text-green-700 bg-green-50" : 
-                                    f.locationType === 'On-Site' ? "border-amber-500 text-amber-700 bg-amber-50" : 
-                                    "border-red-500 text-red-700 bg-red-50"
-                                )}>
-                                    {getLocationText(f).toUpperCase()}
+                        {visibleFields.serialNumber && (
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] flex items-center gap-1.5"><Hash className="h-3 w-3"/> Serial Number</Label>
+                                <p className="text-3xl font-black text-slate-900 leading-none">{forkliftToDownload.serialNumber}</p>
+                            </div>
+                        )}
+                        {visibleFields.status && (
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em]">Current Status</Label>
+                                <div className="flex items-center">
+                                    <div className={cn(
+                                        "text-[11px] font-black py-1.5 px-4 rounded-full border-2",
+                                        forkliftToDownload.locationType === 'Workshop' ? "border-green-500 text-green-700 bg-green-50" : 
+                                        forkliftToDownload.locationType === 'On-Site' ? "border-amber-500 text-amber-700 bg-amber-50" : 
+                                        "border-red-500 text-red-700 bg-red-50"
+                                    )}>
+                                        {getLocationText(forkliftToDownload).toUpperCase()}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                         
-                        {/* Detail Row 1: General Info (4 columns in one line) */}
+                        {/* Detail Row 1: General Info */}
                         <div className="col-span-2 grid grid-cols-4 gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                            <div className="space-y-1.5">
-                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">MFG Year</Label>
-                                <p className="text-sm font-bold text-slate-900">{f.year || '-'}</p>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">Firm</Label>
-                                <p className="text-sm font-bold text-slate-900">{f.firm || '-'}</p>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider flex items-center gap-1"><CalendarDays className="h-2.5 w-2.5"/> Location Set</Label>
-                                <p className="text-sm font-bold text-slate-900 truncate">{f.locationAssignmentDate ? format(parseISO(f.locationAssignmentDate), 'dd MMM yyyy') : '-'}</p>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">PO/PI No.</Label>
-                                <p className="text-sm font-bold text-slate-900 truncate">{f.poPiNumber || 'N/A'}</p>
-                            </div>
+                            {visibleFields.mfgYear && (
+                                <div className="space-y-1.5">
+                                    <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">MFG Year</Label>
+                                    <p className="text-sm font-bold text-slate-900">{forkliftToDownload.year || '-'}</p>
+                                </div>
+                            )}
+                            {visibleFields.firm && (
+                                <div className="space-y-1.5">
+                                    <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">Firm</Label>
+                                    <p className="text-sm font-bold text-slate-900">{forkliftToDownload.firm || '-'}</p>
+                                </div>
+                            )}
+                            {visibleFields.locationDate && (
+                                <div className="space-y-1.5">
+                                    <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider flex items-center gap-1"><CalendarDays className="h-2.5 w-2.5"/> Location Set</Label>
+                                    <p className="text-sm font-bold text-slate-900 truncate">{forkliftToDownload.locationAssignmentDate ? format(parseISO(forkliftToDownload.locationAssignmentDate), 'dd MMM yyyy') : '-'}</p>
+                                </div>
+                            )}
+                            {visibleFields.poNo && (
+                                <div className="space-y-1.5">
+                                    <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">PO/PI No.</Label>
+                                    <p className="text-sm font-bold text-slate-900 truncate">{forkliftToDownload.poPiNumber || 'N/A'}</p>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Detail Row 2: Specs (4 columns in one line) */}
+                        {/* Detail Row 2: Specs */}
                         <div className="col-span-2 grid grid-cols-4 gap-2">
-                            <div className="space-y-1.5 text-center border-r border-slate-100 px-1">
-                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">Capacity</Label>
-                                <p className="text-[13px] font-black text-slate-900">{f.capacity || '-'}</p>
-                            </div>
-                            <div className="space-y-1.5 text-center border-r border-slate-100 px-1">
-                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">Type</Label>
-                                <p className="text-[13px] font-black text-slate-900 truncate">{f.equipmentType || '-'}</p>
-                            </div>
-                            <div className="space-y-1.5 text-center border-r border-slate-100 px-1">
-                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider flex items-center justify-center gap-1"><Zap className="h-2.5 w-2.5"/> Voltage</Label>
-                                <p className="text-[13px] font-black text-slate-900">{f.voltage || '-'}</p>
-                            </div>
-                            <div className="space-y-1.5 text-center px-1">
-                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider flex items-center justify-center gap-1"><Ruler className="h-2.5 w-2.5"/> Mast Height</Label>
-                                <p className="text-[13px] font-black text-slate-900">{f.mastHeight || '-'}</p>
-                            </div>
+                            {visibleFields.capacity && (
+                                <div className="space-y-1.5 text-center border-r border-slate-100 px-1">
+                                    <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">Capacity</Label>
+                                    <p className="text-[13px] font-black text-slate-900">{forkliftToDownload.capacity || '-'}</p>
+                                </div>
+                            )}
+                            {visibleFields.type && (
+                                <div className="space-y-1.5 text-center border-r border-slate-100 px-1">
+                                    <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">Type</Label>
+                                    <p className="text-[13px] font-black text-slate-900 truncate">{forkliftToDownload.equipmentType || '-'}</p>
+                                </div>
+                            )}
+                            {visibleFields.voltage && (
+                                <div className="space-y-1.5 text-center border-r border-slate-100 px-1">
+                                    <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider flex items-center justify-center gap-1"><Zap className="h-2.5 w-2.5"/> Voltage</Label>
+                                    <p className="text-[13px] font-black text-slate-900">{forkliftToDownload.voltage || '-'}</p>
+                                </div>
+                            )}
+                            {visibleFields.mastHeight && (
+                                <div className="space-y-1.5 text-center px-1">
+                                    <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider flex items-center justify-center gap-1"><Ruler className="h-2.5 w-2.5"/> Mast Height</Label>
+                                    <p className="text-[13px] font-black text-slate-900">{forkliftToDownload.mastHeight || '-'}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {f.locationType === 'On-Site' && (
+                    {visibleFields.siteInfo && forkliftToDownload.locationType === 'On-Site' && (
                         <div className="mt-8 p-6 bg-white rounded-2xl border-2 border-slate-100">
                             <h4 className="text-[11px] font-black text-[#10b981] uppercase tracking-[0.2em] mb-5 flex items-center gap-2.5">
                                 <MapPin className="h-4 w-4" /> Deployed Site Information
@@ -800,21 +866,28 @@ export default function ForkliftsPage() {
                             <div className="grid grid-cols-2 gap-x-8 gap-y-6">
                                 <div className="space-y-1">
                                     <Label className="text-[9px] font-black text-slate-500 uppercase">Site / Company</Label>
-                                    <p className="text-sm font-bold text-slate-900 truncate">{f.siteCompany}</p>
+                                    <p className="text-sm font-bold text-slate-900 truncate">{forkliftToDownload.siteCompany}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-[9px] font-black text-slate-500 uppercase">Geographical Area</Label>
-                                    <p className="text-sm font-bold text-slate-900">{f.siteArea || '-'}</p>
+                                    <p className="text-sm font-bold text-slate-900">{forkliftToDownload.siteArea || '-'}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-[9px] font-black text-slate-500 uppercase">Contact Person</Label>
-                                    <p className="text-sm font-bold text-slate-900 truncate">{f.siteContactPerson || '-'}</p>
+                                    <p className="text-sm font-bold text-slate-900 truncate">{forkliftToDownload.siteContactPerson || '-'}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-[9px] font-black text-slate-500 uppercase">Mobile Number</Label>
-                                    <p className="text-sm font-bold text-slate-900">{f.siteContactNumber || '-'}</p>
+                                    <p className="text-sm font-bold text-slate-900">{forkliftToDownload.siteContactNumber || '-'}</p>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {visibleFields.remarks && forkliftToDownload.remarks && (
+                        <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                            <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Remarks</Label>
+                            <p className="text-[11px] text-slate-600 mt-1 italic leading-relaxed line-clamp-3">{forkliftToDownload.remarks}</p>
                         </div>
                     )}
 
@@ -823,8 +896,90 @@ export default function ForkliftsPage() {
                         <span className="font-medium">{format(new Date(), 'dd MMM yyyy, p')}</span>
                     </div>
                 </div>
-            ))}
+            )}
         </div>
+
+        {/* Download Customization Dialog */}
+        <Dialog open={isDownloadSettingsOpen} onOpenChange={setIsDownloadSettingsOpen}>
+            <DialogContent className="max-w-[95vw] sm:max-w-lg p-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-0">
+                    <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                        <Download className="h-5 w-5 text-primary" />
+                        Download Card Settings
+                    </DialogTitle>
+                    <DialogDescription>
+                        Choose the fields you want to show in the professional card for Serial: <span className="font-bold text-foreground">{forkliftToDownload?.serialNumber}</span>.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="p-6 pt-4">
+                    <ScrollArea className="max-h-[50vh] pr-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                            <div className="space-y-4">
+                                <h4 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Main Details</h4>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="field-serial" checked={visibleFields.serialNumber} onCheckedChange={(c) => setVisibleFields(p => ({...p, serialNumber: !!c}))} />
+                                    <Label htmlFor="field-serial" className="text-sm cursor-pointer">Serial Number</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="field-status" checked={visibleFields.status} onCheckedChange={(c) => setVisibleFields(p => ({...p, status: !!c}))} />
+                                    <Label htmlFor="field-status" className="text-sm cursor-pointer">Current Status</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="field-mfg" checked={visibleFields.mfgYear} onCheckedChange={(c) => setVisibleFields(p => ({...p, mfgYear: !!c}))} />
+                                    <Label htmlFor="field-mfg" className="text-sm cursor-pointer">MFG Year</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="field-firm" checked={visibleFields.firm} onCheckedChange={(c) => setVisibleFields(p => ({...p, firm: !!c}))} />
+                                    <Label htmlFor="field-firm" className="text-sm cursor-pointer">Enterprise Firm</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="field-date" checked={visibleFields.locationDate} onCheckedChange={(c) => setVisibleFields(p => ({...p, locationDate: !!c}))} />
+                                    <Label htmlFor="field-date" className="text-sm cursor-pointer">Location Set Date</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="field-po" checked={visibleFields.poNo} onCheckedChange={(c) => setVisibleFields(p => ({...p, poNo: !!c}))} />
+                                    <Label htmlFor="field-po" className="text-sm cursor-pointer">PO/PI Number</Label>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <h4 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Specifications</h4>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="field-capacity" checked={visibleFields.capacity} onCheckedChange={(c) => setVisibleFields(p => ({...p, capacity: !!c}))} />
+                                    <Label htmlFor="field-capacity" className="text-sm cursor-pointer">Lifting Capacity</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="field-type" checked={visibleFields.type} onCheckedChange={(c) => setVisibleFields(p => ({...p, type: !!c}))} />
+                                    <Label htmlFor="field-type" className="text-sm cursor-pointer">Equipment Type</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="field-voltage" checked={visibleFields.voltage} onCheckedChange={(c) => setVisibleFields(p => ({...p, voltage: !!c}))} />
+                                    <Label htmlFor="field-voltage" className="text-sm cursor-pointer">Battery Voltage</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="field-mast" checked={visibleFields.mastHeight} onCheckedChange={(c) => setVisibleFields(p => ({...p, mastHeight: !!c}))} />
+                                    <Label htmlFor="field-mast" className="text-sm cursor-pointer">Mast Height</Label>
+                                </div>
+                                <div className="flex items-center space-x-2 pt-2">
+                                    <Checkbox id="field-site" checked={visibleFields.siteInfo} onCheckedChange={(c) => setVisibleFields(p => ({...p, siteInfo: !!c}))} />
+                                    <Label htmlFor="field-site" className="text-sm cursor-pointer font-bold text-primary">Site Details</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="field-remarks" checked={visibleFields.remarks} onCheckedChange={(c) => setVisibleFields(p => ({...p, remarks: !!c}))} />
+                                    <Label htmlFor="field-remarks" className="text-sm cursor-pointer font-bold text-amber-600">Include Remarks</Label>
+                                </div>
+                            </div>
+                        </div>
+                    </ScrollArea>
+                </div>
+                <DialogFooter className="p-6 pt-2 border-t bg-muted/10 gap-2">
+                    <Button variant="outline" onClick={() => setIsDownloadSettingsOpen(false)}>Cancel</Button>
+                    <Button onClick={executeDownload} className="flex-1 sm:flex-none">
+                        <Download className="mr-2 h-4 w-4" />
+                        Download PDF Image
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
         <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
           <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] flex flex-col p-0 rounded-xl overflow-hidden border-none shadow-2xl">
