@@ -345,7 +345,7 @@ export default function ForkliftsPage() {
     }
   };
   
-  const cardClassName = "border-0 bg-gradient-to-br shadow-lg transition-transform hover:scale-[1.02] cursor-pointer";
+  const cardClassName = "border-none shadow-lg transition-all hover:scale-[1.02] cursor-pointer active:scale-95";
   
   const getLocationIcon = (locationType: Forklift['locationType']) => {
     switch (locationType) {
@@ -452,45 +452,45 @@ export default function ForkliftsPage() {
           </div>
         </div>
 
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <Card onClick={() => setLocationFilter('Workshop')} className={cn(cardClassName, "from-emerald-500 to-green-600 text-white shadow-emerald-500/30")}>
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <Card onClick={() => setLocationFilter('Workshop')} className={cn(cardClassName, "bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-emerald-500/20")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">In Workshop</CardTitle>
-              <Warehouse className="h-5 w-5 text-white/80" />
+              <CardTitle className="text-sm font-bold uppercase tracking-wider opacity-90">In Workshop</CardTitle>
+              <Warehouse className="h-5 w-5 text-white/70" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{isLoading ? '...' : stats.inWorkshop}</div>
-              <p className="text-[10px] text-white/90">Units available at workshop</p>
+              <div className="text-3xl font-black">{isLoading ? '...' : stats.inWorkshop}</div>
+              <p className="text-[10px] font-medium text-white/80 mt-1 uppercase tracking-tight">Units ready for deployment</p>
             </CardContent>
           </Card>
-          <Card onClick={() => setLocationFilter('On-Site')} className={cn(cardClassName, "from-amber-500 to-orange-600 text-white shadow-amber-500/30")}>
+          <Card onClick={() => setLocationFilter('On-Site')} className={cn(cardClassName, "bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-amber-500/20")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">On-Site</CardTitle>
-              <ForkliftIcon className="h-5 w-5 text-white/80" />
+              <CardTitle className="text-sm font-bold uppercase tracking-wider opacity-90">On-Site</CardTitle>
+              <ForkliftIcon className="h-5 w-5 text-white/70" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{isLoading ? '...' : stats.onSite}</div>
-              <p className="text-[10px] text-white/90">Units deployed at client sites</p>
+              <div className="text-3xl font-black">{isLoading ? '...' : stats.onSite}</div>
+              <p className="text-[10px] font-medium text-white/80 mt-1 uppercase tracking-tight">Units currently on site</p>
             </CardContent>
           </Card>
-          <Card onClick={() => setLocationFilter('Not Confirm')} className={cn(cardClassName, "from-red-500 to-rose-600 text-white shadow-red-500/30")}>
+          <Card onClick={() => setLocationFilter('Not Confirm')} className={cn(cardClassName, "bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-red-500/20")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Not Confirmed</CardTitle>
-              <AlertTriangle className="h-5 w-5 text-white/80" />
+              <CardTitle className="text-sm font-bold uppercase tracking-wider opacity-90">Not Confirmed</CardTitle>
+              <AlertTriangle className="h-5 w-5 text-white/70" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{isLoading ? '...' : stats.notConfirmed}</div>
-              <p className="text-[10px] text-white/90">Units with unconfirmed locations</p>
+              <div className="text-3xl font-black">{isLoading ? '...' : stats.notConfirmed}</div>
+              <p className="text-[10px] font-medium text-white/80 mt-1 uppercase tracking-tight">Location update pending</p>
             </CardContent>
           </Card>
-          <Card onClick={handleClearFilters} className={cn(cardClassName, "from-blue-500 to-indigo-600 text-white shadow-blue-500/30")}>
+          <Card onClick={handleClearFilters} className={cn(cardClassName, "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-blue-500/20")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Forklifts</CardTitle>
-              <ForkliftIcon className="h-5 w-5 text-white/80" />
+              <CardTitle className="text-sm font-bold uppercase tracking-wider opacity-90">Total Fleet</CardTitle>
+              <ListFilter className="h-5 w-5 text-white/70" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{isLoading ? '...' : stats.total}</div>
-              <p className="text-[10px] text-white/90">Total units in fleet</p>
+              <div className="text-3xl font-black">{isLoading ? '...' : stats.total}</div>
+              <p className="text-[10px] font-medium text-white/80 mt-1 uppercase tracking-tight">Total registered forklifts</p>
             </CardContent>
           </Card>
         </div>
@@ -975,7 +975,7 @@ export default function ForkliftsPage() {
                     <Button variant="outline" onClick={() => setIsDownloadSettingsOpen(false)}>Cancel</Button>
                     <Button onClick={executeDownload} className="flex-1 sm:flex-none">
                         <Download className="mr-2 h-4 w-4" />
-                        Download PDF Image
+                        Download Card Image
                     </Button>
                 </DialogFooter>
             </DialogContent>
