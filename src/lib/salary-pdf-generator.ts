@@ -1,4 +1,3 @@
-
 'use client';
 
 import jsPDF from 'jspdf';
@@ -177,37 +176,23 @@ const renderSingleSlip = (
 
     currentY = (doc as any).lastAutoTable.finalY + 12;
 
-    // 6) Net Salary Section
-    doc.setFillColor(245, 245, 245);
-    doc.rect(14, currentY, 182, 12, 'F');
-    doc.setDrawColor(0, 0, 0);
-    doc.rect(14, currentY, 182, 12, 'S');
-    
+    // 6) Net Salary Section (Cleaned up: Left aligned, no border)
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text(`NET PAYABLE SALARY: Rs. ${salary.netSalary.toLocaleString('en-IN', { minimumFractionDigits: 2 })}/-`, 105, currentY + 7.5, { align: 'center' });
+    doc.text(`NET PAYABLE SALARY: Rs. ${salary.netSalary.toLocaleString('en-IN', { minimumFractionDigits: 2 })}/-`, 14, currentY + 7.5, { align: 'left' });
     
     currentY += 18;
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
 
-    // 7) Footer Section
+    // 7) Footer Section (Signature and Dashboard mentions removed)
     currentY += 25;
-    doc.setFont('helvetica', 'bold');
-    doc.text("__________________________", 35, currentY);
-    doc.text("__________________________", 145, currentY);
-    currentY += 5;
-    doc.setFontSize(8);
-    doc.text("Employee Signature", 35, currentY, { align: 'center' });
-    doc.text("Authorized Signatory", 145, currentY, { align: 'center' });
-    
-    currentY += 15;
     doc.setFontSize(7);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(100, 100, 100);
     doc.text("This is a system generated salary slip and does not require a physical signature.", 105, currentY, { align: 'center' });
-    doc.text(`Generated via VE Dashboard on ${format(new Date(), 'dd MMM yyyy, p')}`, 105, currentY + 4, { align: 'center' });
+    doc.text(`Generated on ${format(new Date(), 'dd MMM yyyy, p')}`, 105, currentY + 4, { align: 'center' });
 };
 
 export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, company: CompanySettings) => {
