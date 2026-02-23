@@ -759,19 +759,19 @@ export default function ForkliftsPage() {
                         {/* Detail Row 1: General Info (4 columns in one line) */}
                         <div className="col-span-2 grid grid-cols-4 gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
                             <div className="space-y-1.5">
-                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">MFG Year</Label>
+                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">MFG Year</Label>
                                 <p className="text-sm font-bold text-slate-900">{f.year || '-'}</p>
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Firm</Label>
+                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">Firm</Label>
                                 <p className="text-sm font-bold text-slate-900">{f.firm || '-'}</p>
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider flex items-center gap-1"><CalendarDays className="h-2.5 w-2.5"/> Location Set</Label>
+                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider flex items-center gap-1"><CalendarDays className="h-2.5 w-2.5"/> Location Set</Label>
                                 <p className="text-sm font-bold text-slate-900 truncate">{f.locationAssignmentDate ? format(parseISO(f.locationAssignmentDate), 'dd MMM yyyy') : '-'}</p>
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">PO/PI No.</Label>
+                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">PO/PI No.</Label>
                                 <p className="text-sm font-bold text-slate-900 truncate">{f.poPiNumber || 'N/A'}</p>
                             </div>
                         </div>
@@ -779,19 +779,19 @@ export default function ForkliftsPage() {
                         {/* Detail Row 2: Specs (4 columns in one line) */}
                         <div className="col-span-2 grid grid-cols-4 gap-2">
                             <div className="space-y-1.5 text-center border-r border-slate-100 px-1">
-                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Capacity</Label>
+                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">Capacity</Label>
                                 <p className="text-[13px] font-black text-slate-900">{f.capacity || '-'}</p>
                             </div>
                             <div className="space-y-1.5 text-center border-r border-slate-100 px-1">
-                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Type</Label>
+                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">Type</Label>
                                 <p className="text-[13px] font-black text-slate-900 truncate">{f.equipmentType || '-'}</p>
                             </div>
                             <div className="space-y-1.5 text-center border-r border-slate-100 px-1">
-                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider flex items-center justify-center gap-1"><Zap className="h-2.5 w-2.5"/> Voltage</Label>
+                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider flex items-center justify-center gap-1"><Zap className="h-2.5 w-2.5"/> Voltage</Label>
                                 <p className="text-[13px] font-black text-slate-900">{f.voltage || '-'}</p>
                             </div>
                             <div className="space-y-1.5 text-center px-1">
-                                <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider flex items-center justify-center gap-1"><Ruler className="h-2.5 w-2.5"/> Mast Height</Label>
+                                <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider flex items-center justify-center gap-1"><Ruler className="h-2.5 w-2.5"/> Mast Height</Label>
                                 <p className="text-[13px] font-black text-slate-900">{f.mastHeight || '-'}</p>
                             </div>
                         </div>
@@ -804,19 +804,19 @@ export default function ForkliftsPage() {
                             </h4>
                             <div className="grid grid-cols-2 gap-x-8 gap-y-6">
                                 <div className="space-y-1">
-                                    <Label className="text-[9px] font-black text-slate-400 uppercase">Site / Company</Label>
+                                    <Label className="text-[9px] font-black text-slate-500 uppercase">Site / Company</Label>
                                     <p className="text-sm font-bold text-slate-900 truncate">{f.siteCompany}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-[9px] font-black text-slate-400 uppercase">Geographical Area</Label>
+                                    <Label className="text-[9px] font-black text-slate-500 uppercase">Geographical Area</Label>
                                     <p className="text-sm font-bold text-slate-900">{f.siteArea || '-'}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-[9px] font-black text-slate-400 uppercase">Contact Person</Label>
+                                    <Label className="text-[9px] font-black text-slate-500 uppercase">Contact Person</Label>
                                     <p className="text-sm font-bold text-slate-900 truncate">{f.siteContactPerson || '-'}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-[9px] font-black text-slate-400 uppercase">Mobile Number</Label>
+                                    <Label className="text-[9px] font-black text-slate-500 uppercase">Mobile Number</Label>
                                     <p className="text-sm font-bold text-slate-900">{f.siteContactNumber || '-'}</p>
                                 </div>
                             </div>
@@ -824,7 +824,7 @@ export default function ForkliftsPage() {
                     )}
 
                     <div className="mt-10 pt-6 border-t border-slate-100 flex justify-between items-center italic text-[10px] text-slate-400">
-                        <span>Generated via VE Dashboard</span>
+                        <span>Generated via Fleet Management</span>
                         <span className="font-medium">{format(new Date(), 'dd MMM yyyy, p')}</span>
                     </div>
                 </div>
