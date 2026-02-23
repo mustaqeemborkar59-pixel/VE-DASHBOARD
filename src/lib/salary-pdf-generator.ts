@@ -42,18 +42,18 @@ const renderSingleSlip = (
     const grossEarnings = (salary.baseSalary || 0) + (salary.hra || 0) + (salary.conveyance || 0) + (salary.medical || 0) + (salary.special || 0) + (salary.bonus || 0) + (salary.ot || 0);
     const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.tds || 0) + (salary.advance || 0) + (salary.otherDeductions || 0) + (salary.lwf || 0);
 
-    // --- Watermark (10% Transparency) ---
+    // --- Watermark (15% Transparency) ---
     // Centered in the top 50% area (which is approx 148.5mm height)
     if (logoImg) {
         doc.saveGraphicsState();
         try {
-            // Using GState for transparency if supported
-            const gState = new (doc as any).GState({ opacity: 0.10 });
+            // Using GState for transparency - Updated to 0.15 (15%)
+            const gState = new (doc as any).GState({ opacity: 0.15 });
             doc.setGState(gState);
         } catch (e) {
             // Fallback if GState fails
         }
-        const imgSize = 85; // Increased size
+        const imgSize = 120; // Increased size as requested
         const centerX = (210 - imgSize) / 2;
         const centerY = (148.5 - imgSize) / 2; // Centered in the top half of A4
         doc.addImage(logoImg, 'PNG', centerX, centerY, imgSize, imgSize);
