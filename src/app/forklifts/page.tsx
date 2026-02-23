@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Forklift, JobCard, Company } from "@/lib/data";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle, Share2, MapPin, CalendarDays, Zap, Ruler, Hash } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle, Download, MapPin, CalendarDays, Zap, Ruler, Hash } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy, deleteField } from "firebase/firestore";
 import { useState, useMemo, Fragment, useCallback } from "react";
@@ -86,7 +86,7 @@ export default function ForkliftsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchField, setSearchField] = useState<SearchField>('All');
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [isSharing, setIsSharing] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState<string | null>(null);
 
   const forkliftsQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'forklifts'), orderBy('srNumber', 'asc')) : null, [firestore, user]);
   const activeJobCardsQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'jobCards'), where('status', 'in', ['Pending', 'Assigned', 'In Progress'])) : null, [firestore, user]);
@@ -263,11 +263,11 @@ export default function ForkliftsPage() {
     setExpandedRow(expandedRow === id ? null : id);
   };
 
-  const handleShare = async (forklift: Forklift) => {
+  const handleDownloadImage = async (forklift: Forklift) => {
     const node = document.getElementById(`share-card-${forklift.id}`);
     if (!node) return;
 
-    setIsSharing(forklift.id);
+    setIsDownloading(forklift.id);
     try {
       const blob = await toBlob(node, { 
         backgroundColor: '#FFFFFF',
@@ -280,26 +280,21 @@ export default function ForkliftsPage() {
       
       if (!blob) throw new Error("Failed to generate image");
 
-      const file = new File([blob], `forklift-${forklift.serialNumber}.png`, { type: 'image/png' });
-
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `Forklift Details: ${forklift.serialNumber}`,
-          text: `Details for ${forklift.make} ${forklift.model} - Shared via VE Dashboard`
-        });
-      } else {
-        const link = document.createElement('a');
-        link.download = `forklift-${forklift.serialNumber}.png`;
-        link.href = URL.createObjectURL(blob);
-        link.click();
-        toast({ title: "Image Generated", description: "Image downloaded. You can now send it manually." });
-      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `forklift-${forklift.serialNumber}.png`;
+      link.href = url;
+      link.click();
+      
+      // Clean up the URL to free memory
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      
+      toast({ title: "Success", description: "Image downloaded successfully." });
     } catch (error) {
-      console.error('Error sharing:', error);
-      toast({ variant: 'destructive', title: "Share Error", description: "Failed to create shareable image." });
+      console.error('Error downloading:', error);
+      toast({ variant: 'destructive', title: "Download Error", description: "Failed to create image." });
     } finally {
-      setIsSharing(null);
+      setIsDownloading(null);
     }
   };
   
@@ -374,9 +369,9 @@ export default function ForkliftsPage() {
               </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-40" align="end" onMouseLeave={(e) => (e.currentTarget as HTMLElement).blur()}>
-              <DropdownMenuItem onSelect={() => handleShare(forklift)} disabled={isSharing === forklift.id}>
-                  <Share2 className="mr-2 h-4 w-4" />
-                  {isSharing === forklift.id ? 'Generating...' : 'Share Card'}
+              <DropdownMenuItem onSelect={() => handleDownloadImage(forklift)} disabled={isDownloading === forklift.id}>
+                  <Download className="mr-2 h-4 w-4" />
+                  {isDownloading === forklift.id ? 'Generating...' : 'Download Card'}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => openAddEditDialog(forklift)}>
                   <Pencil className="mr-2 h-4 w-4" />
@@ -596,11 +591,11 @@ export default function ForkliftsPage() {
                                                 variant="outline" 
                                                 size="sm" 
                                                 className="h-8 text-[10px] sm:text-xs" 
-                                                onClick={(e) => { e.stopPropagation(); handleShare(forklift); }}
-                                                disabled={isSharing === forklift.id}
+                                                onClick={(e) => { e.stopPropagation(); handleDownloadImage(forklift); }}
+                                                disabled={isDownloading === forklift.id}
                                               >
-                                                  <Share2 className="mr-1.5 h-3.5 w-3.5" />
-                                                  {isSharing === forklift.id ? 'Generating...' : 'Share Details'}
+                                                  <Download className="mr-1.5 h-3.5 w-3.5" />
+                                                  {isDownloading === forklift.id ? 'Generating...' : 'Download Details'}
                                               </Button>
                                           </div>
                                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -709,7 +704,7 @@ export default function ForkliftsPage() {
           </CardContent>
         </Card>
 
-        {/* Professional Share Image Template */}
+        {/* Professional Download Image Template (Hidden) */}
         <div className="fixed -left-[9999px] top-0 pointer-events-none" aria-hidden="true">
             {forklifts?.map(f => (
                 <div 
@@ -824,7 +819,7 @@ export default function ForkliftsPage() {
                     )}
 
                     <div className="mt-10 pt-6 border-t border-slate-100 flex justify-between items-center italic text-[10px] text-slate-400">
-                        <span>Generated via Fleet Management</span>
+                        <span>Fleet Management Information System</span>
                         <span className="font-medium">{format(new Date(), 'dd MMM yyyy, p')}</span>
                     </div>
                 </div>
