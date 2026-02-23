@@ -16,9 +16,6 @@ const toWords = new ToWords({
     }
 });
 
-/**
- * Helper to load an image from a URL and return a promise.
- */
 const loadImage = (url: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -32,9 +29,6 @@ const loadImage = (url: string): Promise<HTMLImageElement> => {
     });
 };
 
-/**
- * Renders a highly structured, professional horizontal salary slip.
- */
 const renderSingleSlip = (
     doc: jsPDF,
     yOffset: number,
@@ -46,27 +40,22 @@ const renderSingleSlip = (
     const netSalaryWords = toWords.convert(salary.netSalary).toUpperCase();
     const monthDisplay = format(parseISO(`${salary.month}-01`), 'MMMM yyyy').toUpperCase();
 
-    const grossEarnings = (salary.baseSalary || 0) + (salary.da || 0) + (salary.hra || 0) + (salary.conveyance || 0) + (salary.medical || 0) + (salary.special || 0) + (salary.ot || 0);
-    const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.tds || 0) + (salary.lwf || 0) + (salary.advance || 0);
+    const grossEarnings = (salary.baseSalary || 0) + (salary.hra || 0) + (salary.conveyance || 0) + (salary.medical || 0) + (salary.special || 0) + (salary.bonus || 0) + (salary.ot || 0);
+    const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.tds || 0) + (salary.advance || 0) + (salary.otherDeductions || 0) + (salary.lwf || 0);
 
-    // --- Background Watermark Image (Rendered with 10% transparency) ---
+    // --- Watermark (10% Transparency) ---
     if (logoImg) {
         doc.saveGraphicsState();
         const gState = new (doc as any).GState({ opacity: 0.10 });
         doc.setGState(gState);
-        
-        const imgWidth = 120;
-        const imgHeight = 120;
-        const x = (210 - imgWidth) / 2;
-        const y = yOffset + 30; 
-        
-        doc.addImage(logoImg, 'PNG', x, y, imgWidth, imgHeight);
+        const imgSize = 100;
+        doc.addImage(logoImg, 'PNG', (210 - imgSize) / 2, yOffset + 40, imgSize, imgSize);
         doc.restoreGraphicsState();
     }
     
-    // --- Header Section ---
+    // 1) Company Details
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(20); 
+    doc.setFontSize(18); 
     doc.setFont('helvetica', 'bold');
     doc.text(company.companyName.toUpperCase(), 105, yOffset + 15, { align: 'center' });
     
@@ -79,11 +68,10 @@ const renderSingleSlip = (
         currentY += 4;
     });
 
-    const contactDetails = `${company.contactNumber ? `Contact: ${company.contactNumber}` : ''} ${company.gstin ? ` | GST: ${company.gstin}` : ''} ${company.pan ? ` | PAN: ${company.pan}` : ''}`;
+    const contactDetails = `${company.contactNumber ? `Contact: ${company.contactNumber}` : ''} ${company.gstin ? ` | GST: ${company.gstin}` : ''}`;
     doc.text(contactDetails, 105, currentY, { align: 'center' });
     currentY += 8;
 
-    // --- Separator ---
     doc.setLineWidth(0.5);
     doc.line(14, currentY, 196, currentY); 
     currentY += 6;
@@ -93,72 +81,72 @@ const renderSingleSlip = (
     doc.text(`SALARY SLIP - ${monthDisplay}`, 105, currentY, { align: 'center' });
     currentY += 8;
 
-    // --- Details Grid (Employee & Period) ---
+    // 2 & 3) Employee & Period Details
     doc.setFontSize(8);
     const col1 = 14;
     const col2 = 60;
     const col3 = 110;
     const col4 = 155;
     
-    // Row 1
+    const bankDisplay = employee.bankAccountNumber ? `****${employee.bankAccountNumber.slice(-4)}` : 'N/A';
+
     doc.setFont('helvetica', 'bold'); doc.text("Employee Name:", col1, currentY);
     doc.setFont('helvetica', 'normal'); doc.text(employee.fullName, col2, currentY);
     doc.setFont('helvetica', 'bold'); doc.text("Salary Month:", col3, currentY);
     doc.setFont('helvetica', 'normal'); doc.text(monthDisplay, col4, currentY);
     currentY += 5;
 
-    // Row 2
-    doc.setFont('helvetica', 'bold'); doc.text("Employee Code:", col1, currentY);
+    doc.setFont('helvetica', 'bold'); doc.text("Employee ID:", col1, currentY);
     doc.setFont('helvetica', 'normal'); doc.text(employee.empCode || 'N/A', col2, currentY);
     doc.setFont('helvetica', 'bold'); doc.text("Total Work Days:", col3, currentY);
     doc.setFont('helvetica', 'normal'); doc.text(String(salary.workingDays || 0), col4, currentY);
     currentY += 5;
 
-    // Row 3
     doc.setFont('helvetica', 'bold'); doc.text("Designation:", col1, currentY);
     doc.setFont('helvetica', 'normal'); doc.text(employee.specialization || 'N/A', col2, currentY);
     doc.setFont('helvetica', 'bold'); doc.text("Present Days:", col3, currentY);
     doc.setFont('helvetica', 'normal'); doc.text(String(salary.presentDays || 0), col4, currentY);
     currentY += 5;
 
-    // Row 4
     doc.setFont('helvetica', 'bold'); doc.text("Department:", col1, currentY);
-    doc.setFont('helvetica', 'normal'); doc.text(employee.department || 'Workshop', col2, currentY);
+    doc.setFont('helvetica', 'normal'); doc.text(employee.department || 'N/A', col2, currentY);
     doc.setFont('helvetica', 'bold'); doc.text("Leave / Absent:", col3, currentY);
     doc.setFont('helvetica', 'normal'); doc.text(String(salary.absentDays || 0), col4, currentY);
     currentY += 5;
 
-    // Row 5
     doc.setFont('helvetica', 'bold'); doc.text("Date of Joining:", col1, currentY);
     doc.setFont('helvetica', 'normal'); doc.text(employee.doj ? format(parseISO(employee.doj), 'dd/MM/yyyy') : 'N/A', col2, currentY);
     doc.setFont('helvetica', 'bold'); doc.text("Pay Date:", col3, currentY);
     doc.setFont('helvetica', 'normal'); doc.text(salary.paymentDate ? format(parseISO(salary.paymentDate), 'dd/MM/yyyy') : 'N/A', col4, currentY);
     currentY += 5;
 
-    // Row 6
     doc.setFont('helvetica', 'bold'); doc.text("PAN Number:", col1, currentY);
     doc.setFont('helvetica', 'normal'); doc.text(employee.panNumber || 'N/A', col2, currentY);
-    doc.setFont('helvetica', 'bold'); doc.text("UAN Number:", col3, currentY);
-    doc.setFont('helvetica', 'normal'); doc.text(employee.uanNumber || 'N/A', col4, currentY);
+    doc.setFont('helvetica', 'bold'); doc.text("Bank Account:", col3, currentY);
+    doc.setFont('helvetica', 'normal'); doc.text(`${employee.bankName || ''} (${bankDisplay})`, col4, currentY);
+    currentY += 5;
+
+    doc.setFont('helvetica', 'bold'); doc.text("UAN Number:", col1, currentY);
+    doc.setFont('helvetica', 'normal'); doc.text(employee.uanNumber || 'N/A', col2, currentY);
     currentY += 10;
 
-    // --- Earnings & Deductions Tables (Side-by-Side) ---
+    // 4 & 5) Earnings & Deductions Tables (Side-by-Side)
     const tableY = currentY;
     
-    // Earnings Table
+    // Earnings
     autoTable(doc, {
         startY: tableY,
         margin: { left: 14, right: 107 },
         head: [['Earnings', 'Amount (INR)']],
         body: [
             ['Basic Salary', (salary.baseSalary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
-            ['D.A.', (salary.da || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             ['H.R.A.', (salary.hra || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             ['Conveyance Allw.', (salary.conveyance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             ['Medical Allw.', (salary.medical || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             ['Special Allw.', (salary.special || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
-            ['Overtime / Bonus', (salary.ot || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
-            [{ content: 'Total Earnings', styles: { fontStyle: 'bold' } }, { content: grossEarnings.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }]
+            ['Bonus / Incentive', (salary.bonus || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
+            ['Overtime (OT)', (salary.ot || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
+            [{ content: 'Total Gross Earnings', styles: { fontStyle: 'bold' } }, { content: grossEarnings.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }]
         ],
         theme: 'grid',
         styles: { fontSize: 7.5, cellPadding: 1.5, font: 'helvetica', fillColor: false },
@@ -166,7 +154,7 @@ const renderSingleSlip = (
         columnStyles: { 1: { halign: 'right' } }
     });
 
-    // Deductions Table
+    // Deductions
     autoTable(doc, {
         startY: tableY,
         margin: { left: 107, right: 14 },
@@ -178,7 +166,7 @@ const renderSingleSlip = (
             ['T.D.S.', (salary.tds || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             ['Loan / Advance', (salary.advance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             ['L.W.F.', (salary.lwf || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
-            ['Other Deductions', '0.00'],
+            ['Other Deductions', (salary.otherDeductions || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             [{ content: 'Total Deductions', styles: { fontStyle: 'bold' } }, { content: totalDeductions.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }]
         ],
         theme: 'grid',
@@ -189,7 +177,7 @@ const renderSingleSlip = (
 
     currentY = (doc as any).lastAutoTable.finalY + 12;
 
-    // --- Net Salary Section ---
+    // 6) Net Salary Section
     doc.setFillColor(245, 245, 245);
     doc.rect(14, currentY, 182, 12, 'F');
     doc.setDrawColor(0, 0, 0);
@@ -204,7 +192,7 @@ const renderSingleSlip = (
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
 
-    // --- Footer Section ---
+    // 7) Footer Section
     currentY += 25;
     doc.setFont('helvetica', 'bold');
     doc.text("__________________________", 35, currentY);
@@ -229,7 +217,7 @@ export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, 
     try {
         logoImg = await loadImage('/velogo.png');
     } catch (e) {
-        console.warn("Watermark logo not found.");
+        console.warn("Logo not found at /velogo.png");
     }
 
     renderSingleSlip(doc, 0, salary, employee, company, logoImg);

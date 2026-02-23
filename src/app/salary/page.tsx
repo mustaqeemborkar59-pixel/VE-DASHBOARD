@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, FileText, WalletCards, XCircle, Calculator, CalendarCheck } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -48,12 +48,12 @@ export default function SalaryPage() {
   const [absentDays, setAbsentDays] = useState('0');
 
   // Earnings
-  const [baseSalary, setBaseSalary] = useState('0'); // Basic
-  const [da, setDa] = useState('0');
+  const [baseSalary, setBaseSalary] = useState('0');
   const [hra, setHra] = useState('0');
   const [conveyance, setConveyance] = useState('0');
   const [medical, setMedical] = useState('0');
   const [special, setSpecial] = useState('0');
+  const [bonus, setBonus] = useState('0');
   const [ot, setOt] = useState('0');
   
   // Deductions
@@ -63,6 +63,7 @@ export default function SalaryPage() {
   const [tds, setTds] = useState('0');
   const [lwf, setLwf] = useState('0');
   const [advance, setAdvance] = useState('0');
+  const [otherDeductions, setOtherDeductions] = useState('0');
 
   const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [status, setStatus] = useState<'Paid' | 'Pending'>('Paid');
@@ -82,11 +83,11 @@ export default function SalaryPage() {
 
   const calculations = useMemo(() => {
     const basic = parseFloat(baseSalary) || 0;
-    const v_da = parseFloat(da) || 0;
     const v_hra = parseFloat(hra) || 0;
     const v_conveyance = parseFloat(conveyance) || 0;
     const v_medical = parseFloat(medical) || 0;
     const v_special = parseFloat(special) || 0;
+    const v_bonus = parseFloat(bonus) || 0;
     const v_ot = parseFloat(ot) || 0;
     
     const v_pf = parseFloat(pf) || 0;
@@ -95,13 +96,14 @@ export default function SalaryPage() {
     const v_tds = parseFloat(tds) || 0;
     const v_lwf = parseFloat(lwf) || 0;
     const v_advance = parseFloat(advance) || 0;
+    const v_other = parseFloat(otherDeductions) || 0;
 
-    const grossEarnings = basic + v_da + v_hra + v_conveyance + v_medical + v_special + v_ot;
-    const grossDeductions = v_pf + v_esic + v_pt + v_tds + v_lwf + v_advance;
-    const netPay = Math.max(0, grossEarnings - grossDeductions);
+    const grossEarnings = basic + v_hra + v_conveyance + v_medical + v_special + v_bonus + v_ot;
+    const totalDeductions = v_pf + v_esic + v_pt + v_tds + v_lwf + v_advance + v_other;
+    const netPay = Math.max(0, grossEarnings - totalDeductions);
 
-    return { grossEarnings, grossDeductions, netPay };
-  }, [baseSalary, da, hra, conveyance, medical, special, ot, pf, esic, pt, tds, lwf, advance]);
+    return { grossEarnings, totalDeductions, netPay };
+  }, [baseSalary, hra, conveyance, medical, special, bonus, ot, pf, esic, pt, tds, lwf, advance, otherDeductions]);
 
   const filteredSalaries = useMemo(() => {
     if (!salaries) return [];
@@ -121,11 +123,11 @@ export default function SalaryPage() {
     setPresentDays('0');
     setAbsentDays('0');
     setBaseSalary('0');
-    setDa('0');
     setHra('0');
     setConveyance('0');
     setMedical('0');
     setSpecial('0');
+    setBonus('0');
     setOt('0');
     setPf('0');
     setEsic('0');
@@ -133,6 +135,7 @@ export default function SalaryPage() {
     setTds('0');
     setLwf('0');
     setAdvance('0');
+    setOtherDeductions('0');
     setPaymentDate(format(new Date(), 'yyyy-MM-dd'));
     setStatus('Paid');
     setNotes('');
@@ -148,11 +151,11 @@ export default function SalaryPage() {
       setPresentDays(salary.presentDays?.toString() || '0');
       setAbsentDays(salary.absentDays?.toString() || '0');
       setBaseSalary(salary.baseSalary?.toString() || '0');
-      setDa(salary.da?.toString() || '0');
       setHra(salary.hra?.toString() || '0');
       setConveyance(salary.conveyance?.toString() || '0');
       setMedical(salary.medical?.toString() || '0');
       setSpecial(salary.special?.toString() || '0');
+      setBonus(salary.bonus?.toString() || '0');
       setOt(salary.ot?.toString() || '0');
       setPf(salary.pf?.toString() || '0');
       setEsic(salary.esic?.toString() || '0');
@@ -160,6 +163,7 @@ export default function SalaryPage() {
       setTds(salary.tds?.toString() || '0');
       setLwf(salary.lwf?.toString() || '0');
       setAdvance(salary.advance?.toString() || '0');
+      setOtherDeductions(salary.otherDeductions?.toString() || '0');
       setPaymentDate(salary.paymentDate || '');
       setStatus(salary.status);
       setNotes(salary.notes || '');
@@ -183,11 +187,11 @@ export default function SalaryPage() {
       presentDays: parseFloat(presentDays) || 0,
       absentDays: parseFloat(absentDays) || 0,
       baseSalary: parseFloat(baseSalary) || 0,
-      da: parseFloat(da) || 0,
       hra: parseFloat(hra) || 0,
       conveyance: parseFloat(conveyance) || 0,
       medical: parseFloat(medical) || 0,
       special: parseFloat(special) || 0,
+      bonus: parseFloat(bonus) || 0,
       ot: parseFloat(ot) || 0,
       pf: parseFloat(pf) || 0,
       esic: parseFloat(esic) || 0,
@@ -195,6 +199,7 @@ export default function SalaryPage() {
       tds: parseFloat(tds) || 0,
       lwf: parseFloat(lwf) || 0,
       advance: parseFloat(advance) || 0,
+      otherDeductions: parseFloat(otherDeductions) || 0,
       netSalary: calculations.netPay,
       paymentDate,
       status,
@@ -288,7 +293,6 @@ export default function SalaryPage() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              {/* Desktop Table */}
               <div className="hidden md:block">
                 <Table>
                   <TableHeader className="bg-muted/30">
@@ -344,7 +348,6 @@ export default function SalaryPage() {
                 </Table>
               </div>
 
-              {/* Mobile List View - Optimized Padding */}
               <div className="md:hidden px-1 py-4 space-y-3">
                 {filteredSalaries.length > 0 ? (
                   filteredSalaries.map(salary => {
@@ -387,7 +390,6 @@ export default function SalaryPage() {
           </Card>
         </Tabs>
 
-        {/* Add/Edit Salary Dialog */}
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
             <DialogHeader className="p-6 pb-0">
@@ -438,7 +440,6 @@ export default function SalaryPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Earnings Column */}
                 <div className="space-y-4">
                   <h3 className="font-bold text-sm text-green-600 flex items-center gap-2">
                     <Calculator className="h-4 w-4" /> Earnings
@@ -449,19 +450,15 @@ export default function SalaryPage() {
                       <Input type="number" value={baseSalary} onChange={(e) => setBaseSalary(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <div className="grid grid-cols-2 items-center gap-4">
-                      <Label className="text-xs">D.A.</Label>
-                      <Input type="number" value={da} onChange={(e) => setDa(e.target.value)} className="h-8 font-mono" />
-                    </div>
-                    <div className="grid grid-cols-2 items-center gap-4">
                       <Label className="text-xs">H.R.A.</Label>
                       <Input type="number" value={hra} onChange={(e) => setHra(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <div className="grid grid-cols-2 items-center gap-4">
-                      <Label className="text-xs">Conveyance</Label>
+                      <Label className="text-xs">Conveyance Allw.</Label>
                       <Input type="number" value={conveyance} onChange={(e) => setConveyance(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <div className="grid grid-cols-2 items-center gap-4">
-                      <Label className="text-xs">Medical</Label>
+                      <Label className="text-xs">Medical Allw.</Label>
                       <Input type="number" value={medical} onChange={(e) => setMedical(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <div className="grid grid-cols-2 items-center gap-4">
@@ -469,7 +466,11 @@ export default function SalaryPage() {
                       <Input type="number" value={special} onChange={(e) => setSpecial(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <div className="grid grid-cols-2 items-center gap-4">
-                      <Label className="text-xs">O.T. / Bonus</Label>
+                      <Label className="text-xs">Bonus / Incentive</Label>
+                      <Input type="number" value={bonus} onChange={(e) => setBonus(e.target.value)} className="h-8 font-mono" />
+                    </div>
+                    <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">Overtime (OT)</Label>
                       <Input type="number" value={ot} onChange={(e) => setOt(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <Separator />
@@ -480,7 +481,6 @@ export default function SalaryPage() {
                   </div>
                 </div>
 
-                {/* Deductions Column */}
                 <div className="space-y-4">
                   <h3 className="font-bold text-sm text-red-600 flex items-center gap-2">
                     <Calculator className="h-4 w-4" /> Deductions
@@ -503,17 +503,21 @@ export default function SalaryPage() {
                       <Input type="number" value={tds} onChange={(e) => setTds(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">Loan / Advance</Label>
+                      <Input type="number" value={advance} onChange={(e) => setAdvance(e.target.value)} className="h-8 font-mono text-destructive" />
+                    </div>
+                    <div className="grid grid-cols-2 items-center gap-4">
                       <Label className="text-xs">L.W.F.</Label>
                       <Input type="number" value={lwf} onChange={(e) => setLwf(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <div className="grid grid-cols-2 items-center gap-4">
-                      <Label className="text-xs">Loan / Advance</Label>
-                      <Input type="number" value={advance} onChange={(e) => setAdvance(e.target.value)} className="h-8 font-mono text-destructive" />
+                      <Label className="text-xs">Other Deductions</Label>
+                      <Input type="number" value={otherDeductions} onChange={(e) => setOtherDeductions(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <Separator />
                     <div className="grid grid-cols-2 items-center gap-4 font-bold">
-                      <Label className="text-xs">Gross Deductions</Label>
-                      <div className="text-right text-sm text-destructive">{calculations.grossDeductions.toLocaleString('en-IN')}</div>
+                      <Label className="text-xs">Total Deductions</Label>
+                      <div className="text-right text-sm text-destructive">{calculations.totalDeductions.toLocaleString('en-IN')}</div>
                     </div>
                   </div>
                 </div>
@@ -540,7 +544,7 @@ export default function SalaryPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Additional Notes</Label>
-                  <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Payment mode, ref no., etc." className="h-10" />
+                  <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ref no., mode etc." className="h-10" />
                 </div>
               </div>
             </div>
@@ -551,7 +555,6 @@ export default function SalaryPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation */}
         <AlertDialog open={!!salaryToDelete} onOpenChange={(o) => !o && setSalaryToDelete(null)}>
           <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
             <AlertDialogHeader>
@@ -560,7 +563,7 @@ export default function SalaryPage() {
               </div>
               <AlertDialogTitle className="text-xl font-black">Delete Payroll Record?</AlertDialogTitle>
               <AlertDialogDescription className="text-sm font-medium leading-relaxed">
-                This will permanently erase the salary record for this employee. This action cannot be undone.
+                This will permanently erase the salary record for this employee.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row gap-2">

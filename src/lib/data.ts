@@ -220,22 +220,23 @@ export type Salary = {
   employeeId: string;
   enterprise: 'Vithal' | 'RV';
   month: string; // YYYY-MM
-  workingDays?: number;
-  presentDays?: number;
-  absentDays?: number;
+  workingDays: number;
+  presentDays: number;
+  absentDays: number;
   baseSalary: number; // Basic
-  da: number;
   hra: number;
-  conveyance?: number;
-  medical?: number;
-  special?: number;
-  ot: number;
+  conveyance: number;
+  medical: number;
+  special: number;
+  bonus: number; // Added
+  ot: number; // Overtime
   pf: number;
   esic: number;
   pt: number;
-  tds?: number;
+  tds: number;
   lwf: number;
   advance: number;
+  otherDeductions: number; // Added
   netSalary: number;
   paymentDate: string; // YYYY-MM-DD
   status: 'Paid' | 'Pending';
