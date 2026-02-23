@@ -43,20 +43,24 @@ const renderSingleSlip = (
     const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.tds || 0) + (salary.advance || 0) + (salary.otherDeductions || 0) + (salary.lwf || 0);
 
     // --- Watermark (10% Transparency) ---
+    // Centered in the top 50% area (which is approx 148.5mm height)
     if (logoImg) {
         doc.saveGraphicsState();
         try {
+            // Using GState for transparency if supported
             const gState = new (doc as any).GState({ opacity: 0.10 });
             doc.setGState(gState);
         } catch (e) {
-            // Fallback
+            // Fallback if GState fails
         }
-        const imgSize = 60;
-        doc.addImage(logoImg, 'PNG', (210 - imgSize) / 2, yOffset + 15, imgSize, imgSize);
+        const imgSize = 85; // Increased size
+        const centerX = (210 - imgSize) / 2;
+        const centerY = (148.5 - imgSize) / 2; // Centered in the top half of A4
+        doc.addImage(logoImg, 'PNG', centerX, centerY, imgSize, imgSize);
         doc.restoreGraphicsState();
     }
     
-    // 1) Company Details
+    // 1) Company Details - Compact Header
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
@@ -84,7 +88,7 @@ const renderSingleSlip = (
     doc.text(`SALARY SLIP - ${monthDisplay}`, 105, currentY, { align: 'center' });
     currentY += 6;
 
-    // 2 & 3) Employee & Period Details
+    // 2 & 3) Employee & Period Details - No Department, Compact Pairs
     doc.setFontSize(7.5);
     const col1 = 14;
     const col2 = 50;
@@ -110,7 +114,7 @@ const renderSingleSlip = (
     
     currentY += 3;
 
-    // 4 & 5) Earnings & Deductions Tables (Side-by-Side)
+    // 4 & 5) Earnings & Deductions Tables - Side-by-Side with Transparent Headers
     const tableY = currentY;
     
     // Earnings Table
@@ -130,7 +134,14 @@ const renderSingleSlip = (
         ],
         theme: 'grid',
         styles: { fontSize: 7, cellPadding: 1.5, font: 'helvetica', fillColor: false, lineColor: [0, 0, 0], lineWidth: 0.1 },
-        headStyles: { fillColor: false, textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.2 },
+        headStyles: { 
+            fillColor: false, // Transparent
+            textColor: [0, 0, 0], 
+            fontStyle: 'bold', 
+            halign: 'center', 
+            lineWidth: 0.2, // Border added
+            lineColor: [0, 0, 0]
+        },
         columnStyles: { 1: { halign: 'right' } }
     });
 
@@ -151,13 +162,20 @@ const renderSingleSlip = (
         ],
         theme: 'grid',
         styles: { fontSize: 7, cellPadding: 1.5, font: 'helvetica', fillColor: false, lineColor: [0, 0, 0], lineWidth: 0.1 },
-        headStyles: { fillColor: false, textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.2 },
+        headStyles: { 
+            fillColor: false, // Transparent
+            textColor: [0, 0, 0], 
+            fontStyle: 'bold', 
+            halign: 'center', 
+            lineWidth: 0.2, // Border added
+            lineColor: [0, 0, 0]
+        },
         columnStyles: { 1: { halign: 'right' } }
     });
 
     currentY = (doc as any).lastAutoTable.finalY + 6;
 
-    // 6) Net Salary Section
+    // 6) Net Salary Section - Left Aligned, Clean (No Box)
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text(`NET PAYABLE SALARY: Rs. ${salary.netSalary.toLocaleString('en-IN', { minimumFractionDigits: 2 })}/-`, 14, currentY, { align: 'left' });
@@ -167,7 +185,7 @@ const renderSingleSlip = (
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
 
-    // 7) Footer Section
+    // 7) Footer Section - Generic
     currentY += 10;
     doc.setFontSize(7);
     doc.setFont('helvetica', 'italic');
@@ -186,7 +204,9 @@ export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, 
         console.warn("Logo not found at /velogo.png");
     }
 
+    // Render slip in the top 50% area
     renderSingleSlip(doc, 0, salary, employee, company, logoImg);
+    
     const fileName = `SalarySlip_${employee.fullName.replace(/\s+/g, '_')}_${salary.month}.pdf`;
     doc.save(fileName);
 };
