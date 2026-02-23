@@ -45,52 +45,51 @@ const renderSingleSlip = (
     // --- Watermark (10% Transparency) ---
     if (logoImg) {
         doc.saveGraphicsState();
-        // Check if GState is available (jspdf-autotable often provides it)
         try {
             const gState = new (doc as any).GState({ opacity: 0.10 });
             doc.setGState(gState);
         } catch (e) {
             // Fallback for some environments
         }
-        const imgSize = 80; // Slightly smaller logo for compact view
-        doc.addImage(logoImg, 'PNG', (210 - imgSize) / 2, yOffset + 30, imgSize, imgSize);
+        const imgSize = 70; // Even more compact logo
+        doc.addImage(logoImg, 'PNG', (210 - imgSize) / 2, yOffset + 25, imgSize, imgSize);
         doc.restoreGraphicsState();
     }
     
     // 1) Company Details
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(14); // Reduced from 18 for 50% fit
+    doc.setFontSize(13); // Compact size
     doc.setFont('helvetica', 'bold');
-    doc.text(company.companyName.toUpperCase(), 105, yOffset + 12, { align: 'center' });
+    doc.text(company.companyName.toUpperCase(), 105, yOffset + 10, { align: 'center' });
     
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.setFont('helvetica', 'normal');
     const addressLines = company.address ? doc.splitTextToSize(company.address, 170) : [];
-    let currentY = yOffset + 17;
+    let currentY = yOffset + 14.5;
     addressLines.forEach((line: string) => {
         doc.text(line, 105, currentY, { align: 'center' });
-        currentY += 3.5;
+        currentY += 3.2;
     });
 
     const contactDetails = `${company.contactNumber ? `Contact: ${company.contactNumber}` : ''} ${company.gstin ? ` | GST: ${company.gstin}` : ''}`;
     doc.text(contactDetails, 105, currentY, { align: 'center' });
-    currentY += 6;
-
-    doc.setLineWidth(0.3);
-    doc.line(14, currentY, 196, currentY); 
     currentY += 5;
 
-    doc.setFontSize(10);
+    doc.setLineWidth(0.2);
+    doc.line(14, currentY, 196, currentY); 
+    currentY += 4.5;
+
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text(`SALARY SLIP - ${monthDisplay}`, 105, currentY, { align: 'center' });
-    currentY += 6;
+    currentY += 5.5;
 
-    // 2 & 3) Employee & Period Details
-    doc.setFontSize(7.5);
+    // 2 & 3) Employee & Period Details (Rearranged for compact look without Department)
+    doc.setFontSize(7);
     const col1 = 14;
-    const col2 = 55;
+    const col2 = 50;
     const col3 = 110;
-    const col4 = 150;
+    const col4 = 145;
     
     const bankDisplay = employee.bankAccountNumber ? `****${employee.bankAccountNumber.slice(-4)}` : 'N/A';
 
@@ -99,18 +98,17 @@ const renderSingleSlip = (
         doc.setFont('helvetica', 'normal'); doc.text(val1, col2, currentY);
         doc.setFont('helvetica', 'bold'); doc.text(label2, col3, currentY);
         doc.setFont('helvetica', 'normal'); doc.text(val2, col4, currentY);
-        currentY += 4.5;
+        currentY += 4;
     }
 
     drawInfoLine("Employee Name:", employee.fullName, "Salary Month:", monthDisplay);
     drawInfoLine("Employee ID:", employee.empCode || 'N/A', "Total Work Days:", String(salary.workingDays || 0));
     drawInfoLine("Designation:", employee.specialization || 'N/A', "Present Days:", String(salary.presentDays || 0));
-    drawInfoLine("Department:", employee.department || 'N/A', "Leave / Absent:", String(salary.absentDays || 0));
-    drawInfoLine("Date of Joining:", employee.doj ? format(parseISO(employee.doj), 'dd/MM/yyyy') : 'N/A', "Pay Date:", salary.paymentDate ? format(parseISO(salary.paymentDate), 'dd/MM/yyyy') : 'N/A');
-    drawInfoLine("PAN Number:", employee.panNumber || 'N/A', "Bank Account:", `${employee.bankName || ''} (${bankDisplay})`);
-    drawInfoLine("UAN Number:", employee.uanNumber || 'N/A', "", "");
+    drawInfoLine("Date of Joining:", employee.doj ? format(parseISO(employee.doj), 'dd/MM/yyyy') : 'N/A', "Leave / Absent:", String(salary.absentDays || 0));
+    drawInfoLine("PAN Number:", employee.panNumber || 'N/A', "Pay Date:", salary.paymentDate ? format(parseISO(salary.paymentDate), 'dd/MM/yyyy') : 'N/A');
+    drawInfoLine("UAN Number:", employee.uanNumber || 'N/A', "Bank Account:", `${employee.bankName || ''} (${bankDisplay})`);
     
-    currentY += 4;
+    currentY += 3;
 
     // 4 & 5) Earnings & Deductions Tables (Side-by-Side)
     const tableY = currentY;
@@ -131,7 +129,7 @@ const renderSingleSlip = (
             [{ content: 'Gross Total', styles: { fontStyle: 'bold' } }, { content: grossEarnings.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }]
         ],
         theme: 'grid',
-        styles: { fontSize: 7, cellPadding: 1.2, font: 'helvetica', fillColor: false },
+        styles: { fontSize: 6.5, cellPadding: 1, font: 'helvetica', fillColor: false },
         headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
         columnStyles: { 1: { halign: 'right' } }
     });
@@ -152,30 +150,30 @@ const renderSingleSlip = (
             [{ content: 'Total Deductions', styles: { fontStyle: 'bold' } }, { content: totalDeductions.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }]
         ],
         theme: 'grid',
-        styles: { fontSize: 7, cellPadding: 1.2, font: 'helvetica', fillColor: false },
+        styles: { fontSize: 6.5, cellPadding: 1, font: 'helvetica', fillColor: false },
         headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
         columnStyles: { 1: { halign: 'right' } }
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 8;
+    currentY = (doc as any).lastAutoTable.finalY + 6;
 
     // 6) Net Salary Section (Left aligned, no border)
-    doc.setFontSize(9.5);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text(`NET PAYABLE SALARY: Rs. ${salary.netSalary.toLocaleString('en-IN', { minimumFractionDigits: 2 })}/-`, 14, currentY, { align: 'left' });
     
-    currentY += 6;
-    doc.setFontSize(8);
+    currentY += 5;
+    doc.setFontSize(7.5);
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
 
     // 7) Footer Section
-    currentY += 12;
-    doc.setFontSize(6.5);
+    currentY += 10;
+    doc.setFontSize(6);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(120, 120, 120);
     doc.text("This is a system generated salary slip and does not require a physical signature.", 105, currentY, { align: 'center' });
-    doc.text(`Generated on ${format(new Date(), 'dd MMM yyyy, p')}`, 105, currentY + 3.5, { align: 'center' });
+    doc.text(`Generated on ${format(new Date(), 'dd MMM yyyy, p')}`, 105, currentY + 3, { align: 'center' });
 };
 
 export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, company: CompanySettings) => {
