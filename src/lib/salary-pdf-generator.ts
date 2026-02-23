@@ -51,8 +51,8 @@ const renderSingleSlip = (
         } catch (e) {
             // Fallback
         }
-        const imgSize = 80;
-        doc.addImage(logoImg, 'PNG', (210 - imgSize) / 2, yOffset + 20, imgSize, imgSize);
+        const imgSize = 60;
+        doc.addImage(logoImg, 'PNG', (210 - imgSize) / 2, yOffset + 15, imgSize, imgSize);
         doc.restoreGraphicsState();
     }
     
@@ -73,7 +73,7 @@ const renderSingleSlip = (
 
     const contactDetails = `${company.contactNumber ? `Contact: ${company.contactNumber}` : ''} ${company.gstin ? ` | GST: ${company.gstin}` : ''}`;
     doc.text(contactDetails, 105, currentY, { align: 'center' });
-    currentY += 6;
+    currentY += 5;
 
     doc.setLineWidth(0.2);
     doc.line(14, currentY, 196, currentY); 
@@ -108,7 +108,7 @@ const renderSingleSlip = (
     drawInfoLine("PAN Number:", employee.panNumber || 'N/A', "Pay Date:", salary.paymentDate ? format(parseISO(salary.paymentDate), 'dd/MM/yyyy') : 'N/A');
     drawInfoLine("UAN Number:", employee.uanNumber || 'N/A', "Bank Account:", `${employee.bankName || ''} (${bankDisplay})`);
     
-    currentY += 4;
+    currentY += 3;
 
     // 4 & 5) Earnings & Deductions Tables (Side-by-Side)
     const tableY = currentY;
@@ -129,8 +129,8 @@ const renderSingleSlip = (
             [{ content: 'Gross Total', styles: { fontStyle: 'bold' } }, { content: grossEarnings.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }]
         ],
         theme: 'grid',
-        styles: { fontSize: 7, cellPadding: 1.5, font: 'helvetica', fillColor: false },
-        headStyles: { fillColor: false, textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
+        styles: { fontSize: 7, cellPadding: 1.5, font: 'helvetica', fillColor: false, lineColor: [0, 0, 0], lineWidth: 0.1 },
+        headStyles: { fillColor: false, textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.2 },
         columnStyles: { 1: { halign: 'right' } }
     });
 
@@ -150,25 +150,25 @@ const renderSingleSlip = (
             [{ content: 'Total Deductions', styles: { fontStyle: 'bold' } }, { content: totalDeductions.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }]
         ],
         theme: 'grid',
-        styles: { fontSize: 7, cellPadding: 1.5, font: 'helvetica', fillColor: false },
-        headStyles: { fillColor: false, textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
+        styles: { fontSize: 7, cellPadding: 1.5, font: 'helvetica', fillColor: false, lineColor: [0, 0, 0], lineWidth: 0.1 },
+        headStyles: { fillColor: false, textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.2 },
         columnStyles: { 1: { halign: 'right' } }
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 8;
+    currentY = (doc as any).lastAutoTable.finalY + 6;
 
     // 6) Net Salary Section
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text(`NET PAYABLE SALARY: Rs. ${salary.netSalary.toLocaleString('en-IN', { minimumFractionDigits: 2 })}/-`, 14, currentY, { align: 'left' });
     
-    currentY += 6;
+    currentY += 5;
     doc.setFontSize(8);
     doc.setFont('helvetica', 'italic');
     doc.text(`Amount in words: ${netSalaryWords}`, 14, currentY);
 
     // 7) Footer Section
-    currentY += 12;
+    currentY += 10;
     doc.setFontSize(7);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(100, 100, 100);
