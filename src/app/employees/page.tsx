@@ -30,6 +30,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Employee } from "@/lib/data";
@@ -211,19 +212,28 @@ export default function EmployeesPage() {
       </div>
 
       <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md p-4 sm:p-6">
-          <DialogHeader>
+        <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-0">
             <DialogTitle>{selectedEmployee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
             <DialogDescription className="text-xs">
               {selectedEmployee ? 'Update technician details.' : 'Fill out the form below.'}
             </DialogDescription>
           </DialogHeader>
-          <EmployeeForm
-            onSubmit={handleFormSubmit}
-            onCancel={() => setIsAddEditDialogOpen(false)}
-            initialData={selectedEmployee || undefined}
-            mode={selectedEmployee ? 'edit' : 'add'}
-          />
+          <div className="flex-grow overflow-y-auto px-6 py-4">
+            <EmployeeForm
+              onSubmit={handleFormSubmit}
+              initialData={selectedEmployee || undefined}
+              mode={selectedEmployee ? 'edit' : 'add'}
+            />
+          </div>
+          <DialogFooter className="p-6 pt-4 border-t bg-muted/10 flex gap-2">
+              <Button variant="outline" type="button" onClick={() => setIsAddEditDialogOpen(false)} className="h-10 px-6">
+                Cancel
+              </Button>
+              <Button type="submit" form="employee-form" className="h-10 px-8">
+                {selectedEmployee ? 'Update Technician' : 'Add Technician'}
+              </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       

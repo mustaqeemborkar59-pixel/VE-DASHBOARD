@@ -1,8 +1,6 @@
-
 'use client';
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -25,12 +23,11 @@ export type EmployeeFormData = {
 
 interface EmployeeFormProps {
   onSubmit: (data: EmployeeFormData) => void;
-  onCancel: () => void;
   initialData?: Employee;
   mode: 'add' | 'edit';
 }
 
-export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: EmployeeFormProps) {
+export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState<EmployeeFormData>({
     fullName: '',
@@ -44,16 +41,15 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
     bankName: '',
     bankAccountNumber: '',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (mode === 'edit' && initialData) {
       setFormData({
-        fullName: initialData.fullName,
+        fullName: initialData.fullName || '',
         specialization: initialData.specialization || '',
         contactNumber: initialData.contactNumber || '',
         workLocation: initialData.workLocation || '',
-        availability: initialData.availability,
+        availability: initialData.availability ?? true,
         pfNumber: initialData.pfNumber || '',
         uanNumber: initialData.uanNumber || '',
         esicNumber: initialData.esicNumber || '',
@@ -96,17 +92,16 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
       return;
     }
     
-    setIsSubmitting(true);
     onSubmit(formData);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-6 py-4">
+    <form id="employee-form" onSubmit={handleSubmit} className="grid gap-6">
         <div className="grid gap-2">
             <Label htmlFor="fullName">Full Name</Label>
             <Input id="fullName" value={formData.fullName} onChange={handleInputChange} placeholder="e.g., John Doe" required />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="grid gap-2">
               <Label htmlFor="specialization">Role</Label>
               <Input id="specialization" value={formData.specialization} onChange={handleInputChange} placeholder="e.g., Technician, Worker" />
@@ -118,9 +113,9 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
         </div>
         
         <Separator />
-        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Statutory & Bank Details</h3>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Statutory & Bank Details</h3>
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="grid gap-2">
               <Label htmlFor="pfNumber">PF No.</Label>
               <Input id="pfNumber" value={formData.pfNumber} onChange={handleInputChange} placeholder="PF Account No." />
@@ -131,7 +126,7 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="grid gap-2">
               <Label htmlFor="esicNumber">ESIC No.</Label>
               <Input id="esicNumber" value={formData.esicNumber} onChange={handleInputChange} placeholder="ESIC Number" />
@@ -157,14 +152,6 @@ export function EmployeeForm({ onSubmit, onCancel, initialData, mode }: Employee
             <Switch id="availability" checked={formData.availability} onCheckedChange={handleAvailabilityChange} />
             <Label htmlFor="availability">Available for assignments</Label>
         </div>
-      <div className="flex justify-end gap-2 pt-4">
-        <Button variant="outline" type="button" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (mode === 'add' ? 'Adding...' : 'Updating...') : (mode === 'add' ? 'Add Technician' : 'Update Technician')}
-        </Button>
-      </div>
     </form>
   );
 }
