@@ -147,14 +147,30 @@ export default function ForkliftsPage() {
     setTimeout(action, 100);
   };
 
-  const openAddEditDialog = useCallback((forklift: Forklift | null) => {
-    setSelectedForklift(forklift);
-    handleDelayedAction(() => setIsAddEditDialogOpen(true));
+  const closeAllDialogs = useCallback(() => {
+    setIsAddEditDialogOpen(false);
+    setForkliftToDelete(null);
+    setIsImportDialogOpen(false);
+    setIsDownloadSettingsOpen(false);
+    setSelectedForklift(null);
+    setForkliftToDownload(null);
   }, []);
 
+  const openAddEditDialog = useCallback((forklift: Forklift | null) => {
+    closeAllDialogs();
+    setSelectedForklift(forklift);
+    handleDelayedAction(() => setIsAddEditDialogOpen(true));
+  }, [closeAllDialogs]);
+
   const openDeleteDialog = useCallback((forklift: Forklift) => {
+    closeAllDialogs();
     handleDelayedAction(() => setForkliftToDelete(forklift));
-  }, []);
+  }, [closeAllDialogs]);
+
+  const openImportDialog = useCallback(() => {
+    closeAllDialogs();
+    handleDelayedAction(() => setIsImportDialogOpen(true));
+  }, [closeAllDialogs]);
 
   const equipmentTypes = useMemo(() => {
     if (!forklifts) return [];
@@ -301,9 +317,10 @@ export default function ForkliftsPage() {
   };
 
   const openDownloadSettings = (forklift: Forklift) => {
+      closeAllDialogs();
       setForkliftToDownload(forklift);
       setVisibleFields(defaultVisibleFields);
-      setIsDownloadSettingsOpen(true);
+      handleDelayedAction(() => setIsDownloadSettingsOpen(true));
   }
 
   const executeDownload = async () => {
@@ -416,15 +433,15 @@ export default function ForkliftsPage() {
               </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-40" align="end" onMouseLeave={(e) => (e.currentTarget as HTMLElement).blur()}>
-              <DropdownMenuItem onSelect={() => openDownloadSettings(forklift)} disabled={isDownloading === forklift.id}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openDownloadSettings(forklift); }} disabled={isDownloading === forklift.id}>
                   <Download className="mr-2 h-4 w-4" />
                   Download Card
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => openAddEditDialog(forklift)}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openAddEditDialog(forklift); }}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => openDeleteDialog(forklift)} className="text-destructive hover:text-destructive">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openDeleteDialog(forklift); }} className="text-destructive hover:text-destructive">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete
               </DropdownMenuItem>
@@ -441,7 +458,7 @@ export default function ForkliftsPage() {
             <p className="text-xs sm:text-sm text-muted-foreground">Search, filter, and manage your fleet of forklifts.</p>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button onClick={() => setIsImportDialogOpen(true)} variant="outline" size="sm" className="flex-1 sm:flex-none text-xs">
+            <Button onClick={openImportDialog} variant="outline" size="sm" className="flex-1 sm:flex-none text-xs">
               <Upload className="mr-2 h-3.5 w-3.5" />
               Import
             </Button>
@@ -900,7 +917,7 @@ export default function ForkliftsPage() {
         </div>
 
         {/* Download Customization Dialog */}
-        <Dialog open={isDownloadSettingsOpen} onOpenChange={setIsDownloadSettingsOpen}>
+        <Dialog open={isDownloadSettingsOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
             <DialogContent className="max-w-[95vw] sm:max-w-lg p-0 overflow-hidden">
                 <DialogHeader className="p-6 pb-0">
                     <DialogTitle className="text-xl font-bold flex items-center gap-2">
@@ -981,7 +998,7 @@ export default function ForkliftsPage() {
             </DialogContent>
         </Dialog>
 
-        <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
+        <Dialog open={isAddEditDialogOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
           <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] flex flex-col p-0 rounded-xl overflow-hidden border-none shadow-2xl">
             <DialogHeader className="p-6 pb-0">
               <DialogTitle className="text-xl font-black">{selectedForklift ? 'Modify Forklift' : 'Onboard Forklift'}</DialogTitle>
@@ -992,7 +1009,7 @@ export default function ForkliftsPage() {
             <div className='flex-grow overflow-y-auto px-6 py-4'>
                 <ForkliftForm
                   onSubmit={handleFormSubmit}
-                  onCancel={() => { setIsAddEditDialogOpen(false); setSelectedForklift(null);}}
+                  onCancel={() => { closeAllDialogs(); }}
                   initialData={selectedForklift || undefined}
                   mode={selectedForklift ? 'edit' : 'add'}
                   companies={companies || []}
@@ -1000,7 +1017,7 @@ export default function ForkliftsPage() {
                 />
             </div>
             <DialogFooter className="p-6 pt-4 border-t bg-muted/10 flex gap-2">
-                 <Button variant="outline" type="button" onClick={() => { setIsAddEditDialogOpen(false); setSelectedForklift(null);}} className="rounded-xl font-bold h-10 px-6">
+                 <Button variant="outline" type="button" onClick={() => { closeAllDialogs(); }} className="rounded-xl font-bold h-10 px-6">
                     Cancel
                 </Button>
                 <Button type="submit" form="forklift-form" className="rounded-xl font-bold h-10 px-8">
@@ -1010,7 +1027,7 @@ export default function ForkliftsPage() {
           </DialogContent>
         </Dialog>
         
-        <AlertDialog open={!!forkliftToDelete} onOpenChange={(open) => !open && setForkliftToDelete(null)}>
+        <AlertDialog open={!!forkliftToDelete} onOpenChange={(open) => !open && closeAllDialogs()}>
           <AlertDialogContent className="max-w-[90vw] sm:max-w-md rounded-2xl">
             <AlertDialogHeader>
               <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2 mx-auto sm:mx-0">
