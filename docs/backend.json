@@ -103,9 +103,17 @@
           "type": "string",
           "description": "Full name of the employee."
         },
+        "empCode": {
+          "type": "string",
+          "description": "Unique employee identification code."
+        },
         "specialization": {
           "type": "string",
           "description": "Area of specialization or role for the employee (e.g., Electrical, Mechanical, Worker)."
+        },
+        "department": {
+          "type": "string",
+          "description": "Department of the employee."
         },
         "contactNumber": {
           "type": "string",
@@ -118,6 +126,15 @@
         "availability": {
           "type": "boolean",
           "description": "Indicates if the employee is currently available for assignment."
+        },
+        "doj": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of joining."
+        },
+        "panNumber": {
+          "type": "string",
+          "description": "PAN Card Number."
         },
         "pfNumber": {
           "type": "string",
@@ -685,13 +702,20 @@
         "employeeId": { "type": "string" },
         "enterprise": { "type": "string", "enum": ["Vithal", "RV"] },
         "month": { "type": "string", "description": "YYYY-MM format" },
+        "workingDays": { "type": "number" },
+        "presentDays": { "type": "number" },
+        "absentDays": { "type": "number" },
         "baseSalary": { "type": "number" },
         "da": { "type": "number" },
         "hra": { "type": "number" },
+        "conveyance": { "type": "number" },
+        "medical": { "type": "number" },
+        "special": { "type": "number" },
         "ot": { "type": "number" },
         "pf": { "type": "number" },
         "esic": { "type": "number" },
         "pt": { "type": "number" },
+        "tds": { "type": "number" },
         "lwf": { "type": "number" },
         "advance": { "type": "number" },
         "netSalary": { "type": "number" },

@@ -16,10 +16,14 @@ export type JobCard = {
 export type Employee = {
   id: string;
   fullName: string;
+  empCode?: string;
   specialization: string;
+  department?: string;
   contactNumber: string;
   workLocation: string;
   availability: boolean;
+  doj?: string; // Date of Joining
+  panNumber?: string;
   pfNumber?: string;
   uanNumber?: string;
   esicNumber?: string;
@@ -216,13 +220,20 @@ export type Salary = {
   employeeId: string;
   enterprise: 'Vithal' | 'RV';
   month: string; // YYYY-MM
+  workingDays?: number;
+  presentDays?: number;
+  absentDays?: number;
   baseSalary: number; // Basic
   da: number;
   hra: number;
+  conveyance?: number;
+  medical?: number;
+  special?: number;
   ot: number;
   pf: number;
   esic: number;
   pt: number;
+  tds?: number;
   lwf: number;
   advance: number;
   netSalary: number;

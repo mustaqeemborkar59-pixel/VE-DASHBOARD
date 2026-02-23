@@ -12,10 +12,10 @@ import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Employee, Salary, CompanySettings } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, FileText, WalletCards, XCircle, Calculator } from 'lucide-react';
+import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, FileText, WalletCards, XCircle, Calculator, CalendarCheck } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -42,16 +42,25 @@ export default function SalaryPage() {
   const [employeeId, setEmployeeId] = useState('');
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
   
+  // Attendance
+  const [workingDays, setWorkingDays] = useState('0');
+  const [presentDays, setPresentDays] = useState('0');
+  const [absentDays, setAbsentDays] = useState('0');
+
   // Earnings
   const [baseSalary, setBaseSalary] = useState('0'); // Basic
   const [da, setDa] = useState('0');
   const [hra, setHra] = useState('0');
+  const [conveyance, setConveyance] = useState('0');
+  const [medical, setMedical] = useState('0');
+  const [special, setSpecial] = useState('0');
   const [ot, setOt] = useState('0');
   
   // Deductions
   const [pf, setPf] = useState('0');
   const [esic, setEsic] = useState('0');
   const [pt, setPt] = useState('0');
+  const [tds, setTds] = useState('0');
   const [lwf, setLwf] = useState('0');
   const [advance, setAdvance] = useState('0');
 
@@ -75,20 +84,24 @@ export default function SalaryPage() {
     const basic = parseFloat(baseSalary) || 0;
     const v_da = parseFloat(da) || 0;
     const v_hra = parseFloat(hra) || 0;
+    const v_conveyance = parseFloat(conveyance) || 0;
+    const v_medical = parseFloat(medical) || 0;
+    const v_special = parseFloat(special) || 0;
     const v_ot = parseFloat(ot) || 0;
     
     const v_pf = parseFloat(pf) || 0;
     const v_esic = parseFloat(esic) || 0;
     const v_pt = parseFloat(pt) || 0;
+    const v_tds = parseFloat(tds) || 0;
     const v_lwf = parseFloat(lwf) || 0;
     const v_advance = parseFloat(advance) || 0;
 
-    const grossEarnings = basic + v_da + v_hra + v_ot;
-    const grossDeductions = v_pf + v_esic + v_pt + v_lwf + v_advance;
+    const grossEarnings = basic + v_da + v_hra + v_conveyance + v_medical + v_special + v_ot;
+    const grossDeductions = v_pf + v_esic + v_pt + v_tds + v_lwf + v_advance;
     const netPay = Math.max(0, grossEarnings - grossDeductions);
 
     return { grossEarnings, grossDeductions, netPay };
-  }, [baseSalary, da, hra, ot, pf, esic, pt, lwf, advance]);
+  }, [baseSalary, da, hra, conveyance, medical, special, ot, pf, esic, pt, tds, lwf, advance]);
 
   const filteredSalaries = useMemo(() => {
     if (!salaries) return [];
@@ -104,13 +117,20 @@ export default function SalaryPage() {
   const resetForm = useCallback(() => {
     setEmployeeId('');
     setMonth(format(new Date(), 'yyyy-MM'));
+    setWorkingDays('0');
+    setPresentDays('0');
+    setAbsentDays('0');
     setBaseSalary('0');
     setDa('0');
     setHra('0');
+    setConveyance('0');
+    setMedical('0');
+    setSpecial('0');
     setOt('0');
     setPf('0');
     setEsic('0');
     setPt('0');
+    setTds('0');
     setLwf('0');
     setAdvance('0');
     setPaymentDate(format(new Date(), 'yyyy-MM-dd'));
@@ -124,13 +144,20 @@ export default function SalaryPage() {
       setEditingSalary(salary);
       setEmployeeId(salary.employeeId);
       setMonth(salary.month);
+      setWorkingDays(salary.workingDays?.toString() || '0');
+      setPresentDays(salary.presentDays?.toString() || '0');
+      setAbsentDays(salary.absentDays?.toString() || '0');
       setBaseSalary(salary.baseSalary?.toString() || '0');
       setDa(salary.da?.toString() || '0');
       setHra(salary.hra?.toString() || '0');
+      setConveyance(salary.conveyance?.toString() || '0');
+      setMedical(salary.medical?.toString() || '0');
+      setSpecial(salary.special?.toString() || '0');
       setOt(salary.ot?.toString() || '0');
       setPf(salary.pf?.toString() || '0');
       setEsic(salary.esic?.toString() || '0');
       setPt(salary.pt?.toString() || '0');
+      setTds(salary.tds?.toString() || '0');
       setLwf(salary.lwf?.toString() || '0');
       setAdvance(salary.advance?.toString() || '0');
       setPaymentDate(salary.paymentDate || '');
@@ -152,13 +179,20 @@ export default function SalaryPage() {
       employeeId,
       enterprise: activeTab,
       month,
+      workingDays: parseFloat(workingDays) || 0,
+      presentDays: parseFloat(presentDays) || 0,
+      absentDays: parseFloat(absentDays) || 0,
       baseSalary: parseFloat(baseSalary) || 0,
       da: parseFloat(da) || 0,
       hra: parseFloat(hra) || 0,
+      conveyance: parseFloat(conveyance) || 0,
+      medical: parseFloat(medical) || 0,
+      special: parseFloat(special) || 0,
       ot: parseFloat(ot) || 0,
       pf: parseFloat(pf) || 0,
       esic: parseFloat(esic) || 0,
       pt: parseFloat(pt) || 0,
+      tds: parseFloat(tds) || 0,
       lwf: parseFloat(lwf) || 0,
       advance: parseFloat(advance) || 0,
       netSalary: calculations.netPay,
@@ -331,14 +365,14 @@ export default function SalaryPage() {
                             {salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                           </div>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 px-2 text-[10px] text-red-600 hover:bg-red-500/10 hover:text-red-700">
-                              <FileText className="mr-1 h-3 w-3" /> PDF
+                            <Button variant="ghost" size="icon" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 w-8 text-red-600 hover:bg-red-500/10">
+                              <FileText className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500 hover:bg-amber-500/10">
-                              <Pencil className="h-3 w-3" />
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500 hover:bg-amber-500/10">
+                              <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="icon" onClick={() => setSalaryToDelete(salary)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                              <Trash2 className="h-3 w-3" />
+                            <Button variant="ghost" size="icon" onClick={() => setSalaryToDelete(salary)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
@@ -355,13 +389,13 @@ export default function SalaryPage() {
 
         {/* Add/Edit Salary Dialog */}
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
             <DialogHeader className="p-6 pb-0">
               <DialogTitle className="text-xl font-black">{editingSalary ? 'Modify Salary Record' : 'Record Monthly Salary'}</DialogTitle>
               <DialogDescription className="text-xs">Setting up detailed payroll for {activeTab} Enterprises.</DialogDescription>
             </DialogHeader>
             <div className="flex-grow overflow-y-auto px-6 py-4 space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Select Employee</Label>
                   <Select value={employeeId} onValueChange={setEmployeeId} disabled={isLoadingEmployees}>
@@ -376,6 +410,30 @@ export default function SalaryPage() {
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Salary Month</Label>
                   <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="h-10" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment Date</Label>
+                  <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="h-10" />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-bold text-sm text-blue-600 flex items-center gap-2">
+                  <CalendarCheck className="h-4 w-4" /> Attendance Details
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase">Working Days</Label>
+                    <Input type="number" value={workingDays} onChange={(e) => setWorkingDays(e.target.value)} className="h-8" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase">Present Days</Label>
+                    <Input type="number" value={presentDays} onChange={(e) => setPresentDays(e.target.value)} className="h-8" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase">Absent/Leave</Label>
+                    <Input type="number" value={absentDays} onChange={(e) => setAbsentDays(e.target.value)} className="h-8" />
+                  </div>
                 </div>
               </div>
 
@@ -399,7 +457,19 @@ export default function SalaryPage() {
                       <Input type="number" value={hra} onChange={(e) => setHra(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <div className="grid grid-cols-2 items-center gap-4">
-                      <Label className="text-xs">O.T.</Label>
+                      <Label className="text-xs">Conveyance</Label>
+                      <Input type="number" value={conveyance} onChange={(e) => setConveyance(e.target.value)} className="h-8 font-mono" />
+                    </div>
+                    <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">Medical</Label>
+                      <Input type="number" value={medical} onChange={(e) => setMedical(e.target.value)} className="h-8 font-mono" />
+                    </div>
+                    <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">Special Allw.</Label>
+                      <Input type="number" value={special} onChange={(e) => setSpecial(e.target.value)} className="h-8 font-mono" />
+                    </div>
+                    <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">O.T. / Bonus</Label>
                       <Input type="number" value={ot} onChange={(e) => setOt(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <Separator />
@@ -425,15 +495,19 @@ export default function SalaryPage() {
                       <Input type="number" value={esic} onChange={(e) => setEsic(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <div className="grid grid-cols-2 items-center gap-4">
-                      <Label className="text-xs">P.T. (Prof. Tax)</Label>
+                      <Label className="text-xs">Prof. Tax (P.T.)</Label>
                       <Input type="number" value={pt} onChange={(e) => setPt(e.target.value)} className="h-8 font-mono" />
+                    </div>
+                    <div className="grid grid-cols-2 items-center gap-4">
+                      <Label className="text-xs">T.D.S.</Label>
+                      <Input type="number" value={tds} onChange={(e) => setTds(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <div className="grid grid-cols-2 items-center gap-4">
                       <Label className="text-xs">L.W.F.</Label>
                       <Input type="number" value={lwf} onChange={(e) => setLwf(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <div className="grid grid-cols-2 items-center gap-4">
-                      <Label className="text-xs">Advance</Label>
+                      <Label className="text-xs">Loan / Advance</Label>
                       <Input type="number" value={advance} onChange={(e) => setAdvance(e.target.value)} className="h-8 font-mono text-destructive" />
                     </div>
                     <Separator />
@@ -455,11 +529,7 @@ export default function SalaryPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment Date</Label>
-                  <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="h-10" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Status</Label>
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment Status</Label>
                   <Select value={status} onValueChange={(v: any) => setStatus(v)}>
                     <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -468,11 +538,10 @@ export default function SalaryPage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Additional Notes</Label>
-                <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Payment mode, ref no., etc." />
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Additional Notes</Label>
+                  <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Payment mode, ref no., etc." className="h-10" />
+                </div>
               </div>
             </div>
             <DialogFooter className="p-6 border-t bg-muted/10 gap-3">
