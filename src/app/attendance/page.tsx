@@ -2,33 +2,43 @@
 
 import React, { useState, useMemo } from 'react';
 import AppLayout from "@/components/app-layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, setDoc, where } from 'firebase/firestore';
 import { Employee, Attendance, AttendanceStatus } from '@/lib/data';
-import { format, parseISO, addDays, subDays } from 'date-fns';
-import { CalendarDays, CheckCircle2, XCircle, Clock, Coffee, Save, UserCheck, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameDay } from 'date-fns';
+import { UserCheck, ChevronLeft, ChevronRight, Save, Info, Check, X, Clock, Coffee } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function AttendancePage() {
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
   
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [isSaving, setIsSubmitting] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
 
   // Navigation handlers
-  const handlePrevDay = () => {
-    setSelectedDate(prev => format(subDays(parseISO(prev), 1), 'yyyy-MM-dd'));
+  const handlePrevMonth = () => {
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const prevDate = new Date(year, month - 2, 1);
+    setSelectedMonth(format(prevDate, 'yyyy-MM'));
   };
 
-  const handleNextDay = () => {
-    setSelectedDate(prev => format(addDays(parseISO(prev), 1), 'yyyy-MM-dd'));
+  const handleNextMonth = () => {
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const nextDate = new Date(year, month, 1);
+    setSelectedMonth(format(nextDate, 'yyyy-MM'));
   };
+
+  // Generate days for the selected month
+  const daysInMonth = useMemo(() => {
+    const start = startOfMonth(parseISO(`${selectedMonth}-01`));
+    const end = endOfMonth(start);
+    return eachDayOfInterval({ start, end });
+  }, [selectedMonth]);
 
   // Queries
   const employeesQuery = useMemoFirebase(() => 
@@ -36,239 +46,257 @@ export default function AttendancePage() {
     [firestore, user]
   );
 
-  const attendanceQuery = useMemoFirebase(() => 
-    firestore && user ? query(collection(firestore, 'attendance'), where('date', '==', selectedDate)) : null, 
-    [firestore, user, selectedDate]
-  );
+  const attendanceQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    const start = format(startOfMonth(parseISO(`${selectedMonth}-01`)), 'yyyy-MM-dd');
+    const end = format(endOfMonth(parseISO(`${selectedMonth}-01`)), 'yyyy-MM-dd');
+    return query(
+      collection(firestore, 'attendance'), 
+      where('date', '>=', start),
+      where('date', '<=', end)
+    );
+  }, [firestore, user, selectedMonth]);
 
   const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesQuery);
-  const { data: dailyAttendance, isLoading: isLoadingAttendance } = useCollection<Attendance>(attendanceQuery);
+  const { data: attendanceRecords, isLoading: isLoadingAttendance } = useCollection<Attendance>(attendanceQuery);
 
+  // Map attendance records for quick lookup: map[empId][date] = status
   const attendanceMap = useMemo(() => {
-    const map = new Map<string, AttendanceStatus>();
-    dailyAttendance?.forEach(a => map.set(a.employeeId, a.status));
+    const map: Record<string, Record<string, AttendanceStatus>> = {};
+    attendanceRecords?.forEach(rec => {
+      if (!map[rec.employeeId]) map[rec.employeeId] = {};
+      map[rec.employeeId][rec.date] = rec.status;
+    });
     return map;
-  }, [dailyAttendance]);
+  }, [attendanceRecords]);
 
-  const handleStatusChange = async (empId: string, status: AttendanceStatus) => {
+  const handleStatusToggle = async (empId: string, date: Date) => {
     if (!firestore) return;
     
-    const docId = `${selectedDate}_${empId}`;
-    const attendanceRef = doc(firestore, 'attendance', docId);
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const currentStatus = attendanceMap[empId]?.[dateStr];
     
-    const data: Omit<Attendance, 'id'> = {
-      employeeId: empId,
-      date: selectedDate,
-      status,
-      updatedAt: new Date().toISOString()
+    // Cycle through statuses: null -> Present -> Absent -> Half-Day -> Holiday -> null
+    const nextStatusMap: Record<string, AttendanceStatus | null> = {
+      'undefined': 'Present',
+      'Present': 'Absent',
+      'Absent': 'Half-Day',
+      'Half-Day': 'Holiday',
+      'Holiday': null
     };
-
-    try {
-      await setDoc(attendanceRef, data, { merge: true });
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not save attendance.' });
-    }
-  };
-
-  const markAllPresent = async () => {
-    if (!firestore || !employees) return;
-    setIsSubmitting(true);
     
-    const promises = employees.map(emp => {
-      const docId = `${selectedDate}_${emp.id}`;
-      return setDoc(doc(firestore, 'attendance', docId), {
-        employeeId: emp.id,
-        date: selectedDate,
-        status: 'Present' as AttendanceStatus,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-    });
+    const nextStatus = nextStatusMap[String(currentStatus)];
+    const docId = `${dateStr}_${empId}`;
+    const attendanceRef = doc(firestore, 'attendance', docId);
 
     try {
-      await Promise.all(promises);
-      toast({ title: 'Success', description: `All employees marked Present for ${format(parseISO(selectedDate), 'PP')}` });
+      if (nextStatus) {
+        await setDoc(attendanceRef, {
+          employeeId: empId,
+          date: dateStr,
+          status: nextStatus,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      } else {
+        // We could delete the doc, but for simplicity let's just keep it null or not set
+        // In a real app, you might want to deleteDoc(attendanceRef);
+      }
     } catch (e) {
-      toast({ variant: 'destructive', title: 'Bulk Error', description: 'Failed to mark all present.' });
-    } finally {
-      setIsSubmitting(false);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not save update.' });
     }
   };
 
-  const stats = useMemo(() => {
-    if (!employees) return { total: 0, present: 0, absent: 0, half: 0 };
-    const counts = { total: employees.length, present: 0, absent: 0, half: 0 };
-    employees.forEach(e => {
-      const s = attendanceMap.get(e.id);
-      if (s === 'Present') counts.present++;
-      else if (s === 'Absent') counts.absent++;
-      else if (s === 'Half-Day') counts.half++;
-    });
-    return counts;
-  }, [employees, attendanceMap]);
+  const getStatusIcon = (status: AttendanceStatus | undefined) => {
+    switch (status) {
+      case 'Present': return <span className="text-emerald-600 font-black">P</span>;
+      case 'Absent': return <span className="text-rose-600 font-black">A</span>;
+      case 'Half-Day': return <span className="text-amber-600 font-black">H</span>;
+      case 'Holiday': return <span className="text-blue-600 font-black">O</span>;
+      default: return <span className="text-muted-foreground/20">-</span>;
+    }
+  };
+
+  const getStatusBg = (status: AttendanceStatus | undefined, isCurrentDay: boolean) => {
+    const base = isCurrentDay ? "ring-2 ring-inset ring-primary/30" : "";
+    switch (status) {
+      case 'Present': return cn(base, "bg-emerald-50 dark:bg-emerald-900/20");
+      case 'Absent': return cn(base, "bg-rose-50 dark:bg-rose-900/20");
+      case 'Half-Day': return cn(base, "bg-amber-50 dark:bg-amber-900/20");
+      case 'Holiday': return cn(base, "bg-blue-50 dark:bg-blue-900/20");
+      default: return base;
+    }
+  };
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-4 sm:gap-6 animate-in fade-in duration-500">
+      <div className="flex flex-col gap-4 animate-in fade-in duration-500">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2">
-              <UserCheck className="h-7 w-7 text-primary" />
-              Daily Attendance
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <UserCheck className="h-6 w-6 text-primary" />
+              Monthly Attendance Register
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">Manage and track haazri for all technicians.</p>
+            <p className="text-xs text-muted-foreground">Manage workshop haazri in a single master sheet.</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-             <div className="flex items-center bg-muted/50 rounded-lg p-1 border">
-                <Button variant="ghost" size="icon" onClick={handlePrevDay} className="h-8 w-8">
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <div className="relative group mx-1">
-                    <input 
-                      type="date" 
-                      value={selectedDate} 
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      className="bg-transparent h-8 border-none text-xs sm:text-sm font-bold focus:ring-0 outline-none w-28 sm:w-32 cursor-pointer text-center"
-                    />
+          
+          <div className="flex items-center bg-card border rounded-xl p-1 shadow-sm">
+            <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <input 
+              type="month" 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="bg-transparent h-8 border-none text-xs sm:text-sm font-bold focus:ring-0 outline-none w-32 text-center cursor-pointer"
+            />
+            <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <Card className="border-none shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm">
+          <CardHeader className="p-4 border-b border-border/50 bg-muted/30">
+            <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                    Register: {format(parseISO(`${selectedMonth}-01`), 'MMMM yyyy')}
+                </CardTitle>
+                <div className="flex items-center gap-4 text-[10px] font-bold uppercase">
+                    <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Present</div>
+                    <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-rose-500" /> Absent</div>
+                    <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-500" /> Half</div>
+                    <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500" /> Off</div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={handleNextDay} className="h-8 w-8">
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-             </div>
-             <Button 
-                onClick={markAllPresent} 
-                disabled={isSaving || isLoadingEmployees} 
-                size="sm"
-                className="shadow-lg shadow-primary/20 h-9 px-4 text-xs font-bold"
-              >
-                Mark All Present
-             </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800">
-            <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-              <p className="text-[10px] font-black uppercase text-emerald-600 tracking-widest mb-1">Present</p>
-              <div className="text-2xl font-black text-emerald-700 dark:text-emerald-400">{stats.present}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-rose-50 dark:bg-rose-900/20 border-rose-100 dark:border-rose-800">
-            <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-              <p className="text-[10px] font-black uppercase text-rose-600 tracking-widest mb-1">Absent</p>
-              <div className="text-2xl font-black text-rose-700 dark:text-rose-400">{stats.absent}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800">
-            <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-              <p className="text-[10px] font-black uppercase text-amber-600 tracking-widest mb-1">Half Day</p>
-              <div className="text-2xl font-black text-amber-700 dark:text-amber-400">{stats.half}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800">
-            <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-              <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest mb-1">Total Team</p>
-              <div className="text-2xl font-black text-blue-700 dark:text-blue-400">{stats.total}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="border-none shadow-sm bg-card/50 backdrop-blur-sm">
-          <CardHeader className="pb-3 border-b border-border/50">
-            <CardTitle className="text-lg">Staff List - {format(parseISO(selectedDate), 'PPPP')}</CardTitle>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y">
-              {isLoadingEmployees ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="p-4 flex items-center justify-between">
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-20" />
-                    </div>
-                    <div className="flex gap-2">
-                      <Skeleton className="h-10 w-10 rounded-lg" />
-                      <Skeleton className="h-10 w-10 rounded-lg" />
-                    </div>
-                  </div>
-                ))
-              ) : employees && employees.length > 0 ? (
-                employees.map((emp) => {
-                  const status = attendanceMap.get(emp.id);
-                  return (
-                    <div key={emp.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:bg-muted/30 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0">
-                          {emp.fullName[0]}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-sm sm:text-base">{emp.fullName}</h3>
-                          <p className="text-[10px] text-muted-foreground uppercase font-medium tracking-tight">
-                            {emp.specialization || 'Workshop Staff'}
-                          </p>
-                        </div>
-                      </div>
+            <ScrollArea className="w-full">
+              <div className="min-w-[800px]">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-muted/20">
+                      <th className="sticky left-0 z-20 bg-muted/50 backdrop-blur-md p-3 text-left text-[10px] font-black uppercase tracking-wider border-b border-r min-w-[180px]">
+                        Technician Name
+                      </th>
+                      {daysInMonth.map(day => (
+                        <th 
+                          key={day.toISOString()} 
+                          className={cn(
+                            "p-2 text-center text-[10px] font-bold border-b border-r min-w-[35px]",
+                            isToday(day) ? "bg-primary/10 text-primary" : "text-muted-foreground"
+                          )}
+                        >
+                          <div className="flex flex-col">
+                            <span>{format(day, 'dd')}</span>
+                            <span className="text-[8px] font-medium opacity-60">{format(day, 'EEE')[0]}</span>
+                          </div>
+                        </th>
+                      ))}
+                      <th className="p-3 text-center text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 border-b">
+                        P
+                      </th>
+                      <th className="p-3 text-center text-[10px] font-black uppercase tracking-wider bg-rose-50 dark:bg-rose-950/20 text-rose-700 border-b">
+                        A
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isLoadingEmployees ? (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <tr key={i}><td colSpan={daysInMonth.length + 3} className="p-8 text-center animate-pulse">Loading employee data...</td></tr>
+                      ))
+                    ) : employees && employees.length > 0 ? (
+                      employees.map((emp) => {
+                        let presentCount = 0;
+                        let absentCount = 0;
+                        let halfCount = 0;
 
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <StatusButton 
-                          active={status === 'Present'} 
-                          type="Present" 
-                          onClick={() => handleStatusChange(emp.id, 'Present')} 
-                        />
-                        <StatusButton 
-                          active={status === 'Absent'} 
-                          type="Absent" 
-                          onClick={() => handleStatusChange(emp.id, 'Absent')} 
-                        />
-                        <StatusButton 
-                          active={status === 'Half-Day'} 
-                          type="Half-Day" 
-                          onClick={() => handleStatusChange(emp.id, 'Half-Day')} 
-                        />
-                        <StatusButton 
-                          active={status === 'Holiday'} 
-                          type="Holiday" 
-                          onClick={() => handleStatusChange(emp.id, 'Holiday')} 
-                        />
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="p-20 text-center text-muted-foreground">
-                  No active employees found. Please add employees first.
-                </div>
-              )}
-            </div>
+                        return (
+                          <tr key={emp.id} className="hover:bg-muted/10 transition-colors group">
+                            <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/20 backdrop-blur-md p-3 border-b border-r font-bold text-xs truncate">
+                              {emp.fullName}
+                            </td>
+                            {daysInMonth.map(day => {
+                              const dateStr = format(day, 'yyyy-MM-dd');
+                              const status = attendanceMap[emp.id]?.[dateStr];
+                              
+                              if (status === 'Present') presentCount++;
+                              else if (status === 'Absent') absentCount++;
+                              else if (status === 'Half-Day') {
+                                presentCount += 0.5;
+                                halfCount++;
+                              }
+
+                              return (
+                                <td 
+                                  key={dateStr}
+                                  onClick={() => handleStatusToggle(emp.id, day)}
+                                  className={cn(
+                                    "p-0 text-center border-b border-r cursor-pointer transition-all active:scale-90",
+                                    getStatusBg(status, isToday(day))
+                                  )}
+                                >
+                                  <div className="h-9 flex items-center justify-center text-xs">
+                                    {getStatusIcon(status)}
+                                  </div>
+                                </td>
+                              );
+                            })}
+                            <td className="p-3 text-center text-xs font-black bg-emerald-50/50 dark:bg-emerald-950/10 text-emerald-700 border-b">
+                              {presentCount}
+                            </td>
+                            <td className="p-3 text-center text-xs font-black bg-rose-50/50 dark:bg-rose-950/10 text-rose-700 border-b">
+                              {absentCount}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr><td colSpan={daysInMonth.length + 3} className="p-20 text-center text-muted-foreground">No employees found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </CardContent>
         </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="bg-muted/30 border-dashed">
+                <CardContent className="p-4 flex items-start gap-3">
+                    <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                        <p className="text-xs font-bold uppercase tracking-tight">Quick Tips</p>
+                        <ul className="text-[11px] text-muted-foreground list-disc pl-4 space-y-1">
+                            <li>Click on any cell to cycle status: <b>P → A → H → O → None</b>.</li>
+                            <li>The <b>P</b> and <b>A</b> columns at the end show the monthly summary.</li>
+                            <li>A "Half-Day" (H) counts as <b>0.5</b> in the total Present count.</li>
+                            <li>Data is saved instantly as you click.</li>
+                        </ul>
+                    </div>
+                </CardContent>
+            </Card>
+            <div className="flex flex-col justify-center p-4 space-y-2 border rounded-xl bg-card shadow-sm">
+                <div className="flex items-center gap-2 text-xs">
+                    <div className="w-6 h-6 rounded bg-emerald-500/10 flex items-center justify-center font-bold text-emerald-600">P</div>
+                    <span className="text-muted-foreground">Present (Full Day)</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                    <div className="w-6 h-6 rounded bg-rose-500/10 flex items-center justify-center font-bold text-rose-600">A</div>
+                    <span className="text-muted-foreground">Absent (Zero)</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                    <div className="w-6 h-6 rounded bg-amber-500/10 flex items-center justify-center font-bold text-amber-600">H</div>
+                    <span className="text-muted-foreground">Half-Day (Counts 0.5)</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                    <div className="w-6 h-6 rounded bg-blue-500/10 flex items-center justify-center font-bold text-blue-600">O</div>
+                    <span className="text-muted-foreground">Holiday / Off Day</span>
+                </div>
+            </div>
+        </div>
       </div>
     </AppLayout>
   );
 }
-
-const StatusButton = ({ active, type, onClick }: { active: boolean, type: AttendanceStatus, onClick: () => void }) => {
-  const configs = {
-    Present: { icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/30', border: 'border-emerald-200 dark:border-emerald-800' },
-    Absent: { icon: XCircle, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/30', border: 'border-rose-200 dark:border-rose-800' },
-    'Half-Day': { icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/30', border: 'border-amber-200 dark:border-amber-800' },
-    Holiday: { icon: Coffee, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/30', border: 'border-blue-200 dark:border-blue-800' },
-  };
-
-  const config = configs[type];
-  const Icon = config.icon;
-
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-[10px] font-black uppercase tracking-tight transition-all active:scale-95",
-        active 
-          ? `${config.bg} ${config.color} ${config.border} shadow-sm ring-2 ring-offset-1 ring-primary/20` 
-          : "bg-background text-muted-foreground border-border hover:bg-muted"
-      )}
-    >
-      <Icon className={cn("h-3.5 w-3.5", active ? config.color : "text-muted-foreground/50")} />
-      {type === 'Half-Day' ? 'Half' : type}
-    </button>
-  );
-};
