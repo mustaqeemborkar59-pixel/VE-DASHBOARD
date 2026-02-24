@@ -109,7 +109,14 @@ export const generatePaymentSummaryPdf = (
         ]],
         theme: 'grid',
         headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-        footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'right' },
+        footStyles: { 
+            fillColor: [240, 240, 240], 
+            textColor: [0, 0, 0], 
+            fontStyle: 'bold', 
+            halign: 'right',
+            lineWidth: 0.1,
+            lineColor: [0, 0, 0]
+        },
         columnStyles: {
             0: { halign: 'center', cellWidth: 20 },
             1: { halign: 'center', cellWidth: 22 },
@@ -119,7 +126,13 @@ export const generatePaymentSummaryPdf = (
             5: { halign: 'right', cellWidth: 20 },
             6: { halign: 'right', cellWidth: 25 },
         },
-        styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+        styles: { 
+            fontSize: 8, 
+            cellPadding: 2, 
+            overflow: 'linebreak',
+            lineColor: [0, 0, 0],
+            lineWidth: 0.1 
+        },
     });
 
     // Final Summary Box
