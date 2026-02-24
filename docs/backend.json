@@ -167,6 +167,19 @@
         "availability"
       ]
     },
+    "Attendance": {
+      "title": "Attendance",
+      "type": "object",
+      "description": "Daily attendance record for an employee.",
+      "properties": {
+        "employeeId": { "type": "string" },
+        "date": { "type": "string", "format": "date", "description": "YYYY-MM-DD" },
+        "status": { "type": "string", "enum": ["Present", "Absent", "Half-Day", "Holiday"] },
+        "notes": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["employeeId", "date", "status"]
+    },
     "JobCard": {
       "title": "JobCard",
       "type": "object",
@@ -745,6 +758,12 @@
         "$ref": "#/entities/Employee"
       },
       "description": "Stores profiles for each employee."
+    },
+    "/attendance/{attendanceId}": {
+      "schema": {
+        "$ref": "#/entities/Attendance"
+      },
+      "description": "Stores daily attendance for employees."
     },
     "/jobCards/{jobCardId}": {
       "schema": {

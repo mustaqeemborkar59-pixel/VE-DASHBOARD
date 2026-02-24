@@ -32,6 +32,17 @@ export type Employee = {
   createdAt?: string;
 };
 
+export type AttendanceStatus = 'Present' | 'Absent' | 'Half-Day' | 'Holiday';
+
+export type Attendance = {
+  id: string;
+  employeeId: string;
+  date: string; // YYYY-MM-DD
+  status: AttendanceStatus;
+  notes?: string;
+  updatedAt: string;
+};
+
 export type Technician = Employee;
 
 export type Forklift = {
