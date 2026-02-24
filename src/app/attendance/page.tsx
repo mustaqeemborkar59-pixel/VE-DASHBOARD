@@ -5,14 +5,13 @@ import AppLayout from "@/components/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, where } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, where, deleteDoc } from 'firebase/firestore';
 import { Employee, Attendance, AttendanceStatus } from '@/lib/data';
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameDay } from 'date-fns';
-import { UserCheck, ChevronLeft, ChevronRight, Save, Info, Check, X, Clock, Coffee } from 'lucide-react';
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isToday } from 'date-fns';
+import { UserCheck, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function AttendancePage() {
   const { firestore, user } = useFirebase();
@@ -76,9 +75,10 @@ export default function AttendancePage() {
     const dateStr = format(date, 'yyyy-MM-dd');
     const currentStatus = attendanceMap[empId]?.[dateStr];
     
-    // Cycle through statuses: null -> Present -> Absent -> Half-Day -> Holiday -> null
+    // Cycle through statuses: null/undefined -> Present -> Absent -> Half-Day -> Holiday -> null
     const nextStatusMap: Record<string, AttendanceStatus | null> = {
       'undefined': 'Present',
+      'null': 'Present',
       'Present': 'Absent',
       'Absent': 'Half-Day',
       'Half-Day': 'Holiday',
@@ -98,11 +98,12 @@ export default function AttendancePage() {
           updatedAt: new Date().toISOString()
         }, { merge: true });
       } else {
-        // We could delete the doc, but for simplicity let's just keep it null or not set
-        // In a real app, you might want to deleteDoc(attendanceRef);
+        // If next status is null, delete the document to clear the cell
+        await deleteDoc(attendanceRef);
       }
     } catch (e) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not save update.' });
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not update attendance.' });
     }
   };
 
@@ -209,7 +210,6 @@ export default function AttendancePage() {
                       employees.map((emp) => {
                         let presentCount = 0;
                         let absentCount = 0;
-                        let halfCount = 0;
 
                         return (
                           <tr key={emp.id} className="hover:bg-muted/10 transition-colors group">
@@ -224,7 +224,6 @@ export default function AttendancePage() {
                               else if (status === 'Absent') absentCount++;
                               else if (status === 'Half-Day') {
                                 presentCount += 0.5;
-                                halfCount++;
                               }
 
                               return (
