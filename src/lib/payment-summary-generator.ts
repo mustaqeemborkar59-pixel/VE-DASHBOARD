@@ -19,12 +19,12 @@ type ProcessedInvoice = {
 export const generatePaymentSummaryPdf = (
     invoices: ProcessedInvoice[], 
     enterprise: string,
-    filters: { company?: string; month?: string; year?: string }
+    filters: { company?: string; address?: string; month?: string; year?: string }
 ) => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Header
+    // Header - Enterprise Name
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
@@ -33,40 +33,48 @@ export const generatePaymentSummaryPdf = (
     doc.setFontSize(12);
     doc.text('PAYMENT SUMMARY STATEMENT', pageWidth / 2, 22, { align: 'center' });
     
-    // Draw a thin line
+    // Horizontal Line
     doc.setDrawColor(200, 200, 200);
     doc.line(15, 25, pageWidth - 15, 25);
 
     // Filter & Client Info Section
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(80, 80, 80);
-    
     let currentY = 32;
     
-    // Display Company Name Prominently if filtered
     if (filters.company && filters.company !== 'All') {
+        // Client Name
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
-        doc.setFontSize(11);
         doc.text(`Statement for: ${filters.company}`, 15, currentY);
+        currentY += 5;
+
+        // Client Address (Left Aligned)
+        if (filters.address) {
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(80, 80, 80);
+            const addressLines = doc.splitTextToSize(filters.address, 120); // Limit width to 120mm
+            doc.text(addressLines, 15, currentY);
+            currentY += (addressLines.length * 4) + 2;
+        }
+    } else {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(80, 80, 80);
-        currentY += 6;
-    } else {
         doc.text(`Client: All Active Clients`, 15, currentY);
         currentY += 6;
     }
 
-    // Period Info
+    // Period & Generation Date Info
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    
     let periodText = `Period: ${filters.year !== 'All' ? filters.year : 'Lifetime'}`;
     if (filters.month && filters.month !== 'All') {
         periodText += ` (${filters.month})`;
     }
     doc.text(periodText, 15, currentY);
-    
-    // Generation Date
     doc.text(`Generated on: ${format(new Date(), 'dd MMM yyyy, p')}`, pageWidth - 15, currentY, { align: 'right' });
 
     // Table Data
@@ -80,14 +88,14 @@ export const generatePaymentSummaryPdf = (
         inv.balance.toLocaleString('en-IN'),
     ]);
 
-    // Totals
+    // Totals calculation
     const totalBilled = invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
     const totalPaid = invoices.reduce((sum, inv) => sum + inv.totalPaid, 0);
     const totalTds = invoices.reduce((sum, inv) => sum + inv.tdsAmount, 0);
     const totalBalance = invoices.reduce((sum, inv) => sum + inv.balance, 0);
 
     autoTable(doc, {
-        startY: currentY + 8,
+        startY: currentY + 6,
         head: [['Bill No.', 'Date', 'Company', 'Billed Amt', 'Received', 'TDS', 'Balance']],
         body: tableBody,
         foot: [[
@@ -123,12 +131,12 @@ export const generatePaymentSummaryPdf = (
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    doc.text('Payment Summary Details:', 20, finalY + 7);
+    doc.text('Outstanding Balance Summary:', 20, finalY + 7);
     
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(60, 60, 60);
-    doc.text(`Total Outstanding Balance to be Cleared:`, 20, finalY + 15);
+    doc.text(`Total outstanding amount to be cleared:`, 20, finalY + 15);
     
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
@@ -138,13 +146,13 @@ export const generatePaymentSummaryPdf = (
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'italic');
-    doc.text('* This statement is system generated based on recorded payments. Please report any discrepancies.', pageWidth / 2, finalY + 35, { align: 'center' });
+    doc.text('* This statement is system generated. Please report any discrepancies immediately.', pageWidth / 2, finalY + 35, { align: 'center' });
 
     // Dynamic Filename
     const sanitizedCompanyName = filters.company && filters.company !== 'All' 
         ? filters.company.replace(/[^a-zA-Z0-9]/g, '_') 
         : 'All_Companies';
-    const sanitizedYear = filters.year !== 'All' ? filters.year : 'Summary';
+    const sanitizedYear = filters.year !== 'All' ? filters.year : 'Lifetime';
     
     const fileName = `Statement_${enterprise}_${sanitizedCompanyName}_${sanitizedYear}.pdf`;
     doc.save(fileName);
