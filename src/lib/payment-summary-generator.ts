@@ -19,65 +19,87 @@ type ProcessedInvoice = {
 export const generatePaymentSummaryPdf = (
     invoices: ProcessedInvoice[], 
     enterprise: string,
-    filters: { company?: string; address?: string; month?: string; year?: string }
+    filters: { company?: string; address?: string; gstin?: string; month?: string; year?: string }
 ) => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Header - Enterprise Name
+    // --- Header Section ---
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
     doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, pageWidth / 2, 15, { align: 'center' });
     
-    doc.setFontSize(12);
-    doc.text('PAYMENT SUMMARY STATEMENT', pageWidth / 2, 22, { align: 'center' });
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text('PAYMENT SUMMARY STATEMENT', pageWidth / 2, 21, { align: 'center' });
     
     // Horizontal Line
-    doc.setDrawColor(200, 200, 200);
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.5);
     doc.line(15, 25, pageWidth - 15, 25);
 
-    // Filter & Client Info Section
     let currentY = 32;
     
+    // --- Client Details (Left Side) ---
     if (filters.company && filters.company !== 'All') {
-        // Client Name
-        doc.setFontSize(11);
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 0, 0);
-        doc.text(`Statement for: ${filters.company}`, 15, currentY);
+        doc.setTextColor(120, 120, 120);
+        doc.text('CLIENT DETAILS:', 15, currentY);
         currentY += 5;
 
-        // Client Address (Left Aligned)
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text(filters.company, 15, currentY);
+        currentY += 5;
+
         if (filters.address) {
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.setTextColor(80, 80, 80);
-            const addressLines = doc.splitTextToSize(filters.address, 120); // Limit width to 120mm
+            doc.setTextColor(60, 60, 60);
+            const addressLines = doc.splitTextToSize(filters.address, 110);
             doc.text(addressLines, 15, currentY);
-            currentY += (addressLines.length * 4) + 2;
+            currentY += (addressLines.length * 4) + 1;
+        }
+
+        if (filters.gstin) {
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text(`GSTIN: ${filters.gstin}`, 15, currentY);
+            currentY += 6;
         }
     } else {
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(80, 80, 80);
-        doc.text(`Client: All Active Clients`, 15, currentY);
-        currentY += 6;
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text('Client: All Active Clients', 15, currentY);
+        currentY += 8;
     }
 
-    // Period & Generation Date Info
+    // --- Statement Info (Right Side) ---
+    const infoY = 32;
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(120, 120, 120);
+    doc.text('STATEMENT INFO:', pageWidth - 15, infoY, { align: 'right' });
     
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(60, 60, 60);
     let periodText = `Period: ${filters.year !== 'All' ? filters.year : 'Lifetime'}`;
     if (filters.month && filters.month !== 'All') {
         periodText += ` (${filters.month})`;
     }
-    doc.text(periodText, 15, currentY);
-    doc.text(`Generated on: ${format(new Date(), 'dd MMM yyyy, p')}`, pageWidth - 15, currentY, { align: 'right' });
+    doc.text(periodText, pageWidth - 15, infoY + 5, { align: 'right' });
+    doc.text(`Date: ${format(new Date(), 'dd MMM yyyy')}`, pageWidth - 15, infoY + 10, { align: 'right' });
 
-    // Table Data
+    // Ensure table starts after both sections
+    const startY = Math.max(currentY, infoY + 15) + 5;
+
+    // --- Table Data ---
     const tableBody = invoices.map(inv => [
         `${inv.billNo}-${inv.billNoSuffix || 'MHE'}`,
         format(new Date(inv.billDate), 'dd-MMM-yy'),
@@ -88,14 +110,14 @@ export const generatePaymentSummaryPdf = (
         inv.balance.toLocaleString('en-IN'),
     ]);
 
-    // Totals calculation
+    // Totals
     const totalBilled = invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
     const totalPaid = invoices.reduce((sum, inv) => sum + inv.totalPaid, 0);
     const totalTds = invoices.reduce((sum, inv) => sum + inv.tdsAmount, 0);
     const totalBalance = invoices.reduce((sum, inv) => sum + inv.balance, 0);
 
     autoTable(doc, {
-        startY: currentY + 6,
+        startY: startY,
         head: [['Bill No.', 'Date', 'Company', 'Billed Amt', 'Received', 'TDS', 'Balance']],
         body: tableBody,
         foot: [[
@@ -135,7 +157,7 @@ export const generatePaymentSummaryPdf = (
         },
     });
 
-    // Final Summary Box
+    // --- Final Summary Box ---
     const finalY = (doc as any).lastAutoTable.finalY + 10;
     doc.setDrawColor(200, 200, 200);
     doc.setFillColor(252, 252, 252);
@@ -156,6 +178,7 @@ export const generatePaymentSummaryPdf = (
     doc.setTextColor(200, 0, 0);
     doc.text(`INR ${totalBalance.toLocaleString('en-IN')}/-`, pageWidth - 25, finalY + 15, { align: 'right' });
     
+    // --- Polite Footer ---
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'italic');

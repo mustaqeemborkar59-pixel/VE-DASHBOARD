@@ -255,6 +255,7 @@ export default function PaymentsPage() {
     const selectedCompanyObj = companies?.find(c => c.id === companyFilter);
     const selectedCompanyName = selectedCompanyObj ? selectedCompanyObj.name : 'All';
     const selectedCompanyAddress = selectedCompanyObj ? selectedCompanyObj.address : '';
+    const selectedCompanyGstin = selectedCompanyObj ? selectedCompanyObj.gstin : '';
     
     let selectedMonthLabel = 'All';
     if (monthFilter !== 'All') {
@@ -266,6 +267,7 @@ export default function PaymentsPage() {
     generatePaymentSummaryPdf(filteredInvoices, activeTab, {
         company: selectedCompanyName,
         address: selectedCompanyAddress,
+        gstin: selectedCompanyGstin,
         month: selectedMonthLabel,
         year: yearFilter
     });
