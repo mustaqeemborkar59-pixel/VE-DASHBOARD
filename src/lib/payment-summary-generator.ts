@@ -146,7 +146,7 @@ export const generatePaymentSummaryPdf = (
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'italic');
-    doc.text('* This statement is system generated. Please report any discrepancies immediately.', pageWidth / 2, finalY + 35, { align: 'center' });
+    doc.text('* This is a system-generated statement. Kindly review it and let us know if you find any discrepancies.', pageWidth / 2, finalY + 35, { align: 'center' });
 
     // Dynamic Filename
     const sanitizedCompanyName = filters.company && filters.company !== 'All' 
