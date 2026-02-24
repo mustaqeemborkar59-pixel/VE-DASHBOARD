@@ -14,6 +14,7 @@ service cloud.firestore {
     }
 
     // Allow any authenticated user to read/write all primary collections.
+    // Explicitly allowing 'read' which covers 'get' and 'list'
     match /forklifts/{forkliftId} {
       allow read, write: if isSignedIn();
     }
