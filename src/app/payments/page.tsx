@@ -144,7 +144,7 @@ export default function PaymentsPage() {
 
       if (roundedBalance <= 0) {
         status = 'Received';
-        finalBalance = 0; // If paid or overpaid, show balance as 0.
+        finalBalance = 0;
       } else if (totalCredited > 0 && roundedBalance > 0) {
         status = 'Partial';
       } else {
@@ -195,7 +195,6 @@ export default function PaymentsPage() {
       const monthFromInvoice = invoice.billingMonth || format(parseISO(invoice.billDate), 'yyyy-MM');
       
       const yearMatch = yearFilter === 'All' || yearFromInvoice === yearFilter;
-      // monthMatch filter logic check - fixing comparison to be more accurate
       const monthMatch = monthFilter === 'All' || monthFromInvoice === monthFilter;
 
       const companyMatch = companyFilter === 'All' || invoice.companyId === companyFilter;
@@ -222,7 +221,7 @@ export default function PaymentsPage() {
       return acc;
     }, {} as Record<string, ProcessedInvoice[]>);
     
-    const sortedMonthKeys = Object.keys(groups).sort((a,b) => a.localeCompare(b));
+    const sortedMonthKeys = Object.keys(groups).sort((a,b) => b.localeCompare(a));
 
     return sortedMonthKeys.map(monthKey => ({
       monthKey,
@@ -253,16 +252,23 @@ export default function PaymentsPage() {
         return;
     }
     
-    const selectedCompany = companies?.find(c => c.id === companyFilter)?.name || 'All';
-    const selectedMonthLabel = monthFilter !== 'All' ? format(parseISO(`${monthFilter}-01`), 'MMMM') : 'All';
+    const selectedCompanyObj = companies?.find(c => c.id === companyFilter);
+    const selectedCompanyName = selectedCompanyObj ? selectedCompanyObj.name : 'All';
+    
+    let selectedMonthLabel = 'All';
+    if (monthFilter !== 'All') {
+        try {
+            selectedMonthLabel = format(parseISO(`${monthFilter}-01`), 'MMMM');
+        } catch(e) {}
+    }
 
     generatePaymentSummaryPdf(filteredInvoices, activeTab, {
-        company: selectedCompany,
+        company: selectedCompanyName,
         month: selectedMonthLabel,
         year: yearFilter
     });
     
-    toast({ title: 'Downloading', description: 'Your payment summary statement is being generated.' });
+    toast({ title: 'Downloading', description: `Summary Statement for ${selectedCompanyName} is being generated.` });
   }
 
   const handleOpenPaymentDialog = (invoice: ProcessedInvoice) => {
