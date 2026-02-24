@@ -162,6 +162,7 @@ export default function ForkliftsPage() {
   };
 
   const closeAllDialogs = useCallback(() => {
+    setIsFormOpen(false);
     setIsAddEditDialogOpen(false);
     setForkliftToDelete(null);
     setIsImportDialogOpen(false);
@@ -169,6 +170,8 @@ export default function ForkliftsPage() {
     setSelectedForklift(null);
     setForkliftToDownload(null);
   }, []);
+
+  const [isFormOpen, setIsFormOpen] = useState(false); // Helper state for Dialog consistency
 
   const openAddEditDialog = useCallback((forklift: Forklift | null) => {
     closeAllDialogs();
@@ -810,12 +813,12 @@ export default function ForkliftsPage() {
                                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">VE Enterprise Fleet Management</p>
                             </div>
                         </div>
-                        {visibleFields.firm && forkliftToDownload.firm && (
+                        {visibleFields.firm && (
                             <div className={cn(
                                 "px-4 py-1.5 rounded-lg border-2 text-xs font-black uppercase tracking-wider",
-                                forkliftToDownload.firm === 'Vithal' ? "border-red-500 text-red-600 bg-red-50" : "border-blue-600 text-blue-700 bg-blue-50"
+                                (forkliftToDownload.firm || 'Vithal') === 'Vithal' ? "border-red-500 text-red-600 bg-red-50" : "border-blue-600 text-blue-700 bg-blue-50"
                             )}>
-                                {forkliftToDownload.firm} Enterprises
+                                {(forkliftToDownload.firm || 'Vithal')} Enterprises
                             </div>
                         )}
                     </div>
@@ -824,7 +827,7 @@ export default function ForkliftsPage() {
                         {visibleFields.serialNumber && (
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] flex items-center gap-1.5"><Hash className="h-3 w-3"/> Serial Number</Label>
-                                <p className="text-3xl font-black text-slate-900 leading-none">{forkliftToDownload.serialNumber}</p>
+                                <p className="text-3xl font-black text-slate-900 leading-none">{forkliftToDownload.serialNumber || 'N/A'}</p>
                             </div>
                         )}
                         {visibleFields.status && (
@@ -860,13 +863,17 @@ export default function ForkliftsPage() {
                             {visibleFields.locationDate && (
                                 <div className="space-y-1.5">
                                     <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider flex items-center gap-1"><CalendarDays className="h-2.5 w-2.5"/> Updated On</Label>
-                                    <p className="text-sm font-bold text-slate-900 truncate">{forkliftToDownload.locationAssignmentDate ? format(parseISO(forkliftToDownload.locationAssignmentDate), 'dd MMM yyyy') : '-'}</p>
+                                    <p className="text-sm font-bold text-slate-900 truncate">
+                                        {forkliftToDownload.locationAssignmentDate 
+                                            ? format(parseISO(forkliftToDownload.locationAssignmentDate), 'dd MMM yyyy') 
+                                            : 'Not Set'}
+                                    </p>
                                 </div>
                             )}
                             {visibleFields.poNo && (
                                 <div className="space-y-1.5">
                                     <Label className="text-[9px] uppercase font-black text-slate-500 tracking-wider">PO/PI No.</Label>
-                                    <p className="text-sm font-bold text-slate-900 truncate">{forkliftToDownload.poPiNumber || 'N/A'}</p>
+                                    <p className="text-sm font-bold text-slate-900 truncate">{forkliftToDownload.poPiNumber || '-'}</p>
                                 </div>
                             )}
                         </div>
@@ -908,7 +915,7 @@ export default function ForkliftsPage() {
                             <div className="grid grid-cols-2 gap-x-8 gap-y-6">
                                 <div className="space-y-1">
                                     <Label className="text-[9px] font-black text-slate-500 uppercase">Site / Company</Label>
-                                    <p className="text-sm font-bold text-slate-900 truncate">{forkliftToDownload.siteCompany}</p>
+                                    <p className="text-sm font-bold text-slate-900 truncate">{forkliftToDownload.siteCompany || 'N/A'}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-[9px] font-black text-slate-500 uppercase">Geographical Area</Label>
@@ -926,10 +933,12 @@ export default function ForkliftsPage() {
                         </div>
                     )}
 
-                    {visibleFields.remarks && forkliftToDownload.remarks && (
+                    {visibleFields.remarks && (
                         <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
                             <Label className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Notes & Remarks</Label>
-                            <p className="text-[11px] text-slate-600 mt-1 italic leading-relaxed line-clamp-3">{forkliftToDownload.remarks}</p>
+                            <p className="text-[11px] text-slate-600 mt-1 italic leading-relaxed">
+                                {forkliftToDownload.remarks || "No additional technical remarks provided for this unit."}
+                            </p>
                         </div>
                     )}
 
