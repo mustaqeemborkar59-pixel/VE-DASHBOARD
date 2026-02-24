@@ -35,7 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, XCircle, Info, Trash2 } from "lucide-react";
+import { PlusCircle, Search, XCircle, Info, Trash2, Download } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
@@ -44,6 +44,7 @@ import { format, parseISO } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
+import { generatePaymentSummaryPdf } from '@/lib/payment-summary-generator';
 
 
 type Enterprise = 'Vithal' | 'RV';
@@ -194,7 +195,8 @@ export default function PaymentsPage() {
       const monthFromInvoice = invoice.billingMonth || format(parseISO(invoice.billDate), 'yyyy-MM');
       
       const yearMatch = yearFilter === 'All' || yearFromInvoice === yearFilter;
-      const monthMatch = monthFilter === 'All' || monthFromInvoice === yearFilter; // Corrected filter logic
+      // monthMatch filter logic check - fixing comparison to be more accurate
+      const monthMatch = monthFilter === 'All' || monthFromInvoice === monthFilter;
 
       const companyMatch = companyFilter === 'All' || invoice.companyId === companyFilter;
       const statusMatch = statusFilter === 'All' || invoice.status === statusFilter;
@@ -204,7 +206,7 @@ export default function PaymentsPage() {
         invoice.billNo.toString().includes(searchLower) ||
         invoice.companyName.toLowerCase().includes(searchLower);
 
-      return yearMatch && (monthFilter === 'All' || monthFromInvoice === monthFilter) && companyMatch && statusMatch && searchMatch;
+      return yearMatch && monthMatch && companyMatch && statusMatch && searchMatch;
     });
   }, [processedInvoices, activeTab, companyFilter, statusFilter, searchFilter, yearFilter, monthFilter]);
   
@@ -245,6 +247,24 @@ export default function PaymentsPage() {
     setMonthFilter('All');
   };
   
+  const handleDownloadSummary = () => {
+    if (filteredInvoices.length === 0) {
+        toast({ variant: 'destructive', title: 'No Data', description: 'No invoices found for the current filters.' });
+        return;
+    }
+    
+    const selectedCompany = companies?.find(c => c.id === companyFilter)?.name || 'All';
+    const selectedMonthLabel = monthFilter !== 'All' ? format(parseISO(`${monthFilter}-01`), 'MMMM') : 'All';
+
+    generatePaymentSummaryPdf(filteredInvoices, activeTab, {
+        company: selectedCompany,
+        month: selectedMonthLabel,
+        year: yearFilter
+    });
+    
+    toast({ title: 'Downloading', description: 'Your payment summary statement is being generated.' });
+  }
+
   const handleOpenPaymentDialog = (invoice: ProcessedInvoice) => {
     closeAllDialogs();
     setSelectedInvoiceForPayment(invoice);
@@ -334,14 +354,15 @@ export default function PaymentsPage() {
   }
   
   const handleDeletePayment = () => {
-    if (!firestore || !paymentToDelete) return;
-    const paymentDocRef = doc(firestore, 'payments', paymentToDelete.id);
-    deleteDocumentNonBlocking(paymentDocRef);
-    toast({
-        title: "Payment Deleted",
-        description: `The payment record has been successfully deleted.`,
-    });
-    setPaymentToDelete(null);
+    if (firestore && paymentToDelete) {
+        const paymentDocRef = doc(firestore, 'payments', paymentToDelete.id);
+        deleteDocumentNonBlocking(paymentDocRef);
+        toast({
+            title: "Payment Deleted",
+            description: `The payment record has been successfully deleted.`,
+        });
+        setPaymentToDelete(null);
+    }
   }
 
   const getStatusBadge = (status: Omit<PaymentStatus, 'All'>) => {
@@ -364,8 +385,22 @@ export default function PaymentsPage() {
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Enterprise)} className="space-y-4 sm:space-y-6">
           <Card>
             <CardHeader className="p-4 sm:p-6">
-              <CardTitle>Payment Tracking</CardTitle>
-              <CardDescription>Monitor and manage invoice payments.</CardDescription>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <CardTitle>Payment Tracking</CardTitle>
+                    <CardDescription>Monitor and manage invoice payments.</CardDescription>
+                </div>
+                <Button 
+                    onClick={handleDownloadSummary} 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-9 px-4 text-xs font-bold border-primary/20 hover:bg-primary/5 shadow-sm"
+                    disabled={filteredInvoices.length === 0}
+                >
+                    <Download className="mr-2 h-4 w-4 text-primary" />
+                    Download Summary Statement
+                </Button>
+              </div>
               <TabsList className="grid w-full grid-cols-2 mt-4">
                   <TabsTrigger value="Vithal" className="text-xs sm:text-sm">Vithal Enterprises</TabsTrigger>
                   <TabsTrigger value="RV" className="text-xs sm:text-sm">R.V Enterprises</TabsTrigger>
