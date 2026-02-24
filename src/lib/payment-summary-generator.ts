@@ -157,32 +157,35 @@ export const generatePaymentSummaryPdf = (
         },
     });
 
-    // --- Final Summary Box ---
+    // --- Final Summary Box (Left Aligned) ---
     const finalY = (doc as any).lastAutoTable.finalY + 10;
-    doc.setDrawColor(200, 200, 200);
-    doc.setFillColor(252, 252, 252);
-    doc.rect(15, finalY, pageWidth - 30, 25, 'FD');
+    doc.setDrawColor(220, 220, 220);
+    doc.setFillColor(250, 250, 250);
+    doc.rect(15, finalY, pageWidth - 30, 22, 'FD');
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    doc.text('Outstanding Balance Summary:', 20, finalY + 7);
+    doc.text('OUTSTANDING BALANCE SUMMARY:', 20, finalY + 8);
     
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(60, 60, 60);
+    doc.setTextColor(80, 80, 80);
     doc.text(`Total outstanding amount to be cleared:`, 20, finalY + 15);
     
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(200, 0, 0);
-    doc.text(`INR ${totalBalance.toLocaleString('en-IN')}/-`, pageWidth - 25, finalY + 15, { align: 'right' });
+    doc.setTextColor(180, 0, 0); // Prominent Red
+    doc.text(`INR ${totalBalance.toLocaleString('en-IN')}/-`, 85, finalY + 15);
     
     // --- Polite Footer ---
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'italic');
-    doc.text('* This is a system-generated statement. Kindly review it and let us know if you find any discrepancies.', pageWidth / 2, finalY + 35, { align: 'center' });
+    doc.text('Kindly review this statement and let us know if you find any discrepancies or need further clarification.', pageWidth / 2, finalY + 35, { align: 'center' });
+    
+    doc.setFontSize(7.5);
+    doc.text(`* This is a system-generated document. Date: ${format(new Date(), 'dd MMM yyyy, p')}`, pageWidth / 2, finalY + 40, { align: 'center' });
 
     // Dynamic Filename
     const sanitizedCompanyName = filters.company && filters.company !== 'All' 
