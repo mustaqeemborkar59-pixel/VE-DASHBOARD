@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, setDoc, where } from 'firebase/firestore';
 import { Employee, Attendance, AttendanceStatus } from '@/lib/data';
-import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
+import { format, parseISO, addDays, subDays } from 'date-fns';
 import { CalendarDays, CheckCircle2, XCircle, Clock, Coffee, Save, UserCheck, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +20,15 @@ export default function AttendancePage() {
   
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [isSaving, setIsSubmitting] = useState(false);
+
+  // Navigation handlers
+  const handlePrevDay = () => {
+    setSelectedDate(prev => format(subDays(parseISO(prev), 1), 'yyyy-MM-dd'));
+  };
+
+  const handleNextDay = () => {
+    setSelectedDate(prev => format(addDays(parseISO(prev), 1), 'yyyy-MM-dd'));
+  };
 
   // Queries
   const employeesQuery = useMemoFirebase(() => 
@@ -57,7 +65,6 @@ export default function AttendancePage() {
 
     try {
       await setDoc(attendanceRef, data, { merge: true });
-      // No need for toast here, real-time sync handles it.
     } catch (e) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not save attendance.' });
     }
@@ -106,24 +113,32 @@ export default function AttendancePage() {
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2">
               <UserCheck className="h-7 w-7 text-primary" />
-              Daily Check-in
+              Daily Attendance
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">Quickly manage today's haazri for all technicians.</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Manage and track haazri for all technicians.</p>
           </div>
-          <div className="flex items-center gap-2">
-             <div className="relative group">
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <input 
-                  type="date" 
-                  value={selectedDate} 
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="pl-9 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                />
+          <div className="flex flex-wrap items-center gap-2">
+             <div className="flex items-center bg-muted/50 rounded-lg p-1 border">
+                <Button variant="ghost" size="icon" onClick={handlePrevDay} className="h-8 w-8">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="relative group mx-1">
+                    <input 
+                      type="date" 
+                      value={selectedDate} 
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="bg-transparent h-8 border-none text-xs sm:text-sm font-bold focus:ring-0 outline-none w-28 sm:w-32 cursor-pointer text-center"
+                    />
+                </div>
+                <Button variant="ghost" size="icon" onClick={handleNextDay} className="h-8 w-8">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
              </div>
              <Button 
                 onClick={markAllPresent} 
                 disabled={isSaving || isLoadingEmployees} 
-                className="shadow-lg shadow-primary/20 h-10 px-4"
+                size="sm"
+                className="shadow-lg shadow-primary/20 h-9 px-4 text-xs font-bold"
               >
                 Mark All Present
              </Button>
@@ -182,12 +197,12 @@ export default function AttendancePage() {
                   return (
                     <div key={emp.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:bg-muted/30 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0">
                           {emp.fullName[0]}
                         </div>
                         <div>
                           <h3 className="font-bold text-sm sm:text-base">{emp.fullName}</h3>
-                          <p className="text-xs text-muted-foreground uppercase font-medium tracking-tight">
+                          <p className="text-[10px] text-muted-foreground uppercase font-medium tracking-tight">
                             {emp.specialization || 'Workshop Staff'}
                           </p>
                         </div>
@@ -246,7 +261,7 @@ const StatusButton = ({ active, type, onClick }: { active: boolean, type: Attend
     <button
       onClick={onClick}
       className={cn(
-        "flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold transition-all active:scale-95",
+        "flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-[10px] font-black uppercase tracking-tight transition-all active:scale-95",
         active 
           ? `${config.bg} ${config.color} ${config.border} shadow-sm ring-2 ring-offset-1 ring-primary/20` 
           : "bg-background text-muted-foreground border-border hover:bg-muted"
