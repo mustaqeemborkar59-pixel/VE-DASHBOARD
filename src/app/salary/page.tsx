@@ -32,7 +32,7 @@ export default function SalaryPage() {
 
   const [activeTab, setActiveTab] = useState<Enterprise>('Vithal');
   const [searchTerm, setSearchTerm] = useState('');
-  const [monthFilter, setMonthFilter] = useState(format(new Date(), 'yyyy-MM'));
+  const [monthFilter, setMonthFilter] = useState('All');
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSalary, setEditingSalary] = useState<Salary | null>(null);
@@ -115,6 +115,29 @@ export default function SalaryPage() {
       return nameMatch && monthMatch && enterpriseMatch;
     });
   }, [salaries, employees, searchTerm, monthFilter, activeTab]);
+
+  const groupedSalaries = useMemo(() => {
+    const groups = filteredSalaries.reduce((acc, salary) => {
+      const monthKey = salary.month;
+      if (!acc[monthKey]) {
+        acc[monthKey] = [];
+      }
+      acc[monthKey].push(salary);
+      return acc;
+    }, {} as Record<string, Salary[]>);
+
+    return Object.entries(groups)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([monthKey, items]) => ({
+        monthKey,
+        monthLabel: format(parseISO(`${monthKey}-01`), 'MMMM yyyy'),
+        items: items.sort((a, b) => {
+            const nameA = employees?.find(e => e.id === a.employeeId)?.fullName || '';
+            const nameB = employees?.find(e => e.id === b.employeeId)?.fullName || '';
+            return nameA.localeCompare(nameB);
+        }),
+      }));
+  }, [filteredSalaries, employees]);
 
   const resetForm = useCallback(() => {
     setEmployeeId('');
@@ -283,8 +306,8 @@ export default function SalaryPage() {
                   <Input
                     type="month"
                     className="w-[160px] h-10"
-                    value={monthFilter}
-                    onChange={(e) => setMonthFilter(e.target.value)}
+                    value={monthFilter === 'All' ? '' : monthFilter}
+                    onChange={(e) => setMonthFilter(e.target.value || 'All')}
                   />
                   <Button variant="ghost" size="icon" onClick={() => { setSearchTerm(''); setMonthFilter('All'); }} className="h-10 w-10">
                     <XCircle className="h-4 w-4" />
@@ -297,8 +320,9 @@ export default function SalaryPage() {
                 <Table>
                   <TableHeader className="bg-muted/30">
                     <TableRow>
-                      <TableHead className="pl-6">Employee</TableHead>
-                      <TableHead>Month</TableHead>
+                      <TableHead className="pl-6 w-[250px]">Employee</TableHead>
+                      <TableHead>Working Days</TableHead>
+                      <TableHead>Present Days</TableHead>
                       <TableHead className="text-right">Net Salary</TableHead>
                       <TableHead className="text-center">Status</TableHead>
                       <TableHead className="text-right pr-6">Actions</TableHead>
@@ -306,82 +330,117 @@ export default function SalaryPage() {
                   </TableHeader>
                   <TableBody>
                     {isLoadingSalaries ? (
-                      <TableRow><TableCell colSpan={5} className="text-center py-10">Loading payroll data...</TableCell></TableRow>
-                    ) : filteredSalaries.length > 0 ? (
-                      filteredSalaries.map(salary => {
-                        const employee = employees?.find(e => e.id === salary.employeeId);
-                        return (
-                          <TableRow key={salary.id} className="group hover:bg-muted/30">
-                            <TableCell className="pl-6 py-4">
-                              <div className="font-bold text-sm">{employee?.fullName || 'Unknown'}</div>
-                              <div className="text-[10px] text-muted-foreground uppercase">{employee?.specialization || 'N/A'}</div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm font-medium">{format(parseISO(`${salary.month}-01`), 'MMMM yyyy')}</div>
-                            </TableCell>
-                            <TableCell className="text-right font-bold text-sm">
-                              {salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Badge variant={salary.status === 'Paid' ? 'outline' : 'destructive'} className={cn("text-[10px]", salary.status === 'Paid' && "border-green-500/50 text-green-600 bg-green-50 dark:bg-green-900/20")}>
-                                {salary.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right pr-6 space-x-1">
-                              <Button variant="ghost" title="Download PDF" size="icon" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 w-8 text-red-500 hover:bg-red-500/10">
-                                <FileText className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500 hover:bg-amber-500/10">
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => setSalaryToDelete(salary)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                      <TableRow><TableCell colSpan={6} className="text-center py-10">Loading payroll data...</TableCell></TableRow>
+                    ) : groupedSalaries.length > 0 ? (
+                      groupedSalaries.map(({ monthKey, monthLabel, items }) => (
+                        <React.Fragment key={monthKey}>
+                          <TableRow className="border-b-0 hover:bg-transparent">
+                            <TableCell colSpan={6} className="pt-10 pb-2">
+                              <div className="relative">
+                                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                                      <div className="w-full border-t" />
+                                  </div>
+                                  <div className="relative flex justify-center">
+                                      <span className="bg-background px-4 text-sm font-black uppercase tracking-[0.2em] text-muted-foreground">
+                                          {monthLabel}
+                                      </span>
+                                  </div>
+                              </div>
                             </TableCell>
                           </TableRow>
-                        );
-                      })
+                          {items.map(salary => {
+                            const employee = employees?.find(e => e.id === salary.employeeId);
+                            return (
+                              <TableRow key={salary.id} className="group hover:bg-muted/30 border-b">
+                                <TableCell className="pl-6 py-4">
+                                  <div className="font-bold text-sm">{employee?.fullName || 'Unknown'}</div>
+                                  <div className="text-[10px] text-muted-foreground uppercase">{employee?.specialization || 'N/A'}</div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="text-sm font-medium">{salary.workingDays} Days</div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{salary.presentDays} Days</div>
+                                </TableCell>
+                                <TableCell className="text-right font-bold text-sm">
+                                  {salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge variant={salary.status === 'Paid' ? 'outline' : 'destructive'} className={cn("text-[10px]", salary.status === 'Paid' && "border-green-500/50 text-green-600 bg-green-50 dark:bg-green-900/20")}>
+                                    {salary.status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right pr-6 space-x-1">
+                                  <Button variant="ghost" title="Download PDF" size="icon" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 w-8 text-red-500 hover:bg-red-500/10">
+                                    <FileText className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500 hover:bg-amber-500/10">
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" onClick={() => setSalaryToDelete(salary)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </React.Fragment>
+                      ))
                     ) : (
-                      <TableRow><TableCell colSpan={5} className="text-center py-20 text-muted-foreground">No records found matching filters.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={6} className="text-center py-20 text-muted-foreground">No records found matching filters.</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
               </div>
 
-              <div className="md:hidden px-1 py-4 space-y-3">
-                {filteredSalaries.length > 0 ? (
-                  filteredSalaries.map(salary => {
-                    const employee = employees?.find(e => e.id === salary.employeeId);
-                    return (
-                      <div key={salary.id} className="border rounded-xl p-3 bg-card shadow-sm space-y-3">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-bold text-sm">{employee?.fullName || 'Unknown'}</div>
-                            <div className="text-[10px] text-muted-foreground">{format(parseISO(`${salary.month}-01`), 'MMMM yyyy')}</div>
-                          </div>
-                          <Badge variant={salary.status === 'Paid' ? 'outline' : 'destructive'} className={cn("text-[10px]", salary.status === 'Paid' && "border-green-500/50 text-green-600 bg-green-50 dark:bg-green-900/20")}>
-                            {salary.status}
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between items-center border-t pt-2">
-                          <div className="text-sm font-black text-primary">
-                            {salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                          </div>
-                          <div className="flex gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 w-8 text-red-600 hover:bg-red-500/10">
-                              <FileText className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500 hover:bg-amber-500/10">
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => setSalaryToDelete(salary)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
+              <div className="md:hidden">
+                {groupedSalaries.length > 0 ? (
+                  groupedSalaries.map(({ monthKey, monthLabel, items }) => (
+                    <div key={monthKey} className="space-y-3">
+                      <div className="bg-muted/50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground sticky top-0 z-10 border-y">
+                        {monthLabel}
                       </div>
-                    );
-                  })
+                      <div className="px-3 pb-4 space-y-3">
+                        {items.map(salary => {
+                          const employee = employees?.find(e => e.id === salary.employeeId);
+                          return (
+                            <div key={salary.id} className="border rounded-xl p-3 bg-card shadow-sm space-y-3">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <div className="font-bold text-sm">{employee?.fullName || 'Unknown'}</div>
+                                  <div className="text-[10px] text-muted-foreground uppercase">{employee?.specialization || 'N/A'}</div>
+                                </div>
+                                <Badge variant={salary.status === 'Paid' ? 'outline' : 'destructive'} className={cn("text-[10px]", salary.status === 'Paid' && "border-green-500/50 text-green-600 bg-green-50 dark:bg-green-900/20")}>
+                                  {salary.status}
+                                </Badge>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4 text-[10px] uppercase font-bold text-muted-foreground border-t pt-2">
+                                <div>Attendance: <span className="text-foreground">{salary.presentDays}/{salary.workingDays}</span></div>
+                                <div className="text-right">Net Payable</div>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <div className="text-xs italic text-muted-foreground">{salary.paymentDate ? format(parseISO(salary.paymentDate), 'dd MMM yyyy') : 'No Date'}</div>
+                                <div className="text-sm font-black text-primary">
+                                  {salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                </div>
+                              </div>
+                              <div className="flex justify-end gap-2 pt-2 border-t">
+                                <Button variant="ghost" size="icon" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 w-8 text-red-600 hover:bg-red-500/10">
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500 hover:bg-amber-500/10">
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => setSalaryToDelete(salary)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
                 ) : (
                   <div className="text-center py-10 text-muted-foreground text-sm">No records found.</div>
                 )}
