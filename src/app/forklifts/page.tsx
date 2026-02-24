@@ -969,10 +969,6 @@ export default function ForkliftsPage() {
                                     <Label htmlFor="field-status" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">Current Status</Label>
                                 </div>
                                 <div className="flex items-center space-x-3 group">
-                                    <Checkbox id="field-mfg" checked={visibleFields.mfgYear} onCheckedChange={(c) => updateVisibleFields({mfgYear: !!c})} className="h-5 w-5" />
-                                    <Label htmlFor="field-mfg" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">MFG Year</Label>
-                                </div>
-                                <div className="flex items-center space-x-3 group">
                                     <Checkbox id="field-firm" checked={visibleFields.firm} onCheckedChange={(c) => updateVisibleFields({firm: !!c})} className="h-5 w-5" />
                                     <Label htmlFor="field-firm" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">Enterprise Firm</Label>
                                 </div>
@@ -989,6 +985,10 @@ export default function ForkliftsPage() {
                         <div className="space-y-4">
                             <h4 className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-[0.2em]">Specifications</h4>
                             <div className="space-y-3">
+                                <div className="flex items-center space-x-3 group">
+                                    <Checkbox id="field-mfg" checked={visibleFields.mfgYear} onCheckedChange={(c) => updateVisibleFields({mfgYear: !!c})} className="h-5 w-5" />
+                                    <Label htmlFor="field-mfg" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">MFG Year</Label>
+                                </div>
                                 <div className="flex items-center space-x-3 group">
                                     <Checkbox id="field-capacity" checked={visibleFields.capacity} onCheckedChange={(c) => updateVisibleFields({capacity: !!c})} className="h-5 w-5" />
                                     <Label htmlFor="field-capacity" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">Lifting Capacity</Label>
