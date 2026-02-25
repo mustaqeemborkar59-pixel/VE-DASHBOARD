@@ -38,7 +38,7 @@ export type Attendance = {
   id: string;
   employeeId: string;
   date: string; // YYYY-MM-DD
-  status: AttendanceStatus;
+  status?: AttendanceStatus;
   overtimeHours?: number;
   notes?: string;
   updatedAt: string;

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -148,8 +149,17 @@ export default function AttendancePage() {
           updatedAt: new Date().toISOString()
         }, { merge: true });
       } else {
-        // If clearing status, we usually clear everything for that cell
-        await deleteDoc(attendanceRef);
+        // If clearing status, but OT exists, only clear the status field
+        if (currentOT > 0) {
+            await setDoc(attendanceRef, {
+                employeeId: empId,
+                date: dateStr,
+                status: null,
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+        } else {
+            await deleteDoc(attendanceRef);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -167,16 +177,21 @@ export default function AttendancePage() {
     const hours = parseFloat(otHours) || 0;
 
     try {
-        // If marking OT, preserve existing status (like 'Present') or default to Present
-        const currentStatus = attendanceMap[empId]?.[dateStr]?.status || 'Present';
+        // preserve existing status if any
+        const currentStatus = attendanceMap[empId]?.[dateStr]?.status || null;
         
-        await setDoc(attendanceRef, {
+        const data: any = {
             employeeId: empId,
             date: dateStr,
-            status: currentStatus,
             overtimeHours: hours,
             updatedAt: new Date().toISOString()
-        }, { merge: true });
+        };
+
+        if (currentStatus) {
+            data.status = currentStatus;
+        }
+        
+        await setDoc(attendanceRef, data, { merge: true });
         
         setIsOTDialogOpen(false);
         toast({ title: 'Overtime Saved', description: `${hours} hours recorded for technician.` });
@@ -190,6 +205,16 @@ export default function AttendancePage() {
     if (!record) return null;
     const status = record.status;
     const ot = record.overtimeHours;
+
+    // Case: Only Overtime (No base status)
+    if (ot && ot > 0 && !status) {
+        return (
+            <div className="flex flex-col items-center leading-none gap-0.5">
+                <span className="font-black text-orange-600">OT</span>
+                <span className="text-[7px] font-black text-orange-500 uppercase tracking-tighter">{ot} Hrs</span>
+            </div>
+        );
+    }
 
     // Combined View: Status Indicator + OT label
     if (ot && ot > 0) {
@@ -409,7 +434,7 @@ export default function AttendancePage() {
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent side="top" className="py-1 px-2 text-[10px] font-black">
-                                      {status || 'Present'} + {ot} Hrs OT
+                                      {status ? `${status} + ` : ''}{ot} Hrs OT
                                     </TooltipContent>
                                   </Tooltip>
                                 ) : (
