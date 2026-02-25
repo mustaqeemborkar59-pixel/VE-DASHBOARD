@@ -226,13 +226,6 @@ export default function AttendancePage() {
     }
   };
 
-  const calculateHours = (status: AttendanceStatus | undefined, ot: number = 0) => {
-    let base = 0;
-    if (status === 'Present') base = 8;
-    else if (status === 'Half-Day') base = 4;
-    return base + ot;
-  };
-
   return (
     <AppLayout>
       <TooltipProvider delayDuration={100}>
@@ -385,7 +378,7 @@ export default function AttendancePage() {
                           const record = attendanceMap[emp.id]?.[dateStr];
                           const status = record?.status;
                           const isSun = day.getDay() === 0;
-                          const totalHr = calculateHours(status, record?.overtimeHours);
+                          const ot = record?.overtimeHours;
                           
                           return (
                             <td 
@@ -394,45 +387,25 @@ export default function AttendancePage() {
                               className={cn(
                                 "p-0 text-center border-b border-r cursor-pointer transition-all active:scale-95 h-9",
                                 isSun ? "bg-zinc-50/30 dark:bg-zinc-900/10" : "",
-                                getStatusBg(status, isToday(day), record?.overtimeHours)
+                                getStatusBg(status, isToday(day), ot)
                               )}
                             >
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="h-full flex items-center justify-center text-[10px]">
-                                    {getStatusIcon(record, isSun)}
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="p-3 bg-card border-2 shadow-xl animate-in zoom-in-95 duration-200">
-                                  <div className="space-y-1.5 min-w-[120px]">
-                                    <div className="flex items-center justify-between gap-4">
-                                      <span className="text-[10px] font-black uppercase text-foreground">{emp.fullName}</span>
-                                      <span className="text-[9px] font-bold text-muted-foreground">{format(day, 'dd MMM yyyy')}</span>
+                              {ot && ot > 0 ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="h-full flex items-center justify-center text-[10px]">
+                                      {getStatusIcon(record, isSun)}
                                     </div>
-                                    <Separator />
-                                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[9px] font-bold uppercase tracking-tight">
-                                      <span className="text-muted-foreground">Status:</span>
-                                      <span className={cn(
-                                        status === 'Present' ? "text-emerald-600" : 
-                                        status === 'Absent' ? "text-rose-600" : 
-                                        status === 'Half-Day' ? "text-amber-600" : "text-muted-foreground"
-                                      )}>{status || 'Not Marked'}</span>
-                                      
-                                      {record?.overtimeHours ? (
-                                        <>
-                                          <span className="text-muted-foreground">Overtime:</span>
-                                          <span className="text-orange-600">{record.overtimeHours} Hrs</span>
-                                        </>
-                                      ) : null}
-                                      
-                                      <div className="col-span-2 mt-1 p-1 bg-primary/5 rounded border border-primary/10 flex justify-between items-center">
-                                        <span className="text-primary font-black">Working Hr:</span>
-                                        <span className="text-primary font-black">{totalHr} Hrs</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="py-1 px-2 text-[10px] font-black">
+                                    {ot} Hrs Overtime
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <div className="h-full flex items-center justify-center text-[10px]">
+                                  {getStatusIcon(record, isSun)}
+                                </div>
+                              )}
                             </td>
                           );
                         })}
