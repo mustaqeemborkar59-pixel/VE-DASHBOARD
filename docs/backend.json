@@ -175,6 +175,7 @@
         "employeeId": { "type": "string" },
         "date": { "type": "string", "format": "date", "description": "YYYY-MM-DD" },
         "status": { "type": "string", "enum": ["Present", "Absent", "Half-Day", "Holiday"] },
+        "overtimeHours": { "type": "number", "description": "Number of overtime hours worked." },
         "notes": { "type": "string" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },

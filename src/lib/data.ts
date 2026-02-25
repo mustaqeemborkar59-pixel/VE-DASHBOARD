@@ -39,6 +39,7 @@ export type Attendance = {
   employeeId: string;
   date: string; // YYYY-MM-DD
   status: AttendanceStatus;
+  overtimeHours?: number;
   notes?: string;
   updatedAt: string;
 };
