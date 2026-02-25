@@ -188,28 +188,33 @@ export default function AttendancePage() {
     const status = record.status;
     const ot = record.overtimeHours;
 
-    let icon: React.ReactNode = null;
-    switch (status) {
-      case 'Present': icon = <span className={cn("font-black", isSun ? "text-rose-600" : "text-emerald-600")}>{isSun ? 'SW' : 'P'}</span>; break;
-      case 'Absent': icon = <span className="text-rose-600 font-black">A</span>; break;
-      case 'Half-Day': icon = <span className="text-amber-600 font-black">H</span>; break;
-      case 'Holiday': icon = <span className="text-blue-600 font-black">O</span>; break;
-    }
-
+    // If OT is present, we show OT as the primary label
     if (ot && ot > 0) {
         return (
             <div className="flex flex-col items-center leading-none gap-0.5">
-                {icon}
-                <span className="text-[7px] font-black text-orange-600 uppercase tracking-tighter">+{ot}h</span>
+                <span className="font-black text-orange-600">OT</span>
+                <span className="text-[7px] font-black text-orange-500 uppercase tracking-tighter">{ot} Hrs</span>
             </div>
         );
     }
 
-    return icon;
+    switch (status) {
+      case 'Present': return <span className={cn("font-black", isSun ? "text-rose-600" : "text-emerald-600")}>{isSun ? 'SW' : 'P'}</span>;
+      case 'Absent': return <span className="text-rose-600 font-black">A</span>;
+      case 'Half-Day': return <span className="text-amber-600 font-black">H</span>;
+      case 'Holiday': return <span className="text-blue-600 font-black">O</span>;
+      default: return null;
+    }
   };
 
-  const getStatusBg = (status: AttendanceStatus | undefined, isCurrentDay: boolean) => {
+  const getStatusBg = (status: AttendanceStatus | undefined, isCurrentDay: boolean, ot?: number) => {
     const base = isCurrentDay ? "ring-1 ring-inset ring-primary/40" : "";
+    
+    // If Overtime is recorded, we give it a subtle orange tint background
+    if (ot && ot > 0) {
+        return cn(base, "bg-orange-50/80 dark:bg-orange-900/20");
+    }
+
     switch (status) {
       case 'Present': return cn(base, "bg-emerald-100/80 dark:bg-emerald-900/40");
       case 'Absent': return cn(base, "bg-rose-100/80 dark:bg-rose-900/40");
@@ -378,7 +383,7 @@ export default function AttendancePage() {
                               className={cn(
                                 "p-0 text-center border-b border-r cursor-pointer transition-all active:scale-95 h-9",
                                 isSun ? "bg-zinc-50/30 dark:bg-zinc-900/10" : "",
-                                getStatusBg(status, isToday(day))
+                                getStatusBg(status, isToday(day), record?.overtimeHours)
                               )}
                             >
                               <div className="h-full flex items-center justify-center text-[10px]">
@@ -406,7 +411,7 @@ export default function AttendancePage() {
                         <p className="text-[10px] font-black uppercase tracking-tight">Overtime & Sunday Policy</p>
                         <p className="text-[9px] text-muted-foreground leading-relaxed">
                             Sundays are working days (<b>SW</b>). Mark <b>OT</b> tool to record extra hours worked. <br/>
-                            Overtime hours will be added to the current day's record.
+                            Overtime records show <b>OT</b> status with specific hours underneath.
                         </p>
                     </div>
                 </CardContent>
