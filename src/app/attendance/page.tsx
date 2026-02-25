@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -8,15 +9,19 @@ import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, setDoc, where, deleteDoc } from 'firebase/firestore';
 import { Employee, Attendance, AttendanceStatus } from '@/lib/data';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isToday } from 'date-fns';
-import { UserCheck, ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { UserCheck, ChevronLeft, ChevronRight, Info, MousePointer2, Eraser } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+
+type ActiveTool = AttendanceStatus | 'Clear' | null;
 
 export default function AttendancePage() {
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
   
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+  const [activeTool, setActiveTool] = useState<ActiveTool>(null);
+  
   // Track the current cycle index for each cell to allow P -> Clear -> A -> Clear... flow
   const [cellCycleIndices, setCellCycleIndices] = useState<Record<string, number>>({});
 
@@ -89,22 +94,31 @@ export default function AttendancePage() {
     const cellKey = `${dateStr}_${empId}`;
     const currentStatus = attendanceMap[empId]?.[dateStr];
     
-    // Determine the starting index based on current status if not tracked in this session
-    let currentIndex = cellCycleIndices[cellKey];
-    if (currentIndex === undefined) {
-        if (!currentStatus) currentIndex = 0;
-        else if (currentStatus === 'Present') currentIndex = 1;
-        else if (currentStatus === 'Absent') currentIndex = 3;
-        else if (currentStatus === 'Half-Day') currentIndex = 5;
-        else if (currentStatus === 'Holiday') currentIndex = 7;
-        else currentIndex = 0;
-    }
+    let nextStatus: AttendanceStatus | null = null;
 
-    const nextIndex = (currentIndex + 1) % statusCycle.length;
-    const nextStatus = statusCycle[nextIndex];
-    
-    // Update session tracker
-    setCellCycleIndices(prev => ({ ...prev, [cellKey]: nextIndex }));
+    // FAST PAINT MODE LOGIC
+    if (activeTool) {
+        if (activeTool === 'Clear') {
+            nextStatus = null;
+        } else {
+            // If already same status, clear it (toggle behavior)
+            nextStatus = currentStatus === activeTool ? null : activeTool;
+        }
+    } else {
+        // TRADITIONAL CYCLE LOGIC
+        let currentIndex = cellCycleIndices[cellKey];
+        if (currentIndex === undefined) {
+            if (!currentStatus) currentIndex = 0;
+            else if (currentStatus === 'Present') currentIndex = 1;
+            else if (currentStatus === 'Absent') currentIndex = 3;
+            else if (currentStatus === 'Half-Day') currentIndex = 5;
+            else if (currentStatus === 'Holiday') currentIndex = 7;
+            else currentIndex = 0;
+        }
+        const nextIndex = (currentIndex + 1) % statusCycle.length;
+        nextStatus = statusCycle[nextIndex];
+        setCellCycleIndices(prev => ({ ...prev, [cellKey]: nextIndex }));
+    }
 
     const attendanceRef = doc(firestore, 'attendance', cellKey);
 
@@ -172,6 +186,60 @@ export default function AttendancePage() {
               <ChevronRight className="h-3 w-3" />
             </Button>
           </div>
+        </div>
+
+        {/* QUICK PAINT TOOLS */}
+        <div className="px-4 flex flex-wrap items-center gap-2">
+            <div className="bg-card border rounded-full px-3 py-1.5 flex items-center gap-2 shadow-sm">
+                <span className="text-[9px] font-black uppercase tracking-tighter text-muted-foreground flex items-center gap-1">
+                    <MousePointer2 className="h-3 w-3" /> Paint Tool:
+                </span>
+                <div className="flex items-center gap-1.5">
+                    <button 
+                        onClick={() => setActiveTool(activeTool === 'Present' ? null : 'Present')}
+                        className={cn(
+                            "w-7 h-7 rounded-full text-[10px] font-black border transition-all active:scale-90 flex items-center justify-center",
+                            activeTool === 'Present' ? "bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        )}
+                    >P</button>
+                    <button 
+                        onClick={() => setActiveTool(activeTool === 'Absent' ? null : 'Absent')}
+                        className={cn(
+                            "w-7 h-7 rounded-full text-[10px] font-black border transition-all active:scale-90 flex items-center justify-center",
+                            activeTool === 'Absent' ? "bg-rose-600 text-white border-rose-600 shadow-lg shadow-rose-500/20" : "bg-rose-50 text-rose-700 border-rose-200"
+                        )}
+                    >A</button>
+                    <button 
+                        onClick={() => setActiveTool(activeTool === 'Half-Day' ? null : 'Half-Day')}
+                        className={cn(
+                            "w-7 h-7 rounded-full text-[10px] font-black border transition-all active:scale-90 flex items-center justify-center",
+                            activeTool === 'Half-Day' ? "bg-amber-600 text-white border-amber-600 shadow-lg shadow-amber-500/20" : "bg-amber-50 text-amber-700 border-amber-200"
+                        )}
+                    >H</button>
+                    <button 
+                        onClick={() => setActiveTool(activeTool === 'Holiday' ? null : 'Holiday')}
+                        className={cn(
+                            "w-7 h-7 rounded-full text-[10px] font-black border transition-all active:scale-90 flex items-center justify-center",
+                            activeTool === 'Holiday' ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20" : "bg-blue-50 text-blue-700 border-blue-200"
+                        )}
+                    >O</button>
+                    <div className="w-px h-4 bg-border mx-1" />
+                    <button 
+                        onClick={() => setActiveTool(activeTool === 'Clear' ? null : 'Clear')}
+                        className={cn(
+                            "w-7 h-7 rounded-full text-[10px] font-black border transition-all active:scale-90 flex items-center justify-center",
+                            activeTool === 'Clear' ? "bg-zinc-800 text-white border-zinc-800" : "bg-white text-zinc-500 border-zinc-200"
+                        )}
+                    ><Eraser className="h-3 w-3" /></button>
+                </div>
+            </div>
+            {activeTool && (
+                <div className="animate-in slide-in-from-left-2 duration-300">
+                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[9px] font-black uppercase py-1">
+                        Tool Active: {activeTool === 'Clear' ? 'Eraser' : activeTool} (Click cells to apply)
+                    </Badge>
+                </div>
+            )}
         </div>
 
         <Card className="border-none shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm rounded-none">
@@ -282,9 +350,10 @@ export default function AttendancePage() {
                 <CardContent className="p-3 flex items-start gap-2.5">
                     <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                        <p className="text-[10px] font-black uppercase tracking-tight">One-Click Toggle Cycle</p>
+                        <p className="text-[10px] font-black uppercase tracking-tight">How to use Quick Mark?</p>
                         <p className="text-[9px] text-muted-foreground leading-relaxed">
-                            Click to cycle: <b>P (Present)</b> → <b>Clear</b> → <b>A (Absent)</b> → <b>Clear</b> → <b>H (Half)</b> → <b>Clear</b> → <b>O (Off)</b> → <b>Clear</b>.
+                            1. Select a tool above (e.g. <b>P</b>).<br/>
+                            2. Simply click any cell to set that status instantly. Click again to unmark.
                         </p>
                     </div>
                 </CardContent>
@@ -312,3 +381,9 @@ export default function AttendancePage() {
     </AppLayout>
   );
 }
+
+const Badge = ({ children, variant, className }: { children: React.ReactNode, variant?: string, className?: string }) => (
+    <span className={cn("px-2 py-0.5 rounded text-[10px] font-medium border", className)}>
+        {children}
+    </span>
+);
