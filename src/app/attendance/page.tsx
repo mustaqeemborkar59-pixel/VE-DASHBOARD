@@ -17,7 +17,7 @@ export default function AttendancePage() {
   const { toast } = useToast();
   
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
-  // Track the current cycle index for each cell to allow P -> Clear -> A flow
+  // Track the current cycle index for each cell to allow P -> Clear -> A -> Clear... flow
   const [cellCycleIndices, setCellCycleIndices] = useState<Record<string, number>>({});
 
   // Navigation handlers
@@ -70,7 +70,7 @@ export default function AttendancePage() {
     return map;
   }, [attendanceRecords]);
 
-  // Cycle sequence: null (0), Present (1), null (2), Absent (3), null (4), Half-Day (5), null (6), Holiday (7)
+  // Toggle Sequence: null (0), Present (1), null (2), Absent (3), null (4), Half-Day (5), null (6), Holiday/Off (7)
   const statusCycle: (AttendanceStatus | null)[] = [
     null, 
     'Present', 
@@ -202,7 +202,7 @@ export default function AttendancePage() {
                         "p-1 text-center text-[8px] font-bold border-b border-r",
                         isToday(day) 
                           ? "bg-primary/20 text-primary" 
-                          : (day.getDay() === 0 ? "bg-rose-100/50 text-rose-600" : "text-muted-foreground")
+                          : (day.getDay() === 0 ? "bg-blue-600/20 text-blue-700 dark:text-blue-400" : "text-muted-foreground")
                       )}
                     >
                       <div className="flex flex-col leading-none">
@@ -250,7 +250,7 @@ export default function AttendancePage() {
                               onClick={() => handleStatusToggle(emp.id, day)}
                               className={cn(
                                 "p-0 text-center border-b border-r cursor-pointer transition-all active:scale-95 h-9",
-                                day.getDay() === 0 ? "bg-rose-50/30" : "",
+                                day.getDay() === 0 ? "bg-blue-600/10 dark:bg-blue-900/30" : "",
                                 getStatusBg(status, isToday(day))
                               )}
                             >
@@ -282,7 +282,7 @@ export default function AttendancePage() {
                 <CardContent className="p-3 flex items-start gap-2.5">
                     <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                        <p className="text-[10px] font-black uppercase tracking-tight">One-Click Toggle</p>
+                        <p className="text-[10px] font-black uppercase tracking-tight">One-Click Toggle Cycle</p>
                         <p className="text-[9px] text-muted-foreground leading-relaxed">
                             Click to cycle: <b>P (Present)</b> → <b>Clear</b> → <b>A (Absent)</b> → <b>Clear</b> → <b>H (Half)</b> → <b>Clear</b> → <b>O (Off)</b> → <b>Clear</b>.
                         </p>
