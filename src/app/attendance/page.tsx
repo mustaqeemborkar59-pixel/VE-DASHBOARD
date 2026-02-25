@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -26,15 +25,12 @@ export default function AttendancePage() {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
   
-  // Track the current cycle index for each cell to allow P -> Clear -> A -> Clear... flow
   const [cellCycleIndices, setCellCycleIndices] = useState<Record<string, number>>({});
 
-  // Overtime Dialog State
   const [isOTDialogOpen, setIsOTDialogOpen] = useState(false);
   const [otHours, setOtHours] = useState('0');
   const [selectedOTCell, setSelectedOTCell] = useState<{ empId: string, date: Date } | null>(null);
 
-  // Navigation handlers
   const handlePrevMonth = () => {
     const [year, month] = selectedMonth.split('-').map(Number);
     const prevDate = new Date(year, month - 2, 1);
@@ -47,14 +43,12 @@ export default function AttendancePage() {
     setSelectedMonth(format(nextDate, 'yyyy-MM'));
   };
 
-  // Generate days for the selected month
   const daysInMonth = useMemo(() => {
     const start = startOfMonth(parseISO(`${selectedMonth}-01`));
     const end = endOfMonth(start);
     return eachDayOfInterval({ start, end });
   }, [selectedMonth]);
 
-  // Queries - Matching the sort order of the Employees section (createdAt asc)
   const employeesQuery = useMemoFirebase(() => 
     firestore && user ? query(collection(firestore, 'employees'), orderBy('createdAt', 'asc')) : null, 
     [firestore, user]
@@ -74,7 +68,6 @@ export default function AttendancePage() {
   const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesQuery);
   const { data: attendanceRecords, isLoading: isLoadingAttendance } = useCollection<Attendance>(attendanceQuery);
 
-  // Map attendance records for quick lookup: map[empId][date] = record
   const attendanceMap = useMemo(() => {
     const map: Record<string, Record<string, Attendance>> = {};
     attendanceRecords?.forEach(rec => {
@@ -84,7 +77,6 @@ export default function AttendancePage() {
     return map;
   }, [attendanceRecords]);
 
-  // Toggle Sequence: P (Present) -> Clear -> A (Absent) -> Clear -> H (Half) -> Clear -> O (Off) -> Clear
   const statusCycle: (AttendanceStatus | null)[] = [
     null, 
     'Present', 
@@ -108,10 +100,8 @@ export default function AttendancePage() {
     
     let nextStatus: AttendanceStatus | null = null;
 
-    // FAST PAINT MODE LOGIC
     if (activeTool) {
         if (activeTool === 'Clear') {
-            // ERASER: Wipe everything (Status and OT)
             deleteDoc(attendanceRef).catch(async (err) => {
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     path: attendanceRef.path,
@@ -120,17 +110,14 @@ export default function AttendancePage() {
             });
             return;
         } else if (activeTool === 'OT') {
-            // Open Overtime dialog
             setSelectedOTCell({ empId, date });
             setOtHours(currentOT.toString());
             setIsOTDialogOpen(true);
             return;
         } else {
-            // Status tool (P, A, H, O): Toggle if already same, else apply
             nextStatus = currentStatus === activeTool ? null : activeTool;
         }
     } else {
-        // TRADITIONAL CYCLE LOGIC (No tool active)
         let currentIndex = cellCycleIndices[cellKey];
         if (currentIndex === undefined) {
             if (!currentStatus) currentIndex = 0;
@@ -146,7 +133,6 @@ export default function AttendancePage() {
     }
 
     if (nextStatus) {
-        // Update status but preserve OT if it exists (using merge)
         setDoc(attendanceRef, {
             employeeId: empId,
             date: dateStr,
@@ -160,9 +146,7 @@ export default function AttendancePage() {
             }));
         });
     } else {
-        // If we are clearing the status field
         if (currentOT > 0) {
-            // Just nullify the status but keep the OT record
             setDoc(attendanceRef, {
                 employeeId: empId,
                 date: dateStr,
@@ -176,7 +160,6 @@ export default function AttendancePage() {
                 }));
             });
         } else {
-            // Nothing left, delete doc
             deleteDoc(attendanceRef).catch(async (err) => {
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     path: attendanceRef.path,
@@ -196,7 +179,6 @@ export default function AttendancePage() {
     const attendanceRef = doc(firestore, 'attendance', cellKey);
     const hours = parseFloat(otHours) || 0;
 
-    // preserve existing status if any
     const currentStatus = attendanceMap[empId]?.[dateStr]?.status || null;
     
     const data: any = {
@@ -227,7 +209,6 @@ export default function AttendancePage() {
     const status = record.status;
     const ot = record.overtimeHours;
 
-    // Case: Only Overtime (No base status)
     if (ot && ot > 0 && !status) {
         return (
             <div className="flex flex-col items-center leading-none gap-0.5">
@@ -237,7 +218,6 @@ export default function AttendancePage() {
         );
     }
 
-    // Combined View: Status Indicator + OT label
     if (ot && ot > 0) {
         let baseChar = '';
         if (status === 'Present') baseChar = 'P';
@@ -268,7 +248,6 @@ export default function AttendancePage() {
   const getStatusBg = (status: AttendanceStatus | undefined, isCurrentDay: boolean, ot?: number) => {
     const base = isCurrentDay ? "ring-1 ring-inset ring-primary/40" : "";
     
-    // If Only Overtime is recorded (no status), we give it a subtle orange tint background
     if (ot && ot > 0 && !status) {
         return cn(base, "bg-orange-50/80 dark:bg-orange-900/20");
     }
@@ -311,7 +290,6 @@ export default function AttendancePage() {
           </div>
         </div>
 
-        {/* QUICK PAINT TOOLS */}
         <div className="px-4 flex flex-wrap items-center gap-2">
             <div className="bg-card border rounded-full px-3 py-1.5 flex items-center gap-2 shadow-sm">
                 <span className="text-[9px] font-black uppercase tracking-tighter text-muted-foreground flex items-center gap-1">
@@ -403,7 +381,7 @@ export default function AttendancePage() {
                           "p-1 text-center text-[8px] font-bold border-b border-r",
                           isToday(day) 
                             ? "bg-primary/20 text-primary" 
-                            : (isSun ? "bg-muted/50 dark:bg-muted/20" : "text-muted-foreground")
+                            : (isSun ? "bg-rose-50 dark:bg-rose-950/20 text-rose-600" : "text-muted-foreground")
                         )}
                       >
                         <div className={cn("flex flex-col leading-none")}>
@@ -442,7 +420,7 @@ export default function AttendancePage() {
                               onClick={() => handleStatusToggle(emp.id, day)}
                               className={cn(
                                 "p-0 text-center border-b border-r cursor-pointer transition-all active:scale-95 h-9",
-                                isSun ? "bg-muted/30 dark:bg-muted/10" : "",
+                                isSun ? "bg-rose-50/50 dark:bg-rose-950/10" : "",
                                 getStatusBg(status, isToday(day), ot)
                               )}
                             >
@@ -483,7 +461,7 @@ export default function AttendancePage() {
                     <div className="space-y-0.5">
                         <p className="text-[10px] font-black uppercase tracking-tight">Register Policy</p>
                         <p className="text-[9px] text-muted-foreground leading-relaxed">
-                            Sundays are typically off. If working, record as <b>P</b> or use the <b>OT tool</b> to add specific extra hours. <br/>
+                            Sundays typically off. If working, record as <b>P</b> or use the <b>OT tool</b> to add specific extra hours. <br/>
                             Use the <b>Eraser</b> tool to wipe both Status and OT from a cell.
                         </p>
                     </div>
@@ -511,7 +489,6 @@ export default function AttendancePage() {
       </div>
       </TooltipProvider>
 
-      {/* Overtime Hours Dialog */}
       <Dialog open={isOTDialogOpen} onOpenChange={setIsOTDialogOpen}>
         <DialogContent className="max-w-[90vw] sm:max-w-[300px] p-4">
             <DialogHeader>
