@@ -75,7 +75,7 @@ export default function AttendancePage() {
     return map;
   }, [attendanceRecords]);
 
-  // Toggle Sequence: null (0), Present (1), null (2), Absent (3), null (4), Half-Day (5), null (6), Holiday/Off (7)
+  // Toggle Sequence: P (Present) -> Clear -> A (Absent) -> Clear -> H (Half) -> Clear -> O (Off) -> Clear
   const statusCycle: (AttendanceStatus | null)[] = [
     null, 
     'Present', 
@@ -169,7 +169,7 @@ export default function AttendancePage() {
               <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               Workshop Haazri Register
             </h1>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">Monthly master sheet for employee attendance.</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Monthly master sheet for employee attendance. (Sundays = Working)</p>
           </div>
           
           <div className="flex items-center bg-card border rounded-lg p-0.5 shadow-sm self-start sm:self-auto">
@@ -263,22 +263,27 @@ export default function AttendancePage() {
                   <th className="sticky left-0 z-20 bg-muted/80 backdrop-blur-md p-2 text-left text-[9px] font-black uppercase tracking-wider border-b border-r w-[140px]">
                     Technician
                   </th>
-                  {daysInMonth.map(day => (
-                    <th 
-                      key={day.toISOString()} 
-                      className={cn(
-                        "p-1 text-center text-[8px] font-bold border-b border-r",
-                        isToday(day) 
-                          ? "bg-primary/20 text-primary" 
-                          : (day.getDay() === 0 ? "bg-zinc-900 text-white dark:bg-black" : "text-muted-foreground")
-                      )}
-                    >
-                      <div className="flex flex-col leading-none">
-                        <span>{format(day, 'dd')}</span>
-                        <span className="text-[7px] opacity-50 font-medium">{format(day, 'EEE')[0]}</span>
-                      </div>
-                    </th>
-                  ))}
+                  {daysInMonth.map(day => {
+                    const isSun = day.getDay() === 0;
+                    return (
+                      <th 
+                        key={day.toISOString()} 
+                        className={cn(
+                          "p-1 text-center text-[8px] font-bold border-b border-r",
+                          isToday(day) 
+                            ? "bg-primary/20 text-primary" 
+                            : (isSun ? "bg-zinc-50 dark:bg-zinc-900/30" : "text-muted-foreground")
+                        )}
+                      >
+                        <div className={cn("flex flex-col leading-none", isSun && "text-rose-600")}>
+                          <span>{format(day, 'dd')}</span>
+                          <span className="text-[7px] opacity-70 font-black tracking-tighter">
+                            {format(day, 'EEE')[0]}{isSun ? '(W)' : ''}
+                          </span>
+                        </div>
+                      </th>
+                    )
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -296,6 +301,7 @@ export default function AttendancePage() {
                         {daysInMonth.map(day => {
                           const dateStr = format(day, 'yyyy-MM-dd');
                           const status = attendanceMap[emp.id]?.[dateStr];
+                          const isSun = day.getDay() === 0;
                           
                           return (
                             <td 
@@ -303,7 +309,7 @@ export default function AttendancePage() {
                               onClick={() => handleStatusToggle(emp.id, day)}
                               className={cn(
                                 "p-0 text-center border-b border-r cursor-pointer transition-all active:scale-95 h-9",
-                                day.getDay() === 0 ? "bg-zinc-100 dark:bg-zinc-900/50" : "",
+                                isSun ? "bg-zinc-50/50 dark:bg-zinc-900/20" : "",
                                 getStatusBg(status, isToday(day))
                               )}
                             >
@@ -329,10 +335,10 @@ export default function AttendancePage() {
                 <CardContent className="p-3 flex items-start gap-2.5">
                     <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                        <p className="text-[10px] font-black uppercase tracking-tight">How to use Quick Mark?</p>
+                        <p className="text-[10px] font-black uppercase tracking-tight">Sunday Working Policy</p>
                         <p className="text-[9px] text-muted-foreground leading-relaxed">
-                            1. Select a tool above (e.g. <b>P</b>).<br/>
-                            2. Simply click any cell to set that status instantly. Click again to unmark.
+                            Sundays are now considered regular working days. <br/>
+                            Mark <b>P</b> for technicians working on Sundays.
                         </p>
                     </div>
                 </CardContent>
