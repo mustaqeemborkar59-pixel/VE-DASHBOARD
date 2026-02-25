@@ -306,9 +306,9 @@ export default function AttendancePage() {
             </div>
             {activeTool && (
                 <div className="animate-in slide-in-from-left-2 duration-300">
-                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[9px] font-black uppercase py-1">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-black border bg-primary/5 text-primary border-primary/20 uppercase">
                         Tool Active: {activeTool === 'Clear' ? 'Eraser' : (activeTool === 'OT' ? 'Overtime (Hours)' : activeTool)} (Click cells to apply)
-                    </Badge>
+                    </span>
                 </div>
             )}
         </div>
@@ -408,10 +408,10 @@ export default function AttendancePage() {
                 <CardContent className="p-3 flex items-start gap-2.5">
                     <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                        <p className="text-[10px] font-black uppercase tracking-tight">Overtime & Sunday Policy</p>
+                        <p className="text-[10px] font-black uppercase tracking-tight">Register Categories</p>
                         <p className="text-[9px] text-muted-foreground leading-relaxed">
                             Sundays are working days (<b>SW</b>). Mark <b>OT</b> tool to record extra hours worked. <br/>
-                            Overtime records show <b>OT</b> status with specific hours underneath.
+                            Status entries include: <b>Working</b>, <b>Absent</b>, <b>Half Day</b>, and <b>Overtime</b>.
                         </p>
                     </div>
                 </CardContent>
@@ -424,6 +424,10 @@ export default function AttendancePage() {
                 <div className="flex items-center gap-1 text-[9px] font-bold">
                     <div className="w-5 h-5 rounded border border-rose-500/30 bg-rose-500/10 flex items-center justify-center text-rose-600 text-[8px]">A</div>
                     <span className="text-muted-foreground/80 uppercase">Absent</span>
+                </div>
+                <div className="flex items-center gap-1 text-[9px] font-bold">
+                    <div className="w-5 h-5 rounded border border-amber-500/30 bg-amber-500/10 flex items-center justify-center text-amber-600 text-[8px]">H</div>
+                    <span className="text-muted-foreground/80 uppercase">Half Day</span>
                 </div>
                 <div className="flex items-center gap-1 text-[9px] font-bold">
                     <div className="w-5 h-5 rounded border border-orange-500/30 bg-orange-500/10 flex items-center justify-center text-orange-600 text-[8px]">OT</div>
@@ -469,9 +473,3 @@ export default function AttendancePage() {
     </AppLayout>
   );
 }
-
-const Badge = ({ children, variant, className }: { children: React.ReactNode, variant?: string, className?: string }) => (
-    <span className={cn("px-2 py-0.5 rounded text-[10px] font-medium border", className)}>
-        {children}
-    </span>
-);
