@@ -111,25 +111,25 @@ export default function AttendancePage() {
       case 'Absent': return <span className="text-rose-600 font-black">A</span>;
       case 'Half-Day': return <span className="text-amber-600 font-black">H</span>;
       case 'Holiday': return <span className="text-blue-600 font-black">O</span>;
-      default: return <span className="text-muted-foreground/10">-</span>;
+      default: return null;
     }
   };
 
   const getStatusBg = (status: AttendanceStatus | undefined, isCurrentDay: boolean) => {
     const base = isCurrentDay ? "ring-1 ring-inset ring-primary/40" : "";
     switch (status) {
-      case 'Present': return cn(base, "bg-emerald-50 dark:bg-emerald-900/20");
-      case 'Absent': return cn(base, "bg-rose-50 dark:bg-rose-900/20");
-      case 'Half-Day': return cn(base, "bg-amber-50 dark:bg-amber-900/20");
-      case 'Holiday': return cn(base, "bg-blue-50 dark:bg-blue-900/20");
-      default: return base;
+      case 'Present': return cn(base, "bg-emerald-100/80 dark:bg-emerald-900/40");
+      case 'Absent': return cn(base, "bg-rose-100/80 dark:bg-rose-900/40");
+      case 'Half-Day': return cn(base, "bg-amber-100/80 dark:bg-amber-900/40");
+      case 'Holiday': return cn(base, "bg-blue-100/80 dark:bg-blue-900/40");
+      default: return "";
     }
   };
 
   return (
     <AppLayout>
       <div className="flex flex-col gap-4 animate-in fade-in duration-500 max-w-full overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-4">
           <div className="space-y-1">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
               <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
@@ -154,7 +154,7 @@ export default function AttendancePage() {
           </div>
         </div>
 
-        <Card className="border-none shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm">
+        <Card className="border-none shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm rounded-none">
           <CardHeader className="p-3 border-b border-border/50 bg-muted/30">
             <div className="flex items-center justify-between">
                 <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
@@ -169,10 +169,10 @@ export default function AttendancePage() {
             </div>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto hide-scrollbar">
-            <table className="w-full border-collapse table-fixed min-w-[600px] sm:min-w-full">
+            <table className="w-full border-collapse table-fixed min-w-[800px] sm:min-w-full">
               <thead>
                 <tr className="bg-muted/40">
-                  <th className="sticky left-0 z-20 bg-muted/80 backdrop-blur-md p-2 text-left text-[9px] font-black uppercase tracking-wider border-b border-r w-[120px] sm:w-[15%]">
+                  <th className="sticky left-0 z-20 bg-muted/80 backdrop-blur-md p-2 text-left text-[9px] font-black uppercase tracking-wider border-b border-r w-[140px]">
                     Technician
                   </th>
                   {daysInMonth.map(day => (
@@ -182,7 +182,7 @@ export default function AttendancePage() {
                         "p-1 text-center text-[8px] font-bold border-b border-r",
                         isToday(day) 
                           ? "bg-primary/20 text-primary" 
-                          : (day.getDay() === 0 ? "bg-red-100/50 text-red-600" : "text-muted-foreground")
+                          : (day.getDay() === 0 ? "bg-red-100 text-red-600" : "text-muted-foreground")
                       )}
                     >
                       <div className="flex flex-col leading-none">
@@ -191,10 +191,10 @@ export default function AttendancePage() {
                       </div>
                     </th>
                   ))}
-                  <th className="p-1 text-center text-[9px] font-black uppercase tracking-wider bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-700 border-b w-[25px] sm:w-[3%]">
+                  <th className="p-1 text-center text-[9px] font-black uppercase tracking-wider bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-700 border-b w-[35px]">
                     P
                   </th>
-                  <th className="p-1 text-center text-[9px] font-black uppercase tracking-wider bg-rose-50/80 dark:bg-rose-950/40 text-rose-700 border-b w-[25px] sm:w-[3%]">
+                  <th className="p-1 text-center text-[9px] font-black uppercase tracking-wider bg-rose-50/80 dark:bg-rose-950/40 text-rose-700 border-b w-[35px]">
                     A
                   </th>
                 </tr>
@@ -210,8 +210,8 @@ export default function AttendancePage() {
                     let absentCount = 0;
 
                     return (
-                      <tr key={emp.id} className="hover:bg-muted/10 transition-colors group">
-                        <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/20 backdrop-blur-md p-2 border-b border-r font-bold text-[10px] truncate leading-tight">
+                      <tr key={emp.id} className="hover:bg-muted/5 transition-colors group">
+                        <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/10 backdrop-blur-md p-2 border-b border-r font-bold text-[10px] truncate leading-tight">
                           {emp.fullName}
                         </td>
                         {daysInMonth.map(day => {
@@ -229,12 +229,12 @@ export default function AttendancePage() {
                               key={dateStr}
                               onClick={() => handleStatusToggle(emp.id, day)}
                               className={cn(
-                                "p-0 text-center border-b border-r cursor-pointer transition-all active:scale-95",
-                                day.getDay() === 0 ? "bg-red-50/40" : "",
+                                "p-0 text-center border-b border-r cursor-pointer transition-all active:scale-95 h-9",
+                                day.getDay() === 0 ? "bg-red-50/80" : "",
                                 getStatusBg(status, isToday(day))
                               )}
                             >
-                              <div className="h-8 flex items-center justify-center text-[10px]">
+                              <div className="h-full flex items-center justify-center text-[10px]">
                                 {getStatusIcon(status)}
                               </div>
                             </td>
@@ -257,7 +257,7 @@ export default function AttendancePage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 px-4 pb-4">
             <Card className="bg-muted/20 border-dashed border-muted-foreground/20">
                 <CardContent className="p-3 flex items-start gap-2.5">
                     <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
