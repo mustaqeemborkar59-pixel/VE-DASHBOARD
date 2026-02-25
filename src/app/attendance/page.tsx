@@ -17,6 +17,8 @@ export default function AttendancePage() {
   const { toast } = useToast();
   
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+  // Track the current cycle index for each cell to allow P -> Clear -> A flow
+  const [cellCycleIndices, setCellCycleIndices] = useState<Record<string, number>>({});
 
   // Navigation handlers
   const handlePrevMonth = () => {
@@ -68,25 +70,43 @@ export default function AttendancePage() {
     return map;
   }, [attendanceRecords]);
 
+  // Cycle sequence: null (0), Present (1), null (2), Absent (3), null (4), Half-Day (5), null (6), Holiday (7)
+  const statusCycle: (AttendanceStatus | null)[] = [
+    null, 
+    'Present', 
+    null, 
+    'Absent', 
+    null, 
+    'Half-Day', 
+    null, 
+    'Holiday'
+  ];
+
   const handleStatusToggle = async (empId: string, date: Date) => {
     if (!firestore) return;
     
     const dateStr = format(date, 'yyyy-MM-dd');
+    const cellKey = `${dateStr}_${empId}`;
     const currentStatus = attendanceMap[empId]?.[dateStr];
     
-    // Cycle through statuses: null/undefined -> Present -> Absent -> Half-Day -> Holiday -> null
-    const nextStatusMap: Record<string, AttendanceStatus | null> = {
-      'undefined': 'Present',
-      'null': 'Present',
-      'Present': 'Absent',
-      'Absent': 'Half-Day',
-      'Half-Day': 'Holiday',
-      'Holiday': null
-    };
+    // Determine the starting index based on current status if not tracked in this session
+    let currentIndex = cellCycleIndices[cellKey];
+    if (currentIndex === undefined) {
+        if (!currentStatus) currentIndex = 0;
+        else if (currentStatus === 'Present') currentIndex = 1;
+        else if (currentStatus === 'Absent') currentIndex = 3;
+        else if (currentStatus === 'Half-Day') currentIndex = 5;
+        else if (currentStatus === 'Holiday') currentIndex = 7;
+        else currentIndex = 0;
+    }
+
+    const nextIndex = (currentIndex + 1) % statusCycle.length;
+    const nextStatus = statusCycle[nextIndex];
     
-    const nextStatus = nextStatusMap[String(currentStatus)];
-    const docId = `${dateStr}_${empId}`;
-    const attendanceRef = doc(firestore, 'attendance', docId);
+    // Update session tracker
+    setCellCycleIndices(prev => ({ ...prev, [cellKey]: nextIndex }));
+
+    const attendanceRef = doc(firestore, 'attendance', cellKey);
 
     try {
       if (nextStatus) {
@@ -182,7 +202,7 @@ export default function AttendancePage() {
                         "p-1 text-center text-[8px] font-bold border-b border-r",
                         isToday(day) 
                           ? "bg-primary/20 text-primary" 
-                          : (day.getDay() === 0 ? "bg-rose-100 text-rose-600" : "text-muted-foreground")
+                          : (day.getDay() === 0 ? "bg-rose-100/50 text-rose-600" : "text-muted-foreground")
                       )}
                     >
                       <div className="flex flex-col leading-none">
@@ -230,7 +250,7 @@ export default function AttendancePage() {
                               onClick={() => handleStatusToggle(emp.id, day)}
                               className={cn(
                                 "p-0 text-center border-b border-r cursor-pointer transition-all active:scale-95 h-9",
-                                day.getDay() === 0 ? "bg-rose-50/50" : "",
+                                day.getDay() === 0 ? "bg-rose-50/30" : "",
                                 getStatusBg(status, isToday(day))
                               )}
                             >
@@ -264,8 +284,7 @@ export default function AttendancePage() {
                     <div className="space-y-0.5">
                         <p className="text-[10px] font-black uppercase tracking-tight">One-Click Toggle</p>
                         <p className="text-[9px] text-muted-foreground leading-relaxed">
-                            Click any cell to cycle: <b>P (Present)</b> → <b>A (Absent)</b> → <b>H (Half)</b> → <b>O (Off)</b> → <b>Clear</b>. 
-                            Summaries update in real-time.
+                            Click to cycle: <b>P (Present)</b> → <b>Clear</b> → <b>A (Absent)</b> → <b>Clear</b> → <b>H (Half)</b> → <b>Clear</b> → <b>O (Off)</b> → <b>Clear</b>.
                         </p>
                     </div>
                 </CardContent>
