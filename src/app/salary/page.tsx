@@ -8,11 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc, where } from 'firebase/firestore';
+import { collection, query, orderBy, doc, where, getDocs } from 'firebase/firestore';
 import { Employee, Salary, CompanySettings, Attendance } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, FileText, WalletCards, XCircle, Calculator, CalendarCheck, Info } from 'lucide-react';
+import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, FileText, WalletCards, XCircle, Calculator, CalendarCheck, Info, Loader2 } from 'lucide-react';
 import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -35,6 +35,7 @@ export default function SalaryPage() {
   const [monthFilter, setMonthFilter] = useState('All');
   
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isFetchingAttendance, setIsFetchingAttendance] = useState(false);
   const [editingSalary, setEditingSalary] = useState<Salary | null>(null);
   const [salaryToDelete, setSalaryToDelete] = useState<Salary | null>(null);
 
@@ -80,22 +81,6 @@ export default function SalaryPage() {
   const { data: salaries, isLoading: isLoadingSalaries } = useCollection<Salary>(salariesQuery);
   const { data: vithalSettings } = useDoc<CompanySettings>(vithalSettingsRef);
   const { data: rvSettings } = useDoc<CompanySettings>(rvSettingsRef);
-
-  // Auto-fetch attendance when employee and month changes
-  useEffect(() => {
-    if (!firestore || !employeeId || !month || editingSalary) return;
-
-    const fetchAttendance = async () => {
-        const start = format(startOfMonth(parseISO(`${month}-01`)), 'yyyy-MM-dd');
-        const end = format(endOfMonth(parseISO(`${month}-01`)), 'yyyy-MM-dd');
-        
-        // We use a query here but since we don't have a direct hook for this specific on-demand task,
-        // we normally rely on the user having marked haazri in the attendance page.
-        // For simplicity in MVP, we suggest the user has already synced haazri.
-        // We will query haazri for this range.
-    };
-    fetchAttendance();
-  }, [employeeId, month, firestore, editingSalary]);
 
   const calculations = useMemo(() => {
     const basic = parseFloat(baseSalary) || 0;
@@ -285,19 +270,71 @@ export default function SalaryPage() {
   };
 
   const autoFillHaazri = async () => {
-    if (!firestore || !employeeId || !month) return;
+    if (!firestore || !employeeId || !month) {
+        toast({ variant: 'destructive', title: 'Action Required', description: 'Please select an employee and month first.' });
+        return;
+    };
     
+    setIsFetchingAttendance(true);
     const start = format(startOfMonth(parseISO(`${month}-01`)), 'yyyy-MM-dd');
     const end = format(endOfMonth(parseISO(`${month}-01`)), 'yyyy-MM-dd');
-    
-    toast({ title: 'Checking Haazri...', description: 'Fetching attendance from database.' });
+    const totalMonthDays = endOfMonth(parseISO(`${month}-01`)).getDate();
 
-    // In a real app we'd query firestore here. 
-    // For this prototype, the idea is that the "Advanced" system links these two.
-    // For now we simulate the auto-fill based on total days in month.
-    const totalDays = endOfMonth(parseISO(`${month}-01`)).getDate();
-    setWorkingDays(String(totalDays));
-    setPresentDays(String(totalDays)); // Default to full month, user can correct.
+    try {
+        const attendanceRef = collection(firestore, 'attendance');
+        const q = query(
+            attendanceRef, 
+            where('employeeId', '==', employeeId),
+            where('date', '>=', start),
+            where('date', '<=', end)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const records = querySnapshot.docs.map(doc => doc.data() as Attendance);
+
+        if (records.length === 0) {
+            toast({ 
+                title: 'No Records Found', 
+                description: 'No attendance marked for this technician in the selected month.' 
+            });
+            setWorkingDays(String(totalMonthDays));
+            setPresentDays('0');
+            setAbsentDays('0');
+            setOt('0');
+        } else {
+            let totalPresent = 0;
+            let totalAbsent = 0;
+            let totalOT = 0;
+
+            records.forEach(rec => {
+                if (rec.status === 'Present') totalPresent += 1;
+                else if (rec.status === 'Half-Day') {
+                    totalPresent += 0.5;
+                    totalAbsent += 0.5;
+                }
+                else if (rec.status === 'Absent') totalAbsent += 1;
+                
+                if (rec.overtimeHours) {
+                    totalOT += rec.overtimeHours;
+                }
+            });
+
+            setWorkingDays(String(totalMonthDays));
+            setPresentDays(String(totalPresent));
+            setAbsentDays(String(totalAbsent));
+            setOt(String(totalOT));
+
+            toast({ 
+                title: 'Sync Complete', 
+                description: `Fetched ${records.length} records. Calculated ${totalPresent} Present days and ${totalOT} OT hours.` 
+            });
+        }
+    } catch (e) {
+        console.error(e);
+        toast({ variant: 'destructive', title: 'Sync Error', description: 'Failed to fetch attendance data.' });
+    } finally {
+        setIsFetchingAttendance(false);
+    }
   }
 
   return (
@@ -516,8 +553,18 @@ export default function SalaryPage() {
                     <CalendarCheck className="h-4 w-4" /> Attendance Details
                     </h3>
                     {!editingSalary && (
-                        <Button variant="outline" size="sm" onClick={autoFillHaazri} className="h-7 text-[10px] uppercase font-black">
-                            <Info className="h-3 w-3 mr-1" /> Auto-Fill Haazri
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={autoFillHaazri} 
+                            disabled={isFetchingAttendance}
+                            className="h-7 text-[10px] uppercase font-black border-primary/30 hover:bg-primary/5"
+                        >
+                            {isFetchingAttendance ? (
+                                <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Syncing...</>
+                            ) : (
+                                <><Info className="h-3 w-3 mr-1" /> Auto-Fill Haazri</>
+                            )}
                         </Button>
                     )}
                 </div>
