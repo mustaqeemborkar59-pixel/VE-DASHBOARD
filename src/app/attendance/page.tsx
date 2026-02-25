@@ -139,9 +139,9 @@ export default function AttendancePage() {
     }
   };
 
-  const getStatusIcon = (status: AttendanceStatus | undefined) => {
+  const getStatusIcon = (status: AttendanceStatus | undefined, isSun: boolean) => {
     switch (status) {
-      case 'Present': return <span className="text-emerald-600 font-black">P</span>;
+      case 'Present': return <span className="text-emerald-600 font-black">{isSun ? 'SW' : 'P'}</span>;
       case 'Absent': return <span className="text-rose-600 font-black">A</span>;
       case 'Half-Day': return <span className="text-amber-600 font-black">H</span>;
       case 'Holiday': return <span className="text-blue-600 font-black">O</span>;
@@ -169,7 +169,7 @@ export default function AttendancePage() {
               <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               Workshop Haazri Register
             </h1>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">Monthly master sheet for employee attendance. (Sundays = Working)</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Monthly master sheet for employee attendance. (Sundays = SW)</p>
           </div>
           
           <div className="flex items-center bg-card border rounded-lg p-0.5 shadow-sm self-start sm:self-auto">
@@ -249,7 +249,7 @@ export default function AttendancePage() {
                     {format(parseISO(`${selectedMonth}-01`), 'MMMM yyyy')}
                 </CardTitle>
                 <div className="hidden sm:flex items-center gap-3 text-[9px] font-bold uppercase">
-                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> P</div>
+                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> P (SW on Sunday)</div>
                     <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-rose-500" /> A</div>
                     <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-500" /> H</div>
                     <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> O</div>
@@ -272,13 +272,13 @@ export default function AttendancePage() {
                           "p-1 text-center text-[8px] font-bold border-b border-r",
                           isToday(day) 
                             ? "bg-primary/20 text-primary" 
-                            : (isSun ? "bg-zinc-50 dark:bg-zinc-900/30" : "text-muted-foreground")
+                            : (isSun ? "bg-zinc-100/50 dark:bg-zinc-900/30" : "text-muted-foreground")
                         )}
                       >
                         <div className={cn("flex flex-col leading-none", isSun && "text-rose-600")}>
                           <span>{format(day, 'dd')}</span>
-                          <span className="text-[7px] opacity-70 font-black tracking-tighter">
-                            {format(day, 'EEE')[0]}{isSun ? '(W)' : ''}
+                          <span className="text-[7px] opacity-70 font-black tracking-tighter uppercase">
+                            {isSun ? 'SW' : format(day, 'EEE')[0]}
                           </span>
                         </div>
                       </th>
@@ -314,7 +314,7 @@ export default function AttendancePage() {
                               )}
                             >
                               <div className="h-full flex items-center justify-center text-[10px]">
-                                {getStatusIcon(status)}
+                                {getStatusIcon(status, isSun)}
                               </div>
                             </td>
                           );
@@ -335,18 +335,18 @@ export default function AttendancePage() {
                 <CardContent className="p-3 flex items-start gap-2.5">
                     <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                        <p className="text-[10px] font-black uppercase tracking-tight">Sunday Working Policy</p>
+                        <p className="text-[10px] font-black uppercase tracking-tight">Sunday Working Policy (SW)</p>
                         <p className="text-[9px] text-muted-foreground leading-relaxed">
-                            Sundays are now considered regular working days. <br/>
-                            Mark <b>P</b> for technicians working on Sundays.
+                            Sundays are considered working days. <br/>
+                            Mark <b>P</b> for working Sundays (Shows as <b>SW</b> in register).
                         </p>
                     </div>
                 </CardContent>
             </Card>
             <div className="flex flex-wrap items-center justify-around p-2 border rounded-lg bg-card shadow-sm gap-2">
                 <div className="flex items-center gap-1 text-[9px] font-bold">
-                    <div className="w-5 h-5 rounded border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center text-emerald-600">P</div>
-                    <span className="text-muted-foreground/80 uppercase">Full</span>
+                    <div className="w-5 h-5 rounded border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center text-emerald-600">P/SW</div>
+                    <span className="text-muted-foreground/80 uppercase">Full/Working</span>
                 </div>
                 <div className="flex items-center gap-1 text-[9px] font-bold">
                     <div className="w-5 h-5 rounded border border-rose-500/30 bg-rose-500/10 flex items-center justify-center text-rose-600">A</div>
