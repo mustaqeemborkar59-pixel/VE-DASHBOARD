@@ -212,8 +212,8 @@ export default function AttendancePage() {
     if (ot && ot > 0 && !status) {
         return (
             <div className="flex flex-col items-center leading-none gap-0.5">
-                <span className="font-black text-orange-600">OT</span>
-                <span className="text-[7px] font-black text-orange-500 uppercase tracking-tighter">{ot} Hrs</span>
+                <span className="font-black text-orange-600 text-[10px]">OT</span>
+                <span className="text-[7px] font-black text-orange-500 uppercase tracking-tighter">{ot}H</span>
             </div>
         );
     }
@@ -228,19 +228,19 @@ export default function AttendancePage() {
         return (
             <div className="flex flex-col items-center leading-none gap-0.5">
                 <div className="flex items-center gap-0.5">
-                    {baseChar && <span className={cn("text-[7px] font-black opacity-40 uppercase", isSun && status === 'Present' ? "text-rose-600 opacity-100" : "")}>{baseChar}</span>}
-                    <span className="font-black text-orange-600">OT</span>
+                    {baseChar && <span className={cn("text-[8px] font-black opacity-40 uppercase", isSun && status === 'Present' ? "text-rose-600 opacity-100" : "")}>{baseChar}</span>}
+                    <span className="font-black text-orange-600 text-[9px]">OT</span>
                 </div>
-                <span className="text-[7px] font-black text-orange-500 uppercase tracking-tighter">{ot} Hrs</span>
+                <span className="text-[7px] font-black text-orange-500 uppercase tracking-tighter">{ot}H</span>
             </div>
         );
     }
 
     switch (status) {
-      case 'Present': return <span className={cn("font-black", isSun ? "text-rose-600" : "text-emerald-600")}>P</span>;
-      case 'Absent': return <span className="text-rose-600 font-black">A</span>;
-      case 'Half-Day': return <span className="text-amber-600 font-black">H</span>;
-      case 'Holiday': return <span className="text-blue-600 font-black">O</span>;
+      case 'Present': return <span className={cn("font-black text-[11px]", isSun ? "text-rose-600" : "text-emerald-600")}>P</span>;
+      case 'Absent': return <span className="text-rose-600 font-black text-[11px]">A</span>;
+      case 'Half-Day': return <span className="text-amber-600 font-black text-[11px]">H</span>;
+      case 'Holiday': return <span className="text-blue-600 font-black text-[11px]">O</span>;
       default: return null;
     }
   };
@@ -265,111 +265,116 @@ export default function AttendancePage() {
     <AppLayout>
       <TooltipProvider delayDuration={100}>
       <div className="flex flex-col gap-4 animate-in fade-in duration-500 max-w-full overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-4">
+        {/* Responsive Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-2">
           <div className="space-y-1">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2">
               <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-              Workshop Haazri Register
+              Haazri Register
             </h1>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">Monthly master sheet for employee attendance.</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider">Workshop Monthly Master Sheet</p>
           </div>
           
           <div className="flex items-center bg-card border rounded-lg p-0.5 shadow-sm self-start sm:self-auto">
-            <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-7 w-7">
-              <ChevronLeft className="h-3 w-3" />
+            <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8">
+              <ChevronLeft className="h-4 w-4" />
             </Button>
             <input 
               type="month" 
               value={selectedMonth} 
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-transparent h-7 border-none text-[10px] sm:text-xs font-black focus:ring-0 outline-none w-24 text-center cursor-pointer uppercase tracking-tighter"
+              className="bg-transparent h-8 border-none text-[11px] sm:text-xs font-black focus:ring-0 outline-none w-28 text-center cursor-pointer uppercase tracking-tighter"
             />
-            <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-7 w-7">
-              <ChevronRight className="h-3 w-3" />
+            <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8">
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        <div className="px-4 flex flex-wrap items-center gap-2">
-            <div className="bg-card border rounded-full px-3 py-1.5 flex items-center gap-2 shadow-sm">
-                <span className="text-[9px] font-black uppercase tracking-tighter text-muted-foreground flex items-center gap-1">
-                    <MousePointer2 className="h-3 w-3" /> Paint Tool:
-                </span>
-                <div className="flex items-center gap-1.5">
+        {/* Improved Tool Selector for Mobile */}
+        <div className="px-4 flex flex-col gap-2">
+            <div className="bg-card border rounded-xl p-2 flex flex-wrap items-center gap-3 shadow-sm">
+                <div className="flex items-center gap-1.5 px-1 border-r pr-3 mr-1">
+                    <MousePointer2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground hidden xs:inline">Paint:</span>
+                </div>
+                <div className="flex items-center gap-2">
                     <button 
                         onClick={() => setActiveTool(activeTool === 'Present' ? null : 'Present')}
                         className={cn(
-                            "w-7 h-7 rounded-full text-[10px] font-black border transition-all active:scale-90 flex items-center justify-center",
-                            activeTool === 'Present' ? "bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            "w-8 h-8 rounded-lg text-[11px] font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm",
+                            activeTool === 'Present' ? "bg-emerald-600 text-white border-emerald-600" : "bg-emerald-50 text-emerald-700 border-emerald-200"
                         )}
                     >P</button>
                     <button 
                         onClick={() => setActiveTool(activeTool === 'Absent' ? null : 'Absent')}
                         className={cn(
-                            "w-7 h-7 rounded-full text-[10px] font-black border transition-all active:scale-90 flex items-center justify-center",
-                            activeTool === 'Absent' ? "bg-rose-600 text-white border-rose-600 shadow-lg shadow-rose-500/20" : "bg-rose-50 text-rose-700 border-rose-200"
+                            "w-8 h-8 rounded-lg text-[11px] font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm",
+                            activeTool === 'Absent' ? "bg-rose-600 text-white border-rose-600" : "bg-rose-50 text-rose-700 border-rose-200"
                         )}
                     >A</button>
                     <button 
                         onClick={() => setActiveTool(activeTool === 'Half-Day' ? null : 'Half-Day')}
                         className={cn(
-                            "w-7 h-7 rounded-full text-[10px] font-black border transition-all active:scale-90 flex items-center justify-center",
-                            activeTool === 'Half-Day' ? "bg-amber-600 text-white border-amber-600 shadow-lg shadow-amber-500/20" : "bg-amber-50 text-amber-700 border-amber-200"
+                            "w-8 h-8 rounded-lg text-[11px] font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm",
+                            activeTool === 'Half-Day' ? "bg-amber-600 text-white border-amber-600" : "bg-amber-50 text-amber-700 border-amber-200"
                         )}
                     >H</button>
                     <button 
                         onClick={() => setActiveTool(activeTool === 'Holiday' ? null : 'Holiday')}
                         className={cn(
-                            "w-7 h-7 rounded-full text-[10px] font-black border transition-all active:scale-90 flex items-center justify-center",
-                            activeTool === 'Holiday' ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20" : "bg-blue-50 text-blue-700 border-blue-200"
+                            "w-8 h-8 rounded-lg text-[11px] font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm",
+                            activeTool === 'Holiday' ? "bg-blue-600 text-white border-blue-600" : "bg-blue-50 text-blue-700 border-blue-200"
                         )}
                     >O</button>
-                    <div className="w-px h-4 bg-border mx-1" />
+                    <div className="w-px h-5 bg-border mx-1" />
                     <button 
                         onClick={() => setActiveTool(activeTool === 'OT' ? null : 'OT')}
                         className={cn(
-                            "w-7 h-7 rounded-full text-[10px] font-black border transition-all active:scale-90 flex items-center justify-center",
-                            activeTool === 'OT' ? "bg-orange-600 text-white border-orange-600 shadow-lg shadow-orange-500/20" : "bg-orange-50 text-orange-700 border-orange-200"
+                            "w-8 h-8 rounded-lg text-[11px] font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm",
+                            activeTool === 'OT' ? "bg-orange-600 text-white border-orange-600" : "bg-orange-50 text-orange-700 border-orange-200"
                         )}
                     >OT</button>
                     <button 
                         onClick={() => setActiveTool(activeTool === 'Clear' ? null : 'Clear')}
                         className={cn(
-                            "w-7 h-7 rounded-full text-[10px] font-black border transition-all active:scale-90 flex items-center justify-center",
+                            "w-8 h-8 rounded-lg text-[11px] font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm",
                             activeTool === 'Clear' ? "bg-zinc-800 text-white border-zinc-800" : "bg-white text-zinc-500 border-zinc-200"
                         )}
-                    ><Eraser className="h-3 w-3" /></button>
+                    ><Eraser className="h-3.5 w-3.5" /></button>
                 </div>
             </div>
             {activeTool && (
                 <div className="animate-in slide-in-from-left-2 duration-300">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-black border bg-primary/5 text-primary border-primary/20 uppercase">
-                        Tool Active: {activeTool === 'Clear' ? 'Eraser' : (activeTool === 'OT' ? 'Overtime (Hours)' : activeTool)} (Click cells to apply)
+                    <span className="px-3 py-1 rounded-full text-[9px] font-black border bg-primary/5 text-primary border-primary/20 uppercase tracking-widest flex items-center w-fit gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                        Mode: {activeTool === 'Clear' ? 'Eraser' : (activeTool === 'OT' ? 'Overtime' : activeTool)} Active
                     </span>
                 </div>
             )}
         </div>
 
-        <Card className="border-none shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm rounded-none">
-          <CardHeader className="p-3 border-b border-border/50 bg-muted/30">
+        {/* Attendance Grid Card */}
+        <Card className="border-none shadow-none sm:shadow-sm overflow-hidden bg-background sm:bg-card/50 rounded-none">
+          <CardHeader className="p-3 border-b border-border/50 bg-muted/30 sm:flex hidden">
             <div className="flex items-center justify-between">
                 <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
                     {format(parseISO(`${selectedMonth}-01`), 'MMMM yyyy')}
                 </CardTitle>
-                <div className="hidden sm:flex items-center gap-3 text-[9px] font-bold uppercase">
-                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Working (P)</div>
-                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Absent</div>
-                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Half-Day</div>
-                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Off</div>
-                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-orange-500" /> OT (Hours)</div>
+                <div className="flex items-center gap-3 text-[9px] font-bold uppercase">
+                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> P</div>
+                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-rose-500" /> A</div>
+                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-500" /> H</div>
+                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> O</div>
+                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-orange-500" /> OT</div>
                 </div>
             </div>
           </CardHeader>
-          <CardContent className="p-0 overflow-x-auto hide-scrollbar">
-            <table className="w-full border-collapse table-fixed min-w-[800px] sm:min-w-full">
+          <CardContent className="p-0 overflow-x-auto hide-scrollbar touch-pan-x">
+            <table className="w-full border-collapse table-fixed min-w-[800px]">
               <thead>
-                <tr className="bg-muted/40">
-                  <th className="sticky left-0 z-20 bg-muted/80 backdrop-blur-md p-2 text-left text-[9px] font-black uppercase tracking-wider border-b border-r w-[140px]">
+                <tr className="bg-muted/40 sticky top-0 z-30">
+                  <th className="sticky left-0 z-40 bg-muted/95 backdrop-blur-md p-3 text-left text-[10px] font-black uppercase tracking-widest border-b border-r w-[130px] sm:w-[160px] shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                     Technician
                   </th>
                   {daysInMonth.map(day => {
@@ -378,16 +383,16 @@ export default function AttendancePage() {
                       <th 
                         key={day.toISOString()} 
                         className={cn(
-                          "p-1 text-center text-[8px] font-bold border-b border-r",
+                          "p-1.5 text-center text-[9px] font-bold border-b border-r",
                           isToday(day) 
                             ? "bg-primary/20 text-primary" 
-                            : (isSun ? "bg-rose-50 dark:bg-rose-950/20 text-rose-600" : "text-muted-foreground")
+                            : (isSun ? "bg-rose-100/50 dark:bg-rose-950/30 text-rose-600" : "text-muted-foreground")
                         )}
                       >
-                        <div className={cn("flex flex-col leading-none")}>
-                          <span className={cn(isSun ? "text-rose-600" : "")}>{format(day, 'dd')}</span>
-                          <span className={cn("text-[7px] font-black tracking-tighter uppercase", isSun ? "text-rose-600" : "opacity-70")}>
-                            {isSun ? 'S' : format(day, 'EEE')[0]}
+                        <div className={cn("flex flex-col leading-none gap-0.5")}>
+                          <span className={cn("text-[10px]", isSun ? "text-rose-600" : "text-foreground")}>{format(day, 'dd')}</span>
+                          <span className={cn("text-[8px] font-black tracking-tighter uppercase", isSun ? "text-rose-600" : "opacity-60")}>
+                            {format(day, 'EEE').charAt(0)}
                           </span>
                         </div>
                       </th>
@@ -398,13 +403,13 @@ export default function AttendancePage() {
               <tbody>
                 {isLoadingEmployees ? (
                   Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i}><td colSpan={daysInMonth.length + 1} className="p-4 text-center animate-pulse text-[10px]">Syncing Register...</td></tr>
+                    <tr key={i}><td colSpan={daysInMonth.length + 1} className="p-10 text-center animate-pulse text-[10px] font-bold uppercase text-muted-foreground">Synchronizing Register...</td></tr>
                   ))
                 ) : employees && employees.length > 0 ? (
                   employees.map((emp) => {
                     return (
-                      <tr key={emp.id} className="hover:bg-muted/5 transition-colors group">
-                        <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/10 backdrop-blur-md p-2 border-b border-r font-bold text-[10px] truncate leading-tight">
+                      <tr key={emp.id} className="hover:bg-muted/5 transition-colors group h-11">
+                        <td className="sticky left-0 z-20 bg-card/95 backdrop-blur-md p-3 border-b border-r font-black text-[10px] sm:text-[11px] truncate leading-tight shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
                           {emp.fullName}
                         </td>
                         {daysInMonth.map(day => {
@@ -419,12 +424,12 @@ export default function AttendancePage() {
                               key={dateStr}
                               onClick={() => handleStatusToggle(emp.id, day)}
                               className={cn(
-                                "p-0 text-center border-b border-r cursor-pointer transition-all active:scale-95 h-9",
+                                "p-0 text-center border-b border-r cursor-pointer transition-all active:bg-primary/5 select-none",
                                 isSun ? "bg-rose-50/50 dark:bg-rose-950/10" : "",
                                 getStatusBg(status, isToday(day), ot)
                               )}
                             >
-                              <div className="h-full flex items-center justify-center text-[10px]">
+                              <div className="h-full flex items-center justify-center">
                                 {ot > 0 ? (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
@@ -432,7 +437,7 @@ export default function AttendancePage() {
                                         {getStatusIcon(record, isSun)}
                                       </div>
                                     </TooltipTrigger>
-                                    <TooltipContent side="top" className="py-1 px-2 text-[10px] font-black">
+                                    <TooltipContent side="top" className="py-1 px-2 text-[10px] font-black bg-orange-600 text-white border-none">
                                       {status ? `${status} + ` : ''}{ot} Hrs OT
                                     </TooltipContent>
                                   </Tooltip>
@@ -447,61 +452,63 @@ export default function AttendancePage() {
                     );
                   })
                 ) : (
-                  <tr><td colSpan={daysInMonth.length + 1} className="p-10 text-center text-muted-foreground text-xs">No technicians found in database.</td></tr>
+                  <tr><td colSpan={daysInMonth.length + 1} className="p-16 text-center text-muted-foreground text-xs font-bold uppercase tracking-widest">No technicians found in database.</td></tr>
                 )}
               </tbody>
             </table>
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 px-4 pb-4">
-            <Card className="bg-muted/20 border-dashed border-muted-foreground/20">
-                <CardContent className="p-3 flex items-start gap-2.5">
-                    <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <div className="space-y-0.5">
-                        <p className="text-[10px] font-black uppercase tracking-tight">Register Policy</p>
-                        <p className="text-[9px] text-muted-foreground leading-relaxed">
-                            Sundays typically off. If working, record as <b>P</b> or use the <b>OT tool</b> to add specific extra hours. <br/>
-                            Use the <b>Eraser</b> tool to wipe both Status and OT from a cell.
+        {/* Responsive Legend & Policy Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 pb-10">
+            <Card className="bg-muted/20 border-dashed border-muted-foreground/20 rounded-xl">
+                <CardContent className="p-4 flex items-start gap-3">
+                    <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                        <p className="text-[11px] font-black uppercase tracking-widest">Register Policy</p>
+                        <p className="text-[10px] text-muted-foreground leading-relaxed">
+                            Sundays off by default. Use <b>P</b> for full day or <b>OT tool</b> for extra hours. <br/>
+                            Use <b>Eraser</b> to wipe a cell. Cells with OT have orange tooltips.
                         </p>
                     </div>
                 </CardContent>
             </Card>
-            <div className="flex flex-wrap items-center justify-around p-2 border rounded-lg bg-card shadow-sm gap-2">
-                <div className="flex items-center gap-1 text-[9px] font-bold">
-                    <div className="w-5 h-5 rounded border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center text-emerald-600 text-[8px]">P</div>
-                    <span className="text-muted-foreground/80 uppercase">Working</span>
+            <div className="flex flex-wrap items-center justify-around p-3 border rounded-xl bg-card shadow-sm gap-3">
+                <div className="flex items-center gap-2 text-[10px] font-black">
+                    <div className="w-6 h-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center text-emerald-600 text-[10px]">P</div>
+                    <span className="text-muted-foreground/80 uppercase tracking-tighter">Working</span>
                 </div>
-                <div className="flex items-center gap-1 text-[9px] font-bold">
-                    <div className="w-5 h-5 rounded border border-rose-500/30 bg-rose-500/10 flex items-center justify-center text-rose-600 text-[8px]">A</div>
-                    <span className="text-muted-foreground/80 uppercase">Absent</span>
+                <div className="flex items-center gap-2 text-[10px] font-black">
+                    <div className="w-6 h-6 rounded-lg border border-rose-500/30 bg-rose-500/10 flex items-center justify-center text-rose-600 text-[10px]">A</div>
+                    <span className="text-muted-foreground/80 uppercase tracking-tighter">Absent</span>
                 </div>
-                <div className="flex items-center gap-1 text-[9px] font-bold">
-                    <div className="w-5 h-5 rounded border border-amber-500/30 bg-amber-500/10 flex items-center justify-center text-amber-600 text-[8px]">H</div>
-                    <span className="text-muted-foreground/80 uppercase">Half Day</span>
+                <div className="flex items-center gap-2 text-[10px] font-black">
+                    <div className="w-6 h-6 rounded-lg border border-amber-500/30 bg-amber-500/10 flex items-center justify-center text-amber-600 text-[10px]">H</div>
+                    <span className="text-muted-foreground/80 uppercase tracking-tighter">Half Day</span>
                 </div>
-                <div className="flex items-center gap-1 text-[9px] font-bold">
-                    <div className="w-5 h-5 rounded border border-orange-500/30 bg-orange-500/10 flex items-center justify-center text-orange-600 text-[8px]">OT</div>
-                    <span className="text-muted-foreground/80 uppercase">Overtime</span>
+                <div className="flex items-center gap-2 text-[10px] font-black">
+                    <div className="w-6 h-6 rounded-lg border border-orange-500/30 bg-orange-500/10 flex items-center justify-center text-orange-600 text-[10px]">OT</div>
+                    <span className="text-muted-foreground/80 uppercase tracking-tighter">Overtime</span>
                 </div>
             </div>
         </div>
       </div>
       </TooltipProvider>
 
+      {/* Mobile Optimized OT Dialog */}
       <Dialog open={isOTDialogOpen} onOpenChange={setIsOTDialogOpen}>
-        <DialogContent className="max-w-[90vw] sm:max-w-[300px] p-4">
-            <DialogHeader>
-                <DialogTitle className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-orange-600" /> Record Overtime
+        <DialogContent className="max-w-[95vw] sm:max-w-[320px] p-0 rounded-2xl overflow-hidden border-none shadow-2xl">
+            <DialogHeader className="p-6 bg-orange-50 dark:bg-orange-950/20 border-b border-orange-100 dark:border-orange-900/30">
+                <DialogTitle className="text-base font-black uppercase tracking-tight flex items-center gap-2 text-orange-700 dark:text-orange-400">
+                    <Clock className="h-5 w-5" /> Record Overtime
                 </DialogTitle>
-                <DialogDescription className="text-[10px]">
-                    Enter extra hours for {selectedOTCell && format(selectedOTCell.date, 'dd MMM yyyy')}
+                <DialogDescription className="text-[11px] font-medium text-orange-600/70">
+                    Entering extra hours for {selectedOTCell && format(selectedOTCell.date, 'dd MMM yyyy')}
                 </DialogDescription>
             </DialogHeader>
-            <div className="py-4">
-                <Label htmlFor="ot-hours" className="text-[10px] font-bold uppercase mb-1.5 block">Total OT Hours</Label>
-                <div className="flex items-center gap-2">
+            <div className="p-6 pb-2">
+                <Label htmlFor="ot-hours" className="text-[10px] font-black uppercase mb-3 block text-muted-foreground tracking-widest text-center">Total OT Hours</Label>
+                <div className="flex items-center justify-center gap-3">
                     <Input 
                         id="ot-hours"
                         type="number"
@@ -509,15 +516,15 @@ export default function AttendancePage() {
                         min="0"
                         value={otHours}
                         onChange={(e) => setOtHours(e.target.value)}
-                        className="h-10 text-center font-black text-lg"
+                        className="h-14 w-24 text-center font-black text-2xl bg-muted/30 border-2 focus-visible:ring-orange-500/20"
                         autoFocus
                     />
-                    <span className="font-bold text-sm text-muted-foreground">Hrs</span>
+                    <span className="font-black text-sm text-muted-foreground uppercase">Hrs</span>
                 </div>
             </div>
-            <DialogFooter className="grid grid-cols-2 gap-2">
-                <Button variant="outline" onClick={() => setIsOTDialogOpen(false)} className="h-9 text-[10px] font-bold uppercase">Cancel</Button>
-                <Button onClick={handleSaveOT} className="h-9 text-[10px] font-bold uppercase bg-orange-600 hover:bg-orange-700">Save OT</Button>
+            <DialogFooter className="p-6 grid grid-cols-2 gap-3 bg-muted/10 mt-4">
+                <Button variant="outline" onClick={() => setIsOTDialogOpen(false)} className="h-11 rounded-xl text-[11px] font-black uppercase tracking-wider border-muted-foreground/20">Cancel</Button>
+                <Button onClick={handleSaveOT} className="h-11 rounded-xl text-[11px] font-black uppercase tracking-wider bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-500/20 border-none">Save OT</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
