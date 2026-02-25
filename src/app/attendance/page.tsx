@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import AppLayout from "@/components/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, query, orderBy, doc, setDoc, where, deleteDoc } from 'firebase/firestore';
 import { Employee, Attendance, AttendanceStatus } from '@/lib/data';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isToday } from 'date-fns';
@@ -96,7 +96,7 @@ export default function AttendancePage() {
     'Holiday'
   ];
 
-  const handleStatusToggle = async (empId: string, date: Date) => {
+  const handleStatusToggle = (empId: string, date: Date) => {
     if (!firestore) return;
     
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -104,13 +104,21 @@ export default function AttendancePage() {
     const currentRecord = attendanceMap[empId]?.[dateStr];
     const currentStatus = currentRecord?.status;
     const currentOT = currentRecord?.overtimeHours || 0;
+    const attendanceRef = doc(firestore, 'attendance', cellKey);
     
     let nextStatus: AttendanceStatus | null = null;
 
     // FAST PAINT MODE LOGIC
     if (activeTool) {
         if (activeTool === 'Clear') {
-            nextStatus = null;
+            // ERASER: Wipe everything (Status and OT)
+            deleteDoc(attendanceRef).catch(async (err) => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: attendanceRef.path,
+                    operation: 'delete',
+                }));
+            });
+            return;
         } else if (activeTool === 'OT') {
             // Open Overtime dialog
             setSelectedOTCell({ empId, date });
@@ -118,11 +126,11 @@ export default function AttendancePage() {
             setIsOTDialogOpen(true);
             return;
         } else {
-            // If already same status, clear it (toggle behavior)
+            // Status tool (P, A, H, O): Toggle if already same, else apply
             nextStatus = currentStatus === activeTool ? null : activeTool;
         }
     } else {
-        // TRADITIONAL CYCLE LOGIC
+        // TRADITIONAL CYCLE LOGIC (No tool active)
         let currentIndex = cellCycleIndices[cellKey];
         if (currentIndex === undefined) {
             if (!currentStatus) currentIndex = 0;
@@ -137,37 +145,49 @@ export default function AttendancePage() {
         setCellCycleIndices(prev => ({ ...prev, [cellKey]: nextIndex }));
     }
 
-    const attendanceRef = doc(firestore, 'attendance', cellKey);
-
-    try {
-      if (nextStatus) {
-        // We use merge: true to preserve overtimeHours if they exist when changing status
-        await setDoc(attendanceRef, {
-          employeeId: empId,
-          date: dateStr,
-          status: nextStatus,
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
-      } else {
-        // If clearing status, but OT exists, only clear the status field
+    if (nextStatus) {
+        // Update status but preserve OT if it exists (using merge)
+        setDoc(attendanceRef, {
+            employeeId: empId,
+            date: dateStr,
+            status: nextStatus,
+            updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(async (err) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: attendanceRef.path,
+                operation: 'update',
+                requestResourceData: { status: nextStatus }
+            }));
+        });
+    } else {
+        // If we are clearing the status field
         if (currentOT > 0) {
-            await setDoc(attendanceRef, {
+            // Just nullify the status but keep the OT record
+            setDoc(attendanceRef, {
                 employeeId: empId,
                 date: dateStr,
                 status: null,
                 updatedAt: new Date().toISOString()
-            }, { merge: true });
+            }, { merge: true }).catch(async (err) => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: attendanceRef.path,
+                    operation: 'update',
+                    requestResourceData: { status: null }
+                }));
+            });
         } else {
-            await deleteDoc(attendanceRef);
+            // Nothing left, delete doc
+            deleteDoc(attendanceRef).catch(async (err) => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: attendanceRef.path,
+                    operation: 'delete',
+                }));
+            });
         }
-      }
-    } catch (e) {
-      console.error(e);
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not update attendance.' });
     }
   };
 
-  const handleSaveOT = async () => {
+  const handleSaveOT = () => {
     if (!firestore || !selectedOTCell) return;
     
     const { empId, date } = selectedOTCell;
@@ -176,29 +196,30 @@ export default function AttendancePage() {
     const attendanceRef = doc(firestore, 'attendance', cellKey);
     const hours = parseFloat(otHours) || 0;
 
-    try {
-        // preserve existing status if any
-        const currentStatus = attendanceMap[empId]?.[dateStr]?.status || null;
-        
-        const data: any = {
-            employeeId: empId,
-            date: dateStr,
-            overtimeHours: hours,
-            updatedAt: new Date().toISOString()
-        };
+    // preserve existing status if any
+    const currentStatus = attendanceMap[empId]?.[dateStr]?.status || null;
+    
+    const data: any = {
+        employeeId: empId,
+        date: dateStr,
+        overtimeHours: hours,
+        updatedAt: new Date().toISOString()
+    };
 
-        if (currentStatus) {
-            data.status = currentStatus;
-        }
-        
-        await setDoc(attendanceRef, data, { merge: true });
-        
-        setIsOTDialogOpen(false);
-        toast({ title: 'Overtime Saved', description: `${hours} hours recorded for technician.` });
-    } catch (e) {
-        console.error(e);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not save Overtime.' });
+    if (currentStatus) {
+        data.status = currentStatus;
     }
+    
+    setDoc(attendanceRef, data, { merge: true }).catch(async (err) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: attendanceRef.path,
+            operation: 'update',
+            requestResourceData: data
+        }));
+    });
+    
+    setIsOTDialogOpen(false);
+    toast({ title: 'Overtime Saved', description: `${hours} hours recorded for technician.` });
   }
 
   const getStatusIcon = (record: Attendance | undefined, isSun: boolean) => {
@@ -247,8 +268,8 @@ export default function AttendancePage() {
   const getStatusBg = (status: AttendanceStatus | undefined, isCurrentDay: boolean, ot?: number) => {
     const base = isCurrentDay ? "ring-1 ring-inset ring-primary/40" : "";
     
-    // If Overtime is recorded, we give it a subtle orange tint background
-    if (ot && ot > 0) {
+    // If Only Overtime is recorded (no status), we give it a subtle orange tint background
+    if (ot && ot > 0 && !status) {
         return cn(base, "bg-orange-50/80 dark:bg-orange-900/20");
     }
 
@@ -463,7 +484,7 @@ export default function AttendancePage() {
                         <p className="text-[10px] font-black uppercase tracking-tight">Register Policy</p>
                         <p className="text-[9px] text-muted-foreground leading-relaxed">
                             Sundays are typically off. If working, record as <b>P</b> or use the <b>OT tool</b> to add specific extra hours. <br/>
-                            Total hours for the day will be calculated as (Base Status + Overtime).
+                            Use the <b>Eraser</b> tool to wipe both Status and OT from a cell.
                         </p>
                     </div>
                 </CardContent>
