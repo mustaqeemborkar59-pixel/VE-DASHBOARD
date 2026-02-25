@@ -106,6 +106,18 @@ export default function SalaryPage() {
     return { grossEarnings, totalDeductions, netPay };
   }, [baseSalary, hra, conveyance, medical, special, bonus, ot, pf, esic, pt, tds, lwf, advance, otherDeductions]);
 
+  // Handle auto-populating base salary when employee is selected
+  useEffect(() => {
+    if (employeeId && !editingSalary) {
+        const emp = employees?.find(e => e.id === employeeId);
+        if (emp && emp.baseSalary) {
+            setBaseSalary(emp.baseSalary.toString());
+        } else {
+            setBaseSalary('0');
+        }
+    }
+  }, [employeeId, employees, editingSalary]);
+
   const filteredSalaries = useMemo(() => {
     if (!salaries) return [];
     return salaries.filter(s => {
@@ -282,16 +294,12 @@ export default function SalaryPage() {
 
     try {
         const attendanceRef = collection(firestore, 'attendance');
-        // We only query by employeeId to avoid composite index requirements
-        // Filtering by date will happen client-side
         const q = query(
             attendanceRef, 
             where('employeeId', '==', employeeId)
         );
         
         const querySnapshot = await getDocs(q);
-        
-        // Filter records within the selected month range manually
         const records = querySnapshot.docs
             .map(doc => doc.data() as Attendance)
             .filter(rec => rec.date >= start && rec.date <= end);
@@ -328,14 +336,19 @@ export default function SalaryPage() {
             setAbsentDays(String(totalAbsent));
             setOt(String(totalOT));
 
+            // Also ensure base salary is pulled again if somehow missing
+            const emp = employees?.find(e => e.id === employeeId);
+            if (emp && emp.baseSalary) {
+                setBaseSalary(emp.baseSalary.toString());
+            }
+
             toast({ 
                 title: 'Sync Complete', 
                 description: `Fetched ${records.length} records. Calculated ${totalPresent} Present days and ${totalOT} OT hours.` 
             });
         }
     } catch (e) {
-        // We use toast instead of console.error for better user experience
-        toast({ variant: 'destructive', title: 'Sync Error', description: 'Failed to fetch attendance data. Database index may be required.' });
+        toast({ variant: 'destructive', title: 'Sync Error', description: 'Failed to fetch attendance data.' });
     } finally {
         setIsFetchingAttendance(false);
     }

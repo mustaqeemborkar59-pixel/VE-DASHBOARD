@@ -132,6 +132,10 @@
           "format": "date",
           "description": "Date of joining."
         },
+        "baseSalary": {
+          "type": "number",
+          "description": "Default monthly base salary for payroll calculation."
+        },
         "panNumber": {
           "type": "string",
           "description": "PAN Card Number."
@@ -810,7 +814,7 @@
     },
     "/payments/{paymentId}": {
         "schema": {
-            "$ref": "#/entities/Payment"
+            " $ref": "#/entities/Payment"
         },
         "description": "Stores all payment records for invoices."
     },

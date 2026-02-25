@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from "react";
@@ -14,6 +15,7 @@ export type EmployeeFormData = {
   contactNumber: string;
   workLocation: string;
   availability: boolean;
+  baseSalary: string;
   pfNumber: string;
   uanNumber: string;
   esicNumber: string;
@@ -22,7 +24,7 @@ export type EmployeeFormData = {
 };
 
 interface EmployeeFormProps {
-  onSubmit: (data: EmployeeFormData) => void;
+  onSubmit: (data: Partial<EmployeeFormData> & { baseSalary: number }) => void;
   initialData?: Employee;
   mode: 'add' | 'edit';
 }
@@ -35,6 +37,7 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
     contactNumber: '',
     workLocation: '',
     availability: true,
+    baseSalary: '0',
     pfNumber: '',
     uanNumber: '',
     esicNumber: '',
@@ -50,6 +53,7 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
         contactNumber: initialData.contactNumber || '',
         workLocation: initialData.workLocation || '',
         availability: initialData.availability ?? true,
+        baseSalary: initialData.baseSalary?.toString() || '0',
         pfNumber: initialData.pfNumber || '',
         uanNumber: initialData.uanNumber || '',
         esicNumber: initialData.esicNumber || '',
@@ -63,6 +67,7 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
             contactNumber: '',
             workLocation: '',
             availability: true,
+            baseSalary: '0',
             pfNumber: '',
             uanNumber: '',
             esicNumber: '',
@@ -92,7 +97,8 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
       return;
     }
     
-    onSubmit(formData);
+    const salary = parseFloat(formData.baseSalary) || 0;
+    onSubmit({ ...formData, baseSalary: salary });
   };
 
   return (
@@ -108,10 +114,28 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
           </div>
           <div className="grid gap-2">
               <Label htmlFor="contactNumber">Contact Number</Label>
-              <Input id="contactNumber" value={formData.contactNumber} onChange={handleInputChange} placeholder="e.g., +1 234 567 890" />
+              <Input id="contactNumber" value={formData.contactNumber} onChange={handleInputChange} placeholder="e.g., +91 9876543210" />
           </div>
         </div>
         
+        <Separator />
+        
+        <div className="grid gap-2 bg-muted/20 p-4 rounded-lg border border-primary/10">
+            <Label htmlFor="baseSalary" className="text-primary font-bold uppercase tracking-tight">Monthly Base Salary (Fixed)</Label>
+            <div className="flex items-center gap-2">
+                <span className="text-lg font-bold text-muted-foreground">₹</span>
+                <Input 
+                    id="baseSalary" 
+                    type="number" 
+                    value={formData.baseSalary} 
+                    onChange={handleInputChange} 
+                    placeholder="Enter fixed salary" 
+                    className="h-10 text-lg font-black"
+                />
+            </div>
+            <p className="text-[10px] text-muted-foreground italic">This salary will be used for automatic payroll calculations and payslip generation.</p>
+        </div>
+
         <Separator />
         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Statutory & Bank Details</h3>
         

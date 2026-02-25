@@ -23,6 +23,7 @@ export type Employee = {
   workLocation: string;
   availability: boolean;
   doj?: string; // Date of Joining
+  baseSalary?: number; // Default base salary for payroll
   panNumber?: string;
   pfNumber?: string;
   uanNumber?: string;
