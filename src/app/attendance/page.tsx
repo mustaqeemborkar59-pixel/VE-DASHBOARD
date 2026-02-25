@@ -168,7 +168,7 @@ export default function AttendancePage() {
     const hours = parseFloat(otHours) || 0;
 
     try {
-        // If marking OT, preserve existing status or default to Present
+        // If marking OT, preserve existing status (like 'Present') or default to Present
         const currentStatus = attendanceMap[empId]?.[dateStr]?.status || 'Present';
         
         await setDoc(attendanceRef, {
@@ -192,11 +192,20 @@ export default function AttendancePage() {
     const status = record.status;
     const ot = record.overtimeHours;
 
-    // If OT is present, we show OT as the primary label
+    // If OT is present, show base status initial + OT label
     if (ot && ot > 0) {
+        let baseChar = '';
+        if (status === 'Present') baseChar = isSun ? 'SW' : 'P';
+        else if (status === 'Half-Day') baseChar = 'H';
+        else if (status === 'Holiday') baseChar = 'O';
+        else if (status === 'Absent') baseChar = 'A';
+
         return (
             <div className="flex flex-col items-center leading-none gap-0.5">
-                <span className="font-black text-orange-600">OT</span>
+                <div className="flex items-center gap-0.5">
+                    {baseChar && <span className="text-[7px] font-black opacity-40 uppercase">{baseChar}</span>}
+                    <span className="font-black text-orange-600">OT</span>
+                </div>
                 <span className="text-[7px] font-black text-orange-500 uppercase tracking-tighter">{ot} Hrs</span>
             </div>
         );
@@ -429,7 +438,7 @@ export default function AttendancePage() {
                     <div className="space-y-0.5">
                         <p className="text-[10px] font-black uppercase tracking-tight">Register Policy</p>
                         <p className="text-[9px] text-muted-foreground leading-relaxed">
-                            Sundays are working days (<b>SW</b>). Use <b>OT tool</b> to add extra hours to any day (even if already marked P). <br/>
+                            Sundays are working days (<b>SW</b>). Use <b>OT tool</b> to add extra hours to any marked day (click a <b>P</b> cell with OT tool to add extra time). <br/>
                             Status entries include: <b>Working</b>, <b>Absent</b>, <b>Half Day</b>, and <b>Overtime</b>.
                         </p>
                     </div>
