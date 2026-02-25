@@ -16,7 +16,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Separator } from '@/components/ui/separator';
 
 type ActiveTool = AttendanceStatus | 'Clear' | 'OT' | null;
 
@@ -104,6 +103,7 @@ export default function AttendancePage() {
     const cellKey = `${dateStr}_${empId}`;
     const currentRecord = attendanceMap[empId]?.[dateStr];
     const currentStatus = currentRecord?.status;
+    const currentOT = currentRecord?.overtimeHours || 0;
     
     let nextStatus: AttendanceStatus | null = null;
 
@@ -114,7 +114,7 @@ export default function AttendancePage() {
         } else if (activeTool === 'OT') {
             // Open Overtime dialog
             setSelectedOTCell({ empId, date });
-            setOtHours(currentRecord?.overtimeHours?.toString() || '0');
+            setOtHours(currentOT.toString());
             setIsOTDialogOpen(true);
             return;
         } else {
@@ -141,6 +141,7 @@ export default function AttendancePage() {
 
     try {
       if (nextStatus) {
+        // We use merge: true to preserve overtimeHours if they exist when changing status
         await setDoc(attendanceRef, {
           employeeId: empId,
           date: dateStr,
@@ -148,6 +149,7 @@ export default function AttendancePage() {
           updatedAt: new Date().toISOString()
         }, { merge: true });
       } else {
+        // If clearing status, we usually clear everything for that cell
         await deleteDoc(attendanceRef);
       }
     } catch (e) {
@@ -166,7 +168,7 @@ export default function AttendancePage() {
     const hours = parseFloat(otHours) || 0;
 
     try {
-        // If marking OT, we assume they are Present if no status exists
+        // If marking OT, preserve existing status or default to Present
         const currentStatus = attendanceMap[empId]?.[dateStr]?.status || 'Present';
         
         await setDoc(attendanceRef, {
@@ -323,10 +325,10 @@ export default function AttendancePage() {
                     {format(parseISO(`${selectedMonth}-01`), 'MMMM yyyy')}
                 </CardTitle>
                 <div className="hidden sm:flex items-center gap-3 text-[9px] font-bold uppercase">
-                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> P (SW on Sunday)</div>
-                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-rose-500" /> A</div>
-                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-500" /> H</div>
-                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> O</div>
+                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Working (P/SW)</div>
+                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Absent</div>
+                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Half-Day</div>
+                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Off</div>
                     <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-orange-500" /> OT (Hours)</div>
                 </div>
             </div>
@@ -378,7 +380,7 @@ export default function AttendancePage() {
                           const record = attendanceMap[emp.id]?.[dateStr];
                           const status = record?.status;
                           const isSun = day.getDay() === 0;
-                          const ot = record?.overtimeHours;
+                          const ot = record?.overtimeHours || 0;
                           
                           return (
                             <td 
@@ -390,22 +392,22 @@ export default function AttendancePage() {
                                 getStatusBg(status, isToday(day), ot)
                               )}
                             >
-                              {ot && ot > 0 ? (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className="h-full flex items-center justify-center text-[10px]">
-                                      {getStatusIcon(record, isSun)}
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="py-1 px-2 text-[10px] font-black">
-                                    {ot} Hrs Overtime
-                                  </TooltipContent>
-                                </Tooltip>
-                              ) : (
-                                <div className="h-full flex items-center justify-center text-[10px]">
-                                  {getStatusIcon(record, isSun)}
-                                </div>
-                              )}
+                              <div className="h-full flex items-center justify-center text-[10px]">
+                                {ot > 0 ? (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="h-full w-full flex items-center justify-center">
+                                        {getStatusIcon(record, isSun)}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="py-1 px-2 text-[10px] font-black">
+                                      {isSun && status === 'Present' ? 'SW' : status || 'Present'} + {ot} Hrs OT
+                                    </TooltipContent>
+                                  </Tooltip>
+                                ) : (
+                                  getStatusIcon(record, isSun)
+                                )}
+                              </div>
                             </td>
                           );
                         })}
@@ -425,9 +427,9 @@ export default function AttendancePage() {
                 <CardContent className="p-3 flex items-start gap-2.5">
                     <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                        <p className="text-[10px] font-black uppercase tracking-tight">Register Categories</p>
+                        <p className="text-[10px] font-black uppercase tracking-tight">Register Policy</p>
                         <p className="text-[9px] text-muted-foreground leading-relaxed">
-                            Sundays are working days (<b>SW</b>). Mark <b>OT</b> tool to record extra hours worked. <br/>
+                            Sundays are working days (<b>SW</b>). Use <b>OT tool</b> to add extra hours to any day (even if already marked P). <br/>
                             Status entries include: <b>Working</b>, <b>Absent</b>, <b>Half Day</b>, and <b>Overtime</b>.
                         </p>
                     </div>
@@ -463,7 +465,7 @@ export default function AttendancePage() {
                     <Clock className="h-4 w-4 text-orange-600" /> Record Overtime
                 </DialogTitle>
                 <DialogDescription className="text-[10px]">
-                    Enter overtime hours for {selectedOTCell && format(selectedOTCell.date, 'dd MMM yyyy')}
+                    Enter extra hours for {selectedOTCell && format(selectedOTCell.date, 'dd MMM yyyy')}
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4">
