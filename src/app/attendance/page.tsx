@@ -279,24 +279,15 @@ export default function AttendancePage() {
                       </div>
                     </th>
                   ))}
-                  <th className="p-1 text-center text-[9px] font-black uppercase tracking-wider bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-700 border-b w-[35px]">
-                    P
-                  </th>
-                  <th className="p-1 text-center text-[9px] font-black uppercase tracking-wider bg-rose-50/80 dark:bg-rose-950/40 text-rose-700 border-b w-[35px]">
-                    A
-                  </th>
                 </tr>
               </thead>
               <tbody>
                 {isLoadingEmployees ? (
                   Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i}><td colSpan={daysInMonth.length + 3} className="p-4 text-center animate-pulse text-[10px]">Syncing Register...</td></tr>
+                    <tr key={i}><td colSpan={daysInMonth.length + 1} className="p-4 text-center animate-pulse text-[10px]">Syncing Register...</td></tr>
                   ))
                 ) : employees && employees.length > 0 ? (
                   employees.map((emp) => {
-                    let presentCount = 0;
-                    let absentCount = 0;
-
                     return (
                       <tr key={emp.id} className="hover:bg-muted/5 transition-colors group">
                         <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/10 backdrop-blur-md p-2 border-b border-r font-bold text-[10px] truncate leading-tight">
@@ -306,12 +297,6 @@ export default function AttendancePage() {
                           const dateStr = format(day, 'yyyy-MM-dd');
                           const status = attendanceMap[emp.id]?.[dateStr];
                           
-                          if (status === 'Present') presentCount++;
-                          else if (status === 'Absent') absentCount++;
-                          else if (status === 'Half-Day') {
-                            presentCount += 0.5;
-                          }
-
                           return (
                             <td 
                               key={dateStr}
@@ -328,17 +313,11 @@ export default function AttendancePage() {
                             </td>
                           );
                         })}
-                        <td className="p-1 text-center text-[10px] font-black bg-emerald-50/30 dark:bg-emerald-950/10 text-emerald-700 border-b">
-                          {presentCount}
-                        </td>
-                        <td className="p-1 text-center text-[10px] font-black bg-rose-50/30 dark:bg-rose-950/10 text-rose-700 border-b">
-                          {absentCount}
-                        </td>
                       </tr>
                     );
                   })
                 ) : (
-                  <tr><td colSpan={daysInMonth.length + 3} className="p-10 text-center text-muted-foreground text-xs">No technicians found in database.</td></tr>
+                  <tr><td colSpan={daysInMonth.length + 1} className="p-10 text-center text-muted-foreground text-xs">No technicians found in database.</td></tr>
                 )}
               </tbody>
             </table>
