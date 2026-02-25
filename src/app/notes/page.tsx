@@ -36,7 +36,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, EllipsisVertical, Pencil, Trash2, Search, StickyNote, XCircle, Pin } from 'lucide-react';
+import { PlusCircle, EllipsisVertical, Pencil, Trash2, Search, StickyNote, XCircle, Pin, X } from 'lucide-react';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -221,15 +221,30 @@ export default function NotesPage() {
 
         <Card className="border-none shadow-sm bg-card/50 backdrop-blur-sm">
           <CardHeader className="p-4 border-b border-border/50">
-            <div className="relative group max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input
-                    type="search"
-                    placeholder="Search titles or content..."
-                    className="pl-9 w-full h-10 border-muted focus-visible:ring-primary/30"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="relative group max-w-md w-full">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Input
+                        type="search"
+                        placeholder="Search titles or content..."
+                        className="pl-9 pr-10 w-full h-10 border-muted focus-visible:ring-primary/30"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    {searchTerm && (
+                        <button 
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
+                </div>
+                {searchTerm && (
+                    <div className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest px-2">
+                        Found {filteredNotes.length} matching notes
+                    </div>
+                )}
             </div>
           </CardHeader>
         </Card>
@@ -326,7 +341,7 @@ export default function NotesPage() {
         ) : (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="h-20 w-20 rounded-full bg-primary/5 flex items-center justify-center mb-4">
-                <StickyNote className="h-10 w-10 text-primary opacity-20" />
+                {searchTerm ? <Search className="h-10 w-10 text-primary opacity-20" /> : <StickyNote className="h-10 w-10 text-primary opacity-20" />}
             </div>
             <h3 className="text-xl font-bold text-foreground">
                 {searchTerm ? 'No matching notes' : 'No notes captured yet'}
@@ -335,7 +350,7 @@ export default function NotesPage() {
                 {searchTerm ? 'Try a different search term or clear the filter.' : 'Start recording important ideas or workshop reminders by clicking "Add Note".'}
             </p>
             {searchTerm && (
-                <Button variant="link" onClick={() => setSearchTerm('')} className="mt-2 text-primary font-bold">
+                <Button variant="outline" onClick={() => setSearchTerm('')} className="mt-4 text-xs font-bold uppercase tracking-widest h-9">
                     Clear Search
                 </Button>
             )}
