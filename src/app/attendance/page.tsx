@@ -202,7 +202,7 @@ export default function AttendancePage() {
                         "p-1 text-center text-[8px] font-bold border-b border-r",
                         isToday(day) 
                           ? "bg-primary/20 text-primary" 
-                          : (day.getDay() === 0 ? "bg-blue-600/20 text-blue-700 dark:text-blue-400" : "text-muted-foreground")
+                          : (day.getDay() === 0 ? "bg-zinc-900 text-white dark:bg-black" : "text-muted-foreground")
                       )}
                     >
                       <div className="flex flex-col leading-none">
@@ -250,7 +250,7 @@ export default function AttendancePage() {
                               onClick={() => handleStatusToggle(emp.id, day)}
                               className={cn(
                                 "p-0 text-center border-b border-r cursor-pointer transition-all active:scale-95 h-9",
-                                day.getDay() === 0 ? "bg-blue-600/10 dark:bg-blue-900/30" : "",
+                                day.getDay() === 0 ? "bg-zinc-100 dark:bg-zinc-900/50" : "",
                                 getStatusBg(status, isToday(day))
                               )}
                             >
