@@ -203,7 +203,7 @@ export default function AttendancePage() {
         return (
             <div className="flex flex-col items-center leading-none gap-0.5">
                 <div className="flex items-center gap-0.5">
-                    {baseChar && <span className="text-[7px] font-black opacity-40 uppercase">{baseChar}</span>}
+                    {baseChar && <span className={cn("text-[7px] font-black opacity-40 uppercase", isSun && status === 'Present' ? "text-rose-600 opacity-100" : "")}>{baseChar}</span>}
                     <span className="font-black text-orange-600">OT</span>
                 </div>
                 <span className="text-[7px] font-black text-orange-500 uppercase tracking-tighter">{ot} Hrs</span>
@@ -439,7 +439,7 @@ export default function AttendancePage() {
                         <p className="text-[10px] font-black uppercase tracking-tight">Register Policy</p>
                         <p className="text-[9px] text-muted-foreground leading-relaxed">
                             Use <b>OT tool</b> to add extra hours to any marked day (click a <b>P</b> cell with OT tool to add extra time). <br/>
-                            Sundays are typically off; any work done on Sundays should be recorded as <b>OT</b>.
+                            Sundays are Typically Off; any work done on Sundays should be recorded as <b>P</b> or <b>OT</b>.
                         </p>
                     </div>
                 </CardContent>
