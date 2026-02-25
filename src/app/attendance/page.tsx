@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -192,7 +191,7 @@ export default function AttendancePage() {
     const status = record.status;
     const ot = record.overtimeHours;
 
-    // If OT is present, show base status initial + OT label
+    // Combined View: Status Indicator + OT label
     if (ot && ot > 0) {
         let baseChar = '';
         if (status === 'Present') baseChar = 'P';
@@ -438,8 +437,8 @@ export default function AttendancePage() {
                     <div className="space-y-0.5">
                         <p className="text-[10px] font-black uppercase tracking-tight">Register Policy</p>
                         <p className="text-[9px] text-muted-foreground leading-relaxed">
-                            Use <b>OT tool</b> to add extra hours to any marked day (click a <b>P</b> cell with OT tool to add extra time). <br/>
-                            Sundays are Typically Off; any work done on Sundays should be recorded as <b>P</b> or <b>OT</b>.
+                            Sundays are typically off. If working, record as <b>P</b> or use the <b>OT tool</b> to add specific extra hours. <br/>
+                            Total hours for the day will be calculated as (Base Status + Overtime).
                         </p>
                     </div>
                 </CardContent>
