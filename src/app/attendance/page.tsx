@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Separator } from '@/components/ui/separator';
 
 type ActiveTool = AttendanceStatus | 'Clear' | 'OT' | null;
 
@@ -224,8 +226,16 @@ export default function AttendancePage() {
     }
   };
 
+  const calculateHours = (status: AttendanceStatus | undefined, ot: number = 0) => {
+    let base = 0;
+    if (status === 'Present') base = 8;
+    else if (status === 'Half-Day') base = 4;
+    return base + ot;
+  };
+
   return (
     <AppLayout>
+      <TooltipProvider delayDuration={100}>
       <div className="flex flex-col gap-4 animate-in fade-in duration-500 max-w-full overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-4">
           <div className="space-y-1">
@@ -375,21 +385,54 @@ export default function AttendancePage() {
                           const record = attendanceMap[emp.id]?.[dateStr];
                           const status = record?.status;
                           const isSun = day.getDay() === 0;
+                          const totalHr = calculateHours(status, record?.overtimeHours);
                           
                           return (
-                            <td 
-                              key={dateStr}
-                              onClick={() => handleStatusToggle(emp.id, day)}
-                              className={cn(
-                                "p-0 text-center border-b border-r cursor-pointer transition-all active:scale-95 h-9",
-                                isSun ? "bg-zinc-50/30 dark:bg-zinc-900/10" : "",
-                                getStatusBg(status, isToday(day), record?.overtimeHours)
-                              )}
-                            >
-                              <div className="h-full flex items-center justify-center text-[10px]">
-                                {getStatusIcon(record, isSun)}
-                              </div>
-                            </td>
+                            <Tooltip key={dateStr}>
+                              <TooltipTrigger asChild>
+                                <td 
+                                  onClick={() => handleStatusToggle(emp.id, day)}
+                                  className={cn(
+                                    "p-0 text-center border-b border-r cursor-pointer transition-all active:scale-95 h-9",
+                                    isSun ? "bg-zinc-50/30 dark:bg-zinc-900/10" : "",
+                                    getStatusBg(status, isToday(day), record?.overtimeHours)
+                                  )}
+                                >
+                                  <div className="h-full flex items-center justify-center text-[10px]">
+                                    {getStatusIcon(record, isSun)}
+                                  </div>
+                                </td>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="p-3 bg-card border-2 shadow-xl animate-in zoom-in-95 duration-200">
+                                <div className="space-y-1.5 min-w-[120px]">
+                                  <div className="flex items-center justify-between gap-4">
+                                    <span className="text-[10px] font-black uppercase text-foreground">{emp.fullName}</span>
+                                    <span className="text-[9px] font-bold text-muted-foreground">{format(day, 'dd MMM yyyy')}</span>
+                                  </div>
+                                  <Separator />
+                                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[9px] font-bold uppercase tracking-tight">
+                                    <span className="text-muted-foreground">Status:</span>
+                                    <span className={cn(
+                                      status === 'Present' ? "text-emerald-600" : 
+                                      status === 'Absent' ? "text-rose-600" : 
+                                      status === 'Half-Day' ? "text-amber-600" : "text-muted-foreground"
+                                    )}>{status || 'Not Marked'}</span>
+                                    
+                                    {record?.overtimeHours ? (
+                                      <>
+                                        <span className="text-muted-foreground">Overtime:</span>
+                                        <span className="text-orange-600">{record.overtimeHours} Hrs</span>
+                                      </>
+                                    ) : null}
+                                    
+                                    <div className="col-span-2 mt-1 p-1 bg-primary/5 rounded border border-primary/10 flex justify-between items-center">
+                                      <span className="text-primary font-black">Working Hr:</span>
+                                      <span className="text-primary font-black">{totalHr} Hrs</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
                           );
                         })}
                       </tr>
@@ -436,6 +479,7 @@ export default function AttendancePage() {
             </div>
         </div>
       </div>
+      </TooltipProvider>
 
       {/* Overtime Hours Dialog */}
       <Dialog open={isOTDialogOpen} onOpenChange={setIsOTDialogOpen}>
