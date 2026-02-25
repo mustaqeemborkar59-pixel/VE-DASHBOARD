@@ -45,9 +45,9 @@ export default function AttendancePage() {
     return eachDayOfInterval({ start, end });
   }, [selectedMonth]);
 
-  // Queries
+  // Queries - Matching the sort order of the Employees section (createdAt asc)
   const employeesQuery = useMemoFirebase(() => 
-    firestore && user ? query(collection(firestore, 'employees'), orderBy('fullName')) : null, 
+    firestore && user ? query(collection(firestore, 'employees'), orderBy('createdAt', 'asc')) : null, 
     [firestore, user]
   );
 
