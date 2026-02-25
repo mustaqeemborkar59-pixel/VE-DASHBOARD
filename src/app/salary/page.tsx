@@ -282,15 +282,19 @@ export default function SalaryPage() {
 
     try {
         const attendanceRef = collection(firestore, 'attendance');
+        // We only query by employeeId to avoid composite index requirements
+        // Filtering by date will happen client-side
         const q = query(
             attendanceRef, 
-            where('employeeId', '==', employeeId),
-            where('date', '>=', start),
-            where('date', '<=', end)
+            where('employeeId', '==', employeeId)
         );
         
         const querySnapshot = await getDocs(q);
-        const records = querySnapshot.docs.map(doc => doc.data() as Attendance);
+        
+        // Filter records within the selected month range manually
+        const records = querySnapshot.docs
+            .map(doc => doc.data() as Attendance)
+            .filter(rec => rec.date >= start && rec.date <= end);
 
         if (records.length === 0) {
             toast({ 
@@ -330,8 +334,8 @@ export default function SalaryPage() {
             });
         }
     } catch (e) {
-        console.error(e);
-        toast({ variant: 'destructive', title: 'Sync Error', description: 'Failed to fetch attendance data.' });
+        // We use toast instead of console.error for better user experience
+        toast({ variant: 'destructive', title: 'Sync Error', description: 'Failed to fetch attendance data. Database index may be required.' });
     } finally {
         setIsFetchingAttendance(false);
     }
