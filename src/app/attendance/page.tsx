@@ -195,7 +195,7 @@ export default function AttendancePage() {
     // If OT is present, show base status initial + OT label
     if (ot && ot > 0) {
         let baseChar = '';
-        if (status === 'Present') baseChar = isSun ? 'SW' : 'P';
+        if (status === 'Present') baseChar = 'P';
         else if (status === 'Half-Day') baseChar = 'H';
         else if (status === 'Holiday') baseChar = 'O';
         else if (status === 'Absent') baseChar = 'A';
@@ -212,7 +212,7 @@ export default function AttendancePage() {
     }
 
     switch (status) {
-      case 'Present': return <span className={cn("font-black", isSun ? "text-rose-600" : "text-emerald-600")}>{isSun ? 'SW' : 'P'}</span>;
+      case 'Present': return <span className={cn("font-black", isSun ? "text-rose-600" : "text-emerald-600")}>P</span>;
       case 'Absent': return <span className="text-rose-600 font-black">A</span>;
       case 'Half-Day': return <span className="text-amber-600 font-black">H</span>;
       case 'Holiday': return <span className="text-blue-600 font-black">O</span>;
@@ -247,7 +247,7 @@ export default function AttendancePage() {
               <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               Workshop Haazri Register
             </h1>
-            <p className="text-[10px] sm:text-xs text-muted-foreground">Monthly master sheet for employee attendance. (Sundays = SW)</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Monthly master sheet for employee attendance.</p>
           </div>
           
           <div className="flex items-center bg-card border rounded-lg p-0.5 shadow-sm self-start sm:self-auto">
@@ -334,7 +334,7 @@ export default function AttendancePage() {
                     {format(parseISO(`${selectedMonth}-01`), 'MMMM yyyy')}
                 </CardTitle>
                 <div className="hidden sm:flex items-center gap-3 text-[9px] font-bold uppercase">
-                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Working (P/SW)</div>
+                    <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Working (P)</div>
                     <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Absent</div>
                     <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Half-Day</div>
                     <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Off</div>
@@ -358,13 +358,13 @@ export default function AttendancePage() {
                           "p-1 text-center text-[8px] font-bold border-b border-r",
                           isToday(day) 
                             ? "bg-primary/20 text-primary" 
-                            : (isSun ? "bg-zinc-50/50 dark:bg-zinc-900/10" : "text-muted-foreground")
+                            : (isSun ? "bg-muted/50 dark:bg-muted/20" : "text-muted-foreground")
                         )}
                       >
                         <div className={cn("flex flex-col leading-none")}>
                           <span className={cn(isSun ? "text-rose-600" : "")}>{format(day, 'dd')}</span>
                           <span className={cn("text-[7px] font-black tracking-tighter uppercase", isSun ? "text-rose-600" : "opacity-70")}>
-                            {isSun ? 'SW' : format(day, 'EEE')[0]}
+                            {isSun ? 'S' : format(day, 'EEE')[0]}
                           </span>
                         </div>
                       </th>
@@ -397,7 +397,7 @@ export default function AttendancePage() {
                               onClick={() => handleStatusToggle(emp.id, day)}
                               className={cn(
                                 "p-0 text-center border-b border-r cursor-pointer transition-all active:scale-95 h-9",
-                                isSun ? "bg-zinc-50/30 dark:bg-zinc-900/10" : "",
+                                isSun ? "bg-muted/30 dark:bg-muted/10" : "",
                                 getStatusBg(status, isToday(day), ot)
                               )}
                             >
@@ -410,7 +410,7 @@ export default function AttendancePage() {
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent side="top" className="py-1 px-2 text-[10px] font-black">
-                                      {isSun && status === 'Present' ? 'SW' : status || 'Present'} + {ot} Hrs OT
+                                      {status || 'Present'} + {ot} Hrs OT
                                     </TooltipContent>
                                   </Tooltip>
                                 ) : (
@@ -438,15 +438,15 @@ export default function AttendancePage() {
                     <div className="space-y-0.5">
                         <p className="text-[10px] font-black uppercase tracking-tight">Register Policy</p>
                         <p className="text-[9px] text-muted-foreground leading-relaxed">
-                            Sundays are working days (<b>SW</b>). Use <b>OT tool</b> to add extra hours to any marked day (click a <b>P</b> cell with OT tool to add extra time). <br/>
-                            Status entries include: <b>Working</b>, <b>Absent</b>, <b>Half Day</b>, and <b>Overtime</b>.
+                            Use <b>OT tool</b> to add extra hours to any marked day (click a <b>P</b> cell with OT tool to add extra time). <br/>
+                            Sundays are typically off; any work done on Sundays should be recorded as <b>OT</b>.
                         </p>
                     </div>
                 </CardContent>
             </Card>
             <div className="flex flex-wrap items-center justify-around p-2 border rounded-lg bg-card shadow-sm gap-2">
                 <div className="flex items-center gap-1 text-[9px] font-bold">
-                    <div className="w-5 h-5 rounded border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center text-emerald-600 text-[8px]">P/SW</div>
+                    <div className="w-5 h-5 rounded border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center text-emerald-600 text-[8px]">P</div>
                     <span className="text-muted-foreground/80 uppercase">Working</span>
                 </div>
                 <div className="flex items-center gap-1 text-[9px] font-bold">
