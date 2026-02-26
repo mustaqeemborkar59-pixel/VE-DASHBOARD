@@ -17,11 +17,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { BankAccountForm, BankAccountFormData } from "@/components/bank-account-form";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { EllipsisVertical, Pencil, PlusCircle, Trash2, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Trash2, AlignLeft, AlignCenter, AlignRight, Send, Loader2, CheckCircle2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { setupTelegramWebhook } from "@/app/actions/telegram";
 
 
 type Enterprise = 'Vithal' | 'RV';
@@ -318,6 +319,10 @@ export default function SettingsPage() {
     const { toast } = useToast();
     const [activeBankTab, setActiveBankTab] = useState<Enterprise>('Vithal');
     
+    // Telegram State
+    const [isBotSettingUp, setIsBotSettingUp] = useState(false);
+    const [botReady, setBotBotReady] = useState(false);
+
     const bankAccountsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(collection(firestore, "companySettings", activeBankTab.toLowerCase(), "bankAccounts"), orderBy('nickname'));
@@ -372,10 +377,57 @@ export default function SettingsPage() {
         toast({ title: "Bank Account Deleted", description: `${bankAccountToDelete.nickname} has been removed.` });
         setBankAccountToDelete(null);
     }
+
+    const handleInitTelegram = async () => {
+        setIsBotSettingUp(true);
+        try {
+            // Get the current domain URL dynamically
+            const url = window.location.origin;
+            const res = await setupTelegramWebhook(url);
+            if (res.success) {
+                setBotBotReady(true);
+                toast({ title: "Bot Connected!", description: "Technicians can now use /start to get their Chat ID." });
+            }
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Connection Failed", description: e.message });
+        } finally {
+            setIsBotSettingUp(false);
+        }
+    }
     
     return (
         <AppLayout>
             <div className="flex flex-col gap-6">
+                {/* Telegram Bot Integration Card */}
+                <Card className="border-blue-100 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-950/10">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <CardTitle className="flex items-center gap-2">
+                                    <Send className="h-5 w-5 text-blue-600" />
+                                    Telegram Bot Management
+                                </CardTitle>
+                                <CardDescription>Connect your bot to enable auto-replies for Technician Chat IDs.</CardDescription>
+                            </div>
+                            {botReady ? (
+                                <Badge className="bg-green-600 hover:bg-green-600 flex items-center gap-1 py-1 px-3">
+                                    <CheckCircle2 className="h-3 w-3" /> Bot Active
+                                </Badge>
+                            ) : (
+                                <Button onClick={handleInitTelegram} disabled={isBotSettingUp} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                                    {isBotSettingUp ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Connecting...</> : "Connect Telegram Bot"}
+                                </Button>
+                            )}
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                            <b>Instructions:</b> Once connected, tell your technicians to search for your bot on Telegram and type <b>/start</b>. 
+                            The bot will automatically reply with their unique Chat ID, which you can then save in their Employee profile.
+                        </p>
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Enterprise Settings</CardTitle>
@@ -465,7 +517,7 @@ export default function SettingsPage() {
                 </Card>
             </div>
             
-            <Dialog open={isBankAccountDialogOpen} onOpenChange={(open) => {if(!open) closeAllDialogs(); else setIsBankAccountDialogOpen(true); }}>
+            <Dialog open={isBankAccountDialogOpen} onOpenChange={(open) => {if(!open) setIsBankAccountDialogOpen(false); else setIsBankAccountDialogOpen(true); }}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{selectedBankAccount ? 'Edit Bank Account' : `Add New ${activeBankTab} Bank Account`}</DialogTitle>
@@ -482,7 +534,7 @@ export default function SettingsPage() {
                 </DialogContent>
             </Dialog>
 
-            <AlertDialog open={!!bankAccountToDelete} onOpenChange={(open) => !open && closeAllDialogs()}>
+            <AlertDialog open={!!bankAccountToDelete} onOpenChange={(open) => !open && setBankAccountToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
