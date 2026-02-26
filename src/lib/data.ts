@@ -20,6 +20,7 @@ export type Employee = {
   specialization: string;
   department?: string;
   contactNumber: string;
+  whatsappNumber?: string;
   workLocation: string;
   availability: boolean;
   doj?: string; // Date of Joining

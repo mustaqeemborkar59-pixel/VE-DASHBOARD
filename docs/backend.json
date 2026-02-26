@@ -119,6 +119,10 @@
           "type": "string",
           "description": "Contact number of the employee."
         },
+        "whatsappNumber": {
+          "type": "string",
+          "description": "WhatsApp number of the employee for sending summaries."
+        },
         "workLocation": {
           "type": "string",
           "description": "Current work location of the employee (e.g., Workshop, On-Site)."

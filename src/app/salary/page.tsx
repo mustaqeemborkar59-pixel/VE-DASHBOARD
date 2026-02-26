@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -11,7 +12,7 @@ import { collection, query, orderBy, doc, where, getDocs } from 'firebase/firest
 import { Employee, Salary, CompanySettings, Attendance } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, FileText, WalletCards, XCircle, Calculator, CalendarCheck, Info, Loader2, Send } from 'lucide-react';
+import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, FileText, WalletCards, XCircle, Calculator, CalendarCheck, Info, Loader2, Send, MessageSquare } from 'lucide-react';
 import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -313,6 +314,32 @@ export default function SalaryPage() {
     }
   };
 
+  const handleSendWhatsAppSummary = (salary: Salary) => {
+    const employee = employees?.find(e => e.id === salary.employeeId);
+    if (!employee || !employee.whatsappNumber) {
+        toast({ variant: 'destructive', title: 'No WhatsApp Number', description: 'Please set the WhatsApp Number in Technician Profile.' });
+        return;
+    }
+
+    const monthLabel = format(parseISO(`${salary.month}-01`), 'MMMM yyyy');
+    const netSalaryStr = salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
+    
+    const message = `*SALARY SUMMARY: ${monthLabel}*\n\n` +
+        `👤 *Name:* ${employee.fullName}\n` +
+        `🏢 *Firm:* ${salary.enterprise} Enterprises\n` +
+        `✅ *Attendance:* ${salary.presentDays}/${salary.workingDays} Days\n` +
+        `🕒 *Overtime:* ₹${salary.ot || 0}\n` +
+        `💰 *NET PAYABLE:* ${netSalaryStr}\n` +
+        `🏁 *Status:* ${salary.status === 'Paid' ? 'PAID' : 'PENDING'}\n\n` +
+        `_Note: Contact HR for the detailed PDF slip._`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${employee.whatsappNumber}?text=${encodedMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
+    toast({ title: 'Opening WhatsApp', description: `Sending summary to ${employee.fullName}.` });
+  };
+
   const autoFillHaazri = async () => {
     if (!firestore || !employeeId || !month) {
         toast({ variant: 'destructive', title: 'Action Required', description: 'Please select an employee and month first.' });
@@ -503,6 +530,19 @@ export default function SalaryPage() {
                                       <Button 
                                         variant="ghost" 
                                         size="icon" 
+                                        onClick={() => handleSendWhatsAppSummary(salary)} 
+                                        className="h-8 w-8 text-green-600 hover:bg-green-600/10"
+                                      >
+                                        <MessageSquare className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>WhatsApp Summary</TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
                                         disabled={isSending}
                                         onClick={() => handleSendToTelegram(salary)} 
                                         className="h-8 w-8 text-blue-600 hover:bg-blue-600/10"
@@ -510,7 +550,7 @@ export default function SalaryPage() {
                                         {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                                       </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>Send via Telegram</TooltipContent>
+                                    <TooltipContent>Telegram PDF</TooltipContent>
                                   </Tooltip>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
@@ -572,6 +612,14 @@ export default function SalaryPage() {
                                 </div>
                               </div>
                               <div className="flex justify-end gap-2 pt-2 border-t">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    onClick={() => handleSendWhatsAppSummary(salary)} 
+                                    className="h-8 w-8 text-green-600 hover:bg-green-600/10"
+                                >
+                                    <MessageSquare className="h-4 w-4" />
+                                </Button>
                                 <Button 
                                     variant="ghost" 
                                     size="icon" 

@@ -9,12 +9,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Employee } from "@/lib/data";
 import { Separator } from "./ui/separator";
-import { Send } from "lucide-react";
+import { Send, MessageSquare } from "lucide-react";
 
 export type EmployeeFormData = {
   fullName: string;
   specialization: string;
   contactNumber: string;
+  whatsappNumber: string;
   workLocation: string;
   availability: boolean;
   baseSalary: string;
@@ -40,6 +41,7 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
     fullName: '',
     specialization: '',
     contactNumber: '',
+    whatsappNumber: '',
     workLocation: '',
     availability: true,
     baseSalary: '0',
@@ -59,6 +61,7 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
         fullName: initialData.fullName || '',
         specialization: initialData.specialization || '',
         contactNumber: initialData.contactNumber || '',
+        whatsappNumber: initialData.whatsappNumber || '',
         workLocation: initialData.workLocation || '',
         availability: initialData.availability ?? true,
         baseSalary: initialData.baseSalary?.toString() || '0',
@@ -76,6 +79,7 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
             fullName: '',
             specialization: '',
             contactNumber: '',
+            whatsappNumber: '',
             workLocation: '',
             availability: true,
             baseSalary: '0',
@@ -215,20 +219,38 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
         </div>
 
         <Separator />
-        <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-900/30">
-            <h3 className="text-xs font-black uppercase tracking-wider text-blue-700 dark:text-blue-400 mb-3 flex items-center gap-2">
-                <Send className="h-3 w-3" /> Telegram Notifications
-            </h3>
-            <div className="grid gap-2">
-                <Label htmlFor="telegramChatId" className="text-[10px] font-bold uppercase text-muted-foreground">Telegram Chat ID</Label>
-                <Input 
-                    id="telegramChatId" 
-                    value={formData.telegramChatId} 
-                    onChange={handleInputChange} 
-                    placeholder="Enter Chat ID (e.g. 12345678)" 
-                    className="h-9 font-mono"
-                />
-                <p className="text-[9px] text-muted-foreground italic leading-tight">Ask employee to start your bot to get their Chat ID.</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                <h3 className="text-xs font-black uppercase tracking-wider text-blue-700 dark:text-blue-400 mb-3 flex items-center gap-2">
+                    <Send className="h-3 w-3" /> Telegram ID
+                </h3>
+                <div className="grid gap-2">
+                    <Label htmlFor="telegramChatId" className="text-[10px] font-bold uppercase text-muted-foreground">Chat ID</Label>
+                    <Input 
+                        id="telegramChatId" 
+                        value={formData.telegramChatId} 
+                        onChange={handleInputChange} 
+                        placeholder="Enter Chat ID" 
+                        className="h-9 font-mono"
+                    />
+                </div>
+            </div>
+            
+            <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-lg border border-green-100 dark:border-green-900/30">
+                <h3 className="text-xs font-black uppercase tracking-wider text-green-700 dark:text-green-400 mb-3 flex items-center gap-2">
+                    <MessageSquare className="h-3 w-3" /> WhatsApp
+                </h3>
+                <div className="grid gap-2">
+                    <Label htmlFor="whatsappNumber" className="text-[10px] font-bold uppercase text-muted-foreground">Number</Label>
+                    <Input 
+                        id="whatsappNumber" 
+                        value={formData.whatsappNumber} 
+                        onChange={handleInputChange} 
+                        placeholder="e.g. 919876543210" 
+                        className="h-9 font-mono"
+                    />
+                </div>
             </div>
         </div>
 
