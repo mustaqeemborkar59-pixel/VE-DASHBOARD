@@ -71,26 +71,18 @@ export default function JobCardsPage() {
   const forkliftMap = useMemo(() => new Map(forklifts?.map(f => [f.id, `${f.serialNumber} (${f.make})`])), [forklifts]);
   const employeeMap = useMemo(() => new Map(employees?.map(e => [e.id, e.fullName])), [employees]);
 
-  const closeAllDialogs = useCallback(() => {
-    setIsFormOpen(false);
-    setJobToDelete(null);
-    setSelectedJob(null);
-  }, []);
-  
   const handleDelayedAction = (action: () => void) => {
     setTimeout(action, 100);
   };
   
   const openFormDialog = useCallback((job: JobCard | null) => {
-    closeAllDialogs();
     setSelectedJob(job);
     handleDelayedAction(() => setIsFormOpen(true));
-  }, [closeAllDialogs]);
+  }, []);
 
   const openDeleteDialog = useCallback((job: JobCard) => {
-    closeAllDialogs();
     handleDelayedAction(() => setJobToDelete(job));
-  }, [closeAllDialogs]);
+  }, []);
 
   const handleFormSubmit = (formData: Partial<JobCardFormData>) => {
     if (!firestore) return;
@@ -107,7 +99,8 @@ export default function JobCardsPage() {
       });
       toast({ title: "Success", description: "Job Card added successfully." });
     }
-    closeAllDialogs();
+    setIsFormOpen(false);
+    setSelectedJob(null);
   };
   
   const handleDelete = () => {
@@ -218,7 +211,7 @@ export default function JobCardsPage() {
         </Card>
       </div>
 
-      <Dialog open={isFormOpen} onOpenChange={(open) => {if(!open) closeAllDialogs()}}>
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-4 sm:p-6 pb-0">
             <DialogTitle>{selectedJob ? 'Edit Job Card' : 'Add New Job Card'}</DialogTitle>
@@ -229,7 +222,7 @@ export default function JobCardsPage() {
           <div className="flex-grow overflow-y-auto px-4 sm:px-6">
             <JobCardForm 
               onSubmit={handleFormSubmit}
-              onCancel={closeAllDialogs}
+              onCancel={() => setIsFormOpen(false)}
               initialData={selectedJob || undefined}
               mode={selectedJob ? 'edit' : 'add'}
               companies={companies || []}
@@ -238,7 +231,7 @@ export default function JobCardsPage() {
             />
           </div>
           <DialogFooter className="p-4 sm:p-6 pt-4 border-t flex gap-2">
-              <Button variant="outline" type="button" onClick={closeAllDialogs} className="h-9">
+              <Button variant="outline" type="button" onClick={() => setIsFormOpen(false)} className="h-9">
                 Cancel
               </Button>
               <Button type="submit" form="job-card-form" className="h-9">
@@ -248,7 +241,7 @@ export default function JobCardsPage() {
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!jobToDelete} onOpenChange={(open) => { if (!open) closeAllDialogs(); }}>
+      <AlertDialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>
         <AlertDialogContent className="max-w-[90vw] sm:max-w-md p-4 sm:p-6">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>

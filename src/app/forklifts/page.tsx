@@ -60,7 +60,6 @@ import { Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toBlob } from 'html-to-image';
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 
 type SearchField = 'All' | 'serialNumber' | 'make' | 'model' | 'siteCompany' | 'siteArea';
@@ -161,36 +160,20 @@ export default function ForkliftsPage() {
     setTimeout(action, 100);
   };
 
-  const closeAllDialogs = useCallback(() => {
-    setIsFormOpen(false);
-    setIsAddEditDialogOpen(false);
-    setForkliftToDelete(null);
-    setIsImportDialogOpen(false);
-    setIsDownloadSettingsOpen(false);
-    setSelectedForklift(null);
-    setForkliftToDownload(null);
-  }, []);
-
-  const [isFormOpen, setIsFormOpen] = useState(false); // Helper state for Dialog consistency
-
   const openAddEditDialog = useCallback((forklift: Forklift | null) => {
-    closeAllDialogs();
     setSelectedForklift(forklift);
     handleDelayedAction(() => setIsAddEditDialogOpen(true));
-  }, [closeAllDialogs]);
+  }, []);
 
   const openDeleteDialog = useCallback((forklift: Forklift) => {
-    closeAllDialogs();
     handleDelayedAction(() => setForkliftToDelete(forklift));
-  }, [closeAllDialogs]);
+  }, []);
 
   const openImportDialog = useCallback(() => {
-    closeAllDialogs();
     handleDelayedAction(() => setIsImportDialogOpen(true));
-  }, [closeAllDialogs]);
+  }, []);
 
   const openDownloadSettings = (forklift: Forklift) => {
-      closeAllDialogs();
       setForkliftToDownload(forklift);
       handleDelayedAction(() => setIsDownloadSettingsOpen(true));
   }
@@ -951,7 +934,7 @@ export default function ForkliftsPage() {
         </div>
 
         {/* Download Customization Dialog */}
-        <Dialog open={isDownloadSettingsOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
+        <Dialog open={isDownloadSettingsOpen} onOpenChange={setIsDownloadSettingsOpen}>
             <DialogContent className="max-w-[95vw] sm:max-w-lg p-0 overflow-hidden rounded-2xl border-none shadow-2xl max-h-[90vh] flex flex-col">
                 <DialogHeader className="p-6 pb-0">
                     <DialogTitle className="text-xl font-black flex items-center gap-2">
@@ -1038,7 +1021,7 @@ export default function ForkliftsPage() {
             </DialogContent>
         </Dialog>
 
-        <Dialog open={isAddEditDialogOpen} onOpenChange={(open) => !open && closeAllDialogs()}>
+        <Dialog open={isAddEditDialogOpen} onOpenChange={setIsAddEditDialogOpen}>
           <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] flex flex-col p-0 rounded-2xl overflow-hidden border-none shadow-2xl">
             <DialogHeader className="p-6 pb-0">
               <DialogTitle className="text-2xl font-black">{selectedForklift ? 'Modify Unit' : 'Register Forklift'}</DialogTitle>
@@ -1049,7 +1032,7 @@ export default function ForkliftsPage() {
             <div className='flex-grow overflow-y-auto px-6 py-4'>
                 <ForkliftForm
                   onSubmit={handleFormSubmit}
-                  onCancel={() => { closeAllDialogs(); }}
+                  onCancel={() => { setIsAddEditDialogOpen(false); }}
                   initialData={selectedForklift || undefined}
                   mode={selectedForklift ? 'edit' : 'add'}
                   companies={companies || []}
@@ -1057,7 +1040,7 @@ export default function ForkliftsPage() {
                 />
             </div>
             <DialogFooter className="p-6 pt-4 border-t border-border/50 bg-muted/10 flex flex-col-reverse sm:flex-row gap-3">
-                 <Button variant="ghost" type="button" onClick={() => { closeAllDialogs(); }} className="h-11 rounded-xl font-bold text-muted-foreground hover:text-foreground">
+                 <Button variant="ghost" type="button" onClick={() => { setIsAddEditDialogOpen(false); }} className="h-11 rounded-xl font-bold text-muted-foreground hover:text-foreground">
                     Discard Changes
                 </Button>
                 <Button type="submit" form="forklift-form" className="h-11 rounded-xl font-bold bg-primary px-8 shadow-lg shadow-primary/20">
@@ -1067,7 +1050,7 @@ export default function ForkliftsPage() {
           </DialogContent>
         </Dialog>
         
-        <AlertDialog open={!!forkliftToDelete} onOpenChange={(open) => !open && closeAllDialogs()}>
+        <AlertDialog open={!!forkliftToDelete} onOpenChange={(open) => !open && setForkliftToDelete(null)}>
           <AlertDialogContent className="max-w-[90vw] sm:max-w-md rounded-2xl border-none shadow-2xl p-6">
             <AlertDialogHeader>
               <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2 mx-auto sm:mx-0">

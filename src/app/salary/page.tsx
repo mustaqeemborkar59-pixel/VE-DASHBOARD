@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -535,7 +534,7 @@ export default function SalaryPage() {
           </Card>
         </Tabs>
 
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <Dialog open={isFormOpen} onOpenChange={(open) => setIsFormOpen(open)}>
           <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
             <DialogHeader className="p-6 pb-0">
               <DialogTitle className="text-xl font-black">{editingSalary ? 'Modify Salary Record' : 'Record Monthly Salary'}</DialogTitle>
