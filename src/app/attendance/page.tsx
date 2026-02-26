@@ -8,7 +8,7 @@ import { useCollection, useFirebase, useMemoFirebase, errorEmitter, FirestorePer
 import { collection, query, orderBy, doc, setDoc, where, deleteDoc } from 'firebase/firestore';
 import { Employee, Attendance, AttendanceStatus } from '@/lib/data';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isToday, getDay } from 'date-fns';
-import { UserCheck, ChevronLeft, ChevronRight, Info, MousePointer2, Eraser, Clock, User, CalendarDays, Calculator } from 'lucide-react';
+import { UserCheck, ChevronLeft, ChevronRight, Info, MousePointer2, Eraser, Clock, User, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -202,7 +202,7 @@ export default function AttendancePage() {
     });
     
     setIsOTDialogOpen(false);
-    toast({ title: 'Overtime Saved', description: `${hours} hours recorded for technician.` });
+    toast({ title: 'Overtime Saved', description: `${hours} hours recorded.` });
   }
 
   const getStatusIcon = (record: Attendance | undefined, isSun: boolean) => {
@@ -229,7 +229,7 @@ export default function AttendancePage() {
         return (
             <div className="flex flex-col items-center leading-none">
                 <div className="flex items-center gap-0.5">
-                    {baseChar && <span className={cn("text-[8px] font-black opacity-40 uppercase", isSun && status === 'Present' ? "text-rose-600 opacity-100" : "")}>{baseChar}</span>}
+                    {baseChar && <span className={cn("text-[8px] font-black uppercase", isSun ? "text-rose-600" : "opacity-40")}>{baseChar}</span>}
                     <span className="font-black text-orange-600 text-[8px]">OT</span>
                 </div>
                 <span className="text-[7px] font-black text-orange-500 uppercase">{ot}H</span>
@@ -246,11 +246,15 @@ export default function AttendancePage() {
     }
   };
 
-  const getStatusBg = (status: AttendanceStatus | undefined, isCurrentDay: boolean, ot?: number) => {
+  const getStatusBg = (status: AttendanceStatus | undefined, isCurrentDay: boolean, ot?: number, isSun?: boolean) => {
     const base = isCurrentDay ? "ring-1 ring-inset ring-primary/40" : "";
     
     if (ot && ot > 0 && !status) {
         return cn(base, "bg-orange-50/80 dark:bg-orange-900/20");
+    }
+
+    if (isSun && !status && !ot) {
+        return cn(base, "bg-rose-50/50 dark:bg-rose-950/10");
     }
 
     switch (status) {
@@ -258,7 +262,7 @@ export default function AttendancePage() {
       case 'Absent': return cn(base, "bg-rose-100/80 dark:bg-rose-900/40");
       case 'Half-Day': return cn(base, "bg-amber-100/80 dark:bg-amber-900/40");
       case 'Holiday': return cn(base, "bg-blue-100/80 dark:bg-blue-900/40");
-      default: return "";
+      default: return isSun ? cn(base, "bg-rose-50/50") : "";
     }
   };
 
@@ -283,10 +287,10 @@ export default function AttendancePage() {
     <AppLayout>
       <TooltipProvider delayDuration={100}>
       <div className="flex flex-col gap-4 animate-in fade-in duration-500 max-w-full overflow-hidden">
-        {/* Responsive Header */}
+        {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-2">
           <div className="space-y-1 text-center sm:text-left">
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight flex items-center justify-center sm:justify-start gap-2">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight flex items-center justify-center sm:justify-start gap-2 text-foreground">
               <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               Haazri Register
             </h1>
@@ -309,7 +313,7 @@ export default function AttendancePage() {
           </div>
         </div>
 
-        {/* Floating Tool Selector - Sticky on Mobile */}
+        {/* Tools Toolbar */}
         <div className="sticky top-[60px] z-50 px-4 py-2 bg-background/80 backdrop-blur-md">
             <div className="bg-card border rounded-2xl p-2 flex items-center justify-between shadow-lg">
                 <div className="flex items-center gap-1.5 px-2 border-r pr-3">
@@ -364,8 +368,8 @@ export default function AttendancePage() {
             </div>
         </div>
 
-        {/* Desktop View - Traditional Table */}
-        <div className="hidden lg:block px-4">
+        {/* Tablet & Desktop View (Traditional Table) */}
+        <div className="hidden md:block px-4">
             <Card className="rounded-2xl overflow-hidden shadow-sm border-border/50">
                 <CardHeader className="p-4 border-b bg-muted/20">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
@@ -373,7 +377,7 @@ export default function AttendancePage() {
                         {format(parseISO(`${selectedMonth}-01`), 'MMMM yyyy')}
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="p-0 overflow-x-auto hide-scrollbar">
+                <CardContent className="p-0 overflow-x-auto">
                     <table className="w-full border-collapse table-fixed min-w-[1000px]">
                         <thead>
                             <tr className="bg-muted/40">
@@ -387,7 +391,7 @@ export default function AttendancePage() {
                                             key={day.toISOString()} 
                                             className={cn(
                                                 "p-2 text-center border-b border-r",
-                                                isToday(day) ? "bg-primary/10" : (isSun ? "bg-rose-50" : "")
+                                                isToday(day) ? "bg-primary/10" : (isSun ? "bg-rose-100/50" : "")
                                             )}
                                         >
                                             <div className="flex flex-col leading-none gap-1">
@@ -423,8 +427,7 @@ export default function AttendancePage() {
                                                     onClick={() => handleStatusToggle(emp.id, day)}
                                                     className={cn(
                                                         "p-0 text-center border-b border-r cursor-pointer transition-all active:bg-primary/10 select-none",
-                                                        isSun ? "bg-rose-50/50" : "",
-                                                        getStatusBg(status, isToday(day), ot)
+                                                        getStatusBg(status, isToday(day), ot, isSun)
                                                     )}
                                                 >
                                                     <div className="h-full w-full flex items-center justify-center">
@@ -455,8 +458,8 @@ export default function AttendancePage() {
             </Card>
         </div>
 
-        {/* Mobile Vertical View - Grid of Cards */}
-        <div className="lg:hidden flex flex-col gap-4 px-4 pb-20">
+        {/* Mobile View (Vertical Cards) */}
+        <div className="md:hidden flex flex-col gap-4 px-4 pb-20">
             {isLoadingEmployees ? (
                 Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="h-64 rounded-3xl bg-muted animate-pulse" />
@@ -490,19 +493,16 @@ export default function AttendancePage() {
                             </CardHeader>
                             <CardContent className="p-4 pt-5">
                                 <div className="grid grid-cols-7 gap-2">
-                                    {/* Calendar Header for Card */}
                                     {['S','M','T','W','T','F','S'].map((day, i) => (
                                         <div key={i} className={cn("text-center text-[8px] font-black uppercase opacity-40", i === 0 ? "text-rose-600 opacity-100" : "")}>
                                             {day}
                                         </div>
                                     ))}
                                     
-                                    {/* Padding for month start day */}
                                     {Array.from({ length: getDay(daysInMonth[0]) }).map((_, i) => (
                                         <div key={`pad-${i}`} className="h-10 w-full" />
                                     ))}
 
-                                    {/* Days Grid */}
                                     {daysInMonth.map(day => {
                                         const dateStr = format(day, 'yyyy-MM-dd');
                                         const record = attendanceMap[emp.id]?.[dateStr];
@@ -518,7 +518,7 @@ export default function AttendancePage() {
                                                     "h-10 w-full rounded-xl flex flex-col items-center justify-center relative transition-all active:scale-90 cursor-pointer border border-transparent shadow-sm",
                                                     isSun ? "bg-rose-50/50 border-rose-100" : "bg-muted/30 border-muted-foreground/5",
                                                     isToday(day) ? "ring-2 ring-primary ring-offset-1 z-10" : "",
-                                                    getStatusBg(status, false, ot)
+                                                    getStatusBg(status, false, ot, isSun)
                                                 )}
                                             >
                                                 <span className={cn(
@@ -542,7 +542,7 @@ export default function AttendancePage() {
             )}
         </div>
 
-        {/* Footer Help */}
+        {/* Footer Info */}
         <div className="px-4 pb-10">
             <Card className="bg-muted/20 border-dashed rounded-3xl">
                 <CardContent className="p-5 flex items-start gap-4">
@@ -552,8 +552,9 @@ export default function AttendancePage() {
                     <div className="space-y-1">
                         <p className="text-[10px] font-black uppercase tracking-widest text-primary">Instructions</p>
                         <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
-                            Sunday columns/dates are highlight in Rose. Click any date to cycle status (P, A, H, O). 
-                            Use <b>OT tool</b> to add extra hours even without a base status.
+                            Sundays are highlighted in <b>Rose</b>. 
+                            Use the <b>OT tool</b> to record extra hours (even without a base status).
+                            Working on any day is marked as <b>P</b>.
                         </p>
                     </div>
                 </CardContent>
