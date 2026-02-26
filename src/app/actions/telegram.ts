@@ -18,6 +18,7 @@ export async function sendTelegramDocument(chatId: string, base64Data: string, f
     const formData = new FormData();
     formData.append('chat_id', chatId);
     
+    // We create a File object for the document
     const blob = new Blob([buffer], { type: 'application/pdf' });
     formData.append('document', blob, fileName);
 
@@ -49,8 +50,6 @@ export async function setupTelegramWebhook(baseUrl: string) {
   // Clean the baseUrl (remove trailing slash)
   const cleanBaseUrl = baseUrl.replace(/\/$/, '');
   const webhookUrl = `${cleanBaseUrl}/api/telegram/webhook`;
-  
-  console.log(`Setting up webhook for URL: ${webhookUrl}`);
   
   try {
     // Set the webhook and drop any pending updates to clear the queue
