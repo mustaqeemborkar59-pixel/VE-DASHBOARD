@@ -28,7 +28,10 @@ export async function sendTelegramDocument(chatId: string, base64Data: string, f
     });
 
     const result = await response.json();
-    if (!result.ok) throw new Error(result.description);
+    if (!result.ok) {
+      console.error('Telegram API Error:', result);
+      throw new Error(result.description || 'Failed to send document.');
+    }
 
     return { success: true };
   } catch (error: any) {
@@ -42,15 +45,22 @@ export async function sendTelegramDocument(chatId: string, base64Data: string, f
  */
 export async function setupTelegramWebhook(baseUrl: string) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) throw new Error('Token missing.');
+  if (!token) throw new Error('Bot token missing in environment variables.');
 
-  const webhookUrl = `${baseUrl}/api/telegram/webhook`;
+  // Clean the baseUrl (remove trailing slash)
+  const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+  const webhookUrl = `${cleanBaseUrl}/api/telegram/webhook`;
   
   try {
-    const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook?url=${webhookUrl}`);
+    // Set the webhook and drop any pending updates to clear the queue
+    const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook?url=${webhookUrl}&drop_pending_updates=true`);
     const result = await response.json();
     
-    if (!result.ok) throw new Error(result.description);
+    if (!result.ok) {
+      console.error('SetWebhook Error:', result);
+      throw new Error(result.description || 'Failed to set webhook.');
+    }
+    
     return { success: true, description: result.description };
   } catch (error: any) {
     console.error('Webhook Setup Error:', error);
