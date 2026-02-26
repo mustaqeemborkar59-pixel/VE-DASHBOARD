@@ -197,7 +197,7 @@ const SettingsForm = ({ enterprise }: { enterprise: Enterprise }) => {
                         <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-10 w-full" /></div>
                     </div>
                 </div>
-            </div>
+             </div>
         )
     }
 
@@ -344,10 +344,9 @@ export default function SettingsPage() {
     };
     
     const openBankAccountDialog = useCallback((bankAccount: BankAccount | null) => {
-        closeAllDialogs();
         setSelectedBankAccount(bankAccount);
-        handleDelayedAction(() => setIsBankAccountDialogOpen(true));
-    }, [closeAllDialogs]);
+        setIsBankAccountDialogOpen(true);
+    }, []);
 
     const handleBankAccountFormSubmit = (formData: BankAccountFormData) => {
         if (!firestore) return;
@@ -366,9 +365,8 @@ export default function SettingsPage() {
     };
     
     const openDeleteDialog = useCallback((bankAccount: BankAccount) => {
-        closeAllDialogs();
-        handleDelayedAction(() => setBankAccountToDelete(bankAccount));
-    }, [closeAllDialogs]);
+        setBankAccountToDelete(bankAccount);
+    }, []);
     
     const handleDeleteBankAccount = () => {
         if (!firestore || !bankAccountToDelete) return;
@@ -381,7 +379,6 @@ export default function SettingsPage() {
     const handleInitTelegram = async () => {
         setIsBotSettingUp(true);
         try {
-            // Get the current domain URL dynamically
             const url = window.location.origin;
             const res = await setupTelegramWebhook(url);
             if (res.success) {
@@ -496,10 +493,10 @@ export default function SettingsPage() {
                                                             </Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent>
-                                                            <DropdownMenuItem onSelect={() => openBankAccountDialog(account)}>
+                                                            <DropdownMenuItem onClick={() => openBankAccountDialog(account)}>
                                                                 <Pencil className="mr-2 h-4 w-4" /> Edit
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => openDeleteDialog(account)} className="text-destructive">
+                                                            <DropdownMenuItem onClick={() => openDeleteDialog(account)} className="text-destructive">
                                                                 <Trash2 className="mr-2 h-4 w-4" /> Delete
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
@@ -517,7 +514,7 @@ export default function SettingsPage() {
                 </Card>
             </div>
             
-            <Dialog open={isBankAccountDialogOpen} onOpenChange={(open) => {if(!open) setIsBankAccountDialogOpen(false); else setIsBankAccountDialogOpen(true); }}>
+            <Dialog open={isBankAccountDialogOpen} onOpenChange={setIsBankAccountDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{selectedBankAccount ? 'Edit Bank Account' : `Add New ${activeBankTab} Bank Account`}</DialogTitle>
