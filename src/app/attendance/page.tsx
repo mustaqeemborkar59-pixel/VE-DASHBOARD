@@ -470,21 +470,21 @@ export default function AttendancePage() {
                     return (
                         <Card key={emp.id} className="rounded-3xl overflow-hidden border-none shadow-md bg-card/50 backdrop-blur-sm h-full flex flex-col">
                             <CardHeader className="p-5 pb-3 border-b bg-muted/10 shrink-0">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                <div className="flex items-start justify-between min-w-0">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
                                             <User className="h-5 w-5 text-primary" />
                                         </div>
-                                        <div>
-                                            <CardTitle className="text-sm font-black tracking-tight">{emp.fullName}</CardTitle>
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{emp.specialization || 'Technician'}</p>
+                                        <div className="min-w-0">
+                                            <CardTitle className="text-xs sm:text-sm font-black tracking-tight truncate pr-1">{emp.fullName}</CardTitle>
+                                            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate">{emp.specialization || 'Technician'}</p>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col items-end gap-1">
-                                        <Badge variant="outline" className="text-[9px] font-black uppercase px-2 py-0.5 border-primary/20 bg-primary/5 text-primary">
+                                    <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
+                                        <Badge variant="outline" className="text-[9px] font-black uppercase px-2 py-0.5 border-primary/20 bg-primary/5 text-primary whitespace-nowrap">
                                             {summary.otTotal}H OT
                                         </Badge>
-                                        <div className="text-[9px] font-bold text-muted-foreground uppercase flex gap-2">
+                                        <div className="text-[9px] font-bold text-muted-foreground uppercase flex gap-2 whitespace-nowrap">
                                             <span>P:{summary.present}</span>
                                             <span>A:{summary.absent}</span>
                                         </div>
