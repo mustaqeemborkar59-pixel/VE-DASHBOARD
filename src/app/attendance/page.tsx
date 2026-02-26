@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 type ActiveTool = AttendanceStatus | 'Clear' | 'OT' | null;
 
@@ -551,8 +552,8 @@ export default function AttendancePage() {
                     <div className="space-y-1">
                         <p className="text-[10px] font-black uppercase tracking-widest text-primary">Instructions</p>
                         <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
-                            Sunday rows are highlight in Rose. Click any date to cycle status (P, A, H, O). 
-                            Use <b>OT tool</b> to add extra hours even if technician is already Present (P).
+                            Sunday columns/dates are highlight in Rose. Click any date to cycle status (P, A, H, O). 
+                            Use <b>OT tool</b> to add extra hours even without a base status.
                         </p>
                     </div>
                 </CardContent>
