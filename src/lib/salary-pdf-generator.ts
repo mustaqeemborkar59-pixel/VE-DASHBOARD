@@ -1,3 +1,4 @@
+
 'use client';
 
 import jsPDF from 'jspdf';
@@ -174,13 +175,18 @@ const renderSingleSlip = (
     doc.text(`Generated on ${format(new Date(), 'dd MMM yyyy, p')}`, 105, currentY + 4, { align: 'center' });
 };
 
-export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, company: CompanySettings) => {
+export const generateSalaryPdfData = async (salary: Salary, employee: Employee, company: CompanySettings) => {
     const doc = new jsPDF('p', 'mm', 'a4');
     let logoImg: HTMLImageElement | undefined;
     try {
         logoImg = await loadImage('/velogo.png');
     } catch (e) { }
     renderSingleSlip(doc, 0, salary, employee, company, logoImg);
+    return doc;
+};
+
+export const generateSalaryPdfSlip = async (salary: Salary, employee: Employee, company: CompanySettings) => {
+    const doc = await generateSalaryPdfData(salary, employee, company);
     const fileName = `SalarySlip_${employee.fullName.replace(/\s+/g, '_')}_${salary.month}.pdf`;
     doc.save(fileName);
 };

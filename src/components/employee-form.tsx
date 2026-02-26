@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Employee } from "@/lib/data";
 import { Separator } from "./ui/separator";
+import { Send } from "lucide-react";
 
 export type EmployeeFormData = {
   fullName: string;
@@ -24,6 +25,7 @@ export type EmployeeFormData = {
   esicNumber: string;
   bankName: string;
   bankAccountNumber: string;
+  telegramChatId: string;
 };
 
 interface EmployeeFormProps {
@@ -48,6 +50,7 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
     esicNumber: '',
     bankName: '',
     bankAccountNumber: '',
+    telegramChatId: '',
   });
 
   useEffect(() => {
@@ -66,6 +69,7 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
         esicNumber: initialData.esicNumber || '',
         bankName: initialData.bankName || '',
         bankAccountNumber: initialData.bankAccountNumber || '',
+        telegramChatId: initialData.telegramChatId || '',
       });
     } else {
         setFormData({
@@ -82,6 +86,7 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
             esicNumber: '',
             bankName: '',
             bankAccountNumber: '',
+            telegramChatId: '',
         });
     }
   }, [initialData, mode]);
@@ -158,7 +163,7 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="pro-rata">Salary Pro-rata (Month Days / 8h)</SelectItem>
+                            <SelectItem value="pro-rata">Salary Pro-rata (Actual Month Days / 8h)</SelectItem>
                             <SelectItem value="fixed">Fixed Hourly Rate</SelectItem>
                         </SelectContent>
                     </Select>
@@ -207,6 +212,24 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
         <div className="grid gap-2">
             <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
             <Input id="bankAccountNumber" value={formData.bankAccountNumber} onChange={handleInputChange} placeholder="Account Number" />
+        </div>
+
+        <Separator />
+        <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-900/30">
+            <h3 className="text-xs font-black uppercase tracking-wider text-blue-700 dark:text-blue-400 mb-3 flex items-center gap-2">
+                <Send className="h-3 w-3" /> Telegram Notifications
+            </h3>
+            <div className="grid gap-2">
+                <Label htmlFor="telegramChatId" className="text-[10px] font-bold uppercase text-muted-foreground">Telegram Chat ID</Label>
+                <Input 
+                    id="telegramChatId" 
+                    value={formData.telegramChatId} 
+                    onChange={handleInputChange} 
+                    placeholder="Enter Chat ID (e.g. 12345678)" 
+                    className="h-9 font-mono"
+                />
+                <p className="text-[9px] text-muted-foreground italic leading-tight">Ask employee to start your bot to get their Chat ID.</p>
+            </div>
         </div>
 
         <Separator />

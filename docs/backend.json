@@ -169,6 +169,10 @@
           "type": "string",
           "description": "Employee's bank account number."
         },
+        "telegramChatId": {
+          "type": "string",
+          "description": "The Telegram Chat ID for sending salary slips."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",

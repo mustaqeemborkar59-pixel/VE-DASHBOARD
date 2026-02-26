@@ -12,7 +12,7 @@ import { collection, query, orderBy, doc, where, getDocs } from 'firebase/firest
 import { Employee, Salary, CompanySettings, Attendance } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, FileText, WalletCards, XCircle, Calculator, CalendarCheck, Info, Loader2 } from 'lucide-react';
+import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, FileText, WalletCards, XCircle, Calculator, CalendarCheck, Info, Loader2, Send } from 'lucide-react';
 import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -20,9 +20,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { generateSalaryPdfSlip } from '@/lib/salary-pdf-generator';
+import { generateSalaryPdfSlip, generateSalaryPdfData } from '@/lib/salary-pdf-generator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
+import { sendTelegramDocument } from '@/app/actions/telegram';
 
 type Enterprise = 'Vithal' | 'RV';
 
@@ -36,6 +37,7 @@ export default function SalaryPage() {
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isFetchingAttendance, setIsFetchingAttendance] = useState(false);
+  const [isSendingTelegram, setIsSendingTelegram] = useState<string | null>(null);
   const [editingSalary, setEditingSalary] = useState<Salary | null>(null);
   const [salaryToDelete, setSalaryToDelete] = useState<Salary | null>(null);
 
@@ -281,6 +283,39 @@ export default function SalaryPage() {
     }
   };
 
+  const handleSendToTelegram = async (salary: Salary) => {
+    const employee = employees?.find(e => e.id === salary.employeeId);
+    const settings = salary.enterprise === 'Vithal' ? vithalSettings : rvSettings;
+
+    if (!employee || !settings) {
+      toast({ variant: 'destructive', title: 'Data Missing', description: 'Technician or Company details not found.' });
+      return;
+    }
+
+    if (!employee.telegramChatId) {
+      toast({ variant: 'destructive', title: 'No Chat ID', description: 'Please set the Telegram Chat ID in Technician Profile first.' });
+      return;
+    }
+
+    setIsSendingTelegram(salary.id);
+    try {
+      // 1. Generate PDF as Base64 on client
+      const doc = await generateSalaryPdfData(salary, employee, settings);
+      const pdfBase64 = doc.output('datauristring');
+      const fileName = `Salary_Slip_${salary.month}_${employee.fullName.replace(/\s+/g, '_')}.pdf`;
+
+      // 2. Call Server Action to send via Telegram Bot
+      await sendTelegramDocument(employee.telegramChatId, pdfBase64, fileName);
+
+      toast({ title: 'Sent Successfully', description: `Salary slip has been sent to ${employee.fullName} via Telegram.` });
+    } catch (e: any) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Telegram Error', description: e.message || 'Failed to send document.' });
+    } finally {
+      setIsSendingTelegram(null);
+    }
+  };
+
   const autoFillHaazri = async () => {
     if (!firestore || !employeeId || !month) {
         toast({ variant: 'destructive', title: 'Action Required', description: 'Please select an employee and month first.' });
@@ -346,7 +381,7 @@ export default function SalaryPage() {
                 if (emp.otCalculationType === 'fixed' && emp.otHourlyRate) {
                     calculatedOTPrice = totalOTHours * emp.otHourlyRate;
                 } else {
-                    // Precise Pro-rata: (Salary / Actual Days in Month / 8 hours)
+                    // Precise Pro-rata based on actual month days: (Salary / Actual Days in Month / 8 hours)
                     const hourlyVal = currentSalary / totalMonthDays / 8;
                     calculatedOTPrice = totalOTHours * hourlyVal;
                 }
@@ -419,8 +454,7 @@ export default function SalaryPage() {
                   <TableHeader className="bg-muted/30">
                     <TableRow>
                       <TableHead className="pl-6 w-[250px]">Employee</TableHead>
-                      <TableHead>Working Days</TableHead>
-                      <TableHead>Present Days</TableHead>
+                      <TableHead>Attendance</TableHead>
                       <TableHead className="text-right">Net Salary</TableHead>
                       <TableHead className="text-center">Status</TableHead>
                       <TableHead className="text-right pr-6">Actions</TableHead>
@@ -428,12 +462,12 @@ export default function SalaryPage() {
                   </TableHeader>
                   <TableBody>
                     {isLoadingSalaries ? (
-                      <TableRow><TableCell colSpan={6} className="text-center py-10">Loading payroll data...</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="text-center py-10">Loading payroll data...</TableCell></TableRow>
                     ) : groupedSalaries.length > 0 ? (
                       groupedSalaries.map(({ monthKey, monthLabel, items }) => (
                         <React.Fragment key={monthKey}>
                           <TableRow className="border-b-0 hover:bg-transparent">
-                            <TableCell colSpan={6} className="pt-10 pb-2">
+                            <TableCell colSpan={5} className="pt-10 pb-2">
                               <div className="relative">
                                   <div className="absolute inset-0 flex items-center" aria-hidden="true">
                                       <div className="w-full border-t" />
@@ -448,6 +482,7 @@ export default function SalaryPage() {
                           </TableRow>
                           {items.map(salary => {
                             const employee = employees?.find(e => e.id === salary.employeeId);
+                            const isSending = isSendingTelegram === salary.id;
                             return (
                               <TableRow key={salary.id} className="group hover:bg-muted/30 border-b">
                                 <TableCell className="pl-6 py-4">
@@ -455,10 +490,8 @@ export default function SalaryPage() {
                                   <div className="text-[10px] text-muted-foreground uppercase">{employee?.specialization || 'N/A'}</div>
                                 </TableCell>
                                 <TableCell>
-                                  <div className="text-sm font-medium">{salary.workingDays} Days</div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{salary.presentDays} Days</div>
+                                  <div className="text-sm font-medium">{salary.presentDays} / {salary.workingDays} Days</div>
+                                  <div className="text-[10px] text-orange-600 font-bold">{salary.ot > 0 ? `+ ₹${salary.ot} OT` : ''}</div>
                                 </TableCell>
                                 <TableCell className="text-right font-bold text-sm">
                                   {salary.netSalary.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
@@ -469,6 +502,16 @@ export default function SalaryPage() {
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-right pr-6 space-x-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    title="Send to Telegram" 
+                                    size="icon" 
+                                    disabled={isSending}
+                                    onClick={() => handleSendToTelegram(salary)} 
+                                    className="h-8 w-8 text-blue-600 hover:bg-blue-600/10"
+                                  >
+                                    {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                  </Button>
                                   <Button variant="ghost" title="Download PDF" size="icon" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 w-8 text-red-500 hover:bg-red-500/10">
                                     <FileText className="h-4 w-4" />
                                   </Button>
@@ -485,7 +528,7 @@ export default function SalaryPage() {
                         </React.Fragment>
                       ))
                     ) : (
-                      <TableRow><TableCell colSpan={6} className="text-center py-20 text-muted-foreground">No records found matching filters.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="text-center py-20 text-muted-foreground">No records found matching filters.</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -501,6 +544,7 @@ export default function SalaryPage() {
                       <div className="px-3 pb-4 space-y-3">
                         {items.map(salary => {
                           const employee = employees?.find(e => e.id === salary.employeeId);
+                          const isSending = isSendingTelegram === salary.id;
                           return (
                             <div key={salary.id} className="border rounded-xl p-3 bg-card shadow-sm space-y-3">
                               <div className="flex justify-between items-start">
@@ -523,6 +567,15 @@ export default function SalaryPage() {
                                 </div>
                               </div>
                               <div className="flex justify-end gap-2 pt-2 border-t">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    disabled={isSending}
+                                    onClick={() => handleSendToTelegram(salary)} 
+                                    className="h-8 w-8 text-blue-600 hover:bg-blue-600/10"
+                                >
+                                    {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                </Button>
                                 <Button variant="ghost" size="icon" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 w-8 text-red-600 hover:bg-red-500/10">
                                   <FileText className="h-4 w-4" />
                                 </Button>
@@ -547,7 +600,8 @@ export default function SalaryPage() {
           </Card>
         </Tabs>
 
-        <Dialog open={isFormOpen} onOpenChange={(open) => setIsFormOpen(open)}>
+        {/* Salary Form Dialog */}
+        <Dialog open={isFormOpen} onOpenChange={(open) => !open && setIsFormOpen(false)}>
           <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
             <DialogHeader className="p-6 pb-0">
               <DialogTitle className="text-xl font-black">{editingSalary ? 'Modify Salary Record' : 'Record Monthly Salary'}</DialogTitle>

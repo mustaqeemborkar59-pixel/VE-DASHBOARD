@@ -32,6 +32,7 @@ export type Employee = {
   esicNumber?: string;
   bankName?: string;
   bankAccountNumber?: string;
+  telegramChatId?: string;
   createdAt?: string;
 };
 
