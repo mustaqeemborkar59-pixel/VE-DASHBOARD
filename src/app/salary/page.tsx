@@ -346,8 +346,8 @@ export default function SalaryPage() {
                 if (emp.otCalculationType === 'fixed' && emp.otHourlyRate) {
                     calculatedOTPrice = totalOTHours * emp.otHourlyRate;
                 } else {
-                    // Default Pro-rata: (Salary / 30 days / 8 hours)
-                    const hourlyVal = currentSalary / 30 / 8;
+                    // Precise Pro-rata: (Salary / Actual Days in Month / 8 hours)
+                    const hourlyVal = currentSalary / totalMonthDays / 8;
                     calculatedOTPrice = totalOTHours * hourlyVal;
                 }
             }

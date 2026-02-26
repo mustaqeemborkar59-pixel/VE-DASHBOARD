@@ -158,7 +158,7 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="pro-rata">Salary Pro-rata (30 Days / 8h)</SelectItem>
+                            <SelectItem value="pro-rata">Salary Pro-rata (Month Days / 8h)</SelectItem>
                             <SelectItem value="fixed">Fixed Hourly Rate</SelectItem>
                         </SelectContent>
                     </Select>
@@ -176,7 +176,7 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
                     />
                 </div>
             </div>
-            <p className="text-[10px] text-muted-foreground italic">Salary and OT values will be used for automatic payroll calculations.</p>
+            <p className="text-[10px] text-muted-foreground italic">"Pro-rata" uses the actual days in the selected month for calculation.</p>
         </div>
 
         <Separator />
