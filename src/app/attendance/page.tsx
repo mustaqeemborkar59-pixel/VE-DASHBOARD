@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { useCollection, useFirebase, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, query, orderBy, doc, setDoc, where, deleteDoc } from 'firebase/firestore';
 import { Employee, Attendance, AttendanceStatus } from '@/lib/data';
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isToday } from 'date-fns';
-import { UserCheck, ChevronLeft, ChevronRight, Info, MousePointer2, Eraser, Clock } from 'lucide-react';
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isToday, getDay } from 'date-fns';
+import { UserCheck, ChevronLeft, ChevronRight, Info, MousePointer2, Eraser, Clock, User, CalendarDays, Calculator } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -211,9 +211,9 @@ export default function AttendancePage() {
 
     if (ot && ot > 0 && !status) {
         return (
-            <div className="flex flex-col items-center leading-none gap-0.5">
-                <span className="font-black text-orange-600 text-[9px] sm:text-[10px]">OT</span>
-                <span className="text-[7px] font-black text-orange-500 uppercase tracking-tighter">{ot}H</span>
+            <div className="flex flex-col items-center leading-none">
+                <span className="font-black text-orange-600 text-[10px]">OT</span>
+                <span className="text-[7px] font-black text-orange-500 uppercase">{ot}H</span>
             </div>
         );
     }
@@ -226,21 +226,21 @@ export default function AttendancePage() {
         else if (status === 'Absent') baseChar = 'A';
 
         return (
-            <div className="flex flex-col items-center leading-none gap-0.5">
+            <div className="flex flex-col items-center leading-none">
                 <div className="flex items-center gap-0.5">
                     {baseChar && <span className={cn("text-[8px] font-black opacity-40 uppercase", isSun && status === 'Present' ? "text-rose-600 opacity-100" : "")}>{baseChar}</span>}
-                    <span className="font-black text-orange-600 text-[8px] sm:text-[9px]">OT</span>
+                    <span className="font-black text-orange-600 text-[8px]">OT</span>
                 </div>
-                <span className="text-[7px] font-black text-orange-500 uppercase tracking-tighter">{ot}H</span>
+                <span className="text-[7px] font-black text-orange-500 uppercase">{ot}H</span>
             </div>
         );
     }
 
     switch (status) {
-      case 'Present': return <span className={cn("font-black text-[10px] sm:text-[11px]", isSun ? "text-rose-600" : "text-emerald-600")}>P</span>;
-      case 'Absent': return <span className="text-rose-600 font-black text-[10px] sm:text-[11px]">A</span>;
-      case 'Half-Day': return <span className="text-amber-600 font-black text-[10px] sm:text-[11px]">H</span>;
-      case 'Holiday': return <span className="text-blue-600 font-black text-[10px] sm:text-[11px]">O</span>;
+      case 'Present': return <span className={cn("font-black text-[11px]", isSun ? "text-rose-600" : "text-emerald-600")}>P</span>;
+      case 'Absent': return <span className="text-rose-600 font-black text-[11px]">A</span>;
+      case 'Half-Day': return <span className="text-amber-600 font-black text-[11px]">H</span>;
+      case 'Holiday': return <span className="text-blue-600 font-black text-[11px]">O</span>;
       default: return null;
     }
   };
@@ -261,113 +261,123 @@ export default function AttendancePage() {
     }
   };
 
+  const getTechnicianSummary = (empId: string) => {
+    const records = attendanceMap[empId] || {};
+    let present = 0;
+    let absent = 0;
+    let half = 0;
+    let otTotal = 0;
+
+    Object.values(records).forEach(rec => {
+        if (rec.status === 'Present') present++;
+        else if (rec.status === 'Absent') absent++;
+        else if (rec.status === 'Half-Day') half++;
+        if (rec.overtimeHours) otTotal += rec.overtimeHours;
+    });
+
+    return { present, absent, half, otTotal };
+  };
+
   return (
     <AppLayout>
       <TooltipProvider delayDuration={100}>
       <div className="flex flex-col gap-4 animate-in fade-in duration-500 max-w-full overflow-hidden">
         {/* Responsive Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-2">
-          <div className="space-y-1">
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2">
+          <div className="space-y-1 text-center sm:text-left">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight flex items-center justify-center sm:justify-start gap-2">
               <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               Haazri Register
             </h1>
-            <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider">Monthly Attendance Grid</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider">Monthly Attendance Log</p>
           </div>
           
-          <div className="flex items-center bg-card border rounded-lg p-0.5 shadow-sm self-start sm:self-auto">
-            <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8">
-              <ChevronLeft className="h-4 w-4" />
+          <div className="flex items-center justify-center bg-card border rounded-xl p-1 shadow-sm self-center sm:self-auto">
+            <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-9 w-9">
+              <ChevronLeft className="h-5 w-5" />
             </Button>
             <input 
               type="month" 
               value={selectedMonth} 
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-transparent h-8 border-none text-[11px] sm:text-xs font-black focus:ring-0 outline-none w-28 text-center cursor-pointer uppercase tracking-tighter"
+              className="bg-transparent h-9 border-none text-sm font-black focus:ring-0 outline-none w-32 text-center cursor-pointer uppercase tracking-tighter"
             />
-            <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8">
-              <ChevronRight className="h-4 w-4" />
+            <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-9 w-9">
+              <ChevronRight className="h-5 w-5" />
             </Button>
           </div>
         </div>
 
-        {/* Improved Tool Selector for Mobile */}
-        <div className="px-4 flex flex-col gap-2">
-            <div className="bg-card border rounded-xl p-2 flex flex-wrap items-center gap-2 shadow-sm">
-                <div className="flex items-center gap-1.5 px-1 border-r pr-2 mr-1">
-                    <MousePointer2 className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground hidden xs:inline">Tool:</span>
+        {/* Floating Tool Selector - Sticky on Mobile */}
+        <div className="sticky top-[60px] z-50 px-4 py-2 bg-background/80 backdrop-blur-md">
+            <div className="bg-card border rounded-2xl p-2 flex items-center justify-between shadow-lg">
+                <div className="flex items-center gap-1.5 px-2 border-r pr-3">
+                    <MousePointer2 className="h-4 w-4 text-primary animate-pulse" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground hidden xs:inline">Mode:</span>
                 </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar px-2">
                     <button 
                         onClick={() => setActiveTool(activeTool === 'Present' ? null : 'Present')}
                         className={cn(
-                            "w-8 h-8 rounded-lg text-[11px] font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm",
-                            activeTool === 'Present' ? "bg-emerald-600 text-white border-emerald-600" : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
+                            activeTool === 'Present' ? "bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-600/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"
                         )}
                     >P</button>
                     <button 
                         onClick={() => setActiveTool(activeTool === 'Absent' ? null : 'Absent')}
                         className={cn(
-                            "w-8 h-8 rounded-lg text-[11px] font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm",
-                            activeTool === 'Absent' ? "bg-rose-600 text-white border-rose-600" : "bg-rose-50 text-rose-700 border-rose-200"
+                            "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
+                            activeTool === 'Absent' ? "bg-rose-600 text-white border-rose-600 ring-2 ring-rose-600/20" : "bg-rose-50 text-rose-700 border-rose-200"
                         )}
                     >A</button>
                     <button 
                         onClick={() => setActiveTool(activeTool === 'Half-Day' ? null : 'Half-Day')}
                         className={cn(
-                            "w-8 h-8 rounded-lg text-[11px] font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm",
-                            activeTool === 'Half-Day' ? "bg-amber-600 text-white border-amber-600" : "bg-amber-50 text-amber-700 border-amber-200"
+                            "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
+                            activeTool === 'Half-Day' ? "bg-amber-600 text-white border-amber-600 ring-2 ring-amber-600/20" : "bg-amber-50 text-amber-700 border-amber-200"
                         )}
                     >H</button>
                     <button 
                         onClick={() => setActiveTool(activeTool === 'Holiday' ? null : 'Holiday')}
                         className={cn(
-                            "w-8 h-8 rounded-lg text-[11px] font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm",
-                            activeTool === 'Holiday' ? "bg-blue-600 text-white border-blue-600" : "bg-blue-50 text-blue-700 border-blue-200"
+                            "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
+                            activeTool === 'Holiday' ? "bg-blue-600 text-white border-blue-600 ring-2 ring-blue-600/20" : "bg-blue-50 text-blue-700 border-blue-200"
                         )}
                     >O</button>
-                    <div className="w-px h-5 bg-border mx-0.5" />
+                    <div className="w-px h-6 bg-border mx-1" />
                     <button 
                         onClick={() => setActiveTool(activeTool === 'OT' ? null : 'OT')}
                         className={cn(
-                            "w-8 h-8 rounded-lg text-[11px] font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm",
-                            activeTool === 'OT' ? "bg-orange-600 text-white border-orange-600" : "bg-orange-50 text-orange-700 border-orange-200"
+                            "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
+                            activeTool === 'OT' ? "bg-orange-600 text-white border-orange-600 ring-2 ring-orange-600/20" : "bg-orange-50 text-orange-700 border-orange-200"
                         )}
                     >OT</button>
                     <button 
                         onClick={() => setActiveTool(activeTool === 'Clear' ? null : 'Clear')}
                         className={cn(
-                            "w-8 h-8 rounded-lg text-[11px] font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm",
+                            "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
                             activeTool === 'Clear' ? "bg-zinc-800 text-white border-zinc-800" : "bg-white text-zinc-500 border-zinc-200"
                         )}
-                    ><Eraser className="h-3.5 w-3.5" /></button>
+                    ><Eraser className="h-4 w-4" /></button>
                 </div>
             </div>
-            {activeTool && (
-                <div className="animate-in slide-in-from-left-2 duration-300">
-                    <span className="px-3 py-1 rounded-full text-[9px] font-black border bg-primary/5 text-primary border-primary/20 uppercase tracking-widest flex items-center w-fit gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                        Mode: {activeTool === 'Clear' ? 'Eraser' : (activeTool === 'OT' ? 'Overtime' : activeTool)} Active
-                    </span>
-                </div>
-            )}
         </div>
 
-        {/* Table Container with Horizontal Scroll */}
-        <div className="px-0 sm:px-4">
-            <Card className="border-y sm:border rounded-none sm:rounded-xl overflow-hidden shadow-none sm:shadow-sm">
-                <CardHeader className="p-3 border-b bg-muted/20 hidden sm:flex">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+        {/* Desktop View - Traditional Table */}
+        <div className="hidden lg:block px-4">
+            <Card className="rounded-2xl overflow-hidden shadow-sm border-border/50">
+                <CardHeader className="p-4 border-b bg-muted/20">
+                    <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4" />
                         {format(parseISO(`${selectedMonth}-01`), 'MMMM yyyy')}
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="p-0 overflow-x-auto hide-scrollbar touch-pan-x">
-                    <table className="w-full border-collapse table-fixed min-w-[900px]">
+                <CardContent className="p-0 overflow-x-auto hide-scrollbar">
+                    <table className="w-full border-collapse table-fixed min-w-[1000px]">
                         <thead>
                             <tr className="bg-muted/40">
-                                <th className="sticky left-0 z-40 bg-muted/95 backdrop-blur-md p-3 text-left text-[10px] font-black uppercase tracking-widest border-b border-r w-[120px] sm:w-[160px] shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
-                                    Technician
+                                <th className="sticky left-0 z-40 bg-muted/95 backdrop-blur-md p-4 text-left text-[10px] font-black uppercase tracking-widest border-b border-r w-[180px] shadow-sm">
+                                    Technician Name
                                 </th>
                                 {daysInMonth.map(day => {
                                     const isSun = day.getDay() === 0;
@@ -375,14 +385,14 @@ export default function AttendancePage() {
                                         <th 
                                             key={day.toISOString()} 
                                             className={cn(
-                                                "p-1 text-center border-b border-r",
+                                                "p-2 text-center border-b border-r",
                                                 isToday(day) ? "bg-primary/10" : (isSun ? "bg-rose-50" : "")
                                             )}
                                         >
-                                            <div className="flex flex-col leading-none gap-0.5">
-                                                <span className={cn("text-[10px] font-bold", isSun ? "text-rose-600" : "")}>{format(day, 'dd')}</span>
+                                            <div className="flex flex-col leading-none gap-1">
+                                                <span className={cn("text-[11px] font-bold", isSun ? "text-rose-600" : "")}>{format(day, 'dd')}</span>
                                                 <span className={cn("text-[8px] font-black tracking-tighter uppercase", isSun ? "text-rose-600" : "opacity-50")}>
-                                                    {format(day, 'EEE').charAt(0)}
+                                                    {format(day, 'EEE')}
                                                 </span>
                                             </div>
                                         </th>
@@ -392,11 +402,11 @@ export default function AttendancePage() {
                         </thead>
                         <tbody>
                             {isLoadingEmployees ? (
-                                <tr><td colSpan={daysInMonth.length + 1} className="p-10 text-center animate-pulse text-[10px] font-black uppercase text-muted-foreground">Syncing...</td></tr>
+                                <tr><td colSpan={daysInMonth.length + 1} className="p-20 text-center animate-pulse text-xs font-black uppercase text-muted-foreground tracking-widest">Synchronizing records...</td></tr>
                             ) : (
                                 employees?.map((emp) => (
-                                    <tr key={emp.id} className="hover:bg-muted/5 h-10">
-                                        <td className="sticky left-0 z-30 bg-card/95 backdrop-blur-md p-3 border-b border-r font-black text-[10px] sm:text-[11px] truncate shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+                                    <tr key={emp.id} className="hover:bg-muted/5 h-12">
+                                        <td className="sticky left-0 z-30 bg-card/95 backdrop-blur-md p-4 border-b border-r font-bold text-xs truncate shadow-sm">
                                             {emp.fullName}
                                         </td>
                                         {daysInMonth.map(day => {
@@ -411,7 +421,7 @@ export default function AttendancePage() {
                                                     key={dateStr}
                                                     onClick={() => handleStatusToggle(emp.id, day)}
                                                     className={cn(
-                                                        "p-0 text-center border-b border-r cursor-pointer transition-all active:bg-primary/5 select-none",
+                                                        "p-0 text-center border-b border-r cursor-pointer transition-all active:bg-primary/10 select-none",
                                                         isSun ? "bg-rose-50/50" : "",
                                                         getStatusBg(status, isToday(day), ot)
                                                     )}
@@ -424,8 +434,8 @@ export default function AttendancePage() {
                                                                         {getStatusIcon(record, isSun)}
                                                                     </div>
                                                                 </TooltipTrigger>
-                                                                <TooltipContent side="top" className="py-1 px-2 text-[10px] font-black bg-orange-600 text-white border-none shadow-lg">
-                                                                    {status ? `${status} + ` : ''}{ot} Hrs OT
+                                                                <TooltipContent side="top" className="py-1.5 px-3 text-[10px] font-black bg-zinc-900 text-white border-none shadow-xl rounded-lg">
+                                                                    {status ? `${status} + ` : ''}{ot} Hrs Overtime
                                                                 </TooltipContent>
                                                             </Tooltip>
                                                         ) : (
@@ -444,16 +454,105 @@ export default function AttendancePage() {
             </Card>
         </div>
 
-        {/* Info Box */}
+        {/* Mobile Vertical View - Grid of Cards */}
+        <div className="lg:hidden flex flex-col gap-4 px-4 pb-20">
+            {isLoadingEmployees ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-64 rounded-3xl bg-muted animate-pulse" />
+                ))
+            ) : (
+                employees?.map((emp) => {
+                    const summary = getTechnicianSummary(emp.id);
+                    return (
+                        <Card key={emp.id} className="rounded-3xl overflow-hidden border-none shadow-md bg-card/50 backdrop-blur-sm">
+                            <CardHeader className="p-5 pb-3 border-b bg-muted/10">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                            <User className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <CardTitle className="text-sm font-black tracking-tight">{emp.fullName}</CardTitle>
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{emp.specialization || 'Technician'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-1">
+                                        <Badge variant="outline" className="text-[9px] font-black uppercase px-2 py-0.5 border-primary/20 bg-primary/5 text-primary">
+                                            {summary.otTotal}H OT
+                                        </Badge>
+                                        <div className="text-[9px] font-bold text-muted-foreground uppercase flex gap-2">
+                                            <span>P:{summary.present}</span>
+                                            <span>A:{summary.absent}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-5">
+                                <div className="grid grid-cols-7 gap-2">
+                                    {/* Calendar Header for Card */}
+                                    {['S','M','T','W','T','F','S'].map((day, i) => (
+                                        <div key={i} className={cn("text-center text-[8px] font-black uppercase opacity-40", i === 0 ? "text-rose-600 opacity-100" : "")}>
+                                            {day}
+                                        </div>
+                                    ))}
+                                    
+                                    {/* Padding for month start day */}
+                                    {Array.from({ length: getDay(daysInMonth[0]) }).map((_, i) => (
+                                        <div key={`pad-${i}`} className="h-10 w-full" />
+                                    ))}
+
+                                    {/* Days Grid */}
+                                    {daysInMonth.map(day => {
+                                        const dateStr = format(day, 'yyyy-MM-dd');
+                                        const record = attendanceMap[emp.id]?.[dateStr];
+                                        const status = record?.status;
+                                        const ot = record?.overtimeHours || 0;
+                                        const isSun = day.getDay() === 0;
+
+                                        return (
+                                            <div 
+                                                key={dateStr}
+                                                onClick={() => handleStatusToggle(emp.id, day)}
+                                                className={cn(
+                                                    "h-10 w-full rounded-xl flex flex-col items-center justify-center relative transition-all active:scale-90 cursor-pointer border border-transparent shadow-sm",
+                                                    isSun ? "bg-rose-50/50 border-rose-100" : "bg-muted/30 border-muted-foreground/5",
+                                                    isToday(day) ? "ring-2 ring-primary ring-offset-1 z-10" : "",
+                                                    getStatusBg(status, false, ot)
+                                                )}
+                                            >
+                                                <span className={cn(
+                                                    "text-[9px] font-black mb-0.5", 
+                                                    isSun ? "text-rose-600" : "text-muted-foreground/60",
+                                                    (status || ot > 0) && "opacity-40"
+                                                )}>
+                                                    {format(day, 'd')}
+                                                </span>
+                                                <div className="scale-90 origin-center">
+                                                    {getStatusIcon(record, isSun)}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    );
+                })
+            )}
+        </div>
+
+        {/* Footer Help */}
         <div className="px-4 pb-10">
-            <Card className="bg-muted/20 border-dashed rounded-xl">
-                <CardContent className="p-4 flex items-start gap-3">
-                    <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <Card className="bg-muted/20 border-dashed rounded-3xl">
+                <CardContent className="p-5 flex items-start gap-4">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Info className="h-4 w-4 text-primary" />
+                    </div>
                     <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest">Guide</p>
-                        <p className="text-[9px] sm:text-[10px] text-muted-foreground leading-relaxed">
-                            Sundays are Rose-colored. Use <b>P</b> for Presence or <b>OT</b> for overtime. 
-                            Hover on OT cells to see hours. <b>Eraser</b> clears everything.
+                        <p className="text-[10px] font-black uppercase tracking-widest text-primary">Instructions</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
+                            Sunday rows are highlight in Rose. Click any date to cycle status (P, A, H, O). 
+                            Use <b>OT tool</b> to add extra hours even if technician is already Present (P).
                         </p>
                     </div>
                 </CardContent>
@@ -464,18 +563,18 @@ export default function AttendancePage() {
 
       {/* OT Dialog */}
       <Dialog open={isOTDialogOpen} onOpenChange={setIsOTDialogOpen}>
-        <DialogContent className="max-w-[90vw] sm:max-w-[320px] p-0 rounded-2xl overflow-hidden border-none shadow-2xl">
+        <DialogContent className="max-w-[90vw] sm:max-w-[340px] p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
             <DialogHeader className="p-6 bg-orange-50 border-b border-orange-100">
-                <DialogTitle className="text-base font-black uppercase tracking-tight flex items-center gap-2 text-orange-700">
-                    <Clock className="h-5 w-5" /> Record OT
+                <DialogTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-orange-700">
+                    <Clock className="h-5 w-5" /> Record Overtime
                 </DialogTitle>
-                <DialogDescription className="text-[11px] font-medium text-orange-600/70">
-                    {selectedOTCell && format(selectedOTCell.date, 'dd MMM yyyy')}
+                <DialogDescription className="text-xs font-bold text-orange-600/70">
+                    {selectedOTCell && format(selectedOTCell.date, 'EEEE, dd MMM yyyy')}
                 </DialogDescription>
             </DialogHeader>
-            <div className="p-6">
-                <Label htmlFor="ot-hours" className="text-[10px] font-black uppercase mb-3 block text-muted-foreground tracking-widest text-center">Hours worked</Label>
-                <div className="flex items-center justify-center gap-3">
+            <div className="p-8">
+                <Label htmlFor="ot-hours" className="text-[10px] font-black uppercase mb-4 block text-muted-foreground tracking-widest text-center">Hours Worked</Label>
+                <div className="flex items-center justify-center gap-4">
                     <Input 
                         id="ot-hours"
                         type="number"
@@ -483,15 +582,15 @@ export default function AttendancePage() {
                         min="0"
                         value={otHours}
                         onChange={(e) => setOtHours(e.target.value)}
-                        className="h-12 w-20 text-center font-black text-xl bg-muted/30 border-2"
+                        className="h-14 w-24 text-center font-black text-2xl bg-muted/30 border-2 rounded-2xl focus-visible:ring-orange-500"
                         autoFocus
                     />
-                    <span className="font-black text-xs text-muted-foreground uppercase">Hrs</span>
+                    <span className="font-black text-xs text-muted-foreground uppercase tracking-widest">Hrs</span>
                 </div>
             </div>
-            <DialogFooter className="p-4 bg-muted/10 grid grid-cols-2 gap-2">
-                <Button variant="outline" onClick={() => setIsOTDialogOpen(false)} className="h-10 rounded-xl text-[11px] font-black uppercase">Cancel</Button>
-                <Button onClick={handleSaveOT} className="h-10 rounded-xl text-[11px] font-black uppercase bg-orange-600 hover:bg-orange-700">Save</Button>
+            <DialogFooter className="p-5 bg-muted/10 grid grid-cols-2 gap-3">
+                <Button variant="ghost" onClick={() => setIsOTDialogOpen(false)} className="h-12 rounded-2xl text-[11px] font-black uppercase">Cancel</Button>
+                <Button onClick={handleSaveOT} className="h-12 rounded-2xl text-[11px] font-black uppercase bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-600/20">Save Hours</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
