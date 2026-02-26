@@ -136,6 +136,15 @@
           "type": "number",
           "description": "Default monthly base salary for payroll calculation."
         },
+        "otCalculationType": {
+          "type": "string",
+          "enum": ["fixed", "pro-rata"],
+          "description": "How overtime is calculated: fixed hourly rate or based on base salary."
+        },
+        "otHourlyRate": {
+          "type": "number",
+          "description": "The fixed hourly rate for overtime if otCalculationType is 'fixed'."
+        },
         "panNumber": {
           "type": "string",
           "description": "PAN Card Number."

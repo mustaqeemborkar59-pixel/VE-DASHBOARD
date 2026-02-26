@@ -24,6 +24,8 @@ export type Employee = {
   availability: boolean;
   doj?: string; // Date of Joining
   baseSalary?: number; // Default base salary for payroll
+  otCalculationType?: 'fixed' | 'pro-rata'; // fixed hourly or based on salary
+  otHourlyRate?: number; // The rate if fixed
   panNumber?: string;
   pfNumber?: string;
   uanNumber?: string;

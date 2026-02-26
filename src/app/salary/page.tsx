@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -315,7 +316,7 @@ export default function SalaryPage() {
         } else {
             let totalPresent = 0;
             let totalAbsent = 0;
-            let totalOT = 0;
+            let totalOTHours = 0;
 
             records.forEach(rec => {
                 if (rec.status === 'Present') totalPresent += 1;
@@ -326,24 +327,36 @@ export default function SalaryPage() {
                 else if (rec.status === 'Absent') totalAbsent += 1;
                 
                 if (rec.overtimeHours) {
-                    totalOT += rec.overtimeHours;
+                    totalOTHours += rec.overtimeHours;
                 }
             });
 
             setWorkingDays(String(totalMonthDays));
             setPresentDays(String(totalPresent));
             setAbsentDays(String(totalAbsent));
-            setOt(String(totalOT));
 
-            // Also ensure base salary is pulled again if somehow missing
+            // Calculate OT Price based on Employee Settings
             const emp = employees?.find(e => e.id === employeeId);
-            if (emp && emp.baseSalary) {
-                setBaseSalary(emp.baseSalary.toString());
+            let calculatedOTPrice = 0;
+
+            if (emp) {
+                if (emp.baseSalary) setBaseSalary(emp.baseSalary.toString());
+                
+                const currentSalary = emp.baseSalary || 0;
+                if (emp.otCalculationType === 'fixed' && emp.otHourlyRate) {
+                    calculatedOTPrice = totalOTHours * emp.otHourlyRate;
+                } else {
+                    // Default Pro-rata: (Salary / 30 days / 8 hours)
+                    const hourlyVal = currentSalary / 30 / 8;
+                    calculatedOTPrice = totalOTHours * hourlyVal;
+                }
             }
+
+            setOt(Math.round(calculatedOTPrice).toString());
 
             toast({ 
                 title: 'Sync Complete', 
-                description: `Fetched ${records.length} records. Calculated ${totalPresent} Present days and ${totalOT} OT hours.` 
+                description: `Fetched ${records.length} records. Calculated ${totalPresent} Present days and ₹${Math.round(calculatedOTPrice)} OT Earnings.` 
             });
         }
     } catch (e) {

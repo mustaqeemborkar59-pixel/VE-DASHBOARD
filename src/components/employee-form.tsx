@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Employee } from "@/lib/data";
 import { Separator } from "./ui/separator";
 
@@ -16,6 +17,8 @@ export type EmployeeFormData = {
   workLocation: string;
   availability: boolean;
   baseSalary: string;
+  otCalculationType: 'fixed' | 'pro-rata';
+  otHourlyRate: string;
   pfNumber: string;
   uanNumber: string;
   esicNumber: string;
@@ -24,7 +27,7 @@ export type EmployeeFormData = {
 };
 
 interface EmployeeFormProps {
-  onSubmit: (data: Partial<EmployeeFormData> & { baseSalary: number }) => void;
+  onSubmit: (data: Partial<EmployeeFormData> & { baseSalary: number, otHourlyRate: number }) => void;
   initialData?: Employee;
   mode: 'add' | 'edit';
 }
@@ -38,6 +41,8 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
     workLocation: '',
     availability: true,
     baseSalary: '0',
+    otCalculationType: 'pro-rata',
+    otHourlyRate: '0',
     pfNumber: '',
     uanNumber: '',
     esicNumber: '',
@@ -54,6 +59,8 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
         workLocation: initialData.workLocation || '',
         availability: initialData.availability ?? true,
         baseSalary: initialData.baseSalary?.toString() || '0',
+        otCalculationType: initialData.otCalculationType || 'pro-rata',
+        otHourlyRate: initialData.otHourlyRate?.toString() || '0',
         pfNumber: initialData.pfNumber || '',
         uanNumber: initialData.uanNumber || '',
         esicNumber: initialData.esicNumber || '',
@@ -68,6 +75,8 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
             workLocation: '',
             availability: true,
             baseSalary: '0',
+            otCalculationType: 'pro-rata',
+            otHourlyRate: '0',
             pfNumber: '',
             uanNumber: '',
             esicNumber: '',
@@ -79,6 +88,10 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSelectChange = (id: keyof EmployeeFormData, value: string) => {
     setFormData(prev => ({ ...prev, [id]: value }));
   };
 
@@ -98,7 +111,8 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
     }
     
     const salary = parseFloat(formData.baseSalary) || 0;
-    onSubmit({ ...formData, baseSalary: salary });
+    const hourlyRate = parseFloat(formData.otHourlyRate) || 0;
+    onSubmit({ ...formData, baseSalary: salary, otHourlyRate: hourlyRate });
   };
 
   return (
@@ -120,20 +134,49 @@ export function EmployeeForm({ onSubmit, initialData, mode }: EmployeeFormProps)
         
         <Separator />
         
-        <div className="grid gap-2 bg-muted/20 p-4 rounded-lg border border-primary/10">
-            <Label htmlFor="baseSalary" className="text-primary font-bold uppercase tracking-tight">Monthly Base Salary (Fixed)</Label>
-            <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-muted-foreground">₹</span>
-                <Input 
-                    id="baseSalary" 
-                    type="number" 
-                    value={formData.baseSalary} 
-                    onChange={handleInputChange} 
-                    placeholder="Enter fixed salary" 
-                    className="h-10 text-lg font-black"
-                />
+        <div className="space-y-4 bg-muted/20 p-4 rounded-lg border border-primary/10">
+            <div className="grid gap-2">
+                <Label htmlFor="baseSalary" className="text-primary font-bold uppercase tracking-tight">Monthly Base Salary (Fixed)</Label>
+                <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-muted-foreground">₹</span>
+                    <Input 
+                        id="baseSalary" 
+                        type="number" 
+                        value={formData.baseSalary} 
+                        onChange={handleInputChange} 
+                        placeholder="Enter fixed salary" 
+                        className="h-10 text-lg font-black"
+                    />
+                </div>
             </div>
-            <p className="text-[10px] text-muted-foreground italic">This salary will be used for automatic payroll calculations and payslip generation.</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">OT Calculation Type</Label>
+                    <Select value={formData.otCalculationType} onValueChange={(v) => handleSelectChange('otCalculationType', v)}>
+                        <SelectTrigger className="h-9">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="pro-rata">Salary Pro-rata (30 Days / 8h)</SelectItem>
+                            <SelectItem value="fixed">Fixed Hourly Rate</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="otHourlyRate" className="text-[10px] font-bold uppercase text-muted-foreground">OT Price (per hr)</Label>
+                    <Input 
+                        id="otHourlyRate" 
+                        type="number" 
+                        value={formData.otHourlyRate} 
+                        onChange={handleInputChange} 
+                        disabled={formData.otCalculationType === 'pro-rata'}
+                        className="h-9 font-bold"
+                        placeholder={formData.otCalculationType === 'pro-rata' ? 'Auto calculated' : 'Enter amount'}
+                    />
+                </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground italic">Salary and OT values will be used for automatic payroll calculations.</p>
         </div>
 
         <Separator />
