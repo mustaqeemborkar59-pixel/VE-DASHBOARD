@@ -315,12 +315,12 @@ export default function AttendancePage() {
 
         {/* Tools Toolbar */}
         <div className="sticky top-[60px] z-50 px-4 py-2 bg-background/80 backdrop-blur-md">
-            <div className="bg-card border rounded-2xl p-2 flex items-center justify-between shadow-lg">
-                <div className="flex items-center gap-1.5 px-2 border-r pr-3">
+            <div className="bg-card border rounded-2xl p-2 flex items-center justify-between shadow-lg max-w-full overflow-hidden">
+                <div className="flex items-center gap-1.5 px-2 border-r pr-3 shrink-0">
                     <MousePointer2 className="h-4 w-4 text-primary animate-pulse" />
                     <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground hidden xs:inline">Mode:</span>
                 </div>
-                <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar px-2">
+                <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar px-2 flex-1">
                     <button 
                         onClick={() => setActiveTool(activeTool === 'Present' ? null : 'Present')}
                         className={cn(
@@ -349,7 +349,7 @@ export default function AttendancePage() {
                             activeTool === 'Holiday' ? "bg-blue-600 text-white border-blue-600 ring-2 ring-blue-600/20" : "bg-blue-50 text-blue-700 border-blue-200"
                         )}
                     >O</button>
-                    <div className="w-px h-6 bg-border mx-1" />
+                    <div className="w-px h-6 bg-border mx-1 shrink-0" />
                     <button 
                         onClick={() => setActiveTool(activeTool === 'OT' ? null : 'OT')}
                         className={cn(
@@ -368,8 +368,8 @@ export default function AttendancePage() {
             </div>
         </div>
 
-        {/* Tablet & Desktop View (Traditional Table) */}
-        <div className="hidden md:block px-4">
+        {/* Desktop View (Table only on Large Screens) */}
+        <div className="hidden lg:block px-4 max-w-full">
             <Card className="rounded-2xl overflow-hidden shadow-sm border-border/50">
                 <CardHeader className="p-4 border-b bg-muted/20">
                     <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
@@ -391,7 +391,7 @@ export default function AttendancePage() {
                                             key={day.toISOString()} 
                                             className={cn(
                                                 "p-2 text-center border-b border-r",
-                                                isToday(day) ? "bg-primary/10" : (isSun ? "bg-rose-100/50" : "")
+                                                isToday(day) ? "bg-primary/10" : (isSun ? "bg-rose-50" : "")
                                             )}
                                         >
                                             <div className="flex flex-col leading-none gap-1">
@@ -458,18 +458,18 @@ export default function AttendancePage() {
             </Card>
         </div>
 
-        {/* Mobile View (Vertical Cards) */}
-        <div className="md:hidden flex flex-col gap-4 px-4 pb-20">
+        {/* Mobile & Tablet View (Cards for smaller screens to avoid horizontal scroll) */}
+        <div className="lg:hidden grid grid-cols-1 md:grid-cols-2 gap-4 px-4 pb-20">
             {isLoadingEmployees ? (
-                Array.from({ length: 3 }).map((_, i) => (
+                Array.from({ length: 4 }).map((_, i) => (
                     <div key={i} className="h-64 rounded-3xl bg-muted animate-pulse" />
                 ))
             ) : (
                 employees?.map((emp) => {
                     const summary = getTechnicianSummary(emp.id);
                     return (
-                        <Card key={emp.id} className="rounded-3xl overflow-hidden border-none shadow-md bg-card/50 backdrop-blur-sm">
-                            <CardHeader className="p-5 pb-3 border-b bg-muted/10">
+                        <Card key={emp.id} className="rounded-3xl overflow-hidden border-none shadow-md bg-card/50 backdrop-blur-sm h-full flex flex-col">
+                            <CardHeader className="p-5 pb-3 border-b bg-muted/10 shrink-0">
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -491,8 +491,8 @@ export default function AttendancePage() {
                                     </div>
                                 </div>
                             </CardHeader>
-                            <CardContent className="p-4 pt-5">
-                                <div className="grid grid-cols-7 gap-2">
+                            <CardContent className="p-4 pt-5 flex-1 overflow-hidden">
+                                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                                     {['S','M','T','W','T','F','S'].map((day, i) => (
                                         <div key={i} className={cn("text-center text-[8px] font-black uppercase opacity-40", i === 0 ? "text-rose-600 opacity-100" : "")}>
                                             {day}
