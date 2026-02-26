@@ -286,7 +286,7 @@ export default function AttendancePage() {
   return (
     <AppLayout>
       <TooltipProvider delayDuration={100}>
-      <div className="flex flex-col gap-4 animate-in fade-in duration-500 max-w-full overflow-hidden">
+      <div className="flex flex-col gap-4 animate-in fade-in duration-500 max-w-full overflow-x-hidden">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-2">
           <div className="space-y-1 text-center sm:text-left">
@@ -516,7 +516,7 @@ export default function AttendancePage() {
                                                 onClick={() => handleStatusToggle(emp.id, day)}
                                                 className={cn(
                                                     "h-10 w-full rounded-xl flex flex-col items-center justify-center relative transition-all active:scale-90 cursor-pointer border border-transparent shadow-sm",
-                                                    isSun ? "bg-rose-50/50 border-rose-100" : "bg-muted/30 border-muted-foreground/5",
+                                                    isSun ? "bg-rose-50 border-rose-100" : "bg-muted/30 border-muted-foreground/5",
                                                     isToday(day) ? "ring-2 ring-primary ring-offset-1 z-10" : "",
                                                     getStatusBg(status, false, ot, isSun)
                                                 )}
