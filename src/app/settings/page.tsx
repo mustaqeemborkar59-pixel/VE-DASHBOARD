@@ -1,3 +1,4 @@
+
 'use client';
 import { useCallback, useEffect, useState, useMemo } from "react";
 import AppLayout from "@/components/app-layout";
@@ -16,7 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { BankAccountForm, BankAccountFormData } from "@/components/bank-account-form";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { EllipsisVertical, Pencil, PlusCircle, Trash2, AlignLeft, AlignCenter, AlignRight, Send, Loader2, CheckCircle2 } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Trash2, AlignLeft, AlignCenter, AlignRight, Send, Loader2, CheckCircle2, RefreshCw } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -407,9 +408,14 @@ export default function SettingsPage() {
                                 <CardDescription>Connect your bot to enable auto-replies for Technician Chat IDs.</CardDescription>
                             </div>
                             {botReady ? (
-                                <Badge className="bg-green-600 hover:bg-green-600 flex items-center gap-1 py-1 px-3">
-                                    <CheckCircle2 className="h-3 w-3" /> Bot Active
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                    <Badge className="bg-green-600 hover:bg-green-600 flex items-center gap-1 py-1 px-3">
+                                        <CheckCircle2 className="h-3 w-3" /> Bot Active
+                                    </Badge>
+                                    <Button variant="outline" size="sm" onClick={handleInitTelegram} disabled={isBotSettingUp} className="h-8">
+                                        <RefreshCw className={cn("h-3 w-3 mr-1", isBotSettingUp && "animate-spin")} /> Reconnect
+                                    </Button>
+                                </div>
                             ) : (
                                 <Button onClick={handleInitTelegram} disabled={isBotSettingUp} size="sm" className="bg-blue-600 hover:bg-blue-700">
                                     {isBotSettingUp ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Connecting...</> : "Connect Telegram Bot"}
@@ -421,6 +427,8 @@ export default function SettingsPage() {
                         <p className="text-xs text-muted-foreground leading-relaxed">
                             <b>Instructions:</b> Once connected, tell your technicians to search for your bot on Telegram and type <b>/start</b>. 
                             The bot will automatically reply with their unique Chat ID, which you can then save in their Employee profile.
+                            <br/><br/>
+                            <span className="text-blue-600 font-bold">Note:</span> If you are in a protected development environment, the bot might not receive messages until the app is deployed to a public URL.
                         </p>
                     </CardContent>
                 </Card>

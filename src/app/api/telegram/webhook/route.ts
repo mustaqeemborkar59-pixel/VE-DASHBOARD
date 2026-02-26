@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import { initializeFirebase } from '@/firebase';
 import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
@@ -17,6 +18,8 @@ export async function POST(req: Request) {
 
   try {
     const data = await req.json();
+    console.log('Incoming Telegram Update:', JSON.stringify(data));
+
     const message = data.message || data.edited_message;
 
     if (message && message.text && message.chat) {
@@ -58,7 +61,8 @@ export async function POST(req: Request) {
             await sendTelegramMessage(token, chatId, `Hello ${employee.fullName},\n\nNo salary records found for your account yet. 🔍`);
           } else {
             const salary = salarySnap.docs[0].data();
-            const monthName = new Date(salary.month + "-01").toLocaleString('en-us', { month: 'long', year: 'numeric' });
+            const monthDate = new Date(salary.month + "-01");
+            const monthName = monthDate.toLocaleString('en-us', { month: 'long', year: 'numeric' });
 
             const summary = `📄 *Latest Salary Summary*\n` +
               `━━━━━━━━━━━━━━━━━━\n` +
@@ -67,7 +71,6 @@ export async function POST(req: Request) {
               `🏢 *Firm:* ${salary.enterprise} Enterprises\n\n` +
               `✅ *Attendance:* ${salary.presentDays} / ${salary.workingDays} Days\n` +
               `🕒 *Overtime:* ₹${salary.ot || 0}\n` +
-              `📉 *Deductions:* ₹${(salary.totalDeductions || (salary.netSalary ? (salary.baseSalary + (salary.hra||0) + (salary.ot||0) - salary.netSalary) : 0)).toFixed(0)}\n\n` +
               `💰 *NET PAYABLE:* ₹${salary.netSalary.toLocaleString('en-IN')}\n` +
               `━━━━━━━━━━━━━━━━━━\n` +
               `🏁 *Status:* ${salary.status === 'Paid' ? '✅ PAID' : '⏳ PENDING'}\n\n` +
@@ -79,6 +82,7 @@ export async function POST(req: Request) {
       }
     }
 
+    // Always return 200 OK to Telegram
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('Webhook processing failed:', error);
@@ -87,13 +91,17 @@ export async function POST(req: Request) {
 }
 
 async function sendTelegramMessage(token: string, chatId: string, text: string) {
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: text,
-      parse_mode: 'Markdown',
-    }),
-  });
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: text,
+        parse_mode: 'Markdown',
+      }),
+    });
+  } catch (e) {
+    console.error('Failed to send reply to Telegram:', e);
+  }
 }
