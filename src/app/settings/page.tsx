@@ -1,4 +1,3 @@
-
 'use client';
 import { useCallback, useEffect, useState, useMemo } from "react";
 import AppLayout from "@/components/app-layout";
@@ -23,6 +22,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { setupTelegramWebhook } from "@/app/actions/telegram";
+import { Badge } from "@/components/ui/badge";
 
 
 type Enterprise = 'Vithal' | 'RV';
