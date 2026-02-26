@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -24,6 +23,7 @@ import { generateSalaryPdfSlip, generateSalaryPdfData } from '@/lib/salary-pdf-g
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
 import { sendTelegramDocument } from '@/app/actions/telegram';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Enterprise = 'Vithal' | 'RV';
 
@@ -108,7 +108,6 @@ export default function SalaryPage() {
     return { grossEarnings, totalDeductions, netPay };
   }, [baseSalary, hra, conveyance, medical, special, bonus, ot, pf, esic, pt, tds, lwf, advance, otherDeductions]);
 
-  // Handle auto-populating base salary when employee is selected
   useEffect(() => {
     if (employeeId && !editingSalary) {
         const emp = employees?.find(e => e.id === employeeId);
@@ -299,12 +298,10 @@ export default function SalaryPage() {
 
     setIsSendingTelegram(salary.id);
     try {
-      // 1. Generate PDF as Base64 on client
       const doc = await generateSalaryPdfData(salary, employee, settings);
       const pdfBase64 = doc.output('datauristring');
       const fileName = `Salary_Slip_${salary.month}_${employee.fullName.replace(/\s+/g, '_')}.pdf`;
 
-      // 2. Call Server Action to send via Telegram Bot
       await sendTelegramDocument(employee.telegramChatId, pdfBase64, fileName);
 
       toast({ title: 'Sent Successfully', description: `Salary slip has been sent to ${employee.fullName} via Telegram.` });
@@ -370,7 +367,6 @@ export default function SalaryPage() {
             setPresentDays(String(totalPresent));
             setAbsentDays(String(totalAbsent));
 
-            // Calculate OT Price based on Employee Settings
             const emp = employees?.find(e => e.id === employeeId);
             let calculatedOTPrice = 0;
 
@@ -381,7 +377,6 @@ export default function SalaryPage() {
                 if (emp.otCalculationType === 'fixed' && emp.otHourlyRate) {
                     calculatedOTPrice = totalOTHours * emp.otHourlyRate;
                 } else {
-                    // Precise Pro-rata based on actual month days: (Salary / Actual Days in Month / 8 hours)
                     const hourlyVal = currentSalary / totalMonthDays / 8;
                     calculatedOTPrice = totalOTHours * hourlyVal;
                 }
@@ -391,7 +386,7 @@ export default function SalaryPage() {
 
             toast({ 
                 title: 'Sync Complete', 
-                description: `Fetched ${records.length} records. Calculated ${totalPresent} Present days and ₹${Math.round(calculatedOTPrice)} OT Earnings.` 
+                description: `Fetched ${records.length} records. Calculated ${totalPresent} Present days.` 
             });
         }
     } catch (e) {
@@ -403,6 +398,7 @@ export default function SalaryPage() {
 
   return (
     <AppLayout>
+      <TooltipProvider delayDuration={300}>
       <div className="flex flex-col gap-4 sm:gap-6 animate-in fade-in duration-500">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
@@ -502,19 +498,28 @@ export default function SalaryPage() {
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-right pr-6 space-x-1">
-                                  <Button 
-                                    variant="ghost" 
-                                    title="Send to Telegram" 
-                                    size="icon" 
-                                    disabled={isSending}
-                                    onClick={() => handleSendToTelegram(salary)} 
-                                    className="h-8 w-8 text-blue-600 hover:bg-blue-600/10"
-                                  >
-                                    {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                                  </Button>
-                                  <Button variant="ghost" title="Download PDF" size="icon" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 w-8 text-red-500 hover:bg-red-500/10">
-                                    <FileText className="h-4 w-4" />
-                                  </Button>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        disabled={isSending}
+                                        onClick={() => handleSendToTelegram(salary)} 
+                                        className="h-8 w-8 text-blue-600 hover:bg-blue-600/10"
+                                      >
+                                        {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Send via Telegram</TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 w-8 text-red-500 hover:bg-red-500/10">
+                                        <FileText className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Download PDF</TooltipContent>
+                                  </Tooltip>
                                   <Button variant="ghost" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500 hover:bg-amber-500/10">
                                     <Pencil className="h-4 w-4" />
                                   </Button>
@@ -601,7 +606,7 @@ export default function SalaryPage() {
         </Tabs>
 
         {/* Salary Form Dialog */}
-        <Dialog open={isFormOpen} onOpenChange={(open) => !open && setIsFormOpen(false)}>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
             <DialogHeader className="p-6 pb-0">
               <DialogTitle className="text-xl font-black">{editingSalary ? 'Modify Salary Record' : 'Record Monthly Salary'}</DialogTitle>
@@ -801,6 +806,7 @@ export default function SalaryPage() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+      </TooltipProvider>
     </AppLayout>
   );
 }
