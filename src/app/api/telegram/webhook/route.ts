@@ -14,7 +14,7 @@ const monthMap: Record<string, string> = {
   'feb': '02', 'february': '02',
   'mar': '03', 'march': '03',
   'apr': '04', 'april': '04',
-  'may': '05',
+  'may': '05', 'manual': '05', // common typo
   'jun': '06', 'june': '06',
   'jul': '07', 'july': '07',
   'aug': '08', 'august': '08',
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
       // COMMAND: /start or ID
       if (rawText.startsWith('/start') || rawText === 'id' || rawText === '/id') {
-        const responseText = `Hello ${firstName}! 👋\n\nWelcome to *VE Enterprises Dashboard Bot*.\n\nYour Unique Chat ID is:\n\`${chatId}\`\n\n*Commands:*\n1. Type */slip* - Get latest salary summary.\n2. Type */slips* - List available months.\n3. Type */slip Jan* - Get PDF for January.\n\n_Make sure this ID is saved in your Employee Profile on the dashboard._`;
+        const responseText = `Hello ${firstName}! 👋\n\nWelcome to *VE Enterprises Dashboard Bot*.\n\nYour Unique Chat ID is:\n\`${chatId}\`\n\n*Commands:*\n1. Type */slip* - Get latest salary summary.\n2. Type */slips* - List available months.\n3. Type */slip Jan* - Get PDF for January.\n\n_Make sure this ID is saved in your Employee Profile on the dashboard to receive your slips._`;
         await sendTelegramMessage(token, chatId, responseText);
       } 
       
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
         const empSnap = await getDocs(empQuery);
 
         if (empSnap.empty) {
-          await sendTelegramMessage(token, chatId, "❌ *Chat ID not linked.*\nPlease contact HR with your ID: `" + chatId + "`");
+          await sendTelegramMessage(token, chatId, "❌ *Chat ID not linked.*\nPlease contact HR with your ID: `" + chatId + "` to link your account.");
         } else {
           const employeeId = empSnap.docs[0].id;
           const salaryQuery = query(
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
           const salarySnap = await getDocs(salaryQuery);
 
           if (salarySnap.empty) {
-            await sendTelegramMessage(token, chatId, "🔍 No salary records found for your account.");
+            await sendTelegramMessage(token, chatId, "🔍 No salary records found for your account in our database.");
           } else {
             let list = `📄 *Available Salary Slips:*\n━━━━━━━━━━━━━━━━━━\n`;
             salarySnap.docs.forEach(doc => {
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
               const label = date.toLocaleString('en-us', { month: 'long', year: 'numeric' });
               list += `• ${label} (Type \`/slip ${date.toLocaleString('en-us', { month: 'short' })}\`)\n`;
             });
-            list += `━━━━━━━━━━━━━━━━━━\n_Type the command to get the full PDF._`;
+            list += `━━━━━━━━━━━━━━━━━━\n_Reply with the month name to get the PDF._`;
             await sendTelegramMessage(token, chatId, list);
           }
         }
@@ -87,7 +87,7 @@ export async function POST(req: Request) {
         const empSnap = await getDocs(empQuery);
 
         if (empSnap.empty) {
-          await sendTelegramMessage(token, chatId, "❌ *Unauthorized.*\nLink your Chat ID: `" + chatId + "`");
+          await sendTelegramMessage(token, chatId, "❌ *Unauthorized Access.*\nYour Chat ID (\`${chatId}\`) is not linked to any technician profile.");
         } else {
           const employee = empSnap.docs[0].data();
           const employeeId = empSnap.docs[0].id;
@@ -105,11 +105,12 @@ export async function POST(req: Request) {
 
           let salaryQuery;
           if (targetMonth) {
-            // Find by specific month in the last 2 years
+            // Find by specific month in the last year
+            const currentYear = new Date().getFullYear();
             salaryQuery = query(
               collection(firestore, 'salaries'), 
               where('employeeId', '==', employeeId),
-              where('month', '>=', formatYearMonth(new Date().getFullYear() - 1)),
+              where('month', '>=', `${currentYear - 1}-01`),
               orderBy('month', 'desc')
             );
           } else {
@@ -132,7 +133,10 @@ export async function POST(req: Request) {
           }
 
           if (!salaryDoc) {
-            await sendTelegramMessage(token, chatId, `❌ Sorry, no slip found for the requested period. Type */slips* to see available records.`);
+            const errorMsg = targetMonth 
+              ? `❌ Sorry, no slip found for the month code: ${targetMonth}.`
+              : `❌ Sorry, no salary records found for your account.`;
+            await sendTelegramMessage(token, chatId, `${errorMsg}\nType */slips* to see available records.`);
           } else {
             const salary = salaryDoc.data();
             const monthDate = new Date(salary.month + "-01");
@@ -160,11 +164,11 @@ export async function POST(req: Request) {
                 const pdfBase64 = pdfDoc.output('datauristring');
                 const fileName = `Salary_Slip_${salary.month}_${employee.fullName.replace(/\s+/g, '_')}.pdf`;
                 
-                // Send PDF via Action
+                // Send PDF via helper
                 await sendTelegramPDF(token, chatId, pdfBase64, fileName);
               } catch (pdfErr) {
                 console.error("PDF Bot Error:", pdfErr);
-                await sendTelegramMessage(token, chatId, "_Error generating PDF. Please contact HR._");
+                await sendTelegramMessage(token, chatId, "_Oops! Something went wrong while generating your PDF. Please contact the office._");
               }
             }
           }
@@ -177,10 +181,6 @@ export async function POST(req: Request) {
     console.error('Webhook processing failed:', error);
     return NextResponse.json({ ok: true }); 
   }
-}
-
-function formatYearMonth(year: number) {
-    return `${year}-01`;
 }
 
 async function sendTelegramMessage(token: string, chatId: string, text: string) {
