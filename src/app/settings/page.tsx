@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { setupTelegramWebhook } from "@/app/actions/telegram";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 
 type Enterprise = 'Vithal' | 'RV';
