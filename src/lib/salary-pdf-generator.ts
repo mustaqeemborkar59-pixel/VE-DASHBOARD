@@ -18,6 +18,11 @@ const toWords = new ToWords({
 
 const loadImage = (url: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
+        // Only attempt to load image in browser environment
+        if (typeof window === 'undefined') {
+            reject('Server environment');
+            return;
+        }
         const img = new Image();
         img.crossOrigin = 'Anonymous';
         img.onload = () => resolve(img);
@@ -43,18 +48,20 @@ const renderSingleSlip = (
     const grossEarnings = (salary.baseSalary || 0) + (salary.hra || 0) + (salary.conveyance || 0) + (salary.medical || 0) + (salary.special || 0) + (salary.bonus || 0) + (salary.ot || 0);
     const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.tds || 0) + (salary.advance || 0) + (salary.otherDeductions || 0) + (salary.lwf || 0);
 
-    // --- Watermark (15% Transparency) ---
+    // --- Watermark (15% Transparency) - Only works if GState is available (browser) ---
     if (logoImg) {
-        doc.saveGraphicsState();
         try {
+            doc.saveGraphicsState();
             const gState = new (doc as any).GState({ opacity: 0.15 });
             doc.setGState(gState);
-        } catch (e) { }
-        const imgSize = 120;
-        const centerX = (210 - imgSize) / 2;
-        const centerY = (148.5 - imgSize) / 2;
-        doc.addImage(logoImg, 'PNG', centerX, centerY, imgSize, imgSize);
-        doc.restoreGraphicsState();
+            const imgSize = 120;
+            const centerX = (210 - imgSize) / 2;
+            const centerY = (148.5 - imgSize) / 2;
+            doc.addImage(logoImg, 'PNG', centerX, centerY, imgSize, imgSize);
+            doc.restoreGraphicsState();
+        } catch (e) { 
+            // Fallback for environments where GState isn't fully supported
+        }
     }
     
     // 1) Company Details
