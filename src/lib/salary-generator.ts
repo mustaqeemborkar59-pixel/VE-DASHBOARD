@@ -30,6 +30,13 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
     const noBorder = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
 
     const doc = new Document({
+        styles: {
+            default: {
+                run: {
+                    font: "Calibri",
+                },
+            },
+        },
         sections: [{
             properties: {
                 page: {
@@ -81,12 +88,12 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                             children: [
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Employee Name: ", bold: true, size: 16 }), new TextRun({ text: employee.fullName, size: 16 })] })],
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Employee Name: ", bold: true, size: 16, font: "Calibri" }), new TextRun({ text: employee.fullName, size: 16, font: "Calibri" })] })],
                                     margins: { left: 0 },
                                 }),
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Salary Month: ", bold: true, size: 16 }), new TextRun({ text: monthDisplay, size: 16 })] })],
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Salary Month: ", bold: true, size: 16, font: "Calibri" }), new TextRun({ text: monthDisplay, size: 16, font: "Calibri" })] })],
                                     margins: { left: 0 },
                                 }),
                             ],
@@ -94,50 +101,50 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Employee ID: ", bold: true, size: 16 }), new TextRun({ text: employee.empCode || 'N/A', size: 16 })] })],
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Employee ID: ", bold: true, size: 16, font: "Calibri" }), new TextRun({ text: employee.empCode || 'N/A', size: 16, font: "Calibri" })] })],
                                 }),
                                 new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Total Work Days: ", bold: true, size: 16 }), new TextRun({ text: String(salary.workingDays || 0), size: 16 })] })],
-                                }),
-                            ],
-                        }),
-                        new DocxTableRow({
-                            children: [
-                                new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Designation: ", bold: true, size: 16 }), new TextRun({ text: employee.specialization || 'N/A', size: 16 })] })],
-                                }),
-                                new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Present Days: ", bold: true, size: 16 }), new TextRun({ text: String(salary.presentDays || 0), size: 16 })] })],
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Total Work Days: ", bold: true, size: 16, font: "Calibri" }), new TextRun({ text: String(salary.workingDays || 0), size: 16, font: "Calibri" })] })],
                                 }),
                             ],
                         }),
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Date of Joining: ", bold: true, size: 16 }), new TextRun({ text: dojDisplay, size: 16 })] })],
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Designation: ", bold: true, size: 16, font: "Calibri" }), new TextRun({ text: employee.specialization || 'N/A', size: 16, font: "Calibri" })] })],
                                 }),
                                 new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Leave / Absent: ", bold: true, size: 16 }), new TextRun({ text: String(salary.absentDays || 0), size: 16 })] })],
-                                }),
-                            ],
-                        }),
-                        new DocxTableRow({
-                            children: [
-                                new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "PAN Number: ", bold: true, size: 16 }), new TextRun({ text: employee.panNumber || 'N/A', size: 16 })] })],
-                                }),
-                                new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Pay Date: ", bold: true, size: 16 }), new TextRun({ text: paymentDateDisplay, size: 16 })] })],
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Present Days: ", bold: true, size: 16, font: "Calibri" }), new TextRun({ text: String(salary.presentDays || 0), size: 16, font: "Calibri" })] })],
                                 }),
                             ],
                         }),
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "UAN Number: ", bold: true, size: 16 }), new TextRun({ text: employee.uanNumber || 'N/A', size: 16 })] })],
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Date of Joining: ", bold: true, size: 16, font: "Calibri" }), new TextRun({ text: dojDisplay, size: 16, font: "Calibri" })] })],
                                 }),
                                 new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Bank Account: ", bold: true, size: 16 }), new TextRun({ text: `${employee.bankName || ''} (${bankDisplay})`, size: 16 })] })],
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Leave / Absent: ", bold: true, size: 16, font: "Calibri" }), new TextRun({ text: String(salary.absentDays || 0), size: 16, font: "Calibri" })] })],
+                                }),
+                            ],
+                        }),
+                        new DocxTableRow({
+                            children: [
+                                new DocxTableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: "PAN Number: ", bold: true, size: 16, font: "Calibri" }), new TextRun({ text: employee.panNumber || 'N/A', size: 16, font: "Calibri" })] })],
+                                }),
+                                new DocxTableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Pay Date: ", bold: true, size: 16, font: "Calibri" }), new TextRun({ text: paymentDateDisplay, size: 16, font: "Calibri" })] })],
+                                }),
+                            ],
+                        }),
+                        new DocxTableRow({
+                            children: [
+                                new DocxTableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: "UAN Number: ", bold: true, size: 16, font: "Calibri" }), new TextRun({ text: employee.uanNumber || 'N/A', size: 16, font: "Calibri" })] })],
+                                }),
+                                new DocxTableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Bank Account: ", bold: true, size: 16, font: "Calibri" }), new TextRun({ text: `${employee.bankName || ''} (${bankDisplay})`, size: 16, font: "Calibri" })] })],
                                 }),
                             ],
                         }),
@@ -152,10 +159,10 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                     rows: [
                         new DocxTableRow({
                             children: [
-                                new DocxTableCell({ children: [new Paragraph({ text: "EARNINGS", bold: true, alignment: AlignmentType.CENTER, size: 16 })], borders: { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "AMOUNT (INR)", bold: true, alignment: AlignmentType.CENTER, size: 16 })], borders: { top: borderStyle, bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "DEDUCTIONS", bold: true, alignment: AlignmentType.CENTER, size: 16 })], borders: { top: borderStyle, bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "AMOUNT (INR)", bold: true, alignment: AlignmentType.CENTER, size: 16 })], borders: { top: borderStyle, bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({ text: "EARNINGS", bold: true, size: 16, font: "Calibri" })], alignment: AlignmentType.CENTER })], borders: { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({ text: "AMOUNT (INR)", bold: true, size: 16, font: "Calibri" })], alignment: AlignmentType.CENTER })], borders: { top: borderStyle, bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({ text: "DEDUCTIONS", bold: true, size: 16, font: "Calibri" })], alignment: AlignmentType.CENTER })], borders: { top: borderStyle, bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({ text: "AMOUNT (INR)", bold: true, size: 16, font: "Calibri" })], alignment: AlignmentType.CENTER })], borders: { top: borderStyle, bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
                             ]
                         }),
                         // Rows
@@ -169,19 +176,19 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                             { e: "Overtime (OT)", ev: salary.ot, d: "Other Deductions", dv: salary.otherDeductions },
                         ].map(row => new DocxTableRow({
                             children: [
-                                new DocxTableCell({ children: [new Paragraph({ text: row.e, size: 16 })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (row.ev || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }), alignment: AlignmentType.RIGHT, size: 16 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: row.d, size: 16 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (row.dv || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }), alignment: AlignmentType.RIGHT, size: 16 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({ text: row.e, size: 16, font: "Calibri" })] })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({ text: (row.ev || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }), size: 16, font: "Calibri" })], alignment: AlignmentType.RIGHT })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({ text: row.d, size: 16, font: "Calibri" })] })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({ text: (row.dv || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }), size: 16, font: "Calibri" })], alignment: AlignmentType.RIGHT })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
                             ]
                         })),
                         // Totals Row
                         new DocxTableRow({
                             children: [
-                                new DocxTableCell({ children: [new Paragraph({ text: "Gross Total", bold: true, size: 16 })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: grossEarnings.toLocaleString('en-IN', { minimumFractionDigits: 2 }), bold: true, alignment: AlignmentType.RIGHT, size: 16 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "Total Deductions", bold: true, size: 16 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: totalDeductions.toLocaleString('en-IN', { minimumFractionDigits: 2 }), bold: true, alignment: AlignmentType.RIGHT, size: 16 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Gross Total", bold: true, size: 16, font: "Calibri" })] })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({ text: grossEarnings.toLocaleString('en-IN', { minimumFractionDigits: 2 }), bold: true, size: 16, font: "Calibri" })], alignment: AlignmentType.RIGHT })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Total Deductions", bold: true, size: 16, font: "Calibri" })] })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ children: [new TextRun({ text: totalDeductions.toLocaleString('en-IN', { minimumFractionDigits: 2 }), bold: true, size: 16, font: "Calibri" })], alignment: AlignmentType.RIGHT })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
                             ]
                         }),
                     ],
