@@ -102,12 +102,17 @@ export default function SalaryPage() {
     const v_advance = parseFloat(advance) || 0;
     const v_other = parseFloat(otherDeductions) || 0;
 
+    // Automatic Absent Deduction Logic
+    const totalDays = parseFloat(workingDays) || 1;
+    const absDays = parseFloat(absentDays) || 0;
+    const absentDeduction = Math.round((basic / totalDays) * absDays);
+
     const grossEarnings = basic + v_hra + v_conveyance + v_medical + v_special + v_bonus + v_ot;
-    const totalDeductions = v_pf + v_esic + v_pt + v_tds + v_lwf + v_advance + v_other;
+    const totalDeductions = v_pf + v_esic + v_pt + v_tds + v_lwf + v_advance + v_other + absentDeduction;
     const netPay = Math.max(0, grossEarnings - totalDeductions);
 
-    return { grossEarnings, totalDeductions, netPay };
-  }, [baseSalary, hra, conveyance, medical, special, bonus, ot, pf, esic, pt, tds, lwf, advance, otherDeductions]);
+    return { grossEarnings, totalDeductions, netPay, absentDeduction };
+  }, [baseSalary, hra, conveyance, medical, special, bonus, ot, pf, esic, pt, tds, lwf, advance, otherDeductions, workingDays, absentDays]);
 
   useEffect(() => {
     if (employeeId && !editingSalary) {
@@ -237,6 +242,7 @@ export default function SalaryPage() {
       tds: parseFloat(tds) || 0,
       lwf: parseFloat(lwf) || 0,
       advance: parseFloat(advance) || 0,
+      absentDeduction: calculations.absentDeduction,
       otherDeductions: parseFloat(otherDeductions) || 0,
       netSalary: calculations.netPay,
       paymentDate,
@@ -767,6 +773,12 @@ export default function SalaryPage() {
                     <Calculator className="h-4 w-4" /> Deductions
                   </h3>
                   <div className="grid gap-3">
+                    {/* Absent Deduction Display */}
+                    <div className="grid grid-cols-2 items-center gap-4 text-red-600">
+                      <Label className="text-xs font-bold">Absent Deduction</Label>
+                      <div className="text-right text-sm font-black">- ₹{calculations.absentDeduction.toLocaleString('en-IN')}</div>
+                    </div>
+                    
                     <div className="grid grid-cols-2 items-center gap-4">
                       <Label className="text-xs">P.F.</Label>
                       <Input type="number" value={pf} onChange={(e) => setPf(e.target.value)} className="h-8 font-mono" />

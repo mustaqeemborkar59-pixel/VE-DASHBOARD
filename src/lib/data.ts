@@ -245,7 +245,7 @@ export type Salary = {
   conveyance: number;
   medical: number;
   special: number;
-  bonus: number; // Added
+  bonus: number;
   ot: number; // Overtime
   pf: number;
   esic: number;
@@ -253,7 +253,8 @@ export type Salary = {
   tds: number;
   lwf: number;
   advance: number;
-  otherDeductions: number; // Added
+  absentDeduction: number; // Added for automatic deduction
+  otherDeductions: number;
   netSalary: number;
   paymentDate: string; // YYYY-MM-DD
   status: 'Paid' | 'Pending';

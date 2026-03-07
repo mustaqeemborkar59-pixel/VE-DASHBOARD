@@ -46,9 +46,9 @@ const renderSingleSlip = (
     const monthDisplay = format(parseISO(`${salary.month}-01`), 'MMMM yyyy').toUpperCase();
 
     const grossEarnings = (salary.baseSalary || 0) + (salary.hra || 0) + (salary.conveyance || 0) + (salary.medical || 0) + (salary.special || 0) + (salary.bonus || 0) + (salary.ot || 0);
-    const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.tds || 0) + (salary.advance || 0) + (salary.otherDeductions || 0) + (salary.lwf || 0);
+    const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.tds || 0) + (salary.advance || 0) + (salary.otherDeductions || 0) + (salary.lwf || 0) + (salary.absentDeduction || 0);
 
-    // --- Watermark (15% Transparency) - Only works if GState is available (browser) ---
+    // --- Watermark (15% Transparency) ---
     if (logoImg) {
         try {
             doc.saveGraphicsState();
@@ -59,9 +59,7 @@ const renderSingleSlip = (
             const centerY = (148.5 - imgSize) / 2;
             doc.addImage(logoImg, 'PNG', centerX, centerY, imgSize, imgSize);
             doc.restoreGraphicsState();
-        } catch (e) { 
-            // Fallback for environments where GState isn't fully supported
-        }
+        } catch (e) { }
     }
     
     // 1) Company Details
@@ -146,6 +144,7 @@ const renderSingleSlip = (
         margin: { left: 107, right: 14 },
         head: [['Deductions', 'Amount (INR)']],
         body: [
+            ['Absent Deduction', (salary.absentDeduction || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             ['Provident Fund (PF)', (salary.pf || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             ['E.S.I.C.', (salary.esic || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             ['Professional Tax', (salary.pt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
