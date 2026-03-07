@@ -24,25 +24,9 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
     const grossEarnings = (salary.baseSalary || 0) + (salary.hra || 0) + (salary.conveyance || 0) + (salary.medical || 0) + (salary.special || 0) + (salary.bonus || 0) + (salary.ot || 0);
     const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.tds || 0) + (salary.advance || 0) + (salary.otherDeductions || 0) + (salary.lwf || 0) + (salary.absentDeduction || 0);
 
-    const cellMargins = { top: 100, bottom: 100, left: 150, right: 150 };
-    const borderStyle = { style: BorderStyle.SINGLE, size: 6, color: "000000" };
-
-    const createTableRow = (label: string, value: string, isBold = false) => {
-        return new DocxTableRow({
-            children: [
-                new DocxTableCell({
-                    children: [new Paragraph({ children: [new TextRun({ text: label, bold: isBold, font: "Calibri", size: 18 })] })],
-                    borders: { bottom: borderStyle, left: borderStyle, right: borderStyle },
-                    margins: cellMargins,
-                }),
-                new DocxTableCell({
-                    children: [new Paragraph({ children: [new TextRun({ text: value, bold: isBold, font: "Calibri", size: 18 })], alignment: AlignmentType.RIGHT })],
-                    borders: { bottom: borderStyle, right: borderStyle },
-                    margins: cellMargins,
-                }),
-            ],
-        });
-    };
+    const cellMargins = { top: 80, bottom: 80, left: 100, right: 100 };
+    const borderStyle = { style: BorderStyle.SINGLE, size: 4, color: "000000" };
+    const noBorder = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
 
     const doc = new Document({
         sections: [{
@@ -53,37 +37,48 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                 },
             },
             children: [
+                // Header: Company Details
                 new Paragraph({
                     children: [new TextRun({ text: company.companyName.toUpperCase(), bold: true, size: 32, font: "Calibri" })],
                     alignment: AlignmentType.CENTER,
                 }),
                 new Paragraph({
-                    children: [new TextRun({ text: company.address, size: 18, font: "Calibri" })],
+                    children: [new TextRun({ text: company.address, size: 16, font: "Calibri" })],
                     alignment: AlignmentType.CENTER,
                 }),
                 new Paragraph({
-                    children: [new TextRun({ text: `Contact: ${company.contactNumber} | GSTIN: ${company.gstin}`, size: 18, font: "Calibri" })],
+                    children: [new TextRun({ text: `Contact: ${company.contactNumber} | GSTIN: ${company.gstin}`, size: 16, font: "Calibri" })],
                     alignment: AlignmentType.CENTER,
-                    spacing: { after: 200 },
+                    spacing: { after: 100 },
                 }),
-                new Paragraph({
-                    children: [new TextRun({ text: `SALARY SLIP - ${monthDisplay}`, bold: true, size: 24, font: "Calibri", underline: {} })],
-                    alignment: AlignmentType.CENTER,
-                    spacing: { after: 400 },
+                
+                // Line Separator
+                new DocxTable({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    rows: [new DocxTableRow({ children: [new DocxTableCell({ children: [], borders: { top: borderStyle, bottom: noBorder, left: noBorder, right: noBorder } })] })]
                 }),
 
+                new Paragraph({
+                    children: [new TextRun({ text: `SALARY SLIP - ${monthDisplay}`, bold: true, size: 22, font: "Calibri" })],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { before: 200, after: 300 },
+                }),
+
+                // Employee Information Table
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
                     rows: [
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Employee Name:", bold: true, font: "Calibri", size: 18 }), new TextRun({ text: ` ${employee.fullName}`, size: 18, font: "Calibri" })] })],
+                                    width: { size: 50, type: WidthType.PERCENTAGE },
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Employee Name: ", bold: true, size: 16 }), new TextRun({ text: employee.fullName, size: 16 })] })],
                                     borders: { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle },
                                     margins: cellMargins,
                                 }),
                                 new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Salary Month:", bold: true, font: "Calibri", size: 18 }), new TextRun({ text: ` ${monthDisplay}`, size: 18, font: "Calibri" })] })],
+                                    width: { size: 50, type: WidthType.PERCENTAGE },
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Salary Month: ", bold: true, size: 16 }), new TextRun({ text: monthDisplay, size: 16 })] })],
                                     borders: { top: borderStyle, bottom: borderStyle, right: borderStyle },
                                     margins: cellMargins,
                                 }),
@@ -92,12 +87,12 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Designation:", bold: true, font: "Calibri", size: 18 }), new TextRun({ text: ` ${employee.specialization || 'N/A'}`, size: 18, font: "Calibri" })] })],
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Employee ID: ", bold: true, size: 16 }), new TextRun({ text: employee.empCode || 'N/A', size: 16 })] })],
                                     borders: { bottom: borderStyle, left: borderStyle, right: borderStyle },
                                     margins: cellMargins,
                                 }),
                                 new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Work Days:", bold: true, font: "Calibri", size: 18 }), new TextRun({ text: ` ${salary.workingDays}`, size: 18, font: "Calibri" })] })],
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Total Work Days: ", bold: true, size: 16 }), new TextRun({ text: String(salary.workingDays || 0), size: 16 })] })],
                                     borders: { bottom: borderStyle, right: borderStyle },
                                     margins: cellMargins,
                                 }),
@@ -106,12 +101,40 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Date of Joining:", bold: true, font: "Calibri", size: 18 }), new TextRun({ text: ` ${dojDisplay}`, size: 18, font: "Calibri" })] })],
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Designation: ", bold: true, size: 16 }), new TextRun({ text: employee.specialization || 'N/A', size: 16 })] })],
                                     borders: { bottom: borderStyle, left: borderStyle, right: borderStyle },
                                     margins: cellMargins,
                                 }),
                                 new DocxTableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: "Present Days:", bold: true, font: "Calibri", size: 18 }), new TextRun({ text: ` ${salary.presentDays}`, size: 18, font: "Calibri" })] })],
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Present Days: ", bold: true, size: 16 }), new TextRun({ text: String(salary.presentDays || 0), size: 16 })] })],
+                                    borders: { bottom: borderStyle, right: borderStyle },
+                                    margins: cellMargins,
+                                }),
+                            ],
+                        }),
+                        new DocxTableRow({
+                            children: [
+                                new DocxTableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Date of Joining: ", bold: true, size: 16 }), new TextRun({ text: dojDisplay, size: 16 })] })],
+                                    borders: { bottom: borderStyle, left: borderStyle, right: borderStyle },
+                                    margins: cellMargins,
+                                }),
+                                new DocxTableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Leave / Absent: ", bold: true, size: 16 }), new TextRun({ text: String(salary.absentDays || 0), size: 16 })] })],
+                                    borders: { bottom: borderStyle, right: borderStyle },
+                                    margins: cellMargins,
+                                }),
+                            ],
+                        }),
+                        new DocxTableRow({
+                            children: [
+                                new DocxTableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: "PAN Number: ", bold: true, size: 16 }), new TextRun({ text: employee.panNumber || 'N/A', size: 16 })] })],
+                                    borders: { bottom: borderStyle, left: borderStyle, right: borderStyle },
+                                    margins: cellMargins,
+                                }),
+                                new DocxTableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Pay Date: ", bold: true, size: 16 }), new TextRun({ text: paymentDateDisplay, size: 16 })] })],
                                     borders: { bottom: borderStyle, right: borderStyle },
                                     margins: cellMargins,
                                 }),
@@ -120,127 +143,84 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                     ],
                 }),
 
-                new Paragraph({ text: "", spacing: { before: 400 } }),
+                new Paragraph({ text: "", spacing: { before: 300 } }),
 
+                // Earnings & Deductions Tables (Side by Side in 4 cols)
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
                     rows: [
                         new DocxTableRow({
                             children: [
-                                new DocxTableCell({ children: [new Paragraph({ text: "EARNINGS", bold: true, alignment: AlignmentType.CENTER, font: "Calibri", size: 18 })], borders: { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "AMOUNT", bold: true, alignment: AlignmentType.CENTER, font: "Calibri", size: 18 })], borders: { top: borderStyle, bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "DEDUCTIONS", bold: true, alignment: AlignmentType.CENTER, font: "Calibri", size: 18 })], borders: { top: borderStyle, bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "AMOUNT", bold: true, alignment: AlignmentType.CENTER, font: "Calibri", size: 18 })], borders: { top: borderStyle, bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: "EARNINGS", bold: true, alignment: AlignmentType.CENTER, size: 16 })], borders: { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: "AMOUNT (INR)", bold: true, alignment: AlignmentType.CENTER, size: 16 })], borders: { top: borderStyle, bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: "DEDUCTIONS", bold: true, alignment: AlignmentType.CENTER, size: 16 })], borders: { top: borderStyle, bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: "AMOUNT (INR)", bold: true, alignment: AlignmentType.CENTER, size: 16 })], borders: { top: borderStyle, bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
                             ]
                         }),
-                        // Row 1: Basic & Absent
-                        new DocxTableRow({
+                        // Rows
+                        ...[
+                            { e: "Basic Salary", ev: salary.baseSalary, d: "Absent Deduction", dv: salary.absentDeduction },
+                            { e: "H.R.A.", ev: salary.hra, d: "Provident Fund (PF)", dv: salary.pf },
+                            { e: "Conveyance Allw.", ev: salary.conveyance, d: "E.S.I.C.", dv: salary.esic },
+                            { e: "Medical Allowance", ev: salary.medical, d: "T.D.S.", dv: salary.tds },
+                            { e: "Special Allowance", ev: salary.special, d: "Loan / Advance", dv: salary.advance },
+                            { e: "Bonus / Incentive", ev: salary.bonus, d: "L.W.F.", dv: salary.lwf },
+                            { e: "Overtime (OT)", ev: salary.ot, d: "Other Deductions", dv: salary.otherDeductions },
+                        ].map(row => new DocxTableRow({
                             children: [
-                                new DocxTableCell({ children: [new Paragraph({ text: "Basic Salary", font: "Calibri", size: 18 })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (salary.baseSalary || 0).toLocaleString('en-IN'), alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "Absent Deduction", font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (salary.absentDeduction || 0).toLocaleString('en-IN'), alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: row.e, size: 16 })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: (row.ev || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }), alignment: AlignmentType.RIGHT, size: 16 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: row.d, size: 16 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: (row.dv || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }), alignment: AlignmentType.RIGHT, size: 16 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
                             ]
-                        }),
-                        // Row 2: HRA & PF
-                        new DocxTableRow({
-                            children: [
-                                new DocxTableCell({ children: [new Paragraph({ text: "H.R.A.", font: "Calibri", size: 18 })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (salary.hra || 0).toLocaleString('en-IN'), alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "Provident Fund (PF)", font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (salary.pf || 0).toLocaleString('en-IN'), alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                            ]
-                        }),
-                        // Row 3: Conveyance & ESIC
-                        new DocxTableRow({
-                            children: [
-                                new DocxTableCell({ children: [new Paragraph({ text: "Conveyance", font: "Calibri", size: 18 })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (salary.conveyance || 0).toLocaleString('en-IN'), alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "E.S.I.C.", font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (salary.esic || 0).toLocaleString('en-IN'), alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                            ]
-                        }),
-                        // Row 4: Medical & TDS
-                        new DocxTableRow({
-                            children: [
-                                new DocxTableCell({ children: [new Paragraph({ text: "Medical Allowance", font: "Calibri", size: 18 })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (salary.medical || 0).toLocaleString('en-IN'), alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "T.D.S.", font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (salary.tds || 0).toLocaleString('en-IN'), alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                            ]
-                        }),
-                        // Row 5: Special & Advance
-                        new DocxTableRow({
-                            children: [
-                                new DocxTableCell({ children: [new Paragraph({ text: "Special Allowance", font: "Calibri", size: 18 })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (salary.special || 0).toLocaleString('en-IN'), alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "Loan / Advance", font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (salary.advance || 0).toLocaleString('en-IN'), alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                            ]
-                        }),
-                        // Row 6: Bonus & LWF
-                        new DocxTableRow({
-                            children: [
-                                new DocxTableCell({ children: [new Paragraph({ text: "Bonus / Incentives", font: "Calibri", size: 18 })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (salary.bonus || 0).toLocaleString('en-IN'), alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "L.W.F.", font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (salary.lwf || 0).toLocaleString('en-IN'), alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                            ]
-                        }),
-                        // Row 7: OT & Other
-                        new DocxTableRow({
-                            children: [
-                                new DocxTableCell({ children: [new Paragraph({ text: "Overtime (OT)", font: "Calibri", size: 18 })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (salary.ot || 0).toLocaleString('en-IN'), alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "Other Deductions", font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: (salary.otherDeductions || 0).toLocaleString('en-IN'), alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                            ]
-                        }),
+                        })),
                         // Totals Row
                         new DocxTableRow({
                             children: [
-                                new DocxTableCell({ children: [new Paragraph({ text: "Gross Total", bold: true, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: grossEarnings.toLocaleString('en-IN'), bold: true, alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: "Total Deductions", bold: true, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: totalDeductions.toLocaleString('en-IN'), bold: true, alignment: AlignmentType.RIGHT, font: "Calibri", size: 18 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: "Gross Total", bold: true, size: 16 })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: grossEarnings.toLocaleString('en-IN', { minimumFractionDigits: 2 }), bold: true, alignment: AlignmentType.RIGHT, size: 16 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: "Total Deductions", bold: true, size: 16 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: totalDeductions.toLocaleString('en-IN', { minimumFractionDigits: 2 }), bold: true, alignment: AlignmentType.RIGHT, size: 16 })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
                             ]
                         }),
                     ],
                 }),
 
-                new Paragraph({ text: "", spacing: { before: 200 } }),
+                new Paragraph({ text: "", spacing: { before: 300 } }),
 
+                // Net Payable
                 new Paragraph({
                     children: [
-                        new TextRun({ text: "NET PAYABLE SALARY: ", bold: true, font: "Calibri", size: 22 }),
-                        new TextRun({ text: `Rs. ${salary.netSalary.toLocaleString('en-IN')}/-`, bold: true, font: "Calibri", size: 22 })
+                        new TextRun({ text: "NET PAYABLE SALARY: ", bold: true, size: 20, font: "Calibri" }),
+                        new TextRun({ text: `Rs. ${salary.netSalary.toLocaleString('en-IN', { minimumFractionDigits: 2 })}/-`, bold: true, size: 20, font: "Calibri" })
                     ],
-                    spacing: { before: 200 },
+                    spacing: { before: 100 },
                 }),
 
                 new Paragraph({
-                    children: [new TextRun({ text: `Amount in words: ${netSalaryWords}`, font: "Calibri", italic: true, size: 18 })],
+                    children: [new TextRun({ text: `Amount in words: ${netSalaryWords}`, font: "Calibri", italic: true, size: 16 })],
                     spacing: { before: 100 },
                 }),
 
                 new Paragraph({ text: "", spacing: { before: 800 } }),
 
+                // Signatures
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
-                    borders: { top: BorderStyle.NONE, bottom: BorderStyle.NONE, left: BorderStyle.NONE, right: BorderStyle.NONE, insideHorizontal: BorderStyle.NONE, insideVertical: BorderStyle.NONE },
+                    borders: { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder, insideHorizontal: noBorder, insideVertical: noBorder },
                     rows: [
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
                                     children: [
                                         new Paragraph({ text: "____________________", alignment: AlignmentType.CENTER }),
-                                        new Paragraph({ text: "Employee Signature", alignment: AlignmentType.CENTER, font: "Calibri", size: 18 })
+                                        new Paragraph({ text: "Employee Signature", alignment: AlignmentType.CENTER, size: 16, font: "Calibri" })
                                     ]
                                 }),
                                 new DocxTableCell({
                                     children: [
                                         new Paragraph({ text: "____________________", alignment: AlignmentType.CENTER }),
-                                        new Paragraph({ text: "Authorized Signatory", alignment: AlignmentType.CENTER, font: "Calibri", size: 18 })
+                                        new Paragraph({ text: "Authorized Signatory", alignment: AlignmentType.CENTER, size: 16, font: "Calibri" })
                                     ]
                                 }),
                             ]
