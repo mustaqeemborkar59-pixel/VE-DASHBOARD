@@ -20,6 +20,7 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
     const monthDisplay = format(parseISO(`${salary.month}-01`), 'MMMM yyyy').toUpperCase();
     const paymentDateDisplay = salary.paymentDate ? format(parseISO(salary.paymentDate), 'dd/MM/yyyy') : 'N/A';
     const dojDisplay = employee.doj ? format(parseISO(employee.doj), 'dd/MM/yyyy') : 'N/A';
+    const bankDisplay = employee.bankAccountNumber ? `****${employee.bankAccountNumber.slice(-4)}` : 'N/A';
 
     const grossEarnings = (salary.baseSalary || 0) + (salary.hra || 0) + (salary.conveyance || 0) + (salary.medical || 0) + (salary.special || 0) + (salary.bonus || 0) + (salary.ot || 0);
     const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.tds || 0) + (salary.advance || 0) + (salary.otherDeductions || 0) + (salary.lwf || 0) + (salary.absentDeduction || 0);
@@ -39,7 +40,7 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
             children: [
                 // Header: Company Details
                 new Paragraph({
-                    children: [new TextRun({ text: company.companyName.toUpperCase(), bold: true, size: 32, font: "Calibri" })],
+                    children: [new TextRun({ text: company.companyName.toUpperCase(), bold: true, size: 28, font: "Calibri" })],
                     alignment: AlignmentType.CENTER,
                 }),
                 new Paragraph({
@@ -47,7 +48,7 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                     alignment: AlignmentType.CENTER,
                 }),
                 new Paragraph({
-                    children: [new TextRun({ text: `Contact: ${company.contactNumber} | GSTIN: ${company.gstin}`, size: 16, font: "Calibri" })],
+                    children: [new TextRun({ text: `${company.contactNumber ? `Contact: ${company.contactNumber}` : ''} ${company.gstin ? ` | GSTIN: ${company.gstin}` : ''}`, size: 16, font: "Calibri" })],
                     alignment: AlignmentType.CENTER,
                     spacing: { after: 100 },
                 }),
@@ -64,23 +65,29 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                     spacing: { before: 200, after: 300 },
                 }),
 
-                // Employee Information Table
+                // Employee Information Section (No visible table borders to match PDF)
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
+                    borders: {
+                        top: noBorder,
+                        bottom: noBorder,
+                        left: noBorder,
+                        right: noBorder,
+                        insideHorizontal: noBorder,
+                        insideVertical: noBorder,
+                    },
                     rows: [
                         new DocxTableRow({
                             children: [
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [new Paragraph({ children: [new TextRun({ text: "Employee Name: ", bold: true, size: 16 }), new TextRun({ text: employee.fullName, size: 16 })] })],
-                                    borders: { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle },
-                                    margins: cellMargins,
+                                    margins: { left: 0 },
                                 }),
                                 new DocxTableCell({
                                     width: { size: 50, type: WidthType.PERCENTAGE },
                                     children: [new Paragraph({ children: [new TextRun({ text: "Salary Month: ", bold: true, size: 16 }), new TextRun({ text: monthDisplay, size: 16 })] })],
-                                    borders: { top: borderStyle, bottom: borderStyle, right: borderStyle },
-                                    margins: cellMargins,
+                                    margins: { left: 0 },
                                 }),
                             ],
                         }),
@@ -88,13 +95,9 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                             children: [
                                 new DocxTableCell({
                                     children: [new Paragraph({ children: [new TextRun({ text: "Employee ID: ", bold: true, size: 16 }), new TextRun({ text: employee.empCode || 'N/A', size: 16 })] })],
-                                    borders: { bottom: borderStyle, left: borderStyle, right: borderStyle },
-                                    margins: cellMargins,
                                 }),
                                 new DocxTableCell({
                                     children: [new Paragraph({ children: [new TextRun({ text: "Total Work Days: ", bold: true, size: 16 }), new TextRun({ text: String(salary.workingDays || 0), size: 16 })] })],
-                                    borders: { bottom: borderStyle, right: borderStyle },
-                                    margins: cellMargins,
                                 }),
                             ],
                         }),
@@ -102,13 +105,9 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                             children: [
                                 new DocxTableCell({
                                     children: [new Paragraph({ children: [new TextRun({ text: "Designation: ", bold: true, size: 16 }), new TextRun({ text: employee.specialization || 'N/A', size: 16 })] })],
-                                    borders: { bottom: borderStyle, left: borderStyle, right: borderStyle },
-                                    margins: cellMargins,
                                 }),
                                 new DocxTableCell({
                                     children: [new Paragraph({ children: [new TextRun({ text: "Present Days: ", bold: true, size: 16 }), new TextRun({ text: String(salary.presentDays || 0), size: 16 })] })],
-                                    borders: { bottom: borderStyle, right: borderStyle },
-                                    margins: cellMargins,
                                 }),
                             ],
                         }),
@@ -116,13 +115,9 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                             children: [
                                 new DocxTableCell({
                                     children: [new Paragraph({ children: [new TextRun({ text: "Date of Joining: ", bold: true, size: 16 }), new TextRun({ text: dojDisplay, size: 16 })] })],
-                                    borders: { bottom: borderStyle, left: borderStyle, right: borderStyle },
-                                    margins: cellMargins,
                                 }),
                                 new DocxTableCell({
                                     children: [new Paragraph({ children: [new TextRun({ text: "Leave / Absent: ", bold: true, size: 16 }), new TextRun({ text: String(salary.absentDays || 0), size: 16 })] })],
-                                    borders: { bottom: borderStyle, right: borderStyle },
-                                    margins: cellMargins,
                                 }),
                             ],
                         }),
@@ -130,13 +125,19 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                             children: [
                                 new DocxTableCell({
                                     children: [new Paragraph({ children: [new TextRun({ text: "PAN Number: ", bold: true, size: 16 }), new TextRun({ text: employee.panNumber || 'N/A', size: 16 })] })],
-                                    borders: { bottom: borderStyle, left: borderStyle, right: borderStyle },
-                                    margins: cellMargins,
                                 }),
                                 new DocxTableCell({
                                     children: [new Paragraph({ children: [new TextRun({ text: "Pay Date: ", bold: true, size: 16 }), new TextRun({ text: paymentDateDisplay, size: 16 })] })],
-                                    borders: { bottom: borderStyle, right: borderStyle },
-                                    margins: cellMargins,
+                                }),
+                            ],
+                        }),
+                        new DocxTableRow({
+                            children: [
+                                new DocxTableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: "UAN Number: ", bold: true, size: 16 }), new TextRun({ text: employee.uanNumber || 'N/A', size: 16 })] })],
+                                }),
+                                new DocxTableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Bank Account: ", bold: true, size: 16 }), new TextRun({ text: `${employee.bankName || ''} (${bankDisplay})`, size: 16 })] })],
                                 }),
                             ],
                         }),
@@ -145,7 +146,7 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
 
                 new Paragraph({ text: "", spacing: { before: 300 } }),
 
-                // Earnings & Deductions Tables (Side by Side in 4 cols)
+                // Earnings & Deductions Tables (Bordered as per PDF)
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
                     rows: [
