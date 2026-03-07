@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -63,7 +62,6 @@ export default function SalaryPage() {
   // Deductions
   const [pf, setPf] = useState('0');
   const [esic, setEsic] = useState('0');
-  const [pt, setPt] = useState('0');
   const [tds, setTds] = useState('0');
   const [lwf, setLwf] = useState('0');
   const [advance, setAdvance] = useState('0');
@@ -96,23 +94,21 @@ export default function SalaryPage() {
     
     const v_pf = parseFloat(pf) || 0;
     const v_esic = parseFloat(esic) || 0;
-    const v_pt = parseFloat(pt) || 0;
     const v_tds = parseFloat(tds) || 0;
     const v_lwf = parseFloat(lwf) || 0;
     const v_advance = parseFloat(advance) || 0;
     const v_other = parseFloat(otherDeductions) || 0;
 
-    // Automatic Absent Deduction Logic
     const totalDays = parseFloat(workingDays) || 1;
     const absDays = parseFloat(absentDays) || 0;
     const absentDeduction = Math.round((basic / totalDays) * absDays);
 
     const grossEarnings = basic + v_hra + v_conveyance + v_medical + v_special + v_bonus + v_ot;
-    const totalDeductions = v_pf + v_esic + v_pt + v_tds + v_lwf + v_advance + v_other + absentDeduction;
+    const totalDeductions = v_pf + v_esic + v_tds + v_lwf + v_advance + v_other + absentDeduction;
     const netPay = Math.max(0, grossEarnings - totalDeductions);
 
     return { grossEarnings, totalDeductions, netPay, absentDeduction };
-  }, [baseSalary, hra, conveyance, medical, special, bonus, ot, pf, esic, pt, tds, lwf, advance, otherDeductions, workingDays, absentDays]);
+  }, [baseSalary, hra, conveyance, medical, special, bonus, ot, pf, esic, tds, lwf, advance, otherDeductions, workingDays, absentDays]);
 
   useEffect(() => {
     if (employeeId && !editingSalary) {
@@ -174,7 +170,6 @@ export default function SalaryPage() {
     setOt('0');
     setPf('0');
     setEsic('0');
-    setPt('0');
     setTds('0');
     setLwf('0');
     setAdvance('0');
@@ -202,7 +197,6 @@ export default function SalaryPage() {
       setOt(salary.ot?.toString() || '0');
       setPf(salary.pf?.toString() || '0');
       setEsic(salary.esic?.toString() || '0');
-      setPt(salary.pt?.toString() || '0');
       setTds(salary.tds?.toString() || '0');
       setLwf(salary.lwf?.toString() || '0');
       setAdvance(salary.advance?.toString() || '0');
@@ -238,7 +232,6 @@ export default function SalaryPage() {
       ot: parseFloat(ot) || 0,
       pf: parseFloat(pf) || 0,
       esic: parseFloat(esic) || 0,
-      pt: parseFloat(pt) || 0,
       tds: parseFloat(tds) || 0,
       lwf: parseFloat(lwf) || 0,
       advance: parseFloat(advance) || 0,
@@ -773,7 +766,6 @@ export default function SalaryPage() {
                     <Calculator className="h-4 w-4" /> Deductions
                   </h3>
                   <div className="grid gap-3">
-                    {/* Absent Deduction Display */}
                     <div className="grid grid-cols-2 items-center gap-4 text-red-600">
                       <Label className="text-xs font-bold">Absent Deduction</Label>
                       <div className="text-right text-sm font-black">- ₹{calculations.absentDeduction.toLocaleString('en-IN')}</div>
@@ -786,10 +778,6 @@ export default function SalaryPage() {
                     <div className="grid grid-cols-2 items-center gap-4">
                       <Label className="text-xs">E.S.I.C.</Label>
                       <Input type="number" value={esic} onChange={(e) => setEsic(e.target.value)} className="h-8 font-mono" />
-                    </div>
-                    <div className="grid grid-cols-2 items-center gap-4">
-                      <Label className="text-xs">Prof. Tax (P.T.)</Label>
-                      <Input type="number" value={pt} onChange={(e) => setPt(e.target.value)} className="h-8 font-mono" />
                     </div>
                     <div className="grid grid-cols-2 items-center gap-4">
                       <Label className="text-xs">T.D.S.</Label>

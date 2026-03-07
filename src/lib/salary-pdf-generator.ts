@@ -1,4 +1,3 @@
-
 'use client';
 
 import jsPDF from 'jspdf';
@@ -18,7 +17,6 @@ const toWords = new ToWords({
 
 const loadImage = (url: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
-        // Only attempt to load image in browser environment
         if (typeof window === 'undefined') {
             reject('Server environment');
             return;
@@ -46,7 +44,7 @@ const renderSingleSlip = (
     const monthDisplay = format(parseISO(`${salary.month}-01`), 'MMMM yyyy').toUpperCase();
 
     const grossEarnings = (salary.baseSalary || 0) + (salary.hra || 0) + (salary.conveyance || 0) + (salary.medical || 0) + (salary.special || 0) + (salary.bonus || 0) + (salary.ot || 0);
-    const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.pt || 0) + (salary.tds || 0) + (salary.advance || 0) + (salary.otherDeductions || 0) + (salary.lwf || 0) + (salary.absentDeduction || 0);
+    const totalDeductions = (salary.pf || 0) + (salary.esic || 0) + (salary.tds || 0) + (salary.advance || 0) + (salary.otherDeductions || 0) + (salary.lwf || 0) + (salary.absentDeduction || 0);
 
     // --- Watermark (15% Transparency) ---
     if (logoImg) {
@@ -147,7 +145,6 @@ const renderSingleSlip = (
             ['Absent Deduction', (salary.absentDeduction || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             ['Provident Fund (PF)', (salary.pf || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             ['E.S.I.C.', (salary.esic || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
-            ['Professional Tax', (salary.pt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             ['T.D.S.', (salary.tds || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             ['Loan / Advance', (salary.advance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],
             ['L.W.F.', (salary.lwf || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })],

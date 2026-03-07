@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Packer, Document, Paragraph, TextRun, AlignmentType, BorderStyle, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType, VerticalAlign, PageOrientation, PageSize } from 'docx';
@@ -102,8 +101,14 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                         }),
                         new DocxTableRow({
                             children: [
-                                new DocxTableCell({ children: [new Paragraph({ text: "Deductions" })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
-                                new DocxTableCell({ children: [new Paragraph({ text: `(-) ${salary.deductions.toLocaleString('en-IN')}`, alignment: AlignmentType.RIGHT })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: "Absent Deduction" })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: `(-) ${salary.absentDeduction.toLocaleString('en-IN')}`, alignment: AlignmentType.RIGHT })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
+                            ]
+                        }),
+                        new DocxTableRow({
+                            children: [
+                                new DocxTableCell({ children: [new Paragraph({ text: "Other Deductions" })], borders: { bottom: borderStyle, left: borderStyle, right: borderStyle }, margins: cellMargins }),
+                                new DocxTableCell({ children: [new Paragraph({ text: `(-) ${salary.otherDeductions.toLocaleString('en-IN')}`, alignment: AlignmentType.RIGHT })], borders: { bottom: borderStyle, right: borderStyle }, margins: cellMargins }),
                             ]
                         }),
                         new DocxTableRow({
