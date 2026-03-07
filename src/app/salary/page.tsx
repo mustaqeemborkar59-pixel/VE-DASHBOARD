@@ -11,7 +11,7 @@ import { collection, query, orderBy, doc, where, getDocs } from 'firebase/firest
 import { Employee, Salary, CompanySettings, Attendance } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, FileText, WalletCards, XCircle, Calculator, CalendarCheck, Info, Loader2, Send, MessageSquare } from 'lucide-react';
+import { PlusCircle, Search, Download, Pencil, Trash2, Banknote, FileText, WalletCards, XCircle, Calculator, CalendarCheck, Info, Loader2, Send, MessageSquare, FileDown } from 'lucide-react';
 import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { generateSalaryPdfSlip, generateSalaryPdfData } from '@/lib/salary-pdf-generator';
+import { generateSalarySlip } from '@/lib/salary-generator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
 import { sendTelegramDocument } from '@/app/actions/telegram';
@@ -279,6 +280,24 @@ export default function SalaryPage() {
     } catch (e) {
       console.error(e);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to generate PDF.' });
+    }
+  };
+
+  const handleDownloadWordSlip = async (salary: Salary) => {
+    const employee = employees?.find(e => e.id === salary.employeeId);
+    const settings = salary.enterprise === 'Vithal' ? vithalSettings : rvSettings;
+
+    if (!employee || !settings) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Employee or Company settings missing.' });
+      return;
+    }
+
+    try {
+      await generateSalarySlip(salary, employee, settings);
+      toast({ title: 'Success', description: 'Word Salary slip generated.' });
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to generate Word file.' });
     }
   };
 
@@ -559,6 +578,14 @@ export default function SalaryPage() {
                                     </TooltipTrigger>
                                     <TooltipContent>Download PDF</TooltipContent>
                                   </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" onClick={() => handleDownloadWordSlip(salary)} className="h-8 w-8 text-blue-500 hover:bg-blue-500/10">
+                                        <FileDown className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Download Word</TooltipContent>
+                                  </Tooltip>
                                   <Button variant="ghost" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500 hover:bg-amber-500/10">
                                     <Pencil className="h-4 w-4" />
                                   </Button>
@@ -630,6 +657,9 @@ export default function SalaryPage() {
                                 </Button>
                                 <Button variant="ghost" size="icon" onClick={() => handleDownloadPdfSlip(salary)} className="h-8 w-8 text-red-600 hover:bg-red-500/10">
                                   <FileText className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleDownloadWordSlip(salary)} className="h-8 w-8 text-blue-600 hover:bg-blue-500/10">
+                                  <FileDown className="h-4 w-4" />
                                 </Button>
                                 <Button variant="ghost" size="icon" onClick={() => handleOpenForm(salary)} className="h-8 w-8 text-amber-500 hover:bg-amber-500/10">
                                   <Pencil className="h-4 w-4" />
