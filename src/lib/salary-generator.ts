@@ -202,32 +202,6 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                     spacing: { before: 100 },
                 }),
 
-                new Paragraph({ text: "", spacing: { before: 800 } }),
-
-                // Signatures
-                new DocxTable({
-                    width: { size: 100, type: WidthType.PERCENTAGE },
-                    borders: { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder, insideHorizontal: noBorder, insideVertical: noBorder },
-                    rows: [
-                        new DocxTableRow({
-                            children: [
-                                new DocxTableCell({
-                                    children: [
-                                        new Paragraph({ text: "____________________", alignment: AlignmentType.CENTER }),
-                                        new Paragraph({ text: "Employee Signature", alignment: AlignmentType.CENTER, size: 16, font: "Calibri" })
-                                    ]
-                                }),
-                                new DocxTableCell({
-                                    children: [
-                                        new Paragraph({ text: "____________________", alignment: AlignmentType.CENTER }),
-                                        new Paragraph({ text: "Authorized Signatory", alignment: AlignmentType.CENTER, size: 16, font: "Calibri" })
-                                    ]
-                                }),
-                            ]
-                        })
-                    ]
-                }),
-                
                 new Paragraph({ text: "", spacing: { before: 400 } }),
                 new Paragraph({
                     children: [new TextRun({ text: `This is a system generated salary slip and does not require a physical signature.`, size: 14, font: "Calibri", color: "666666" })],
