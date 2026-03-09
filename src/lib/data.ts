@@ -37,7 +37,7 @@ export type Employee = {
   createdAt?: string;
 };
 
-export type AttendanceStatus = 'Present' | 'Absent' | 'Half-Day' | 'Holiday';
+export type AttendanceStatus = 'Present' | 'Absent' | 'Half-Day' | 'Holiday' | 'Holiday-Working';
 
 export type Attendance = {
   id: string;

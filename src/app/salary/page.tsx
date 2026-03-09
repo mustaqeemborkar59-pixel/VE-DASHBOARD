@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -396,12 +397,15 @@ export default function SalaryPage() {
             let totalOTHours = 0;
 
             records.forEach(rec => {
-                if (rec.status === 'Present') totalPresent += 1;
-                else if (rec.status === 'Half-Day') {
+                // Present, Holiday, and Holiday-Working are all paid days
+                if (rec.status === 'Present' || rec.status === 'Holiday' || rec.status === 'Holiday-Working') {
+                    totalPresent += 1;
+                } else if (rec.status === 'Half-Day') {
                     totalPresent += 0.5;
                     totalAbsent += 0.5;
+                } else if (rec.status === 'Absent') {
+                    totalAbsent += 1;
                 }
-                else if (rec.status === 'Absent') totalAbsent += 1;
                 
                 if (rec.overtimeHours) {
                     totalOTHours += rec.overtimeHours;
@@ -431,7 +435,7 @@ export default function SalaryPage() {
 
             toast({ 
                 title: 'Sync Complete', 
-                description: `Fetched ${records.length} records. Calculated ${totalPresent} Present days.` 
+                description: `Fetched ${records.length} records. Calculated ${totalPresent} Paid days.` 
             });
         }
     } catch (e) {

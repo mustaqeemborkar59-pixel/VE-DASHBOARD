@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -86,7 +87,9 @@ export default function AttendancePage() {
     null, 
     'Half-Day', 
     null, 
-    'Holiday'
+    'Holiday',
+    null,
+    'Holiday-Working'
   ];
 
   const handleStatusToggle = (empId: string, date: Date) => {
@@ -126,6 +129,7 @@ export default function AttendancePage() {
             else if (currentStatus === 'Absent') currentIndex = 3;
             else if (currentStatus === 'Half-Day') currentIndex = 5;
             else if (currentStatus === 'Holiday') currentIndex = 7;
+            else if (currentStatus === 'Holiday-Working') currentIndex = 9;
             else currentIndex = 0;
         }
         const nextIndex = (currentIndex + 1) % statusCycle.length;
@@ -224,6 +228,7 @@ export default function AttendancePage() {
         if (status === 'Present') baseChar = 'P';
         else if (status === 'Half-Day') baseChar = 'H';
         else if (status === 'Holiday') baseChar = 'O';
+        else if (status === 'Holiday-Working') baseChar = 'HW';
         else if (status === 'Absent') baseChar = 'A';
 
         return (
@@ -242,6 +247,7 @@ export default function AttendancePage() {
       case 'Absent': return <span className="text-rose-600 font-black text-[11px]">A</span>;
       case 'Half-Day': return <span className="text-amber-600 font-black text-[11px]">H</span>;
       case 'Holiday': return <span className="text-blue-600 font-black text-[11px]">O</span>;
+      case 'Holiday-Working': return <span className="text-violet-600 font-black text-[9px]">HW</span>;
       default: return null;
     }
   };
@@ -262,6 +268,7 @@ export default function AttendancePage() {
       case 'Absent': return cn(base, "bg-rose-100/80 dark:bg-rose-900/40");
       case 'Half-Day': return cn(base, "bg-amber-100/80 dark:bg-amber-900/40");
       case 'Holiday': return cn(base, "bg-blue-100/80 dark:bg-blue-900/40");
+      case 'Holiday-Working': return cn(base, "bg-violet-100/80 dark:bg-violet-900/40");
       default: return isSun ? cn(base, "bg-rose-50/50") : "";
     }
   };
@@ -271,16 +278,21 @@ export default function AttendancePage() {
     let present = 0;
     let absent = 0;
     let half = 0;
+    let holiday = 0;
+    let holidayWorking = 0;
     let otTotal = 0;
 
     Object.values(records).forEach(rec => {
         if (rec.status === 'Present') present++;
         else if (rec.status === 'Absent') absent++;
         else if (rec.status === 'Half-Day') half++;
+        else if (rec.status === 'Holiday') holiday++;
+        else if (rec.status === 'Holiday-Working') holidayWorking++;
+        
         if (rec.overtimeHours) otTotal += rec.overtimeHours;
     });
 
-    return { present, absent, half, otTotal };
+    return { present, absent, half, holiday, holidayWorking, otTotal };
   };
 
   return (
@@ -349,6 +361,13 @@ export default function AttendancePage() {
                             activeTool === 'Holiday' ? "bg-blue-600 text-white border-blue-600 ring-2 ring-blue-600/20" : "bg-blue-50 text-blue-700 border-blue-200"
                         )}
                     >O</button>
+                    <button 
+                        onClick={() => setActiveTool(activeTool === 'Holiday-Working' ? null : 'Holiday-Working')}
+                        className={cn(
+                            "w-9 h-9 rounded-xl text-[10px] font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
+                            activeTool === 'Holiday-Working' ? "bg-violet-600 text-white border-violet-600 ring-2 ring-violet-600/20" : "bg-violet-50 text-violet-700 border-violet-200"
+                        )}
+                    >HW</button>
                     <div className="w-px h-6 bg-border mx-1 shrink-0" />
                     <button 
                         onClick={() => setActiveTool(activeTool === 'OT' ? null : 'OT')}
@@ -484,9 +503,9 @@ export default function AttendancePage() {
                                         <Badge variant="outline" className="text-[9px] font-black uppercase px-2 py-0.5 border-primary/20 bg-primary/5 text-primary whitespace-nowrap">
                                             {summary.otTotal}H OT
                                         </Badge>
-                                        <div className="text-[9px] font-bold text-muted-foreground uppercase flex gap-2 whitespace-nowrap">
-                                            <span>P:{summary.present}</span>
-                                            <span>A:{summary.absent}</span>
+                                        <div className="text-[9px] font-bold text-muted-foreground uppercase flex flex-col items-end whitespace-nowrap">
+                                            <span>P:{summary.present} A:{summary.absent}</span>
+                                            <span className="text-blue-600">O:{summary.holiday} HW:{summary.holidayWorking}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -553,8 +572,8 @@ export default function AttendancePage() {
                         <p className="text-[10px] font-black uppercase tracking-widest text-primary">Instructions</p>
                         <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
                             Sundays are highlighted in <b>Rose</b>. 
-                            Use the <b>OT tool</b> to record extra hours (even without a base status).
-                            Working on any day is marked as <b>P</b>.
+                            Use the <b>OT tool</b> to record extra hours.
+                            <b>O</b> represents Holiday (Paid), and <b>HW</b> is for Holiday Working.
                         </p>
                     </div>
                 </CardContent>
