@@ -24,7 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { InvoicePreview } from '@/components/invoice-preview';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/accordion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -218,7 +218,7 @@ const InvoiceActions = ({ invoice, openPreviewDialog, handleDownloadWord, openFo
                 <EllipsisVertical className="h-4 w-4" />
             </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-40" align="end">
+        <DropdownMenuContent className="w-40 z-50" align="end">
             <DropdownMenuItem onSelect={() => openPreviewDialog(invoice)}>
                 <Eye className="mr-2 h-4 w-4" />Preview
             </DropdownMenuItem>
@@ -1272,7 +1272,7 @@ export default function BillingPage() {
                                         Fill Missing
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent>
+                                <DropdownMenuContent className="z-50">
                                     <DropdownMenuLabel className="text-xs">Select a missing bill no.</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <ScrollArea className="h-60 sm:h-72">
@@ -1363,7 +1363,7 @@ export default function BillingPage() {
                                         <ChevronDown className="ml-1.5 h-3 w-3" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
+                                <DropdownMenuContent align="end" className="z-50">
                                     <DropdownMenuRadioGroup value={formEnterprise} onValueChange={(value) => setFormEnterprise(value as Enterprise)}>
                                         <DropdownMenuRadioItem value="Vithal" className="text-xs">Vithal</DropdownMenuRadioItem>
                                         <DropdownMenuRadioItem value="RV" className="text-xs">RV</DropdownMenuRadioItem>
@@ -1466,7 +1466,7 @@ export default function BillingPage() {
                                                 Size
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent>
+                                        <DropdownMenuContent className="z-50">
                                             <DropdownMenuRadioGroup onValueChange={(size) => applyMarkdown('size', parseInt(size, 10))}>
                                                 {[9, 10, 11, 12, 14].map(s => (
                                                     <DropdownMenuRadioItem key={s} value={String(s)} className="text-xs">{s} pt</DropdownMenuRadioItem>
