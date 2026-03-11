@@ -212,10 +212,6 @@ const InvoiceActions = ({ invoice, openPreviewDialog, handleDownloadWord, openFo
                 variant="ghost" 
                 size="icon" 
                 className="h-8 w-8 p-0"
-                onPointerDown={(e) => {
-                    // Prevent immediate opening on pointer down for touch devices to avoid accidental item selection on release
-                    if (e.pointerType === 'touch') e.preventDefault();
-                }}
             >
                 <EllipsisVertical className="h-4 w-4" />
             </Button>
@@ -1267,9 +1263,6 @@ export default function BillingPage() {
                                         size="sm" 
                                         disabled={skippedBillNumbers.length === 0} 
                                         className="h-8 text-xs"
-                                        onPointerDown={(e) => {
-                                            if (e.pointerType === 'touch') e.preventDefault();
-                                        }}
                                     >
                                         <FilePlus2 className="mr-1.5 h-3.5 w-3.5" />
                                         Fill Missing
@@ -1359,9 +1352,6 @@ export default function BillingPage() {
                                         variant="outline" 
                                         size="sm" 
                                         className="ml-4 shrink-0 h-8 text-xs"
-                                        onPointerDown={(e) => {
-                                            if (e.pointerType === 'touch') e.preventDefault();
-                                        }}
                                     >
                                         {formEnterprise}
                                         <ChevronDown className="ml-1.5 h-3 w-3" />
@@ -1463,9 +1453,6 @@ export default function BillingPage() {
                                                 type="button" 
                                                 variant="outline" 
                                                 className="h-7 px-2 text-[10px] sm:text-xs"
-                                                onPointerDown={(e) => {
-                                                    if (e.pointerType === 'touch') e.preventDefault();
-                                                }}
                                             >
                                                 <Pilcrow className="h-3 w-3 mr-1" />
                                                 Size
@@ -1728,6 +1715,9 @@ export default function BillingPage() {
                     />
                 </div>
                 <AlertDialogFooter className="gap-2 sm:gap-0">
+                    <DropdownMenu>
+                        {/* Empty spacing fix */}
+                    </DropdownMenu>
                     <AlertDialogCancel className="h-9">Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={handleConfirmBulkDuplicate} className="h-9 text-xs">Duplicate {selectedInvoices.length} Invoices</AlertDialogAction>
                 </AlertDialogFooter>
