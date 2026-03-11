@@ -212,6 +212,8 @@ const InvoiceActions = ({ invoice, openPreviewDialog, handleDownloadWord, openFo
                 variant="ghost" 
                 size="icon" 
                 className="h-8 w-8 p-0"
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
             >
                 <EllipsisVertical className="h-4 w-4" />
             </Button>
@@ -1263,6 +1265,8 @@ export default function BillingPage() {
                                         size="sm" 
                                         disabled={skippedBillNumbers.length === 0} 
                                         className="h-8 text-xs"
+                                        onClick={(e) => e.stopPropagation()}
+                                        onPointerDown={(e) => e.stopPropagation()}
                                     >
                                         <FilePlus2 className="mr-1.5 h-3.5 w-3.5" />
                                         Fill Missing
@@ -1352,6 +1356,8 @@ export default function BillingPage() {
                                         variant="outline" 
                                         size="sm" 
                                         className="ml-4 shrink-0 h-8 text-xs"
+                                        onClick={(e) => e.stopPropagation()}
+                                        onPointerDown={(e) => e.stopPropagation()}
                                     >
                                         {formEnterprise}
                                         <ChevronDown className="ml-1.5 h-3 w-3" />
@@ -1453,6 +1459,8 @@ export default function BillingPage() {
                                                 type="button" 
                                                 variant="outline" 
                                                 className="h-7 px-2 text-[10px] sm:text-xs"
+                                                onClick={(e) => e.stopPropagation()}
+                                                onPointerDown={(e) => e.stopPropagation()}
                                             >
                                                 <Pilcrow className="h-3 w-3 mr-1" />
                                                 Size
