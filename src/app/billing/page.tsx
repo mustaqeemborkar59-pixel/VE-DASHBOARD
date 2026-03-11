@@ -212,8 +212,12 @@ const InvoiceActions = ({ invoice, openPreviewDialog, handleDownloadWord, openFo
                 variant="ghost" 
                 size="icon" 
                 className="h-8 w-8 p-0"
-                onClick={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                    e.stopPropagation();
+                }}
+                onPointerDown={(e) => {
+                    e.stopPropagation();
+                }}
             >
                 <EllipsisVertical className="h-4 w-4" />
             </Button>
@@ -296,7 +300,11 @@ const InvoiceList = ({
                                                             <div className="flex items-start gap-3">
                                                                 <div
                                                                     id={`select-inv-mob-${invoice.id}`}
-                                                                    onClick={() => handleSelectInvoice(invoice.id, !isSelected)}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleSelectInvoice(invoice.id, !isSelected);
+                                                                    }}
+                                                                    onPointerDown={(e) => e.stopPropagation()}
                                                                     className={cn(
                                                                         "mt-1 h-4 w-4 shrink-0 rounded-sm border border-primary flex items-center justify-center cursor-pointer ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                                                                         isSelected && "bg-primary text-primary-foreground"
@@ -316,7 +324,7 @@ const InvoiceList = ({
                                                             </div>
                                                             <InvoiceActions invoice={invoice} {...actionProps} />
                                                         </div>
-                                                        <div className="text-[10px] flex justify-between items-center" onClick={() => actionProps.openPreviewDialog(invoice)}>
+                                                        <div className="text-[10px] flex justify-between items-center cursor-pointer" onClick={() => actionProps.openPreviewDialog(invoice)}>
                                                             <div><span className="font-medium text-muted-foreground">Date: </span>{format(parseISO(invoice.billDate), 'dd MMM, yy')}</div>
                                                             <div><span className="font-medium text-muted-foreground">Amount: </span>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</div>
                                                         </div>
@@ -345,7 +353,11 @@ const InvoiceList = ({
                                                             <TableCell className="px-4 py-2">
                                                                 <div 
                                                                   id={`select-inv-desk-${invoice.id}`}
-                                                                  onClick={() => handleSelectInvoice(invoice.id, !isSelected)}
+                                                                  onClick={(e) => {
+                                                                      e.stopPropagation();
+                                                                      handleSelectInvoice(invoice.id, !isSelected);
+                                                                  }}
+                                                                  onPointerDown={(e) => e.stopPropagation()}
                                                                   className={cn(
                                                                       "h-4 w-4 rounded-sm border border-primary flex items-center justify-center cursor-pointer ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                                                                       isSelected && "bg-primary text-primary-foreground"
@@ -1265,7 +1277,9 @@ export default function BillingPage() {
                                         size="sm" 
                                         disabled={skippedBillNumbers.length === 0} 
                                         className="h-8 text-xs"
-                                        onClick={(e) => e.stopPropagation()}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                        }}
                                         onPointerDown={(e) => e.stopPropagation()}
                                     >
                                         <FilePlus2 className="mr-1.5 h-3.5 w-3.5" />
@@ -1356,7 +1370,9 @@ export default function BillingPage() {
                                         variant="outline" 
                                         size="sm" 
                                         className="ml-4 shrink-0 h-8 text-xs"
-                                        onClick={(e) => e.stopPropagation()}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                        }}
                                         onPointerDown={(e) => e.stopPropagation()}
                                     >
                                         {formEnterprise}
@@ -1459,7 +1475,9 @@ export default function BillingPage() {
                                                 type="button" 
                                                 variant="outline" 
                                                 className="h-7 px-2 text-[10px] sm:text-xs"
-                                                onClick={(e) => e.stopPropagation()}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                }}
                                                 onPointerDown={(e) => e.stopPropagation()}
                                             >
                                                 <Pilcrow className="h-3 w-3 mr-1" />
