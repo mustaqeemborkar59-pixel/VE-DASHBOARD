@@ -214,8 +214,9 @@ const InvoiceActions = ({
   openDeleteDialog: (invoice: Invoice) => void
 }) => (
   <div
-    className="relative z-50"
+    className="relative z-50 shrink-0"
     onClick={(e) => e.stopPropagation()}
+    onPointerDown={(e) => e.stopPropagation()}
   >
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
@@ -223,6 +224,7 @@ const InvoiceActions = ({
           variant="ghost"
           size="icon"
           className="h-8 w-8 p-0 cursor-pointer"
+          type="button"
         >
           <EllipsisVertical className="h-4 w-4" />
         </Button>
@@ -535,14 +537,14 @@ export default function BillingPage() {
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
   const { data: allInvoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(allInvoicesQuery);
   
-  const { data: vithalCompanyDetails, isLoading: isLoadingVithalSettings } = useDoc<CompanySettings>(vithalSettingsRef);
+  const { data: vithalCompanyDetails, isLoading: isLoadingVinalSettings } = useDoc<CompanySettings>(vithalSettingsRef);
   const { data: rvCompanyDetails, isLoading: isLoadingRvSettings } = useDoc<CompanySettings>(rvSettingsRef);
 
   const { data: vithalBankAccounts, isLoading: isLoadingVithalBanks } = useCollection<BankAccount>(vithalBankAccountsQuery);
   const { data: rvBankAccounts, isLoading: isLoadingRvBanks } = useCollection<BankAccount>(rvBankAccountsQuery);
   const isLoadingBankAccounts = isLoadingVithalBanks || isLoadingRvBanks;
   
-  const isLoadingSettings = isLoadingVithalSettings || isLoadingRvSettings;
+  const isLoadingSettings = isLoadingVinalSettings || isLoadingRvSettings;
   const myCompanyDetails = activeTab === 'Vithal' ? vithalCompanyDetails : rvCompanyDetails;
 
 
@@ -725,7 +727,7 @@ export default function BillingPage() {
   }, [filteredInvoices, activeTab, vithalCompanyDetails, rvCompanyDetails, isLoadingInvoices]);
   
   const nextBillNumberForForm = useMemo(() => {
-    if (!allInvoices || isLoadingVithalSettings || isLoadingRvSettings) return 1;
+    if (!allInvoices || isLoadingVinalSettings || isLoadingRvSettings) return 1;
 
     const targetInvoices = allInvoices.filter(inv => inv.enterprise === formEnterprise);
     const targetSettings = formEnterprise === 'Vithal' ? vithalCompanyDetails : rvCompanyDetails;
@@ -736,7 +738,7 @@ export default function BillingPage() {
 
     const maxBillNo = Math.max(0, ...targetInvoices.map(inv => inv.billNo));
     return maxBillNo + 1;
-  }, [formEnterprise, allInvoices, vithalCompanyDetails, rvCompanyDetails, isLoadingVithalSettings, isLoadingRvSettings]);
+  }, [formEnterprise, allInvoices, vithalCompanyDetails, rvCompanyDetails, isLoadingVinalSettings, isLoadingRvSettings]);
 
   const skippedBillNumbers = useMemo(() => {
     if (!filteredInvoices || filteredInvoices.length < 2) return [];
