@@ -25,7 +25,7 @@ import { InvoicePreview } from '@/components/invoice-preview';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -169,7 +169,7 @@ const DownloadOptionsFields = React.memo(({ options, setOptions }: { options: Do
                     <Label htmlFor="myBank">Show Bank Details</Label>
                 </div>
                  <div className="flex items-center space-x-2">
-                    <Checkbox id="mySac" checked={options.myCompany.showSacCode} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showSacCode: !!checked} }))} />
+                    <Checkbox id="mySac" checked={options.myCompany.showSacCode} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showBankDetails: !!checked} }))} />
                     <Label htmlFor="mySac">Show SAC Code</Label>
                 </div>
                  <div className="flex items-center space-x-2">
@@ -206,40 +206,38 @@ const InvoiceActions = ({ invoice, openPreviewDialog, handleDownloadWord, openFo
     openDuplicateDialog: (invoice: Invoice) => void;
     openDeleteDialog: (invoice: Invoice) => void;
 }) => (
-    <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-            <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 p-0"
-                onClick={(e) => {
-                    e.stopPropagation();
-                }}
-                onPointerDown={(e) => {
-                    e.stopPropagation();
-                }}
-            >
-                <EllipsisVertical className="h-4 w-4" />
-            </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-40 z-50" align="end">
-            <DropdownMenuItem onSelect={() => openPreviewDialog(invoice)}>
-                <Eye className="mr-2 h-4 w-4" />Preview
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => handleDownloadWord(invoice)}>
-                <Download className="mr-2 h-4 w-4" />Download
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => openFormDialog(invoice)}>
-                <Pencil className="mr-2 h-4 w-4" />Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => openDuplicateDialog(invoice)}>
-                <FilePlus2 className="mr-2 h-4 w-4" />Duplicate
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => openDeleteDialog(invoice)} className="text-destructive">
-                <Trash2 className="mr-2 h-4 w-4" />Delete
-            </DropdownMenuItem>
-        </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="relative" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                >
+                    <EllipsisVertical className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuPortal>
+                <DropdownMenuContent className="w-40 z-[100]" align="end" sideOffset={5}>
+                    <DropdownMenuItem onSelect={() => openPreviewDialog(invoice)}>
+                        <Eye className="mr-2 h-4 w-4" />Preview
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleDownloadWord(invoice)}>
+                        <Download className="mr-2 h-4 w-4" />Download
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => openFormDialog(invoice)}>
+                        <Pencil className="mr-2 h-4 w-4" />Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => openDuplicateDialog(invoice)}>
+                        <FilePlus2 className="mr-2 h-4 w-4" />Duplicate
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => openDeleteDialog(invoice)} className="text-destructive focus:text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />Delete
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenuPortal>
+        </DropdownMenu>
+    </div>
 );
 
 const InvoiceList = ({ 
@@ -1270,34 +1268,34 @@ export default function BillingPage() {
                                     </div>
                                 </PopoverContent>
                             </Popover>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        disabled={skippedBillNumbers.length === 0} 
-                                        className="h-8 text-xs"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                        }}
-                                        onPointerDown={(e) => e.stopPropagation()}
-                                    >
-                                        <FilePlus2 className="mr-1.5 h-3.5 w-3.5" />
-                                        Fill Missing
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="z-50">
-                                    <DropdownMenuLabel className="text-xs">Select a missing bill no.</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <ScrollArea className="h-60 sm:h-72">
-                                        {skippedBillNumbers.map(num => (
-                                            <DropdownMenuItem key={num} onSelect={() => openFormDialog(null, num)} className="text-xs">
-                                                Invoice No. {num}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </ScrollArea>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            disabled={skippedBillNumbers.length === 0} 
+                                            className="h-8 text-xs focus-visible:ring-0"
+                                        >
+                                            <FilePlus2 className="mr-1.5 h-3.5 w-3.5" />
+                                            Fill Missing
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuPortal>
+                                        <DropdownMenuContent className="z-[100]" align="end" sideOffset={5}>
+                                            <DropdownMenuLabel className="text-xs">Select a missing bill no.</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            <ScrollArea className="h-60 sm:h-72">
+                                                {skippedBillNumbers.map(num => (
+                                                    <DropdownMenuItem key={num} onSelect={() => openFormDialog(null, num)} className="text-xs">
+                                                        Invoice No. {num}
+                                                    </DropdownMenuItem>
+                                                ))}
+                                            </ScrollArea>
+                                        </DropdownMenuContent>
+                                    </DropdownMenuPortal>
+                                </DropdownMenu>
+                            </div>
                             <Button onClick={() => openFormDialog(null)} size="sm" className="h-8 text-xs">
                                 <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
                                 Add Invoice
@@ -1370,10 +1368,6 @@ export default function BillingPage() {
                                         variant="outline" 
                                         size="sm" 
                                         className="ml-4 shrink-0 h-8 text-xs"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                        }}
-                                        onPointerDown={(e) => e.stopPropagation()}
                                     >
                                         {formEnterprise}
                                         <ChevronDown className="ml-1.5 h-3 w-3" />
@@ -1475,10 +1469,6 @@ export default function BillingPage() {
                                                 type="button" 
                                                 variant="outline" 
                                                 className="h-7 px-2 text-[10px] sm:text-xs"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                }}
-                                                onPointerDown={(e) => e.stopPropagation()}
                                             >
                                                 <Pilcrow className="h-3 w-3 mr-1" />
                                                 Size
@@ -1741,9 +1731,6 @@ export default function BillingPage() {
                     />
                 </div>
                 <AlertDialogFooter className="gap-2 sm:gap-0">
-                    <DropdownMenu>
-                        {/* Empty spacing fix */}
-                    </DropdownMenu>
                     <AlertDialogCancel className="h-9">Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={handleConfirmBulkDuplicate} className="h-9 text-xs">Duplicate {selectedInvoices.length} Invoices</AlertDialogAction>
                 </AlertDialogFooter>
