@@ -9,7 +9,7 @@ import { useCollection, useFirebase, useMemoFirebase, errorEmitter, FirestorePer
 import { collection, query, orderBy, doc, setDoc, where, deleteDoc } from 'firebase/firestore';
 import { Employee, Attendance, AttendanceStatus } from '@/lib/data';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isToday, getDay } from 'date-fns';
-import { UserCheck, ChevronLeft, ChevronRight, Info, MousePointer2, Eraser, Clock, User, CalendarDays, StickyNote, MessageSquare, Undo2, Redo2 } from 'lucide-react';
+import { UserCheck, ChevronLeft, ChevronRight, Info, MousePointer2, Eraser, Clock, User, CalendarDays, StickyNote, MessageSquare, Undo2, Redo2, Lock, LockOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -23,8 +23,8 @@ type ActiveTool = AttendanceStatus | 'Clear' | 'OT' | 'Note' | null;
 
 interface HistoryAction {
     docPath: string;
-    prevData: any; // null if it was deleted/didn't exist
-    nextData: any; // null if it was deleted
+    prevData: any; 
+    nextData: any; 
 }
 
 export default function AttendancePage() {
@@ -33,6 +33,7 @@ export default function AttendancePage() {
   
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [cellCycleIndices, setCellCycleIndices] = useState<Record<string, number>>({});
 
   // History State
@@ -72,7 +73,7 @@ export default function AttendancePage() {
   }, [selectedMonth]);
 
   const employeesQuery = useMemoFirebase(() => 
-    firestore && user ? query(collection(firestore, 'employees'), orderBy('createdAt', 'asc')) : null, 
+    firestore && user ? query(collection(firestore, 'employees'), orderBy('fullName', 'asc')) : null, 
     [firestore, user]
   );
 
@@ -98,7 +99,6 @@ export default function AttendancePage() {
     const map: Record<string, Record<string, Attendance>> = {};
     attendanceRecords?.forEach(rec => {
       if (!map[rec.employeeId]) map[rec.employeeId] = {};
-      map[rec.date] = map[rec.date] || {}; // Optional redundancy
       map[rec.employeeId][rec.date] = rec;
     });
     return map;
@@ -183,6 +183,11 @@ export default function AttendancePage() {
 
   const handleStatusToggle = (empId: string, date: Date) => {
     if (!firestore) return;
+    
+    if (!isEditMode) {
+        toast({ title: "Register Locked", description: "Unlock to make changes.", duration: 2000 });
+        return;
+    }
     
     const dateStr = format(date, 'yyyy-MM-dd');
     const cellKey = `${dateStr}_${empId}`;
@@ -473,12 +478,29 @@ export default function AttendancePage() {
 
         {/* Tools Toolbar */}
         <div className="sticky top-[60px] z-50 px-4 py-2 bg-background/80 backdrop-blur-md">
-            <div className="bg-card border rounded-2xl p-2 flex items-center justify-between shadow-lg max-w-full overflow-hidden">
+            <div className={cn(
+                "bg-card border rounded-2xl p-2 flex items-center justify-between shadow-lg max-w-full overflow-hidden transition-all duration-300",
+                isEditMode ? "border-primary/50 ring-2 ring-primary/5" : "opacity-95"
+            )}>
                 <div className="flex items-center gap-1.5 px-2 border-r pr-3 shrink-0">
-                    <MousePointer2 className="h-4 w-4 text-primary animate-pulse" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground hidden xs:inline">Tools:</span>
+                    <Button 
+                        variant={isEditMode ? "default" : "outline"} 
+                        size="sm" 
+                        onClick={() => setIsEditMode(!isEditMode)}
+                        className={cn(
+                            "h-9 rounded-xl font-black text-[10px] uppercase tracking-tighter px-3 gap-1.5 transition-all active:scale-95",
+                            isEditMode ? "bg-primary shadow-lg shadow-primary/20 animate-pulse" : "border-muted-foreground/20 text-muted-foreground"
+                        )}
+                    >
+                        {isEditMode ? <LockOpen className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                        {isEditMode ? "Unlock" : "Locked"}
+                    </Button>
                 </div>
-                <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar px-2 flex-1">
+                
+                <div className={cn(
+                    "flex items-center gap-2 overflow-x-auto hide-scrollbar px-2 flex-1 transition-opacity duration-300",
+                    !isEditMode && "opacity-40 grayscale pointer-events-none"
+                )}>
                     {[
                         { id: 'Present', label: 'P', color: 'emerald' },
                         { id: 'Absent', label: 'A', color: 'rose' },
@@ -488,6 +510,7 @@ export default function AttendancePage() {
                     ].map(tool => (
                         <button 
                             key={tool.id}
+                            disabled={!isEditMode}
                             onClick={() => setActiveTool(activeTool === tool.id ? null : tool.id as ActiveTool)}
                             className={cn(
                                 "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
@@ -501,6 +524,7 @@ export default function AttendancePage() {
                     <div className="w-px h-6 bg-border mx-1 shrink-0" />
                     
                     <button 
+                        disabled={!isEditMode}
                         onClick={() => setActiveTool(activeTool === 'OT' ? null : 'OT')}
                         className={cn(
                             "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
@@ -509,6 +533,7 @@ export default function AttendancePage() {
                     >OT</button>
                     
                     <button 
+                        disabled={!isEditMode}
                         onClick={() => setActiveTool(activeTool === 'Note' ? null : 'Note')}
                         className={cn(
                             "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
@@ -517,6 +542,7 @@ export default function AttendancePage() {
                     ><StickyNote className="h-4 w-4" /></button>
 
                     <button 
+                        disabled={!isEditMode}
                         onClick={() => setActiveTool(activeTool === 'Clear' ? null : 'Clear')}
                         className={cn(
                             "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
@@ -531,7 +557,7 @@ export default function AttendancePage() {
                             variant="ghost" 
                             size="icon" 
                             onClick={handleUndo} 
-                            disabled={history.length === 0} 
+                            disabled={!isEditMode || history.length === 0} 
                             className="h-9 w-9 rounded-xl disabled:opacity-30"
                         >
                             <Undo2 className="h-4 w-4" />
@@ -540,7 +566,7 @@ export default function AttendancePage() {
                             variant="ghost" 
                             size="icon" 
                             onClick={handleRedo} 
-                            disabled={redoStack.length === 0} 
+                            disabled={!isEditMode || redoStack.length === 0} 
                             className="h-9 w-9 rounded-xl disabled:opacity-30"
                         >
                             <Redo2 className="h-4 w-4" />
@@ -609,7 +635,8 @@ export default function AttendancePage() {
                                                     key={dateStr}
                                                     onClick={() => handleStatusToggle(emp.id, day)}
                                                     className={cn(
-                                                        "p-0 text-center border-b border-r cursor-pointer transition-all active:bg-primary/10 select-none",
+                                                        "p-0 text-center border-b border-r transition-all select-none",
+                                                        isEditMode ? "cursor-pointer active:bg-primary/10" : "cursor-default",
                                                         getStatusBg(status, isToday(day), ot, isSun)
                                                     )}
                                                 >
@@ -701,7 +728,8 @@ export default function AttendancePage() {
                                                     <div 
                                                         onClick={() => handleStatusToggle(emp.id, day)}
                                                         className={cn(
-                                                            "h-10 w-full rounded-xl flex flex-col items-center justify-center relative transition-all active:scale-90 cursor-pointer border border-transparent shadow-sm",
+                                                            "h-10 w-full rounded-xl flex flex-col items-center justify-center relative transition-all border border-transparent shadow-sm",
+                                                            isEditMode ? "cursor-pointer active:scale-90" : "cursor-default",
                                                             isSun ? "bg-rose-50 border-rose-100" : "bg-muted/30 border-muted-foreground/5",
                                                             isToday(day) ? "ring-2 ring-primary ring-offset-1 z-10" : "",
                                                             getStatusBg(status, false, ot, isSun)
@@ -745,7 +773,7 @@ export default function AttendancePage() {
                         <p className="text-[10px] font-black uppercase tracking-widest text-primary">Attendance Logic</p>
                         <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
                             <b>P</b>: Present | <b>A</b>: Absent | <b>HD</b>: Half-Day | <b>H</b>: Holiday | <b>HW</b>: Holiday Working. <br/>
-                            Use the <b>OT tool</b> for extra hours and <b>Note tool</b> for daily comments. Shortcuts: <b>Ctrl+Z</b> (Undo), <b>Ctrl+Y</b> (Redo).
+                            Use the <b>Lock/Unlock</b> toggle to enable editing. Select a tool first, then tap a day to apply it.
                         </p>
                     </div>
                 </CardContent>
@@ -761,9 +789,11 @@ export default function AttendancePage() {
                 <DialogTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-orange-700">
                     <Clock className="h-5 w-5" /> Record Overtime
                 </DialogTitle>
-                <DialogDescription className="text-xs font-bold text-orange-600/70">
-                    {selectedOTCell && format(selectedOTCell.date, 'EEEE, dd MMM yyyy')}
-                </DialogDescription>
+                <DialogHeader className="p-0 border-none bg-transparent">
+                    <DialogDescription className="text-xs font-bold text-orange-600/70">
+                        {selectedOTCell && format(selectedOTCell.date, 'EEEE, dd MMM yyyy')}
+                    </DialogDescription>
+                </DialogHeader>
             </DialogHeader>
             <div className="p-8">
                 <Label htmlFor="ot-hours" className="text-[10px] font-black uppercase mb-4 block text-muted-foreground tracking-widest text-center">Hours Worked</Label>
@@ -795,9 +825,11 @@ export default function AttendancePage() {
                 <DialogTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-indigo-700">
                     <StickyNote className="h-5 w-5" /> Add Comment
                 </DialogTitle>
-                <DialogDescription className="text-xs font-bold text-indigo-600/70">
-                    {selectedNoteCell && format(selectedNoteCell.date, 'EEEE, dd MMM yyyy')}
-                </DialogDescription>
+                <DialogHeader className="p-0 border-none bg-transparent">
+                    <DialogDescription className="text-xs font-bold text-indigo-600/70">
+                        {selectedNoteCell && format(selectedNoteCell.date, 'EEEE, dd MMM yyyy')}
+                    </DialogDescription>
+                </DialogHeader>
             </DialogHeader>
             <div className="p-6">
                 <Label htmlFor="cell-note" className="text-[10px] font-black uppercase mb-3 block text-muted-foreground tracking-widest">Remarks / Note</Label>
