@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import AppLayout from "@/components/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { useCollection, useFirebase, useMemoFirebase, errorEmitter, FirestorePer
 import { collection, query, orderBy, doc, setDoc, where, deleteDoc } from 'firebase/firestore';
 import { Employee, Attendance, AttendanceStatus } from '@/lib/data';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isToday, getDay } from 'date-fns';
-import { UserCheck, ChevronLeft, ChevronRight, Info, MousePointer2, Eraser, Clock, User, CalendarDays, StickyNote, MessageSquare, Undo2, Redo2, Lock, LockOpen } from 'lucide-react';
+import { UserCheck, ChevronLeft, ChevronRight, Info, MousePointer2, Eraser, Clock, User, CalendarDays, StickyNote, MessageSquare, Undo2, Redo2, Lock, LockOpen, Download, Loader2, Hash, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { toBlob } from 'html-to-image';
 
 type ActiveTool = AttendanceStatus | 'Clear' | 'OT' | 'Note' | null;
 
@@ -35,6 +36,7 @@ export default function AttendancePage() {
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [cellCycleIndices, setCellCycleIndices] = useState<Record<string, number>>({});
+  const [isDownloading, setIsDownloading] = useState<string | null>(null);
 
   // History State
   const [history, setHistory] = useState<HistoryAction[]>([]);
@@ -446,6 +448,39 @@ export default function AttendancePage() {
     return { present, absent, half, holiday, holidayWorking, otTotal };
   };
 
+  const executeDownload = async (employee: Employee) => {
+    const node = document.getElementById(`attendance-card-${employee.id}`);
+    if (!node) return;
+
+    setIsDownloading(employee.id);
+    try {
+      const blob = await toBlob(node, { 
+        backgroundColor: '#FFFFFF',
+        pixelRatio: 3, 
+        width: 600,
+        style: {
+          display: 'block'
+        }
+      });
+      
+      if (!blob) throw new Error("Failed to generate image");
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `Attendance-${employee.fullName.replace(/\s+/g, '_')}-${selectedMonth}.png`;
+      link.href = url;
+      link.click();
+      
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      toast({ title: "Card Downloaded", description: `Saved report for ${employee.fullName}.` });
+    } catch (error) {
+      console.error('Error downloading card:', error);
+      toast({ variant: 'destructive', title: "Download Failed", description: "Could not create attendance image." });
+    } finally {
+      setIsDownloading(null);
+    }
+  };
+
   return (
     <AppLayout>
       <TooltipProvider delayDuration={100}>
@@ -589,7 +624,7 @@ export default function AttendancePage() {
                     <table className="w-full border-collapse table-fixed min-w-[1000px]">
                         <thead>
                             <tr className="bg-muted/40">
-                                <th className="sticky left-0 z-40 bg-muted/95 backdrop-blur-md p-4 text-left text-[10px] font-black uppercase tracking-widest border-b border-r w-[180px] shadow-sm">
+                                <th className="sticky left-0 z-40 bg-muted/95 backdrop-blur-md p-4 text-left text-[10px] font-black uppercase tracking-widest border-b border-r w-[220px] shadow-sm">
                                     Technician Name
                                 </th>
                                 {daysInMonth.map(day => {
@@ -618,9 +653,20 @@ export default function AttendancePage() {
                                 <tr><td colSpan={daysInMonth.length + 1} className="p-20 text-center animate-pulse text-xs font-black uppercase text-muted-foreground tracking-widest">Synchronizing records...</td></tr>
                             ) : (
                                 employees?.map((emp) => (
-                                    <tr key={emp.id} className="hover:bg-muted/5 h-12">
+                                    <tr key={emp.id} className="hover:bg-muted/5 h-12 group">
                                         <td className="sticky left-0 z-30 bg-card/95 backdrop-blur-md p-4 border-b border-r font-bold text-xs truncate shadow-sm">
-                                            {emp.fullName}
+                                            <div className="flex items-center justify-between">
+                                                <span className="truncate pr-2">{emp.fullName}</span>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    onClick={() => executeDownload(emp)}
+                                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"
+                                                    disabled={isDownloading === emp.id}
+                                                >
+                                                    {isDownloading === emp.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3 text-primary" />}
+                                                </Button>
+                                            </div>
                                         </td>
                                         {daysInMonth.map(day => {
                                             const dateStr = format(day, 'yyyy-MM-dd');
@@ -680,7 +726,7 @@ export default function AttendancePage() {
                 employees?.map((emp) => {
                     const summary = getTechnicianSummary(emp.id);
                     return (
-                        <Card key={emp.id} className="rounded-3xl overflow-hidden border-none shadow-md bg-card/50 backdrop-blur-sm h-full flex flex-col">
+                        <Card key={emp.id} className="rounded-3xl overflow-hidden border-none shadow-md bg-card/50 backdrop-blur-sm h-full flex flex-col relative group">
                             <CardHeader className="p-5 pb-3 border-b bg-muted/10 shrink-0">
                                 <div className="flex items-start justify-between min-w-0">
                                     <div className="flex items-center gap-3 min-w-0">
@@ -688,7 +734,18 @@ export default function AttendancePage() {
                                             <User className="h-5 w-5 text-primary" />
                                         </div>
                                         <div className="min-w-0">
-                                            <CardTitle className="text-xs sm:text-sm font-black tracking-tight truncate pr-1">{emp.fullName}</CardTitle>
+                                            <div className="flex items-center gap-2">
+                                                <CardTitle className="text-xs sm:text-sm font-black tracking-tight truncate pr-1">{emp.fullName}</CardTitle>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    onClick={() => executeDownload(emp)}
+                                                    className="h-6 w-6"
+                                                    disabled={isDownloading === emp.id}
+                                                >
+                                                    {isDownloading === emp.id ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Download className="h-3 w-3 text-primary" />}
+                                                </Button>
+                                            </div>
                                             <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate">{emp.specialization || 'Technician'}</p>
                                         </div>
                                     </div>
@@ -762,6 +819,134 @@ export default function AttendancePage() {
             )}
         </div>
 
+        {/* Professional Attendance Card Templates (Hidden for Capture) */}
+        <div className="fixed -left-[9999px] top-0 pointer-events-none" aria-hidden="true">
+            {employees?.map(emp => {
+                const summary = getTechnicianSummary(emp.id);
+                return (
+                    <div 
+                        key={`capture-${emp.id}`}
+                        id={`attendance-card-${emp.id}`}
+                        className="bg-white p-8 w-[600px] border-4 border-emerald-500 rounded-3xl shadow-none overflow-hidden text-slate-900 font-sans"
+                    >
+                        <div className="flex items-center justify-between mb-8 border-b-2 border-slate-100 pb-6">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-emerald-500 p-3 rounded-2xl">
+                                    <UserCheck className="h-10 w-10 text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black text-emerald-600 uppercase tracking-tight leading-none">Attendance Card</h2>
+                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">VE Enterprise Workshop Management</p>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-lg font-black text-slate-900 uppercase">{format(parseISO(`${selectedMonth}-01`), 'MMMM yyyy')}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Payroll Report</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-10 mb-8">
+                            <div className="space-y-4">
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] flex items-center gap-1.5"><User className="h-3.5 w-3.5"/> Technician</Label>
+                                    <p className="text-2xl font-black text-slate-900 leading-none">{emp.fullName}</p>
+                                    <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest">{emp.specialization || 'Staff'}</p>
+                                </div>
+                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 grid grid-cols-2 gap-4">
+                                    <div className="space-y-0.5">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase">Employee ID</p>
+                                        <p className="text-sm font-bold">{emp.empCode || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase">Work Location</p>
+                                        <p className="text-sm font-bold">{emp.workLocation || 'Workshop'}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5"/> Performance Summary</Label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100 text-center">
+                                        <p className="text-lg font-black text-emerald-700">{summary.present}</p>
+                                        <p className="text-[8px] font-black text-emerald-600 uppercase">Present</p>
+                                    </div>
+                                    <div className="bg-rose-50 p-2.5 rounded-xl border border-rose-100 text-center">
+                                        <p className="text-lg font-black text-rose-700">{summary.absent}</p>
+                                        <p className="text-[8px] font-black text-rose-600 uppercase">Absent</p>
+                                    </div>
+                                    <div className="bg-orange-50 p-2.5 rounded-xl border border-orange-100 text-center">
+                                        <p className="text-lg font-black text-orange-700">{summary.otTotal}H</p>
+                                        <p className="text-[8px] font-black text-orange-600 uppercase">OT</p>
+                                    </div>
+                                    <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-100 text-center">
+                                        <p className="text-lg font-black text-amber-700">{summary.half}</p>
+                                        <p className="text-[8px] font-black text-amber-600 uppercase">Half-Day</p>
+                                    </div>
+                                    <div className="bg-blue-50 p-2.5 rounded-xl border border-blue-100 text-center">
+                                        <p className="text-lg font-black text-blue-700">{summary.holiday}</p>
+                                        <p className="text-[8px] font-black text-blue-600 uppercase">Holiday</p>
+                                    </div>
+                                    <div className="bg-violet-50 p-2.5 rounded-xl border border-violet-100 text-center">
+                                        <p className="text-lg font-black text-violet-700">{summary.holidayWorking}</p>
+                                        <p className="text-[8px] font-black text-violet-600 uppercase">HW</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Calendar Snippet for Card */}
+                        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <CalendarDays className="h-4 w-4 text-emerald-500" /> Markings Detail
+                            </h4>
+                            <div className="grid grid-cols-7 gap-2">
+                                {['S','M','T','W','T','F','S'].map((day, i) => (
+                                    <div key={i} className={cn("text-center text-[10px] font-black uppercase mb-2", i === 0 ? "text-rose-500" : "text-slate-400")}>{day}</div>
+                                ))}
+                                {daysInMonth.length > 0 && Array.from({ length: getDay(daysInMonth[0]) }).map((_, i) => (
+                                    <div key={`pad-cap-${i}`} className="h-10 w-full" />
+                                ))}
+                                {daysInMonth.map(day => {
+                                    const dateStr = format(day, 'yyyy-MM-dd');
+                                    const record = attendanceMap[emp.id]?.[dateStr];
+                                    const status = record?.status;
+                                    const ot = record?.overtimeHours || 0;
+                                    const isSun = day.getDay() === 0;
+
+                                    let bg = "bg-white border-slate-100";
+                                    let color = "text-slate-400";
+                                    let char = "";
+
+                                    if (status === 'Present') { bg = "bg-emerald-100 border-emerald-200"; color="text-emerald-700"; char="P"; }
+                                    else if (status === 'Absent') { bg = "bg-rose-100 border-rose-200"; color="text-rose-700"; char="A"; }
+                                    else if (status === 'Half-Day') { bg = "bg-amber-100 border-amber-200"; color="text-amber-700"; char="HD"; }
+                                    else if (status === 'Holiday') { bg = "bg-blue-100 border-blue-200"; color="text-blue-700"; char="H"; }
+                                    else if (status === 'Holiday-Working') { bg = "bg-violet-100 border-violet-200"; color="text-violet-700"; char="HW"; }
+                                    else if (isSun) { bg = "bg-rose-50 border-rose-100"; color="text-rose-400"; }
+
+                                    return (
+                                        <div key={`cap-cell-${dateStr}`} className={cn("h-10 w-full rounded-xl border flex flex-col items-center justify-center relative", bg)}>
+                                            <span className={cn("text-[8px] font-black opacity-40", isSun && !status && "text-rose-500")}>{format(day, 'd')}</span>
+                                            <div className="flex items-center gap-0.5">
+                                                {char && <span className={cn("text-[9px] font-black", color)}>{char}</span>}
+                                                {ot > 0 && <div className="flex flex-col items-center scale-75 leading-none"><span className="text-[8px] font-black text-orange-600">OT</span><span className="text-[7px] font-black text-orange-500">{ot}H</span></div>}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center italic text-[10px] text-slate-400">
+                            <span>System Generated Haazri Slip</span>
+                            <span className="font-bold">Date: {format(new Date(), 'dd MMM yyyy, p')}</span>
+                        </div>
+                    </div>
+                )
+            })}
+        </div>
+
         {/* Footer Info */}
         <div className="px-4 pb-10">
             <Card className="bg-muted/20 border-dashed rounded-3xl">
@@ -773,7 +958,7 @@ export default function AttendancePage() {
                         <p className="text-[10px] font-black uppercase tracking-widest text-primary">Attendance Logic</p>
                         <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
                             <b>P</b>: Present | <b>A</b>: Absent | <b>HD</b>: Half-Day | <b>H</b>: Holiday | <b>HW</b>: Holiday Working. <br/>
-                            Use the <b>Lock/Unlock</b> toggle to enable editing. Select a tool first, then tap a day to apply it.
+                            Use the <b>Lock/Unlock</b> toggle to enable editing. Select a tool first, then tap a day to apply it. Use the <b>Download</b> icon to save technician report cards.
                         </p>
                     </div>
                 </CardContent>
