@@ -506,56 +506,56 @@ export default function SettingsPage() {
 
                 {/* Bank Accounts Section */}
                 <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-card/50 backdrop-blur-md">
-                    <CardHeader className="p-5 sm:p-8 pb-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="h-9 w-9 rounded-2xl bg-primary/10 flex items-center justify-center">
-                                    <CreditCard className="h-4 w-4 text-primary" />
+                    <CardHeader className="p-4 sm:p-8 pb-3 sm:pb-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                            <div className="flex items-center gap-2.5 sm:gap-3">
+                                <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
+                                    <CreditCard className="h-3.5 w-3.5 sm:h-4 w-4 text-primary" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-lg font-black">Treasury & Banking</CardTitle>
-                                    <CardDescription className="text-[10px] sm:text-xs">Manage multiple settlement accounts.</CardDescription>
+                                    <CardTitle className="text-base sm:text-lg font-black">Treasury & Banking</CardTitle>
+                                    <CardDescription className="text-[9px] sm:text-xs">Manage settlement accounts.</CardDescription>
                                 </div>
                             </div>
-                            <Button onClick={() => openBankAccountDialog(null)} size="sm" className="h-10 rounded-xl px-4 font-bold shadow-lg shadow-primary/10 w-full sm:w-auto text-xs">
-                                <PlusCircle className="mr-2 h-3.5 w-3.5" />
-                                Add New Account
+                            <Button onClick={() => openBankAccountDialog(null)} size="sm" className="h-9 sm:h-10 rounded-xl px-4 font-bold shadow-lg shadow-primary/10 w-full sm:w-auto text-[10px] sm:text-xs">
+                                <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
+                                New Account
                             </Button>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 sm:p-8 pt-0">
-                        <Tabs value={activeBankTab} onValueChange={(value) => setActiveBankTab(value as Enterprise)} className="px-5 sm:px-0">
-                            <TabsList className="grid w-full grid-cols-2 h-9 p-1 rounded-xl bg-muted/30 border-none mb-5">
-                                <TabsTrigger value="Vithal" className="rounded-lg text-[9px] font-bold uppercase tracking-wider">Vithal Accounts</TabsTrigger>
-                                <TabsTrigger value="RV" className="rounded-lg text-[9px] font-bold uppercase tracking-wider">RV Accounts</TabsTrigger>
+                        <Tabs value={activeBankTab} onValueChange={(value) => setActiveBankTab(value as Enterprise)} className="px-4 sm:px-0">
+                            <TabsList className="grid w-full grid-cols-2 h-8 p-0.5 rounded-lg bg-muted/30 border-none mb-4 sm:mb-5">
+                                <TabsTrigger value="Vithal" className="rounded-md text-[8px] sm:text-[9px] font-bold uppercase tracking-wider h-7">Vithal Accounts</TabsTrigger>
+                                <TabsTrigger value="RV" className="rounded-md text-[8px] sm:text-[9px] font-bold uppercase tracking-wider h-7">RV Accounts</TabsTrigger>
                             </TabsList>
                             
                             {/* Mobile List View */}
-                            <div className="md:hidden space-y-3 pb-6">
+                            <div className="md:hidden space-y-2 pb-4">
                                 {isLoadingBankAccounts ? (
-                                    <div className="py-8 text-center animate-pulse text-[10px] font-bold text-muted-foreground uppercase">Syncing accounts...</div>
+                                    <div className="py-6 text-center animate-pulse text-[9px] font-bold text-muted-foreground uppercase">Syncing accounts...</div>
                                 ) : bankAccounts && bankAccounts.length > 0 ? (
                                     bankAccounts.map(account => (
-                                        <div key={account.id} className="p-3.5 rounded-2xl border bg-card/50 shadow-sm space-y-3 relative">
-                                            <div className="flex justify-between items-start pr-8">
-                                                <div>
-                                                    <h4 className="font-black text-xs">{account.nickname}</h4>
-                                                    <p className="text-[9px] font-bold text-muted-foreground uppercase">{account.bankName}</p>
+                                        <div key={account.id} className="p-3 rounded-2xl border bg-card/50 shadow-sm space-y-2 relative group active:scale-[0.99] transition-transform">
+                                            <div className="flex justify-between items-start pr-1">
+                                                <div className="space-y-0.5">
+                                                    <h4 className="font-black text-[11px] leading-tight text-foreground">{account.nickname}</h4>
+                                                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-tight">{account.bankName}</p>
                                                 </div>
-                                                <Badge variant="outline" className="text-[9px] py-0 h-4 font-mono border-primary/20 text-primary">
+                                                <Badge variant="outline" className="text-[8px] py-0 h-4 font-mono border-primary/20 text-primary px-1.5 shrink-0">
                                                     {account.ifscCode}
                                                 </Badge>
                                             </div>
-                                            <div className="pt-2 border-t flex justify-between items-center">
+                                            <div className="pt-2 border-t border-border/40 flex justify-between items-end">
                                                 <div className="space-y-0.5">
-                                                    <p className="text-[7px] font-black text-muted-foreground uppercase">Account No.</p>
-                                                    <p className="text-xs font-mono font-bold tracking-tight">{account.accountNumber}</p>
+                                                    <p className="text-[7px] font-black text-muted-foreground/60 uppercase tracking-tighter">A/C Number</p>
+                                                    <p className="text-[11px] font-mono font-bold tracking-tight text-primary">{account.accountNumber}</p>
                                                 </div>
                                                 <div className="flex gap-1">
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-500 hover:bg-amber-50" onClick={() => openBankAccountDialog(account)}>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-500 rounded-lg hover:bg-amber-50" onClick={() => openBankAccountDialog(account)}>
                                                         <Pencil className="h-3.5 w-3.5" />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/5" onClick={() => openDeleteDialog(account)}>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive rounded-lg hover:bg-destructive/5" onClick={() => openDeleteDialog(account)}>
                                                         <Trash2 className="h-3.5 w-3.5" />
                                                     </Button>
                                                 </div>
@@ -563,9 +563,9 @@ export default function SettingsPage() {
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="py-12 text-center border-2 border-dashed rounded-3xl">
-                                        <CreditCard className="h-7 w-7 text-muted-foreground/30 mx-auto mb-2" />
-                                        <p className="text-[10px] text-muted-foreground font-bold">No accounts found for {activeBankTab}.</p>
+                                    <div className="py-8 text-center border-2 border-dashed rounded-2xl bg-muted/5">
+                                        <CreditCard className="h-6 w-6 text-muted-foreground/20 mx-auto mb-1.5" />
+                                        <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">No accounts added</p>
                                     </div>
                                 )}
                             </div>
