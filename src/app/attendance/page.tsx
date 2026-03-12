@@ -265,8 +265,8 @@ export default function AttendancePage() {
     switch (status) {
       case 'Present': baseChar = 'P'; baseColor = isSun ? "text-rose-600" : "text-emerald-600"; break;
       case 'Absent': baseChar = 'A'; baseColor = "text-rose-600"; break;
-      case 'Half-Day': baseChar = 'H'; baseColor = "text-amber-600"; break;
-      case 'Holiday': baseChar = 'O'; baseColor = "text-blue-600"; break;
+      case 'Half-Day': baseChar = 'HD'; baseColor = "text-amber-600"; break;
+      case 'Holiday': baseChar = 'H'; baseColor = "text-blue-600"; break;
       case 'Holiday-Working': baseChar = 'HW'; baseColor = "text-violet-600"; break;
     }
 
@@ -280,7 +280,7 @@ export default function AttendancePage() {
             
             <div className="flex flex-col items-center gap-0.5">
                 {baseChar && (
-                    <span className={cn("font-black", status === 'Holiday-Working' ? "text-[9px]" : "text-[11px]", baseColor)}>
+                    <span className={cn("font-black", (status === 'Holiday-Working' || status === 'Half-Day') ? "text-[9px]" : "text-[11px]", baseColor)}>
                         {baseChar}
                     </span>
                 )}
@@ -385,8 +385,8 @@ export default function AttendancePage() {
                     {[
                         { id: 'Present', label: 'P', color: 'emerald' },
                         { id: 'Absent', label: 'A', color: 'rose' },
-                        { id: 'Half-Day', label: 'H', color: 'amber' },
-                        { id: 'Holiday', label: 'O', color: 'blue' },
+                        { id: 'Half-Day', label: 'HD', color: 'amber' },
+                        { id: 'Holiday', label: 'H', color: 'blue' },
                         { id: 'Holiday-Working', label: 'HW', color: 'violet' }
                     ].map(tool => (
                         <button 
@@ -551,7 +551,7 @@ export default function AttendancePage() {
                                         </Badge>
                                         <div className="text-[9px] font-bold text-muted-foreground uppercase flex flex-col items-end whitespace-nowrap">
                                             <span>P:{summary.present} A:{summary.absent}</span>
-                                            <span className="text-blue-600">O:{summary.holiday} HW:{summary.holidayWorking}</span>
+                                            <span className="text-blue-600">H:{summary.holiday} HW:{summary.holidayWorking}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -624,7 +624,7 @@ export default function AttendancePage() {
                     <div className="space-y-1">
                         <p className="text-[10px] font-black uppercase tracking-widest text-primary">Attendance Logic</p>
                         <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
-                            <b>P</b>: Present | <b>A</b>: Absent | <b>H</b>: Half-Day | <b>O</b>: Holiday (Paid) | <b>HW</b>: Holiday Working. <br/>
+                            <b>P</b>: Present | <b>A</b>: Absent | <b>HD</b>: Half-Day | <b>H</b>: Holiday (Paid) | <b>HW</b>: Holiday Working. <br/>
                             Use the <b>OT tool</b> for extra hours and <b>Note tool</b> for daily comments (indicators will appear in cells).
                         </p>
                     </div>
