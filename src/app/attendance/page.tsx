@@ -1,15 +1,15 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import AppLayout from "@/components/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirebase, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, where, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, where, deleteDoc, DocumentReference } from 'firebase/firestore';
 import { Employee, Attendance, AttendanceStatus } from '@/lib/data';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isToday, getDay } from 'date-fns';
-import { UserCheck, ChevronLeft, ChevronRight, Info, MousePointer2, Eraser, Clock, User, CalendarDays, StickyNote, MessageSquare } from 'lucide-react';
+import { UserCheck, ChevronLeft, ChevronRight, Info, MousePointer2, Eraser, Clock, User, CalendarDays, StickyNote, MessageSquare, Undo2, Redo2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -21,14 +21,23 @@ import { Textarea } from '@/components/ui/textarea';
 
 type ActiveTool = AttendanceStatus | 'Clear' | 'OT' | 'Note' | null;
 
+interface HistoryAction {
+    docRef: DocumentReference;
+    prevData: any; // null if it was deleted
+    nextData: any; // null if it is being deleted
+}
+
 export default function AttendancePage() {
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
   
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
-  
   const [cellCycleIndices, setCellCycleIndices] = useState<Record<string, number>>({});
+
+  // History State
+  const [history, setHistory] = useState<HistoryAction[]>([]);
+  const [redoStack, setRedoStack] = useState<HistoryAction[]>([]);
 
   // OT Dialog State
   const [isOTDialogOpen, setIsOTDialogOpen] = useState(false);
@@ -86,6 +95,69 @@ export default function AttendancePage() {
     return map;
   }, [attendanceRecords]);
 
+  // Record History Helper
+  const pushToHistory = useCallback((action: HistoryAction) => {
+    setHistory(prev => [action, ...prev].slice(0, 20)); // Keep last 20 actions
+    setRedoStack([]); // Clear redo on new action
+  }, []);
+
+  const applyHistoryAction = useCallback((action: HistoryAction, isUndo: boolean) => {
+    if (!firestore) return;
+    const dataToApply = isUndo ? action.prevData : action.nextData;
+    
+    if (dataToApply === null) {
+        deleteDoc(action.docRef).catch(() => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: action.docRef.path,
+                operation: 'delete',
+            }));
+        });
+    } else {
+        setDoc(action.docRef, dataToApply, { merge: false }).catch(() => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: action.docRef.path,
+                operation: 'update',
+                requestResourceData: dataToApply
+            }));
+        });
+    }
+  }, [firestore]);
+
+  const handleUndo = useCallback(() => {
+    if (history.length === 0) return;
+    const action = history[0];
+    applyHistoryAction(action, true);
+    setHistory(prev => prev.slice(1));
+    setRedoStack(prev => [action, ...prev]);
+    toast({ title: 'Undo Successful', description: 'Previous action reverted.' });
+  }, [history, applyHistoryAction, toast]);
+
+  const handleRedo = useCallback(() => {
+    if (redoStack.length === 0) return;
+    const action = redoStack[0];
+    applyHistoryAction(action, false);
+    setRedoStack(prev => prev.slice(1));
+    setHistory(prev => [action, ...prev]);
+    toast({ title: 'Redo Successful', description: 'Action applied again.' });
+  }, [redoStack, applyHistoryAction, toast]);
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+            e.preventDefault();
+            if (e.shiftKey) handleRedo();
+            else handleUndo();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+            e.preventDefault();
+            handleRedo();
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, handleRedo]);
+
   const statusCycle: (AttendanceStatus | null)[] = [
     null, 
     'Present', 
@@ -112,9 +184,14 @@ export default function AttendancePage() {
     
     let nextStatus: AttendanceStatus | null = null;
 
+    // Previous data for history
+    const prevData = currentRecord ? { ...currentRecord } : null;
+
     if (activeTool) {
         if (activeTool === 'Clear') {
-            deleteDoc(attendanceRef).catch(() => {
+            deleteDoc(attendanceRef).then(() => {
+                pushToHistory({ docRef: attendanceRef, prevData, nextData: null });
+            }).catch(() => {
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     path: attendanceRef.path,
                     operation: 'delete',
@@ -151,34 +228,46 @@ export default function AttendancePage() {
     }
 
     if (nextStatus) {
-        setDoc(attendanceRef, {
+        const nextData = {
             employeeId: empId,
             date: dateStr,
             status: nextStatus,
+            overtimeHours: currentOT,
+            notes: currentNote,
             updatedAt: new Date().toISOString()
-        }, { merge: true }).catch(() => {
+        };
+        setDoc(attendanceRef, nextData, { merge: true }).then(() => {
+            pushToHistory({ docRef: attendanceRef, prevData, nextData });
+        }).catch(() => {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: attendanceRef.path,
                 operation: 'update',
-                requestResourceData: { status: nextStatus }
+                requestResourceData: nextData
             }));
         });
     } else {
         if (currentOT > 0 || currentNote) {
-            setDoc(attendanceRef, {
+            const nextData = {
                 employeeId: empId,
                 date: dateStr,
                 status: null,
+                overtimeHours: currentOT,
+                notes: currentNote,
                 updatedAt: new Date().toISOString()
-            }, { merge: true }).catch(() => {
+            };
+            setDoc(attendanceRef, nextData, { merge: true }).then(() => {
+                pushToHistory({ docRef: attendanceRef, prevData, nextData });
+            }).catch(() => {
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     path: attendanceRef.path,
                     operation: 'update',
-                    requestResourceData: { status: null }
+                    requestResourceData: nextData
                 }));
             });
         } else {
-            deleteDoc(attendanceRef).catch(() => {
+            deleteDoc(attendanceRef).then(() => {
+                pushToHistory({ docRef: attendanceRef, prevData, nextData: null });
+            }).catch(() => {
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     path: attendanceRef.path,
                     operation: 'delete',
@@ -198,22 +287,25 @@ export default function AttendancePage() {
     const hours = parseFloat(otHours) || 0;
 
     const currentRecord = attendanceMap[empId]?.[dateStr];
+    const prevData = currentRecord ? { ...currentRecord } : null;
     
-    const data: any = {
+    const nextData: any = {
         employeeId: empId,
         date: dateStr,
         overtimeHours: hours,
         updatedAt: new Date().toISOString()
     };
 
-    if (currentRecord?.status) data.status = currentRecord.status;
-    if (currentRecord?.notes) data.notes = currentRecord.notes;
+    if (currentRecord?.status) nextData.status = currentRecord.status;
+    if (currentRecord?.notes) nextData.notes = currentRecord.notes;
     
-    setDoc(attendanceRef, data, { merge: true }).catch(() => {
+    setDoc(attendanceRef, nextData, { merge: true }).then(() => {
+        pushToHistory({ docRef: attendanceRef, prevData, nextData });
+    }).catch(() => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: attendanceRef.path,
             operation: 'update',
-            requestResourceData: data
+            requestResourceData: nextData
         }));
     });
     
@@ -230,22 +322,25 @@ export default function AttendancePage() {
     const attendanceRef = doc(firestore, 'attendance', cellKey);
 
     const currentRecord = attendanceMap[empId]?.[dateStr];
+    const prevData = currentRecord ? { ...currentRecord } : null;
     
-    const data: any = {
+    const nextData: any = {
         employeeId: empId,
         date: dateStr,
         notes: noteText.trim(),
         updatedAt: new Date().toISOString()
     };
 
-    if (currentRecord?.status) data.status = currentRecord.status;
-    if (currentRecord?.overtimeHours) data.overtimeHours = currentRecord.overtimeHours;
+    if (currentRecord?.status) nextData.status = currentRecord.status;
+    if (currentRecord?.overtimeHours) nextData.overtimeHours = currentRecord.overtimeHours;
     
-    setDoc(attendanceRef, data, { merge: true }).catch(() => {
+    setDoc(attendanceRef, nextData, { merge: true }).then(() => {
+        pushToHistory({ docRef: attendanceRef, prevData, nextData });
+    }).catch(() => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: attendanceRef.path,
             operation: 'update',
-            requestResourceData: data
+            requestResourceData: nextData
         }));
     });
     
@@ -420,6 +515,29 @@ export default function AttendancePage() {
                             activeTool === 'Clear' ? "bg-zinc-800 text-white border-zinc-800" : "bg-white text-zinc-500 border-zinc-200"
                         )}
                     ><Eraser className="h-4 w-4" /></button>
+
+                    <div className="w-px h-6 bg-border mx-1 shrink-0" />
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={handleUndo} 
+                            disabled={history.length === 0} 
+                            className="h-9 w-9 rounded-xl disabled:opacity-30"
+                        >
+                            <Undo2 className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={handleRedo} 
+                            disabled={redoStack.length === 0} 
+                            className="h-9 w-9 rounded-xl disabled:opacity-30"
+                        >
+                            <Redo2 className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -619,7 +737,7 @@ export default function AttendancePage() {
                         <p className="text-[10px] font-black uppercase tracking-widest text-primary">Attendance Logic</p>
                         <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
                             <b>P</b>: Present | <b>A</b>: Absent | <b>HD</b>: Half-Day | <b>H</b>: Holiday (Paid) | <b>HW</b>: Holiday Working. <br/>
-                            Use the <b>OT tool</b> for extra hours and <b>Note tool</b> for daily comments (indicators will appear in cells).
+                            Use the <b>OT tool</b> for extra hours and <b>Note tool</b> for daily comments. Shortcuts: <b>Ctrl+Z</b> (Undo), <b>Ctrl+Y</b> (Redo).
                         </p>
                     </div>
                 </CardContent>
@@ -664,7 +782,7 @@ export default function AttendancePage() {
 
       {/* Note Dialog */}
       <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
-        <DialogContent className="max-w-[90vw] sm:max-w-[400px] p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
+        <DialogContent className="max-w-[90vw] sm:max-w-400px] p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
             <DialogHeader className="p-6 bg-indigo-50 border-b border-indigo-100">
                 <DialogTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-indigo-700">
                     <StickyNote className="h-5 w-5" /> Add Comment
