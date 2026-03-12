@@ -35,28 +35,28 @@ const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeC
     onTemplateFontSizeChange: (id: 'sr_no' | 'particulars' | 'rate' | 'amount', size: string) => void,
 }) => {
     return (
-        <div className="space-y-4">
-             <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <LayoutTemplate className="h-3 w-3" /> Default Column Styles
+        <div className="space-y-2">
+             <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                <LayoutTemplate className="h-3 w-3" /> Column Styles
              </h4>
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
              {template.columns.map(col => (
-                <div key={col.id} className="p-3 rounded-xl border bg-muted/20 space-y-3">
+                <div key={col.id} className="p-2 rounded-xl border bg-muted/10 space-y-2">
                     <Label className="text-[9px] font-bold uppercase">{col.label}</Label>
-                    <div className="flex items-center gap-2">
-                        <div className="flex-1 p-1 bg-background rounded-lg border flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                        <div className="flex-1 p-0.5 bg-background rounded-lg border flex items-center justify-between">
                             {(['left', 'center', 'right'] as const).map(align => (
                                 <Button 
                                     key={align} 
                                     type="button" 
                                     variant={col.align === align ? 'default' : 'ghost'} 
                                     size="icon" 
-                                    className="h-7 w-7 flex-1 rounded-md"
+                                    className="h-6 w-6 flex-1 rounded-md"
                                     onClick={() => onTemplateChange(col.id as 'sr_no' | 'particulars' | 'rate' | 'amount', align)}
                                 >
-                                    {align === 'left' && <AlignLeft className="h-3.5 w-3.5" />}
-                                    {align === 'center' && <AlignCenter className="h-3.5 w-3.5" />}
-                                    {align === 'right' && <AlignRight className="h-3.5 w-3.5" />}
+                                    {align === 'left' && <AlignLeft className="h-3 w-3" />}
+                                    {align === 'center' && <AlignCenter className="h-3 w-3" />}
+                                    {align === 'right' && <AlignRight className="h-3 w-3" />}
                                 </Button>
                             ))}
                         </div>
@@ -65,7 +65,7 @@ const ColumnAlignmentFields = ({ template, onTemplateChange, onTemplateFontSizeC
                             placeholder="Size" 
                             value={col.fontSize ?? ''} 
                             onChange={(e) => onTemplateFontSizeChange(col.id as 'sr_no' | 'particulars' | 'rate' | 'amount', e.target.value)}
-                            className="h-9 w-14 text-center font-bold text-xs"
+                            className="h-7 w-12 text-center font-bold text-[10px] px-1"
                         />
                     </div>
                 </div>
@@ -193,12 +193,12 @@ const SettingsForm = ({ enterprise }: { enterprise: Enterprise }) => {
     
     if (isLoadingSettings) {
         return (
-             <div className="space-y-8 p-4">
-               <div className="space-y-4">
-                    <Skeleton className="h-6 w-1/4" />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-10 w-full" /></div>
-                        <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-10 w-full" /></div>
+             <div className="space-y-4 p-2">
+               <div className="space-y-2">
+                    <Skeleton className="h-4 w-1/4" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1"><Skeleton className="h-4 w-20" /><Skeleton className="h-8 w-full" /></div>
+                        <div className="space-y-1"><Skeleton className="h-4 w-20" /><Skeleton className="h-8 w-full" /></div>
                     </div>
                 </div>
              </div>
@@ -206,131 +206,121 @@ const SettingsForm = ({ enterprise }: { enterprise: Enterprise }) => {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500 pb-10">
-            <div className="space-y-6">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
-                    <Building2 className="h-3.5 w-3.5" /> Basic Information
+        <div className="space-y-2 animate-in fade-in duration-500 pb-4">
+            <div className="space-y-2">
+                <h3 className="text-[9px] font-black uppercase tracking-[0.1em] text-primary flex items-center gap-1.5">
+                    <Building2 className="h-3 w-3" /> Basic Info
                 </h3>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="space-y-2">
-                        <Label htmlFor="companyName" className="text-[9px] font-bold uppercase text-muted-foreground">Company Name</Label>
-                        <Input id="companyName" value={settings.companyName || ''} onChange={handleInputChange} className="h-10 rounded-xl text-xs" />
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                        <Label htmlFor="companyName" className="text-[8px] font-bold uppercase text-muted-foreground">Company Name</Label>
+                        <Input id="companyName" value={settings.companyName || ''} onChange={handleInputChange} className="h-8 rounded-xl text-xs" />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="address" className="text-[9px] font-bold uppercase text-muted-foreground">Registered Address</Label>
-                        <Textarea id="address" value={settings.address || ''} onChange={handleInputChange} placeholder="Full address for documents" className="min-h-[80px] rounded-xl resize-none text-xs" />
+                    <div className="space-y-1">
+                        <Label htmlFor="address" className="text-[8px] font-bold uppercase text-muted-foreground">Address</Label>
+                        <Textarea id="address" value={settings.address || ''} onChange={handleInputChange} placeholder="Document address" className="min-h-[60px] rounded-xl resize-none text-xs p-2" />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="pan" className="text-[9px] font-bold uppercase text-muted-foreground">PAN Number</Label>
-                        <Input id="pan" value={settings.pan || ''} onChange={handleInputChange} className="h-10 rounded-xl font-mono text-xs" />
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <Label htmlFor="pan" className="text-[8px] font-bold uppercase text-muted-foreground">PAN</Label>
+                            <Input id="pan" value={settings.pan || ''} onChange={handleInputChange} className="h-8 rounded-xl font-mono text-xs" />
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="gstin" className="text-[8px] font-bold uppercase text-muted-foreground">GSTIN</Label>
+                            <Input id="gstin" value={settings.gstin || ''} onChange={handleInputChange} className="h-8 rounded-xl font-mono text-xs" />
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="gstin" className="text-[9px] font-bold uppercase text-muted-foreground">GSTIN</Label>
-                        <Input id="gstin" value={settings.gstin || ''} onChange={handleInputChange} className="h-10 rounded-xl font-mono text-xs" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="sacCode" className="text-[9px] font-bold uppercase text-muted-foreground">SAC Code</Label>
-                        <Input id="sacCode" value={settings.sacCode || ''} onChange={handleInputChange} className="h-10 rounded-xl font-mono text-xs" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="serviceTaxCode" className="text-[9px] font-bold uppercase text-muted-foreground">Service Tax Code No</Label>
-                        <Input id="serviceTaxCode" value={settings.serviceTaxCode || ''} onChange={handleInputChange} className="h-10 rounded-xl font-mono text-xs" />
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <Label htmlFor="sacCode" className="text-[8px] font-bold uppercase text-muted-foreground">SAC</Label>
+                            <Input id="sacCode" value={settings.sacCode || ''} onChange={handleInputChange} className="h-8 rounded-xl font-mono text-xs" />
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="serviceTaxCode" className="text-[8px] font-bold uppercase text-muted-foreground">Service Tax</Label>
+                            <Input id="serviceTaxCode" value={settings.serviceTaxCode || ''} onChange={handleInputChange} className="h-8 rounded-xl font-mono text-xs" />
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <Separator className="bg-border/50" />
+            <Separator className="bg-border/30 my-1" />
             
-            <div className="space-y-6">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
-                    <Settings2 className="h-3.5 w-3.5" /> Contact & Billing
+            <div className="space-y-2">
+                <h3 className="text-[9px] font-black uppercase tracking-[0.1em] text-primary flex items-center gap-1.5">
+                    <Settings2 className="h-3 w-3" /> Billing
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div className="space-y-2">
-                        <Label htmlFor="contactPerson" className="text-[9px] font-bold uppercase text-muted-foreground">Contact Person</Label>
-                        <Input id="contactPerson" value={settings.contactPerson || ''} onChange={handleInputChange} className="h-10 rounded-xl text-xs" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                        <Label htmlFor="contactPerson" className="text-[8px] font-bold uppercase text-muted-foreground">Person</Label>
+                        <Input id="contactPerson" value={settings.contactPerson || ''} onChange={handleInputChange} className="h-8 rounded-xl text-xs" />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="contactNumber" className="text-[9px] font-bold uppercase text-muted-foreground">Contact Number</Label>
-                        <Input id="contactNumber" value={settings.contactNumber || ''} onChange={handleInputChange} className="h-10 rounded-xl text-xs" />
+                    <div className="space-y-1">
+                        <Label htmlFor="contactNumber" className="text-[8px] font-bold uppercase text-muted-foreground">Contact</Label>
+                        <Input id="contactNumber" value={settings.contactNumber || ''} onChange={handleInputChange} className="h-8 rounded-xl text-xs" />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="nextBillNo" className="text-[9px] font-bold uppercase text-muted-foreground">Next Invoice Number</Label>
-                        <Input id="nextBillNo" type="number" value={settings.nextBillNo ?? ''} onChange={handleInputChange} className="h-10 rounded-xl font-bold text-blue-600 text-xs" />
+                    <div className="space-y-1">
+                        <Label htmlFor="nextBillNo" className="text-[8px] font-bold uppercase text-muted-foreground">Next No.</Label>
+                        <Input id="nextBillNo" type="number" value={settings.nextBillNo ?? ''} onChange={handleInputChange} className="h-8 rounded-xl font-bold text-blue-600 text-xs" />
                     </div>
                 </div>
             </div>
             
-            <Separator className="bg-border/50" />
+            <Separator className="bg-border/30 my-1" />
 
-            <div className="space-y-6">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
-                    <LayoutTemplate className="h-3.5 w-3.5" /> Document Layout Defaults
+            <div className="space-y-2">
+                <h3 className="text-[9px] font-black uppercase tracking-[0.1em] text-primary flex items-center gap-1.5">
+                    <LayoutTemplate className="h-3 w-3" /> Layout
                 </h3>
-                 <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
-                    <div className="p-4 sm:p-5 border rounded-2xl bg-muted/10 space-y-8">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div className="space-y-2">
-                                <Label className="text-[9px] font-bold uppercase text-muted-foreground">Page Size</Label>
-                                <Select value={settings.pageSize || 'A4'} onValueChange={(value) => handleSelectChange('pageSize', value)} >
-                                    <SelectTrigger className="h-9 rounded-xl bg-background text-xs">
-                                        <SelectValue placeholder="Select page size" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="A4" className="text-xs">A4</SelectItem>
-                                        <SelectItem value="LETTER" className="text-xs">Letter</SelectItem>
-                                        <SelectItem value="LEGAL" className="text-xs">Legal</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2 lg:col-span-2">
-                                <Label className="text-[9px] font-bold uppercase text-muted-foreground">Margins (cm)</Label>
-                                <div className="grid grid-cols-4 gap-2">
-                                    <div className="space-y-1">
-                                        <Input type="number" placeholder="Top" value={settings.pageMargins?.top ?? ''} onChange={(e) => handleMarginChange('top', e.target.value)} className="h-9 rounded-xl px-1 text-center text-[10px]"/>
-                                        <span className="text-[7px] text-center block text-muted-foreground uppercase font-bold">Top</span>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Input type="number" placeholder="Btm" value={settings.pageMargins?.bottom ?? ''} onChange={(e) => handleMarginChange('bottom', e.target.value)} className="h-9 rounded-xl px-1 text-center text-[10px]"/>
-                                        <span className="text-[7px] text-center block text-muted-foreground uppercase font-bold">Btm</span>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Input type="number" placeholder="Left" value={settings.pageMargins?.left ?? ''} onChange={(e) => handleMarginChange('left', e.target.value)} className="h-9 rounded-xl px-1 text-center text-[10px]"/>
-                                        <span className="text-[7px] text-center block text-muted-foreground uppercase font-bold">Left</span>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Input type="number" placeholder="Right" value={settings.pageMargins?.right ?? ''} onChange={(e) => handleMarginChange('right', e.target.value)} className="h-9 rounded-xl px-1 text-center text-[10px]"/>
-                                        <span className="text-[7px] text-center block text-muted-foreground uppercase font-bold">Right</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-[9px] font-bold uppercase text-muted-foreground">Page Font</Label>
-                                <Input type="number" value={settings.pageFontSize ?? ''} onChange={e => handleFontSizeChange('pageFontSize', e.target.value)} className="h-9 rounded-xl text-center font-bold text-xs" placeholder="11"/>
+                 <div className="p-2 sm:p-3 border rounded-2xl bg-muted/5 space-y-3">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div className="space-y-1">
+                            <Label className="text-[8px] font-bold uppercase text-muted-foreground">Size</Label>
+                            <Select value={settings.pageSize || 'A4'} onValueChange={(value) => handleSelectChange('pageSize', value)} >
+                                <SelectTrigger className="h-7 rounded-xl bg-background text-[10px] px-2">
+                                    <SelectValue placeholder="Size" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="A4" className="text-xs">A4</SelectItem>
+                                    <SelectItem value="LETTER" className="text-xs">Letter</SelectItem>
+                                    <SelectItem value="LEGAL" className="text-xs">Legal</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1 col-span-1">
+                            <Label className="text-[8px] font-bold uppercase text-muted-foreground">Margins</Label>
+                            <div className="grid grid-cols-4 gap-1">
+                                <Input type="number" value={settings.pageMargins?.top ?? ''} onChange={(e) => handleMarginChange('top', e.target.value)} className="h-7 rounded-xl px-1 text-center text-[9px]"/>
+                                <Input type="number" value={settings.pageMargins?.bottom ?? ''} onChange={(e) => handleMarginChange('bottom', e.target.value)} className="h-7 rounded-xl px-1 text-center text-[9px]"/>
+                                <Input type="number" value={settings.pageMargins?.left ?? ''} onChange={(e) => handleMarginChange('left', e.target.value)} className="h-7 rounded-xl px-1 text-center text-[9px]"/>
+                                <Input type="number" value={settings.pageMargins?.right ?? ''} onChange={(e) => handleMarginChange('right', e.target.value)} className="h-7 rounded-xl px-1 text-center text-[9px]"/>
                             </div>
                         </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <Label className="text-[9px] font-bold uppercase text-muted-foreground">Address Font Size</Label>
-                                <Input type="number" value={settings.addressFontSize ?? ''} onChange={e => handleFontSizeChange('addressFontSize', e.target.value)} className="h-9 rounded-xl text-xs" placeholder="10"/>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-[9px] font-bold uppercase text-muted-foreground">Table Body Font Size</Label>
-                                <Input type="number" value={settings.tableBodyFontSize ?? ''} onChange={e => handleFontSizeChange('tableBodyFontSize', e.target.value)} className="h-9 rounded-xl text-xs" placeholder="11"/>
-                            </div>
+                        <div className="space-y-1">
+                            <Label className="text-[8px] font-bold uppercase text-muted-foreground">Font</Label>
+                            <Input type="number" value={settings.pageFontSize ?? ''} onChange={e => handleFontSizeChange('pageFontSize', e.target.value)} className="h-7 rounded-xl text-center font-bold text-xs" placeholder="11"/>
                         </div>
-
-                        <Separator className="bg-border/50" />
-                        <ColumnAlignmentFields template={settingsWithTemplate.template} onTemplateChange={handleTemplateChange} onTemplateFontSizeChange={handleTemplateFontSizeChange} />
                     </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <Label className="text-[8px] font-bold uppercase text-muted-foreground">Address Font</Label>
+                            <Input type="number" value={settings.addressFontSize ?? ''} onChange={e => handleFontSizeChange('addressFontSize', e.target.value)} className="h-7 rounded-xl text-xs" placeholder="10"/>
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-[8px] font-bold uppercase text-muted-foreground">Table Font</Label>
+                            <Input type="number" value={settings.tableBodyFontSize ?? ''} onChange={e => handleFontSizeChange('tableBodyFontSize', e.target.value)} className="h-7 rounded-xl text-xs" placeholder="11"/>
+                        </div>
+                    </div>
+
+                    <Separator className="bg-border/30" />
+                    <ColumnAlignmentFields template={settingsWithTemplate.template} onTemplateChange={handleTemplateChange} onTemplateFontSizeChange={handleTemplateFontSizeChange} />
                  </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
-                <Button variant="ghost" onClick={() => window.location.reload()} className="h-11 rounded-2xl font-bold text-muted-foreground px-8 order-2 sm:order-1 text-xs">Discard</Button>
-                <Button onClick={handleSaveChanges} disabled={isSubmitting} className="h-11 rounded-2xl font-bold px-10 shadow-lg shadow-primary/20 order-1 sm:order-2 text-xs">
-                    {isSubmitting ? <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> Saving...</> : `Save ${enterprise} Settings`}
+            <div className="flex flex-row justify-end gap-2 pt-2">
+                <Button variant="ghost" onClick={() => window.location.reload()} className="h-8 rounded-xl font-bold text-muted-foreground px-4 text-[10px]">Discard</Button>
+                <Button onClick={handleSaveChanges} disabled={isSubmitting} className="h-8 rounded-xl font-bold px-6 shadow-lg shadow-primary/10 text-[10px]">
+                    {isSubmitting ? <Loader2 className="h-3 w-3 animate-spin" /> : `Save ${enterprise}`}
                 </Button>
             </div>
         </div>
@@ -343,7 +333,6 @@ export default function SettingsPage() {
     const { toast } = useToast();
     const [activeBankTab, setActiveBankTab] = useState<Enterprise>('Vithal');
     
-    // Telegram State
     const [isBotSettingUp, setIsBotSettingUp] = useState(false);
     const [botReady, setBotBotReady] = useState(false);
 
@@ -363,10 +352,6 @@ export default function SettingsPage() {
         setBankAccountToDelete(null);
     }, []);
 
-    const handleDelayedAction = (action: () => void) => {
-        setTimeout(action, 100);
-    };
-    
     const openBankAccountDialog = useCallback((bankAccount: BankAccount | null) => {
         setSelectedBankAccount(bankAccount);
         setIsBankAccountDialogOpen(true);
@@ -377,13 +362,13 @@ export default function SettingsPage() {
 
         const bankAccountsCollectionRef = collection(firestore, "companySettings", activeBankTab.toLowerCase(), "bankAccounts");
         
-        if (selectedBankAccount) { // Edit mode
+        if (selectedBankAccount) { 
             const accountDocRef = doc(bankAccountsCollectionRef, selectedBankAccount.id);
             updateDocumentNonBlocking(accountDocRef, formData);
-            toast({ title: "Success", description: "Bank account updated." });
-        } else { // Add mode
+            toast({ title: "Updated", description: "Bank account saved." });
+        } else { 
             addDocumentNonBlocking(bankAccountsCollectionRef, formData);
-            toast({ title: "Success", description: "Bank account added." });
+            toast({ title: "Added", description: "New account added." });
         }
         setIsBankAccountDialogOpen(false);
     };
@@ -396,7 +381,7 @@ export default function SettingsPage() {
         if (!firestore || !bankAccountToDelete) return;
         const accountDocRef = doc(firestore, "companySettings", activeBankTab.toLowerCase(), "bankAccounts", bankAccountToDelete.id);
         deleteDocumentNonBlocking(accountDocRef);
-        toast({ title: "Bank Account Deleted", description: `${bankAccountToDelete.nickname} has been removed.` });
+        toast({ title: "Deleted", description: "Account removed." });
         setBankAccountToDelete(null);
     }
 
@@ -407,10 +392,10 @@ export default function SettingsPage() {
             const res = await setupTelegramWebhook(url);
             if (res.success) {
                 setBotBotReady(true);
-                toast({ title: "Bot Connected!", description: "Technicians can now use /start to get their Chat ID." });
+                toast({ title: "Bot Connected!", description: "Bot is ready." });
             }
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Connection Failed", description: e.message });
+            toast({ variant: 'destructive', title: "Failed", description: e.message });
         } finally {
             setIsBotSettingUp(false);
         }
@@ -418,198 +403,162 @@ export default function SettingsPage() {
     
     return (
         <AppLayout>
-            <div className="flex flex-col gap-6 sm:gap-8 max-w-full overflow-x-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex flex-col gap-2 max-w-full overflow-x-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
                 
-                <div className="space-y-1 px-1">
-                    <h1 className="text-xl sm:text-3xl font-black tracking-tight text-foreground">Workshop Settings</h1>
-                    <p className="text-[10px] sm:text-sm text-muted-foreground uppercase font-bold tracking-widest opacity-70">Configuration & Infrastructure</p>
+                <div className="space-y-0.5 px-1">
+                    <h1 className="text-lg sm:text-2xl font-black tracking-tight text-foreground">Workshop Settings</h1>
+                    <p className="text-[8px] sm:text-xs text-muted-foreground uppercase font-bold tracking-widest opacity-60">Configuration & Control</p>
                 </div>
 
-                {/* Telegram Bot Integration Card */}
-                <Card className="border-none shadow-xl bg-gradient-to-br from-blue-600 to-blue-800 text-white overflow-hidden relative group">
-                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <Send className="h-20 w-24 -rotate-12" />
+                <Card className="border-none shadow-lg bg-gradient-to-br from-blue-600 to-blue-800 text-white overflow-hidden relative group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <Send className="h-12 w-12 -rotate-12" />
                     </div>
-                    <CardHeader className="p-5 sm:p-8">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div className="space-y-2">
-                                <Badge className="bg-white/20 hover:bg-white/30 text-white border-none py-0.5 px-2.5 text-[9px] font-black uppercase tracking-widest mb-1.5">
-                                    Real-time Automation
-                                </Badge>
-                                <CardTitle className="flex items-center gap-3 text-lg sm:text-2xl font-black">
-                                    <Send className="h-5 w-5 sm:h-6 sm:w-6" />
-                                    Telegram System
+                    <CardHeader className="p-3 sm:p-4 pb-2">
+                        <div className="flex flex-row items-center justify-between gap-2">
+                            <div className="space-y-1">
+                                <CardTitle className="flex items-center gap-2 text-sm sm:text-lg font-black">
+                                    <Send className="h-4 w-4" /> Telegram Bot
                                 </CardTitle>
-                                <CardDescription className="text-blue-100/80 text-[11px] sm:text-sm font-medium">
-                                    Connect your official bot to enable automated salary slips.
+                                <CardDescription className="text-blue-100/70 text-[9px] sm:text-xs font-medium">
+                                    Manage automation for salary slips.
                                 </CardDescription>
                             </div>
-                            <div className="w-full sm:w-auto">
-                                {botReady ? (
-                                    <div className="flex flex-col sm:flex-row items-center gap-3">
-                                        <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white flex items-center gap-2 py-1.5 px-3 rounded-xl border-none shadow-lg text-[10px] font-bold">
-                                            <CheckCircle2 className="h-3.5 w-3.5" /> Bot Connected
-                                        </Badge>
-                                        <Button variant="outline" size="sm" onClick={handleInitTelegram} disabled={isBotSettingUp} className="h-10 w-full sm:w-auto bg-white/10 border-white/20 hover:bg-white/20 text-white rounded-xl font-bold text-xs">
-                                            <RefreshCw className={cn("h-3.5 w-3.5 mr-2", isBotSettingUp && "animate-spin")} /> Reconnect
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <Button onClick={handleInitTelegram} disabled={isBotSettingUp} className="h-11 w-full sm:w-auto bg-white text-blue-700 hover:bg-blue-50 rounded-2xl font-black uppercase tracking-wider shadow-xl shadow-blue-900/20 active:scale-95 transition-all text-xs">
-                                        {isBotSettingUp ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Initializing...</> : "Connect Bot Now"}
-                                    </Button>
-                                )}
-                            </div>
+                            {botReady ? (
+                                <Badge className="bg-emerald-500 text-white border-none py-0.5 px-2 rounded-lg text-[8px] font-bold">
+                                    Connected
+                                </Badge>
+                            ) : (
+                                <Button onClick={handleInitTelegram} disabled={isBotSettingUp} size="sm" className="h-7 bg-white text-blue-700 hover:bg-blue-50 rounded-xl font-bold uppercase tracking-tight text-[9px] px-3">
+                                    {isBotSettingUp ? "..." : "Connect"}
+                                </Button>
+                            )}
                         </div>
                     </CardHeader>
-                    <CardContent className="p-5 sm:p-8 pt-0">
-                        <div className="bg-black/10 rounded-2xl p-4 flex items-start gap-3">
-                            <Info className="h-4 w-4 text-blue-200 shrink-0 mt-0.5" />
-                            <p className="text-[10px] sm:text-xs text-blue-50 leading-relaxed font-medium">
-                                <b>How it works:</b> Tell your technicians to search for the bot on Telegram and type <code className="bg-white/20 px-1 py-0.5 rounded text-white">/start</code>. 
-                                The bot will provide their unique ID which you must save in their profile.
-                            </p>
-                        </div>
-                    </CardContent>
                 </Card>
 
-                {/* Enterprise Settings Section */}
-                <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-card/50 backdrop-blur-md">
-                    <CardHeader className="p-5 sm:p-8 pb-4">
-                        <div className="flex items-center gap-3 mb-1">
-                            <div className="h-9 w-9 rounded-2xl bg-primary/10 flex items-center justify-center">
-                                <Building2 className="h-4 w-4 text-primary" />
-                            </div>
+                <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-card/50 backdrop-blur-md">
+                    <CardHeader className="p-3 sm:p-4 pb-1">
+                        <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-primary" />
                             <div>
-                                <CardTitle className="text-lg font-black">Enterprise Data</CardTitle>
-                                <CardDescription className="text-[10px] sm:text-xs">Master configurations for official document generation.</CardDescription>
+                                <CardTitle className="text-sm sm:text-base font-black">Enterprise Data</CardTitle>
+                                <CardDescription className="text-[8px] sm:text-xs">Document configurations.</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 sm:p-8 pt-0">
+                    <CardContent className="p-0 sm:p-4 pt-0">
                        <Tabs defaultValue="Vithal" className="w-full">
-                            <div className="px-5 sm:px-0">
-                                <TabsList className="grid w-full grid-cols-2 h-11 p-1 rounded-2xl bg-muted/50 border">
-                                    <TabsTrigger value="Vithal" className="rounded-xl font-black text-[9px] sm:text-xs uppercase tracking-widest">Vithal Ent.</TabsTrigger>
-                                    <TabsTrigger value="RV" className="rounded-xl font-black text-[9px] sm:text-xs uppercase tracking-widest">RV Ent.</TabsTrigger>
+                            <div className="px-3 sm:px-0">
+                                <TabsList className="grid w-full grid-cols-2 h-8 p-0.5 rounded-xl bg-muted/30 border">
+                                    <TabsTrigger value="Vithal" className="rounded-lg font-bold text-[8px] sm:text-[10px] uppercase tracking-wide h-7">Vithal Ent.</TabsTrigger>
+                                    <TabsTrigger value="RV" className="rounded-lg font-bold text-[8px] sm:text-[10px] uppercase tracking-wide h-7">RV Ent.</TabsTrigger>
                                 </TabsList>
                             </div>
-                            <TabsContent value="Vithal" className="pt-6 px-5 sm:px-0">
+                            <TabsContent value="Vithal" className="pt-2 px-3 sm:px-0">
                                 <SettingsForm enterprise="Vithal" />
                             </TabsContent>
-                            <TabsContent value="RV" className="pt-6 px-5 sm:px-0">
+                            <TabsContent value="RV" className="pt-2 px-3 sm:px-0">
                                 <SettingsForm enterprise="RV" />
                             </TabsContent>
                         </Tabs>
                     </CardContent>
                 </Card>
 
-                {/* Bank Accounts Section */}
-                <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-card/50 backdrop-blur-md">
-                    <CardHeader className="p-4 sm:p-8 pb-3 sm:pb-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-                            <div className="flex items-center gap-2.5 sm:gap-3">
-                                <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
-                                    <CreditCard className="h-3.5 w-3.5 sm:h-4 w-4 text-primary" />
-                                </div>
+                <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-card/50 backdrop-blur-md">
+                    <CardHeader className="p-3 sm:p-4 pb-1">
+                        <div className="flex flex-row items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                                <CreditCard className="h-4 w-4 text-primary" />
                                 <div>
-                                    <CardTitle className="text-base sm:text-lg font-black">Treasury & Banking</CardTitle>
-                                    <CardDescription className="text-[9px] sm:text-xs">Manage settlement accounts.</CardDescription>
+                                    <CardTitle className="text-sm sm:text-base font-black">Banking</CardTitle>
+                                    <CardDescription className="text-[8px] sm:text-xs">Accounts info.</CardDescription>
                                 </div>
                             </div>
-                            <Button onClick={() => openBankAccountDialog(null)} size="sm" className="h-9 sm:h-10 rounded-xl px-4 font-bold shadow-lg shadow-primary/10 w-full sm:w-auto text-[10px] sm:text-xs">
-                                <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
-                                New Account
+                            <Button onClick={() => openBankAccountDialog(null)} size="sm" className="h-7 rounded-xl px-3 font-bold text-[9px]">
+                                <PlusCircle className="mr-1 h-3 w-3" /> Add
                             </Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 sm:p-8 pt-0">
-                        <Tabs value={activeBankTab} onValueChange={(value) => setActiveBankTab(value as Enterprise)} className="px-4 sm:px-0">
-                            <TabsList className="grid w-full grid-cols-2 h-8 p-0.5 rounded-lg bg-muted/30 border-none mb-4 sm:mb-5">
-                                <TabsTrigger value="Vithal" className="rounded-md text-[8px] sm:text-[9px] font-bold uppercase tracking-wider h-7">Vithal Accounts</TabsTrigger>
-                                <TabsTrigger value="RV" className="rounded-md text-[8px] sm:text-[9px] font-bold uppercase tracking-wider h-7">RV Accounts</TabsTrigger>
+                    <CardContent className="p-0 sm:p-4 pt-0">
+                        <Tabs value={activeBankTab} onValueChange={(value) => setActiveBankTab(value as Enterprise)} className="px-3 sm:px-0">
+                            <TabsList className="grid w-full grid-cols-2 h-7 p-0.5 rounded-lg bg-muted/20 border-none mb-2">
+                                <TabsTrigger value="Vithal" className="rounded-md text-[8px] font-bold uppercase h-6">Vithal</TabsTrigger>
+                                <TabsTrigger value="RV" className="rounded-md text-[8px] font-bold uppercase h-6">RV</TabsTrigger>
                             </TabsList>
                             
-                            {/* Mobile List View */}
-                            <div className="md:hidden space-y-2 pb-4">
+                            <div className="md:hidden space-y-1.5 pb-2">
                                 {isLoadingBankAccounts ? (
-                                    <div className="py-6 text-center animate-pulse text-[9px] font-bold text-muted-foreground uppercase">Syncing accounts...</div>
+                                    <div className="py-4 text-center animate-pulse text-[8px] font-bold text-muted-foreground uppercase">Syncing...</div>
                                 ) : bankAccounts && bankAccounts.length > 0 ? (
                                     bankAccounts.map(account => (
-                                        <div key={account.id} className="p-3 rounded-2xl border bg-card/50 shadow-sm space-y-2 relative group active:scale-[0.99] transition-transform">
-                                            <div className="flex justify-between items-start pr-1">
+                                        <div key={account.id} className="p-2 rounded-xl border bg-card/50 shadow-sm space-y-1 relative active:scale-[0.99] transition-transform">
+                                            <div className="flex justify-between items-start">
                                                 <div className="space-y-0.5">
-                                                    <h4 className="font-black text-[11px] leading-tight text-foreground">{account.nickname}</h4>
-                                                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-tight">{account.bankName}</p>
+                                                    <h4 className="font-black text-[10px] leading-tight text-foreground">{account.nickname}</h4>
+                                                    <p className="text-[7px] font-bold text-muted-foreground uppercase">{account.bankName}</p>
                                                 </div>
-                                                <Badge variant="outline" className="text-[8px] py-0 h-4 font-mono border-primary/20 text-primary px-1.5 shrink-0">
+                                                <Badge variant="outline" className="text-[7px] py-0 h-3 font-mono border-primary/20 text-primary px-1">
                                                     {account.ifscCode}
                                                 </Badge>
                                             </div>
-                                            <div className="pt-2 border-t border-border/40 flex justify-between items-end">
+                                            <div className="pt-1 border-t border-border/20 flex justify-between items-end">
                                                 <div className="space-y-0.5">
-                                                    <p className="text-[7px] font-black text-muted-foreground/60 uppercase tracking-tighter">A/C Number</p>
-                                                    <p className="text-[11px] font-mono font-bold tracking-tight text-primary">{account.accountNumber}</p>
+                                                    <p className="text-[9px] font-mono font-bold tracking-tight text-primary">{account.accountNumber}</p>
                                                 </div>
-                                                <div className="flex gap-1">
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-500 rounded-lg hover:bg-amber-50" onClick={() => openBankAccountDialog(account)}>
-                                                        <Pencil className="h-3.5 w-3.5" />
+                                                <div className="flex gap-0.5">
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-amber-500 rounded-lg" onClick={() => openBankAccountDialog(account)}>
+                                                        <Pencil className="h-3 w-3" />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive rounded-lg hover:bg-destructive/5" onClick={() => openDeleteDialog(account)}>
-                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive rounded-lg" onClick={() => openDeleteDialog(account)}>
+                                                        <Trash2 className="h-3 w-3" />
                                                     </Button>
                                                 </div>
                                             </div>
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="py-8 text-center border-2 border-dashed rounded-2xl bg-muted/5">
-                                        <CreditCard className="h-6 w-6 text-muted-foreground/20 mx-auto mb-1.5" />
-                                        <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">No accounts added</p>
+                                    <div className="py-4 text-center border-2 border-dashed rounded-xl bg-muted/5">
+                                        <p className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest">Empty</p>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Desktop Table View */}
                             <div className="hidden md:block">
                                 <Table>
-                                    <TableHeader className="bg-muted/30">
-                                        <TableRow className="border-none">
-                                            <TableHead className="rounded-l-xl pl-6">Nickname</TableHead>
-                                            <TableHead>Bank & Branch</TableHead>
-                                            <TableHead>Account details</TableHead>
-                                            <TableHead className="text-right pr-6 rounded-r-xl">Actions</TableHead>
+                                    <TableHeader className="bg-muted/20">
+                                        <TableRow className="border-none h-8">
+                                            <TableHead className="rounded-l-lg pl-4 text-[10px]">Nickname</TableHead>
+                                            <TableHead className="text-[10px]">Bank</TableHead>
+                                            <TableHead className="text-[10px]">Details</TableHead>
+                                            <TableHead className="text-right pr-4 rounded-r-lg text-[10px]">Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {isLoadingBankAccounts ? (
-                                            <TableRow><TableCell colSpan={4} className="text-center py-10">Loading...</TableCell></TableRow>
+                                            <TableRow><TableCell colSpan={4} className="text-center py-4">...</TableCell></TableRow>
                                         ) : bankAccounts && bankAccounts.length > 0 ? (
                                             bankAccounts.map(account => (
-                                                <TableRow key={account.id} className="hover:bg-muted/20 border-b border-border/50">
-                                                    <TableCell className="font-bold pl-6 text-sm">{account.nickname}</TableCell>
+                                                <TableRow key={account.id} className="hover:bg-muted/10 border-b border-border/30 h-10">
+                                                    <TableCell className="font-bold pl-4 text-xs">{account.nickname}</TableCell>
+                                                    <TableCell className="text-xs">{account.bankName}</TableCell>
                                                     <TableCell>
-                                                        <div className="font-medium text-xs">{account.bankName}</div>
-                                                        <div className="text-[9px] text-muted-foreground uppercase font-bold">{account.bankBranch || '-'}</div>
+                                                        <div className="font-mono text-[10px] font-bold">{account.accountNumber}</div>
                                                     </TableCell>
-                                                    <TableCell>
-                                                        <div className="font-mono text-xs font-bold">{account.accountNumber}</div>
-                                                        <div className="text-[9px] text-primary font-bold uppercase">IFSC: {account.ifscCode}</div>
-                                                    </TableCell>
-                                                    <TableCell className="text-right pr-6">
-                                                        <div className="flex justify-end gap-1">
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-500 rounded-full" onClick={() => openBankAccountDialog(account)}>
-                                                                <Pencil className="h-4 w-4" />
+                                                    <TableCell className="text-right pr-4">
+                                                        <div className="flex justify-end gap-0.5">
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-amber-500" onClick={() => openBankAccountDialog(account)}>
+                                                                <Pencil className="h-3.5 w-3.5" />
                                                             </Button>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive rounded-full" onClick={() => openDeleteDialog(account)}>
-                                                                <Trash2 className="h-4 w-4" />
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => openDeleteDialog(account)}>
+                                                                <Trash2 className="h-3.5 w-3.5" />
                                                             </Button>
                                                         </div>
                                                     </TableCell>
                                                 </TableRow>
                                             ))
                                         ) : (
-                                            <TableRow><TableCell colSpan={4} className="text-center h-24 text-muted-foreground italic text-xs">No accounts added yet.</TableCell></TableRow>
+                                            <TableRow><TableCell colSpan={4} className="text-center h-12 text-muted-foreground text-[10px]">No data.</TableCell></TableRow>
                                         )}
                                     </TableBody>
                                 </Table>
@@ -620,14 +569,11 @@ export default function SettingsPage() {
             </div>
             
             <Dialog open={isBankAccountDialogOpen} onOpenChange={setIsBankAccountDialogOpen}>
-                <DialogContent className="max-w-[95vw] sm:max-w-md rounded-3xl p-0 overflow-hidden border-none shadow-2xl animate-in zoom-in-95 duration-200">
-                    <DialogHeader className="p-6 sm:p-8 bg-primary/5 border-b border-primary/10">
-                        <DialogTitle className="text-xl sm:text-2xl font-black">{selectedBankAccount ? 'Modify Bank' : `New Settlement Account`}</DialogTitle>
-                        <DialogDescription className="text-[10px] font-bold uppercase tracking-widest text-primary/70">
-                            Enterprise: {activeBankTab} Enterprises
-                        </DialogDescription>
+                <DialogContent className="max-w-[95vw] sm:max-w-md rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+                    <DialogHeader className="p-4 bg-primary/5 border-b border-primary/10">
+                        <DialogTitle className="text-base font-black">{selectedBankAccount ? 'Edit Bank' : `New Account`}</DialogTitle>
                     </DialogHeader>
-                    <div className="p-6 sm:p-8">
+                    <div className="p-4">
                         <BankAccountForm 
                             onSubmit={handleBankAccountFormSubmit}
                             onCancel={() => setIsBankAccountDialogOpen(false)}
@@ -639,19 +585,16 @@ export default function SettingsPage() {
             </Dialog>
 
             <AlertDialog open={!!bankAccountToDelete} onOpenChange={(open) => !open && setBankAccountToDelete(null)}>
-                <AlertDialogContent className="rounded-3xl border-none shadow-2xl p-6">
+                <AlertDialogContent className="rounded-3xl border-none shadow-2xl p-4">
                     <AlertDialogHeader>
-                        <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2 mx-auto sm:mx-0">
-                            <Trash2 className="h-6 w-6 text-destructive" />
-                        </div>
-                        <AlertDialogTitle className="text-lg sm:text-xl font-black">Remove Bank Account?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-xs sm:text-sm font-medium leading-relaxed">
-                            This will permanently delete <span className="font-bold text-foreground">"{bankAccountToDelete?.nickname}"</span>. You will not be able to select this account for new invoices.
+                        <AlertDialogTitle className="text-sm font-black">Remove Bank Account?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-[10px] leading-relaxed">
+                            Permanently delete <span className="font-bold text-foreground">"{bankAccountToDelete?.nickname}"</span>?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row gap-2">
-                        <AlertDialogCancel className="h-11 rounded-xl font-bold border-muted text-xs">Keep Account</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteBankAccount} className="h-11 rounded-xl font-bold bg-destructive hover:bg-destructive/90 shadow-lg shadow-destructive/20 text-xs">Yes, Remove</AlertDialogAction>
+                    <AlertDialogFooter className="mt-4 flex flex-row gap-2">
+                        <AlertDialogCancel className="h-8 rounded-xl font-bold border-muted text-[10px] flex-1">Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteBankAccount} className="h-8 rounded-xl font-bold bg-destructive hover:bg-destructive/90 text-[10px] flex-1">Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
