@@ -206,8 +206,8 @@ const InvoiceActions = ({ invoice, openPreviewDialog, handleDownloadWord, openFo
     openDuplicateDialog: (invoice: Invoice) => void;
     openDeleteDialog: (invoice: Invoice) => void;
 }) => (
-    <div className="relative" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-        <DropdownMenu>
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
                 <Button 
                     variant="ghost" 
@@ -302,7 +302,6 @@ const InvoiceList = ({
                                                                         e.stopPropagation();
                                                                         handleSelectInvoice(invoice.id, !isSelected);
                                                                     }}
-                                                                    onPointerDown={(e) => e.stopPropagation()}
                                                                     className={cn(
                                                                         "mt-1 h-4 w-4 shrink-0 rounded-sm border border-primary flex items-center justify-center cursor-pointer ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                                                                         isSelected && "bg-primary text-primary-foreground"
@@ -355,7 +354,6 @@ const InvoiceList = ({
                                                                       e.stopPropagation();
                                                                       handleSelectInvoice(invoice.id, !isSelected);
                                                                   }}
-                                                                  onPointerDown={(e) => e.stopPropagation()}
                                                                   className={cn(
                                                                       "h-4 w-4 rounded-sm border border-primary flex items-center justify-center cursor-pointer ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                                                                       isSelected && "bg-primary text-primary-foreground"
@@ -1268,8 +1266,8 @@ export default function BillingPage() {
                                     </div>
                                 </PopoverContent>
                             </Popover>
-                            <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-                                <DropdownMenu>
+                            <div onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenu modal={false}>
                                     <DropdownMenuTrigger asChild>
                                         <Button 
                                             variant="outline" 
@@ -1362,7 +1360,7 @@ export default function BillingPage() {
                             </DialogDescription>
                         </div>
                         {!editingInvoice && !billNoOverride && (
-                            <DropdownMenu>
+                            <DropdownMenu modal={false}>
                                 <DropdownMenuTrigger asChild>
                                     <Button 
                                         variant="outline" 
@@ -1463,7 +1461,7 @@ export default function BillingPage() {
                                         <Bold className="h-3.5 w-3.5" />
                                     </Button>
 
-                                    <DropdownMenu>
+                                    <DropdownMenu modal={false}>
                                         <DropdownMenuTrigger asChild>
                                             <Button 
                                                 type="button" 
@@ -1726,7 +1724,7 @@ export default function BillingPage() {
                         id="newBulkBillDate"
                         type="date"
                         value={newBillDateForBulk}
-                        onChange={(e) => setNewBillDateForBulk(e.target.value)}
+                        onChange={(e) => setNewBulkBillDateForBulk(e.target.value)}
                         className="w-full mt-1.5 h-9 text-sm"
                     />
                 </div>
