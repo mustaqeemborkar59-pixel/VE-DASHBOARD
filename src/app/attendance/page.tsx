@@ -285,15 +285,9 @@ export default function AttendancePage() {
                     </span>
                 )}
                 {ot && ot > 0 && (
-                    <div className="flex flex-col items-center leading-none scale-90">
-                        <span className="font-black text-orange-600 text-[8px]">OT</span>
-                        <span className="text-[7px] font-black text-orange-500 uppercase">{ot}H</span>
-                    </div>
-                )}
-                {!baseChar && ot && ot > 0 && (
-                    <div className="flex flex-col items-center leading-none">
-                        <span className="font-black text-orange-600 text-[10px]">OT</span>
-                        <span className="text-[7px] font-black text-orange-500 uppercase">{ot}H</span>
+                    <div className={cn("flex flex-col items-center leading-none", baseChar ? "scale-90" : "")}>
+                        <span className={cn("font-black text-orange-600", baseChar ? "text-[8px]" : "text-[10px]")}>OT</span>
+                        <span className={cn("font-black text-orange-500 uppercase", baseChar ? "text-[7px]" : "text-[8px]")}>{ot}H</span>
                     </div>
                 )}
             </div>
