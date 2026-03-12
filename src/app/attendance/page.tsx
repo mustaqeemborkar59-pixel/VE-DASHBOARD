@@ -9,7 +9,7 @@ import { useCollection, useFirebase, useMemoFirebase, errorEmitter, FirestorePer
 import { collection, query, orderBy, doc, setDoc, where, deleteDoc } from 'firebase/firestore';
 import { Employee, Attendance, AttendanceStatus } from '@/lib/data';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isToday, getDay } from 'date-fns';
-import { UserCheck, ChevronLeft, ChevronRight, Info, MousePointer2, Eraser, Clock, User, CalendarDays } from 'lucide-react';
+import { UserCheck, ChevronLeft, ChevronRight, Info, MousePointer2, Eraser, Clock, User, CalendarDays, StickyNote, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -17,8 +17,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 
-type ActiveTool = AttendanceStatus | 'Clear' | 'OT' | null;
+type ActiveTool = AttendanceStatus | 'Clear' | 'OT' | 'Note' | null;
 
 export default function AttendancePage() {
   const { firestore, user } = useFirebase();
@@ -29,9 +30,15 @@ export default function AttendancePage() {
   
   const [cellCycleIndices, setCellCycleIndices] = useState<Record<string, number>>({});
 
+  // OT Dialog State
   const [isOTDialogOpen, setIsOTDialogOpen] = useState(false);
   const [otHours, setOtHours] = useState('0');
   const [selectedOTCell, setSelectedOTCell] = useState<{ empId: string, date: Date } | null>(null);
+
+  // Note Dialog State
+  const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const [selectedNoteCell, setSelectedNoteCell] = useState<{ empId: string, date: Date } | null>(null);
 
   const handlePrevMonth = () => {
     const [year, month] = selectedMonth.split('-').map(Number);
@@ -100,6 +107,7 @@ export default function AttendancePage() {
     const currentRecord = attendanceMap[empId]?.[dateStr];
     const currentStatus = currentRecord?.status;
     const currentOT = currentRecord?.overtimeHours || 0;
+    const currentNote = currentRecord?.notes || '';
     const attendanceRef = doc(firestore, 'attendance', cellKey);
     
     let nextStatus: AttendanceStatus | null = null;
@@ -117,6 +125,11 @@ export default function AttendancePage() {
             setSelectedOTCell({ empId, date });
             setOtHours(currentOT.toString());
             setIsOTDialogOpen(true);
+            return;
+        } else if (activeTool === 'Note') {
+            setSelectedNoteCell({ empId, date });
+            setNoteText(currentNote);
+            setIsNoteDialogOpen(true);
             return;
         } else {
             nextStatus = currentStatus === activeTool ? null : activeTool;
@@ -151,7 +164,7 @@ export default function AttendancePage() {
             }));
         });
     } else {
-        if (currentOT > 0) {
+        if (currentOT > 0 || currentNote) {
             setDoc(attendanceRef, {
                 employeeId: empId,
                 date: dateStr,
@@ -184,7 +197,7 @@ export default function AttendancePage() {
     const attendanceRef = doc(firestore, 'attendance', cellKey);
     const hours = parseFloat(otHours) || 0;
 
-    const currentStatus = attendanceMap[empId]?.[dateStr]?.status || null;
+    const currentRecord = attendanceMap[empId]?.[dateStr];
     
     const data: any = {
         employeeId: empId,
@@ -193,9 +206,8 @@ export default function AttendancePage() {
         updatedAt: new Date().toISOString()
     };
 
-    if (currentStatus) {
-        data.status = currentStatus;
-    }
+    if (currentRecord?.status) data.status = currentRecord.status;
+    if (currentRecord?.notes) data.notes = currentRecord.notes;
     
     setDoc(attendanceRef, data, { merge: true }).catch(() => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -209,47 +221,84 @@ export default function AttendancePage() {
     toast({ title: 'Overtime Saved', description: `${hours} hours recorded.` });
   }
 
+  const handleSaveNote = () => {
+    if (!firestore || !selectedNoteCell) return;
+    
+    const { empId, date } = selectedNoteCell;
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const cellKey = `${dateStr}_${empId}`;
+    const attendanceRef = doc(firestore, 'attendance', cellKey);
+
+    const currentRecord = attendanceMap[empId]?.[dateStr];
+    
+    const data: any = {
+        employeeId: empId,
+        date: dateStr,
+        notes: noteText.trim(),
+        updatedAt: new Date().toISOString()
+    };
+
+    if (currentRecord?.status) data.status = currentRecord.status;
+    if (currentRecord?.overtimeHours) data.overtimeHours = currentRecord.overtimeHours;
+    
+    setDoc(attendanceRef, data, { merge: true }).catch(() => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: attendanceRef.path,
+            operation: 'update',
+            requestResourceData: data
+        }));
+    });
+    
+    setIsNoteDialogOpen(false);
+    toast({ title: 'Comment Saved', description: 'Note updated for the day.' });
+  }
+
   const getStatusIcon = (record: Attendance | undefined, isSun: boolean) => {
     if (!record) return null;
     const status = record.status;
     const ot = record.overtimeHours;
+    const hasNote = !!record.notes;
 
-    if (ot && ot > 0 && !status) {
-        return (
-            <div className="flex flex-col items-center leading-none">
-                <span className="font-black text-orange-600 text-[10px]">OT</span>
-                <span className="text-[7px] font-black text-orange-500 uppercase">{ot}H</span>
-            </div>
-        );
-    }
-
-    if (ot && ot > 0) {
-        let baseChar = '';
-        if (status === 'Present') baseChar = 'P';
-        else if (status === 'Half-Day') baseChar = 'H';
-        else if (status === 'Holiday') baseChar = 'O';
-        else if (status === 'Holiday-Working') baseChar = 'HW';
-        else if (status === 'Absent') baseChar = 'A';
-
-        return (
-            <div className="flex flex-col items-center leading-none">
-                <div className="flex items-center gap-0.5">
-                    {baseChar && <span className={cn("text-[8px] font-black uppercase", isSun ? "text-rose-600" : "opacity-40")}>{baseChar}</span>}
-                    <span className="font-black text-orange-600 text-[8px]">OT</span>
-                </div>
-                <span className="text-[7px] font-black text-orange-500 uppercase">{ot}H</span>
-            </div>
-        );
-    }
+    let baseChar = '';
+    let baseColor = '';
 
     switch (status) {
-      case 'Present': return <span className={cn("font-black text-[11px]", isSun ? "text-rose-600" : "text-emerald-600")}>P</span>;
-      case 'Absent': return <span className="text-rose-600 font-black text-[11px]">A</span>;
-      case 'Half-Day': return <span className="text-amber-600 font-black text-[11px]">H</span>;
-      case 'Holiday': return <span className="text-blue-600 font-black text-[11px]">O</span>;
-      case 'Holiday-Working': return <span className="text-violet-600 font-black text-[9px]">HW</span>;
-      default: return null;
+      case 'Present': baseChar = 'P'; baseColor = isSun ? "text-rose-600" : "text-emerald-600"; break;
+      case 'Absent': baseChar = 'A'; baseColor = "text-rose-600"; break;
+      case 'Half-Day': baseChar = 'H'; baseColor = "text-amber-600"; break;
+      case 'Holiday': baseChar = 'O'; baseColor = "text-blue-600"; break;
+      case 'Holiday-Working': baseChar = 'HW'; baseColor = "text-violet-600"; break;
     }
+
+    return (
+        <div className="flex flex-col items-center leading-none relative w-full h-full justify-center">
+            {hasNote && (
+                <div className="absolute top-0.5 right-0.5">
+                    <MessageSquare className="h-2 w-2 text-indigo-500 fill-indigo-500/20" />
+                </div>
+            )}
+            
+            <div className="flex flex-col items-center gap-0.5">
+                {baseChar && (
+                    <span className={cn("font-black", status === 'Holiday-Working' ? "text-[9px]" : "text-[11px]", baseColor)}>
+                        {baseChar}
+                    </span>
+                )}
+                {ot && ot > 0 && (
+                    <div className="flex flex-col items-center leading-none scale-90">
+                        <span className="font-black text-orange-600 text-[8px]">OT</span>
+                        <span className="text-[7px] font-black text-orange-500 uppercase">{ot}H</span>
+                    </div>
+                )}
+                {!baseChar && ot && ot > 0 && (
+                    <div className="flex flex-col items-center leading-none">
+                        <span className="font-black text-orange-600 text-[10px]">OT</span>
+                        <span className="text-[7px] font-black text-orange-500 uppercase">{ot}H</span>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
   };
 
   const getStatusBg = (status: AttendanceStatus | undefined, isCurrentDay: boolean, ot?: number, isSun?: boolean) => {
@@ -306,7 +355,7 @@ export default function AttendancePage() {
               <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               Haazri Register
             </h1>
-            <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider">Monthly Attendance Log</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider">Attendance & Overtime Management</p>
           </div>
           
           <div className="flex items-center justify-center bg-card border rounded-xl p-1 shadow-sm self-center sm:self-auto">
@@ -330,45 +379,30 @@ export default function AttendancePage() {
             <div className="bg-card border rounded-2xl p-2 flex items-center justify-between shadow-lg max-w-full overflow-hidden">
                 <div className="flex items-center gap-1.5 px-2 border-r pr-3 shrink-0">
                     <MousePointer2 className="h-4 w-4 text-primary animate-pulse" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground hidden xs:inline">Mode:</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground hidden xs:inline">Tools:</span>
                 </div>
                 <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar px-2 flex-1">
-                    <button 
-                        onClick={() => setActiveTool(activeTool === 'Present' ? null : 'Present')}
-                        className={cn(
-                            "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
-                            activeTool === 'Present' ? "bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-600/20" : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        )}
-                    >P</button>
-                    <button 
-                        onClick={() => setActiveTool(activeTool === 'Absent' ? null : 'Absent')}
-                        className={cn(
-                            "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
-                            activeTool === 'Absent' ? "bg-rose-600 text-white border-rose-600 ring-2 ring-rose-600/20" : "bg-rose-50 text-rose-700 border-rose-200"
-                        )}
-                    >A</button>
-                    <button 
-                        onClick={() => setActiveTool(activeTool === 'Half-Day' ? null : 'Half-Day')}
-                        className={cn(
-                            "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
-                            activeTool === 'Half-Day' ? "bg-amber-600 text-white border-amber-600 ring-2 ring-amber-600/20" : "bg-amber-50 text-amber-700 border-amber-200"
-                        )}
-                    >H</button>
-                    <button 
-                        onClick={() => setActiveTool(activeTool === 'Holiday' ? null : 'Holiday')}
-                        className={cn(
-                            "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
-                            activeTool === 'Holiday' ? "bg-blue-600 text-white border-blue-600 ring-2 ring-blue-600/20" : "bg-blue-50 text-blue-700 border-blue-200"
-                        )}
-                    >O</button>
-                    <button 
-                        onClick={() => setActiveTool(activeTool === 'Holiday-Working' ? null : 'Holiday-Working')}
-                        className={cn(
-                            "w-9 h-9 rounded-xl text-[10px] font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
-                            activeTool === 'Holiday-Working' ? "bg-violet-600 text-white border-violet-600 ring-2 ring-violet-600/20" : "bg-violet-50 text-violet-700 border-violet-200"
-                        )}
-                    >HW</button>
+                    {[
+                        { id: 'Present', label: 'P', color: 'emerald' },
+                        { id: 'Absent', label: 'A', color: 'rose' },
+                        { id: 'Half-Day', label: 'H', color: 'amber' },
+                        { id: 'Holiday', label: 'O', color: 'blue' },
+                        { id: 'Holiday-Working', label: 'HW', color: 'violet' }
+                    ].map(tool => (
+                        <button 
+                            key={tool.id}
+                            onClick={() => setActiveTool(activeTool === tool.id ? null : tool.id as ActiveTool)}
+                            className={cn(
+                                "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
+                                activeTool === tool.id 
+                                    ? `bg-${tool.color}-600 text-white border-${tool.color}-600 ring-2 ring-${tool.color}-600/20` 
+                                    : `bg-${tool.color}-50 text-${tool.color}-700 border-${tool.color}-200`
+                            )}
+                        >{tool.label}</button>
+                    ))}
+                    
                     <div className="w-px h-6 bg-border mx-1 shrink-0" />
+                    
                     <button 
                         onClick={() => setActiveTool(activeTool === 'OT' ? null : 'OT')}
                         className={cn(
@@ -376,6 +410,15 @@ export default function AttendancePage() {
                             activeTool === 'OT' ? "bg-orange-600 text-white border-orange-600 ring-2 ring-orange-600/20" : "bg-orange-50 text-orange-700 border-orange-200"
                         )}
                     >OT</button>
+                    
+                    <button 
+                        onClick={() => setActiveTool(activeTool === 'Note' ? null : 'Note')}
+                        className={cn(
+                            "w-9 h-9 rounded-xl text-xs font-black border transition-all active:scale-90 flex items-center justify-center shadow-sm shrink-0",
+                            activeTool === 'Note' ? "bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-600/20" : "bg-indigo-50 text-indigo-700 border-indigo-200"
+                        )}
+                    ><StickyNote className="h-4 w-4" /></button>
+
                     <button 
                         onClick={() => setActiveTool(activeTool === 'Clear' ? null : 'Clear')}
                         className={cn(
@@ -387,7 +430,7 @@ export default function AttendancePage() {
             </div>
         </div>
 
-        {/* Desktop View (Table only on Large Screens) */}
+        {/* Desktop View */}
         <div className="hidden lg:block px-4 max-w-full">
             <Card className="rounded-2xl overflow-hidden shadow-sm border-border/50">
                 <CardHeader className="p-4 border-b bg-muted/20">
@@ -439,6 +482,7 @@ export default function AttendancePage() {
                                             const status = record?.status;
                                             const isSun = day.getDay() === 0;
                                             const ot = record?.overtimeHours || 0;
+                                            const note = record?.notes;
                                             
                                             return (
                                                 <td 
@@ -449,22 +493,24 @@ export default function AttendancePage() {
                                                         getStatusBg(status, isToday(day), ot, isSun)
                                                     )}
                                                 >
-                                                    <div className="h-full w-full flex items-center justify-center">
-                                                        {ot > 0 ? (
-                                                            <Tooltip>
-                                                                <TooltipTrigger asChild>
-                                                                    <div className="h-full w-full flex items-center justify-center">
-                                                                        {getStatusIcon(record, isSun)}
-                                                                    </div>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent side="top" className="py-1.5 px-3 text-[10px] font-black bg-zinc-900 text-white border-none shadow-xl rounded-lg">
-                                                                    {status ? `${status} + ` : ''}{ot} Hrs Overtime
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        ) : (
-                                                            getStatusIcon(record, isSun)
-                                                        )}
-                                                    </div>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className="h-full w-full flex items-center justify-center min-h-[48px]">
+                                                                {getStatusIcon(record, isSun)}
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="top" className="py-2 px-3 bg-zinc-900 text-white border-none shadow-xl rounded-xl space-y-1 max-w-[200px]">
+                                                            <p className="text-[10px] font-black uppercase tracking-tight text-zinc-400">
+                                                                {format(day, 'dd MMM yyyy')}
+                                                            </p>
+                                                            <div className="text-[11px] font-bold">
+                                                                {status ? <span className="block">Status: {status}</span> : null}
+                                                                {ot > 0 ? <span className="block text-orange-400">Overtime: {ot} Hrs</span> : null}
+                                                                {note ? <div className="mt-1 pt-1 border-t border-white/10 text-indigo-300 italic">"{note}"</div> : null}
+                                                                {!status && !ot && !note && <span className="text-zinc-500">No entry</span>}
+                                                            </div>
+                                                        </TooltipContent>
+                                                    </Tooltip>
                                                 </td>
                                             );
                                         })}
@@ -477,7 +523,7 @@ export default function AttendancePage() {
             </Card>
         </div>
 
-        {/* Mobile & Tablet View (Cards for smaller screens to avoid horizontal scroll) */}
+        {/* Mobile View */}
         <div className="lg:hidden grid grid-cols-1 md:grid-cols-2 gap-4 px-4 pb-20">
             {isLoadingEmployees ? (
                 Array.from({ length: 4 }).map((_, i) => (
@@ -530,27 +576,34 @@ export default function AttendancePage() {
                                         const isSun = day.getDay() === 0;
 
                                         return (
-                                            <div 
-                                                key={dateStr}
-                                                onClick={() => handleStatusToggle(emp.id, day)}
-                                                className={cn(
-                                                    "h-10 w-full rounded-xl flex flex-col items-center justify-center relative transition-all active:scale-90 cursor-pointer border border-transparent shadow-sm",
-                                                    isSun ? "bg-rose-50 border-rose-100" : "bg-muted/30 border-muted-foreground/5",
-                                                    isToday(day) ? "ring-2 ring-primary ring-offset-1 z-10" : "",
-                                                    getStatusBg(status, false, ot, isSun)
-                                                )}
-                                            >
-                                                <span className={cn(
-                                                    "text-[9px] font-black mb-0.5", 
-                                                    isSun ? "text-rose-600" : "text-muted-foreground/60",
-                                                    (status || ot > 0) && "opacity-40"
-                                                )}>
-                                                    {format(day, 'd')}
-                                                </span>
-                                                <div className="scale-90 origin-center">
-                                                    {getStatusIcon(record, isSun)}
-                                                </div>
-                                            </div>
+                                            <Tooltip key={dateStr}>
+                                                <TooltipTrigger asChild>
+                                                    <div 
+                                                        onClick={() => handleStatusToggle(emp.id, day)}
+                                                        className={cn(
+                                                            "h-10 w-full rounded-xl flex flex-col items-center justify-center relative transition-all active:scale-90 cursor-pointer border border-transparent shadow-sm",
+                                                            isSun ? "bg-rose-50 border-rose-100" : "bg-muted/30 border-muted-foreground/5",
+                                                            isToday(day) ? "ring-2 ring-primary ring-offset-1 z-10" : "",
+                                                            getStatusBg(status, false, ot, isSun)
+                                                        )}
+                                                    >
+                                                        <span className={cn(
+                                                            "text-[9px] font-black mb-0.5", 
+                                                            isSun ? "text-rose-600" : "text-muted-foreground/60",
+                                                            (status || ot > 0) && "opacity-40"
+                                                        )}>
+                                                            {format(day, 'd')}
+                                                        </span>
+                                                        <div className="scale-90 origin-center">
+                                                            {getStatusIcon(record, isSun)}
+                                                        </div>
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent className="bg-zinc-900 border-none rounded-xl p-2 text-white text-[10px] font-bold">
+                                                    {status ? `Status: ${status}` : ''} {ot ? `| OT: ${ot}H` : ''}
+                                                    {record?.notes ? <p className="text-indigo-300 italic mt-1">{record.notes}</p> : null}
+                                                </TooltipContent>
+                                            </Tooltip>
                                         );
                                     })}
                                 </div>
@@ -569,11 +622,10 @@ export default function AttendancePage() {
                         <Info className="h-4 w-4 text-primary" />
                     </div>
                     <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-primary">Instructions</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-primary">Attendance Logic</p>
                         <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
-                            Sundays are highlighted in <b>Rose</b>. 
-                            Use the <b>OT tool</b> to record extra hours.
-                            <b>O</b> represents Holiday (Paid), and <b>HW</b> is for Holiday Working.
+                            <b>P</b>: Present | <b>A</b>: Absent | <b>H</b>: Half-Day | <b>O</b>: Holiday (Paid) | <b>HW</b>: Holiday Working. <br/>
+                            Use the <b>OT tool</b> for extra hours and <b>Note tool</b> for daily comments (indicators will appear in cells).
                         </p>
                     </div>
                 </CardContent>
@@ -612,6 +664,35 @@ export default function AttendancePage() {
             <DialogFooter className="p-5 bg-muted/10 grid grid-cols-2 gap-3">
                 <Button variant="ghost" onClick={() => setIsOTDialogOpen(false)} className="h-12 rounded-2xl text-[11px] font-black uppercase">Cancel</Button>
                 <Button onClick={handleSaveOT} className="h-12 rounded-2xl text-[11px] font-black uppercase bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-600/20">Save Hours</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Note Dialog */}
+      <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
+        <DialogContent className="max-w-[90vw] sm:max-w-[400px] p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
+            <DialogHeader className="p-6 bg-indigo-50 border-b border-indigo-100">
+                <DialogTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-indigo-700">
+                    <StickyNote className="h-5 w-5" /> Add Comment
+                </DialogTitle>
+                <DialogDescription className="text-xs font-bold text-indigo-600/70">
+                    {selectedNoteCell && format(selectedNoteCell.date, 'EEEE, dd MMM yyyy')}
+                </DialogDescription>
+            </DialogHeader>
+            <div className="p-6">
+                <Label htmlFor="cell-note" className="text-[10px] font-black uppercase mb-3 block text-muted-foreground tracking-widest">Remarks / Note</Label>
+                <Textarea 
+                    id="cell-note"
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    placeholder="Enter any specific details for this day..."
+                    className="min-h-[120px] rounded-2xl bg-muted/30 border-2 focus-visible:ring-indigo-500 text-sm p-4 leading-relaxed"
+                    autoFocus
+                />
+            </div>
+            <DialogFooter className="p-5 bg-muted/10 grid grid-cols-2 gap-3">
+                <Button variant="ghost" onClick={() => setIsNoteDialogOpen(false)} className="h-12 rounded-2xl text-[11px] font-black uppercase">Cancel</Button>
+                <Button onClick={handleSaveNote} className="h-12 rounded-2xl text-[11px] font-black uppercase bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-600/20">Save Note</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
