@@ -1753,7 +1753,7 @@ export default function BillingPage() {
                         id="newBulkBillDate"
                         type="date"
                         value={newBillDateForBulk}
-                        onChange={(e) => setNewBulkBillDateForBulk(e.target.value)}
+                        onChange={(e) => setNewBillDateForBulk(e.target.value)}
                         className="w-full mt-1.5 h-9 text-sm"
                     />
                 </div>
