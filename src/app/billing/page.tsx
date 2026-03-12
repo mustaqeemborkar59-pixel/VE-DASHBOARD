@@ -198,46 +198,73 @@ const DownloadOptionsFields = React.memo(({ options, setOptions }: { options: Do
 });
 DownloadOptionsFields.displayName = 'DownloadOptionsFields';
 
-const InvoiceActions = ({ invoice, openPreviewDialog, handleDownloadWord, openFormDialog, openDuplicateDialog, openDeleteDialog }: {
-    invoice: Invoice;
-    openPreviewDialog: (invoice: Invoice) => void;
-    handleDownloadWord: (invoice: Invoice) => Promise<void>;
-    openFormDialog: (invoice: Invoice | null) => void;
-    openDuplicateDialog: (invoice: Invoice) => void;
-    openDeleteDialog: (invoice: Invoice) => void;
+const InvoiceActions = ({
+  invoice,
+  openPreviewDialog,
+  handleDownloadWord,
+  openFormDialog,
+  openDuplicateDialog,
+  openDeleteDialog
+}: {
+  invoice: Invoice
+  openPreviewDialog: (invoice: Invoice) => void
+  handleDownloadWord: (invoice: Invoice) => Promise<void>
+  openFormDialog: (invoice: Invoice | null) => void
+  openDuplicateDialog: (invoice: Invoice) => void
+  openDeleteDialog: (invoice: Invoice) => void
 }) => (
-    <div className="relative" onClick={(e) => e.stopPropagation()}>
-        <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                >
-                    <EllipsisVertical className="h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuPortal>
-                <DropdownMenuContent className="w-40 z-[100]" align="end" sideOffset={5}>
-                    <DropdownMenuItem onSelect={() => openPreviewDialog(invoice)}>
-                        <Eye className="mr-2 h-4 w-4" />Preview
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => handleDownloadWord(invoice)}>
-                        <Download className="mr-2 h-4 w-4" />Download
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => openFormDialog(invoice)}>
-                        <Pencil className="mr-2 h-4 w-4" />Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => openDuplicateDialog(invoice)}>
-                        <FilePlus2 className="mr-2 h-4 w-4" />Duplicate
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => openDeleteDialog(invoice)} className="text-destructive focus:text-destructive">
-                        <Trash2 className="mr-2 h-4 w-4" />Delete
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenuPortal>
-        </DropdownMenu>
-    </div>
+  <div
+    className="relative z-50"
+    onClick={(e) => e.stopPropagation()}
+  >
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 p-0 cursor-pointer"
+        >
+          <EllipsisVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuPortal>
+        <DropdownMenuContent
+          className="w-40 z-[200]"
+          align="end"
+          sideOffset={6}
+        >
+          <DropdownMenuItem onClick={() => openPreviewDialog(invoice)}>
+            <Eye className="mr-2 h-4 w-4" />
+            Preview
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onClick={() => handleDownloadWord(invoice)}>
+            <Download className="mr-2 h-4 w-4" />
+            Download
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onClick={() => openFormDialog(invoice)}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onClick={() => openDuplicateDialog(invoice)}>
+            <FilePlus2 className="mr-2 h-4 w-4" />
+            Duplicate
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => openDeleteDialog(invoice)}
+            className="text-destructive"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenuPortal>
+    </DropdownMenu>
+  </div>
 );
 
 const InvoiceList = ({ 
