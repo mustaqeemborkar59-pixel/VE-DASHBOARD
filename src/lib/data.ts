@@ -1,3 +1,4 @@
+
 export type JobCard = {
   id: string;
   jobTitle: string;
@@ -258,27 +259,5 @@ export type Salary = {
   paymentDate: string; // YYYY-MM-DD
   status: 'Paid' | 'Pending';
   notes?: string;
-  createdAt: string;
-};
-
-export type QuotationItem = {
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  total: number;
-};
-
-export type Quotation = {
-  id: string;
-  quotationNumber: string;
-  date: string;
-  clientName: string;
-  items: QuotationItem[];
-  subtotal: number;
-  gstPercent: number;
-  gstAmount: number;
-  grandTotal: number;
-  terms: string;
-  createdBy: string;
   createdAt: string;
 };

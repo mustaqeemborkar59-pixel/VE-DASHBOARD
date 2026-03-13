@@ -1,9 +1,10 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, Settings, User, ReceiptText, Building, Banknote, ScrollText, StickyNote, WalletCards, CalendarCheck, Sparkles } from 'lucide-react';
+import { LogOut, Settings, User, ReceiptText, Building, Banknote, ScrollText, StickyNote, WalletCards, CalendarCheck } from 'lucide-react';
 import { useEffect } from 'react';
 
 import {
@@ -36,7 +37,6 @@ const navItems = [
   { href: '/companies', label: 'Companies', icon: Building },
   { href: '/inventory', label: 'Inventory', icon: Warehouse },
   { href: '/billing', label: 'Billing', icon: ReceiptText },
-  { href: '/quotations', label: 'AI Quotations', icon: Sparkles },
   { href: '/payments', label: 'Payments', icon: Banknote },
   { href: '/salary', label: 'Salary', icon: WalletCards },
   { href: '/notes', label: 'Notes', icon: StickyNote },
@@ -98,7 +98,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   tooltip={{children: item.label, side: 'right', align: 'center'}}
                 >
                   <Link href={item.href}>
-                    <item.icon className={cn(item.href === '/quotations' && "text-primary")} />
+                    <item.icon />
                     <span>{item.label}</span>
                   </Link>
                 </SidebarMenuButton>
