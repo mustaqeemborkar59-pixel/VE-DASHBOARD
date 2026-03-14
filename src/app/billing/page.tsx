@@ -303,7 +303,7 @@ const InvoiceList = ({
                  <AccordionItem value={`year-${year.key}`} key={year.key} className="mb-2 border-0">
                     <AccordionTrigger className="px-3 sm:px-4 py-3 bg-muted/50 hover:bg-muted/80 rounded-md text-xs sm:text-sm font-medium hover:no-underline">
                         <div className="flex items-center gap-2 sm:gap-3">
-                          <Folder className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500 fill-amber-500/20" />
+                          <Folder className="h-4 w-4 sm:h-5 w-5 text-amber-500 fill-amber-500/20" />
                           <span>{year.label}</span>
                         </div>
                     </AccordionTrigger>
@@ -320,7 +320,7 @@ const InvoiceList = ({
                                     </AccordionTrigger>
                                     <AccordionContent className="pt-2">
                                         <div className="md:hidden">
-                                            <div className="space-y-3 p-2">
+                                            <div className="space-y-2 p-2">
                                             {month.invoices.map((invoice: Invoice) => {
                                                 const isSelected = selectedInvoices.includes(invoice.id);
                                                 const selectionIndex = isSelected ? selectedInvoices.indexOf(invoice.id) + 1 : 0;
@@ -336,79 +336,69 @@ const InvoiceList = ({
                                                             setActiveInvoiceForAction(invoice);
                                                         }}
                                                         className={cn(
-                                                            "relative group border rounded-2xl p-4 bg-card active:scale-[0.98] transition-all shadow-sm select-none border-l-4",
+                                                            "relative group border rounded-xl p-3 bg-card active:scale-[0.98] transition-all shadow-sm select-none border-l-4",
                                                             isVithal ? "border-l-red-500" : "border-l-blue-600",
                                                             isSelected && "ring-2 ring-primary ring-offset-2"
                                                         )}
                                                     >
-                                                        <div className="flex justify-between items-start gap-3">
-                                                            <div className="flex items-start gap-3 flex-1 min-w-0">
-                                                                <div
-                                                                    id={`select-inv-mob-${invoice.id}`}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleSelectInvoice(invoice.id, !isSelected);
-                                                                    }}
-                                                                    className={cn(
-                                                                        "mt-1 h-5 w-5 shrink-0 rounded-md border-2 border-primary flex items-center justify-center cursor-pointer transition-colors",
-                                                                        isSelected ? "bg-primary text-primary-foreground" : "bg-background"
-                                                                    )}
-                                                                    role="checkbox"
-                                                                    aria-checked={isSelected}
-                                                                >
-                                                                    {isSelected && (
-                                                                        <span className="text-[10px] font-black leading-none">{selectionIndex}</span>
-                                                                    )}
-                                                                </div>
-                                                                <div className="space-y-1 min-w-0">
-                                                                    <div className="text-base font-black tracking-tight text-foreground truncate uppercase flex items-center gap-2">
-                                                                        {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
+                                                        <div className="flex items-center gap-3">
+                                                            <div
+                                                                id={`select-inv-mob-${invoice.id}`}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleSelectInvoice(invoice.id, !isSelected);
+                                                                }}
+                                                                className={cn(
+                                                                    "h-5 w-5 shrink-0 rounded-md border-2 border-primary flex items-center justify-center cursor-pointer transition-colors",
+                                                                    isSelected ? "bg-primary text-primary-foreground" : "bg-background"
+                                                                )}
+                                                                role="checkbox"
+                                                                aria-checked={isSelected}
+                                                            >
+                                                                {isSelected && (
+                                                                    <span className="text-[10px] font-black leading-none">{selectionIndex}</span>
+                                                                )}
+                                                            </div>
+                                                            
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex justify-between items-start gap-2">
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-sm font-black tracking-tight text-foreground truncate uppercase">
+                                                                            {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
+                                                                        </p>
+                                                                        <p className="text-[11px] font-bold text-muted-foreground line-clamp-1">
+                                                                            {getCompanyDisplay(invoice)}
+                                                                        </p>
                                                                     </div>
-                                                                    <div className="text-xs font-bold text-foreground line-clamp-1 opacity-80">
-                                                                        {getCompanyDisplay(invoice)}
+                                                                    <div className="text-right">
+                                                                        <p className="text-sm font-black text-primary">
+                                                                            {invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
+                                                                        </p>
+                                                                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">
+                                                                            Total
+                                                                        </p>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                            <div className="flex flex-col items-end gap-1.5">
-                                                                <div className="px-2.5 py-1.5 bg-primary/10 rounded-xl text-right border border-primary/10">
-                                                                    <p className="text-xs font-black text-primary">
-                                                                        {invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
-                                                                    </p>
+                                                                
+                                                                <div className="mt-2 flex items-center justify-between border-t border-border/50 pt-2">
+                                                                    <div className="flex items-center gap-3 text-[10px] font-medium text-muted-foreground">
+                                                                        <span className="flex items-center gap-1">
+                                                                            <CalendarDays className="h-3 w-3" />
+                                                                            {format(parseISO(invoice.billDate), 'dd MMM')}
+                                                                        </span>
+                                                                        <span className="h-3 w-px bg-border" />
+                                                                        <span className="flex items-center gap-1">
+                                                                            <ReceiptIndianRupee className="h-3 w-3" />
+                                                                            Net: {invoice.netTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className={cn(
+                                                                        "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                                                                        isVithal ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-700"
+                                                                    )}>
+                                                                        {invoice.enterprise}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Details Row */}
-                                                        <div className="mt-4 grid grid-cols-2 gap-3 bg-muted/30 p-2.5 rounded-xl border border-border/50">
-                                                            <div className="flex flex-col gap-0.5">
-                                                                <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-1">
-                                                                    <ReceiptIndianRupee className="h-2.5 w-2.5" /> Net Amount
-                                                                </span>
-                                                                <span className="text-xs font-bold text-foreground/80">
-                                                                    {invoice.netTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex flex-col gap-0.5 border-l pl-3">
-                                                                <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-1">
-                                                                    <CalendarDays className="h-2.5 w-2.5" /> Bill Date
-                                                                </span>
-                                                                <span className="text-xs font-bold text-foreground/80">
-                                                                    {format(parseISO(invoice.billDate), 'dd MMM, yy')}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="mt-3 flex items-center justify-between pt-1">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <div className={cn(
-                                                                    "px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border",
-                                                                    isVithal ? "bg-red-50 text-red-600 border-red-100" : "bg-blue-50 text-blue-700 border-blue-100"
-                                                                )}>
-                                                                    {invoice.enterprise}
-                                                                </div>
-                                                            </div>
-                                                            <div className="text-[9px] font-bold text-muted-foreground opacity-50 italic">
-                                                                Long press for options
                                                             </div>
                                                         </div>
                                                     </div>
