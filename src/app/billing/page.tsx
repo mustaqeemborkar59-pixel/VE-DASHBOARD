@@ -169,7 +169,7 @@ const DownloadOptionsFields = React.memo(({ options, setOptions }: { options: Do
                     <Label htmlFor="myBank">Show Bank Details</Label>
                 </div>
                  <div className="flex items-center space-x-2">
-                    <Checkbox id="mySac" checked={options.myCompany.showSacCode} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showBankDetails: !!checked} }))} />
+                    <Checkbox id="mySac" checked={options.myCompany.showSacCode} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showSacCode: !!checked} }))} />
                     <Label htmlFor="mySac">Show SAC Code</Label>
                 </div>
                  <div className="flex items-center space-x-2">
@@ -216,14 +216,13 @@ const InvoiceActions = ({
   <div
     className="relative z-50 shrink-0"
     onClick={(e) => e.stopPropagation()}
-    onPointerDown={(e) => e.stopPropagation()}
   >
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 p-0 cursor-pointer"
+          className="hidden md:inline-flex h-8 w-8 p-0 cursor-pointer"
           type="button"
         >
           <EllipsisVertical className="h-4 w-4" />
@@ -279,6 +278,7 @@ const InvoiceList = ({
     selectedInvoices, 
     handleSelectInvoice, 
     getCompanyDisplay,
+    setActiveInvoiceForAction,
     ...actionProps
 }: {
     invoices: any[];
@@ -290,6 +290,7 @@ const InvoiceList = ({
     selectedInvoices: string[];
     handleSelectInvoice: (invoiceId: string, checked: boolean) => void;
     getCompanyDisplay: (invoice: Invoice) => string;
+    setActiveInvoiceForAction: (invoice: Invoice) => void;
 } & Omit<React.ComponentProps<typeof InvoiceActions>, 'invoice'>) => (
   <>
     {isLoadingInvoices ? (
@@ -322,7 +323,15 @@ const InvoiceList = ({
                                                 const isSelected = selectedInvoices.includes(invoice.id);
                                                 const selectionIndex = isSelected ? selectedInvoices.indexOf(invoice.id) + 1 : 0;
                                                 return (
-                                                    <div key={invoice.id} className="border rounded-lg p-3 space-y-2 bg-card">
+                                                    <div 
+                                                        key={invoice.id} 
+                                                        onContextMenu={(e) => {
+                                                            e.preventDefault();
+                                                            if ('vibrate' in navigator) navigator.vibrate(50);
+                                                            setActiveInvoiceForAction(invoice);
+                                                        }}
+                                                        className="border rounded-lg p-3 space-y-2 bg-card active:scale-[0.98] transition-transform select-none"
+                                                    >
                                                         <div className="flex justify-between items-start">
                                                             <div className="flex items-start gap-3">
                                                                 <div
@@ -520,6 +529,8 @@ export default function BillingPage() {
   
   const [openYearAccordions, setOpenYearAccordions] = useState<string[]>([]);
   const [openMonthAccordions, setOpenMonthAccordions] = useState<string[]>([]);
+
+  const [activeInvoiceForAction, setActiveInvoiceForAction] = useState<Invoice | null>(null);
 
 
   // Queries
@@ -1352,6 +1363,7 @@ export default function BillingPage() {
                         openFormDialog={openFormDialog}
                         openDuplicateDialog={openDuplicateDialog}
                         openDeleteDialog={openDeleteDialog}
+                        setActiveInvoiceForAction={setActiveInvoiceForAction}
                       />
                     </TabsContent>
                     <TabsContent value="RV">
@@ -1370,6 +1382,7 @@ export default function BillingPage() {
                         openFormDialog={openFormDialog}
                         openDuplicateDialog={openDuplicateDialog}
                         openDeleteDialog={openDeleteDialog}
+                        setActiveInvoiceForAction={setActiveInvoiceForAction}
                       />
                     </TabsContent>
                 </CardContent>
@@ -1752,8 +1765,8 @@ export default function BillingPage() {
                     <Input
                         id="newBulkBillDate"
                         type="date"
-                        value={newBillDateForBulk}
-                        onChange={(e) => setNewBillDateForBulk(e.target.value)}
+                        value={newBulkBillDateForBulk}
+                        onChange={(e) => setNewBulkBillDateForBulk(e.target.value)}
                         className="w-full mt-1.5 h-9 text-sm"
                     />
                 </div>
@@ -1779,6 +1792,39 @@ export default function BillingPage() {
                     myCompanyDetails={invoiceForPreview?.myCompanyDetails || null}
                     downloadOptions={invoiceForPreview?.downloadOptions || defaultDownloadOptions}
                   />
+                </div>
+            </DialogContent>
+        </Dialog>
+
+        {/* Mobile Actions Dialog (Triggered by Long Press) */}
+        <Dialog open={!!activeInvoiceForAction} onOpenChange={(open) => !open && setActiveInvoiceForAction(null)}>
+            <DialogContent className="sm:max-w-xs p-0 overflow-hidden rounded-t-3xl sm:rounded-3xl border-none shadow-2xl">
+                <div className="p-4 bg-muted/30 border-b flex items-center justify-between">
+                    <div className="space-y-0.5">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Invoice Actions</p>
+                        <p className="text-xs font-black">Bill No. {activeInvoiceForAction?.billNo}-{activeInvoiceForAction?.billNoSuffix || 'MHE'}</p>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => setActiveInvoiceForAction(null)} className="h-8 w-8 rounded-full">
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div className="p-2 grid gap-1">
+                    <Button variant="ghost" className="justify-start h-12 gap-3 px-4 font-bold text-sm rounded-xl" onClick={() => { const inv = activeInvoiceForAction!; setActiveInvoiceForAction(null); openPreviewDialog(inv); }}>
+                        <Eye className="h-4 w-4 text-primary" /> Preview Invoice
+                    </Button>
+                    <Button variant="ghost" className="justify-start h-12 gap-3 px-4 font-bold text-sm rounded-xl" onClick={() => { const inv = activeInvoiceForAction!; setActiveInvoiceForAction(null); handleDownloadWord(inv); }}>
+                        <Download className="h-4 w-4 text-blue-500" /> Download Document
+                    </Button>
+                    <Button variant="ghost" className="justify-start h-12 gap-3 px-4 font-bold text-sm rounded-xl" onClick={() => { const inv = activeInvoiceForAction!; setActiveInvoiceForAction(null); openFormDialog(inv); }}>
+                        <Pencil className="h-4 w-4 text-amber-500" /> Edit Details
+                    </Button>
+                    <Button variant="ghost" className="justify-start h-12 gap-3 px-4 font-bold text-sm rounded-xl" onClick={() => { const inv = activeInvoiceForAction!; setActiveInvoiceForAction(null); openDuplicateDialog(inv); }}>
+                        <Copy className="h-4 w-4 text-indigo-500" /> Duplicate Bill
+                    </Button>
+                    <Separator className="my-1 mx-2" />
+                    <Button variant="ghost" className="justify-start h-12 gap-3 px-4 font-bold text-sm text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl" onClick={() => { const inv = activeInvoiceForAction!; setActiveInvoiceForAction(null); openDeleteDialog(inv); }}>
+                        <Trash2 className="h-4 w-4" /> Delete Invoice
+                    </Button>
                 </div>
             </DialogContent>
         </Dialog>
