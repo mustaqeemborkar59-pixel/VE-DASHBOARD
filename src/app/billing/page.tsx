@@ -11,7 +11,7 @@ import { collection, query, orderBy, doc, setDoc, writeBatch, deleteField } from
 import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions, BankAccount, InvoiceTemplate, InvoiceItem as LibInvoiceItem, DocumentSettings } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow, AlignLeft, AlignCenter, AlignRight, ChevronDown, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow, AlignLeft, AlignCenter, AlignRight, ChevronDown, CalendarDays, Wallet } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -24,7 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { InvoicePreview } from '@/components/invoice-preview';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/Accordion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -323,18 +323,25 @@ const InvoiceList = ({
                                             {month.invoices.map((invoice: Invoice) => {
                                                 const isSelected = selectedInvoices.includes(invoice.id);
                                                 const selectionIndex = isSelected ? selectedInvoices.indexOf(invoice.id) + 1 : 0;
+                                                const isVithal = invoice.enterprise === 'Vithal';
+                                                
                                                 return (
                                                     <div 
                                                         key={invoice.id} 
+                                                        onClick={() => actionProps.openPreviewDialog(invoice)}
                                                         onContextMenu={(e) => {
                                                             e.preventDefault();
                                                             if ('vibrate' in navigator) navigator.vibrate(50);
                                                             setActiveInvoiceForAction(invoice);
                                                         }}
-                                                        className="border rounded-lg p-3 space-y-2 bg-card active:scale-[0.98] transition-transform select-none"
+                                                        className={cn(
+                                                            "relative group border rounded-2xl p-4 bg-card active:scale-[0.98] transition-all shadow-sm select-none border-l-4",
+                                                            isVithal ? "border-l-red-500" : "border-l-blue-600",
+                                                            isSelected && "ring-2 ring-primary ring-offset-2"
+                                                        )}
                                                     >
-                                                        <div className="flex justify-between items-start">
-                                                            <div className="flex items-start gap-3">
+                                                        <div className="flex justify-between items-start gap-3">
+                                                            <div className="flex items-start gap-3 flex-1 min-w-0">
                                                                 <div
                                                                     id={`select-inv-mob-${invoice.id}`}
                                                                     onClick={(e) => {
@@ -342,27 +349,44 @@ const InvoiceList = ({
                                                                         handleSelectInvoice(invoice.id, !isSelected);
                                                                     }}
                                                                     className={cn(
-                                                                        "mt-1 h-4 w-4 shrink-0 rounded-sm border border-primary flex items-center justify-center cursor-pointer ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                                                        isSelected && "bg-primary text-primary-foreground"
+                                                                        "mt-1 h-5 w-5 shrink-0 rounded-md border-2 border-primary flex items-center justify-center cursor-pointer transition-colors",
+                                                                        isSelected ? "bg-primary text-primary-foreground" : "bg-background"
                                                                     )}
                                                                     role="checkbox"
                                                                     aria-checked={isSelected}
-                                                                    aria-label={`Select invoice ${invoice.billNo}`}
                                                                 >
                                                                     {isSelected && (
-                                                                        <span className="text-[10px] font-bold leading-none">{selectionIndex}</span>
+                                                                        <span className="text-[10px] font-black leading-none">{selectionIndex}</span>
                                                                     )}
                                                                 </div>
-                                                              <div className="space-y-0.5 cursor-pointer" onClick={() => actionProps.openPreviewDialog(invoice)}>
-                                                                  <div className="text-xs font-bold">Bill No: {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</div>
-                                                                  <div className="text-[10px] text-muted-foreground">{getCompanyDisplay(invoice)}</div>
-                                                              </div>
+                                                                <div className="space-y-1 min-w-0">
+                                                                    <div className="text-sm font-black tracking-tight text-foreground truncate uppercase">
+                                                                        {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
+                                                                    </div>
+                                                                    <div className="text-[11px] font-bold text-muted-foreground line-clamp-1">
+                                                                        {getCompanyDisplay(invoice)}
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                            <InvoiceActions invoice={invoice} {...actionProps} />
+                                                            <div className="flex flex-col items-end gap-1.5">
+                                                                <div className="px-2 py-1 bg-muted rounded-lg text-right">
+                                                                    <p className="text-[10px] font-black text-foreground">
+                                                                        {invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <div className="text-[10px] flex justify-between items-center cursor-pointer" onClick={() => actionProps.openPreviewDialog(invoice)}>
-                                                            <div><span className="font-medium text-muted-foreground">Date: </span>{format(parseISO(invoice.billDate), 'dd MMM, yy')}</div>
-                                                            <div><span className="font-medium text-muted-foreground">Amount: </span>{invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</div>
+                                                        <div className="mt-3 flex items-center justify-between border-t pt-2 border-dashed">
+                                                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-muted-foreground uppercase">
+                                                                <CalendarDays className="h-3 w-3" />
+                                                                {format(parseISO(invoice.billDate), 'dd MMM, yyyy')}
+                                                            </div>
+                                                            <div className={cn(
+                                                                "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest",
+                                                                isVithal ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-700"
+                                                            )}>
+                                                                {invoice.enterprise}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 );
