@@ -1765,8 +1765,8 @@ export default function BillingPage() {
                     <Input
                         id="newBulkBillDate"
                         type="date"
-                        value={newBulkBillDateForBulk}
-                        onChange={(e) => setNewBulkBillDateForBulk(e.target.value)}
+                        value={newBillDateForBulk}
+                        onChange={(e) => setNewBillDateForBulk(e.target.value)}
                         className="w-full mt-1.5 h-9 text-sm"
                     />
                 </div>
