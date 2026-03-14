@@ -224,6 +224,7 @@ const InvoiceActions = ({
           size="icon"
           className="hidden md:inline-flex h-8 w-8 p-0 cursor-pointer"
           type="button"
+          onPointerDown={(e) => e.stopPropagation()}
         >
           <EllipsisVertical className="h-4 w-4" />
         </Button>
@@ -1314,6 +1315,7 @@ export default function BillingPage() {
                                             size="sm" 
                                             disabled={skippedBillNumbers.length === 0} 
                                             className="h-8 text-xs focus-visible:ring-0"
+                                            onPointerDown={(e) => e.stopPropagation()}
                                         >
                                             <FilePlus2 className="mr-1.5 h-3.5 w-3.5" />
                                             Fill Missing
@@ -1408,6 +1410,7 @@ export default function BillingPage() {
                                         variant="outline" 
                                         size="sm" 
                                         className="ml-4 shrink-0 h-8 text-xs"
+                                        onPointerDown={(e) => e.stopPropagation()}
                                     >
                                         {formEnterprise}
                                         <ChevronDown className="ml-1.5 h-3 w-3" />
@@ -1509,6 +1512,7 @@ export default function BillingPage() {
                                                 type="button" 
                                                 variant="outline" 
                                                 className="h-7 px-2 text-[10px] sm:text-xs"
+                                                onPointerDown={(e) => e.stopPropagation()}
                                             >
                                                 <Pilcrow className="h-3 w-3 mr-1" />
                                                 Size
@@ -1799,15 +1803,17 @@ export default function BillingPage() {
         {/* Mobile Actions Dialog (Triggered by Long Press) */}
         <Dialog open={!!activeInvoiceForAction} onOpenChange={(open) => !open && setActiveInvoiceForAction(null)}>
             <DialogContent className="sm:max-w-xs p-0 overflow-hidden rounded-t-3xl sm:rounded-3xl border-none shadow-2xl">
-                <div className="p-4 bg-muted/30 border-b flex items-center justify-between">
-                    <div className="space-y-0.5">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Invoice Actions</p>
-                        <p className="text-xs font-black">Bill No. {activeInvoiceForAction?.billNo}-{activeInvoiceForAction?.billNoSuffix || 'MHE'}</p>
+                <DialogHeader className="p-4 bg-muted/30 border-b flex items-center justify-between space-y-0">
+                    <div className="space-y-0.5 text-left">
+                        <DialogTitle className="text-[10px] font-bold text-muted-foreground uppercase">Invoice Actions</DialogTitle>
+                        <DialogDescription className="text-xs font-black text-foreground">
+                            Bill No. {activeInvoiceForAction?.billNo}-{activeInvoiceForAction?.billNoSuffix || 'MHE'}
+                        </DialogDescription>
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => setActiveInvoiceForAction(null)} className="h-8 w-8 rounded-full">
                         <X className="h-4 w-4" />
                     </Button>
-                </div>
+                </DialogHeader>
                 <div className="p-2 grid gap-1">
                     <Button variant="ghost" className="justify-start h-12 gap-3 px-4 font-bold text-sm rounded-xl" onClick={() => { const inv = activeInvoiceForAction!; setActiveInvoiceForAction(null); openPreviewDialog(inv); }}>
                         <Eye className="h-4 w-4 text-primary" /> Preview Invoice
