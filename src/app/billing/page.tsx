@@ -318,12 +318,14 @@ const InvoiceList = ({
                                          </div>
                                     </AccordionTrigger>
                                     <AccordionContent className="pt-2">
-                                        <div className="md:hidden">
-                                            <div className="space-y-2 p-2">
+                                        <div className="md:hidden w-full max-w-full overflow-hidden">
+                                            <div className="space-y-2 p-1">
                                             {month.invoices.map((invoice: Invoice) => {
                                                 const isSelected = selectedInvoices.includes(invoice.id);
                                                 const selectionIndex = isSelected ? selectedInvoices.indexOf(invoice.id) + 1 : 0;
                                                 const isVithal = invoice.enterprise === 'Vithal';
+                                                const companyName = getCompanyDisplay(invoice);
+                                                const truncatedName = companyName.length > 25 ? companyName.substring(0, 25) + "..." : companyName;
                                                 
                                                 return (
                                                     <div 
@@ -335,12 +337,12 @@ const InvoiceList = ({
                                                             setActiveInvoiceForAction(invoice);
                                                         }}
                                                         className={cn(
-                                                            "relative group border rounded-xl p-2 bg-card active:scale-[0.98] transition-all shadow-sm select-none border-l-4",
-                                                            isVithal ? "border-l-red-500" : "border-l-blue-600",
+                                                            "relative group border rounded-xl p-2 bg-card active:scale-[0.98] transition-all shadow-sm select-none border-l-4 w-full max-w-full overflow-hidden",
+                                                            isVithal ? "border-l-emerald-500" : "border-l-blue-600",
                                                             isSelected && "ring-2 ring-primary ring-offset-2"
                                                         )}
                                                     >
-                                                        <div className="flex items-start gap-2">
+                                                        <div className="flex items-center gap-2 min-w-0">
                                                             <div
                                                                 id={`select-inv-mob-${invoice.id}`}
                                                                 onClick={(e) => {
@@ -348,7 +350,7 @@ const InvoiceList = ({
                                                                     handleSelectInvoice(invoice.id, !isSelected);
                                                                 }}
                                                                 className={cn(
-                                                                    "h-5 w-5 shrink-0 rounded-md border-2 border-primary flex items-center justify-center cursor-pointer transition-colors mt-1",
+                                                                    "h-5 w-5 shrink-0 rounded-md border-2 border-primary flex items-center justify-center cursor-pointer transition-colors",
                                                                     isSelected ? "bg-primary text-primary-foreground" : "bg-background"
                                                                 )}
                                                                 role="checkbox"
@@ -361,35 +363,34 @@ const InvoiceList = ({
                                                             
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex justify-between items-start gap-2">
-                                                                    <div className="min-w-0">
-                                                                        <p className="text-xs font-black tracking-tight text-foreground truncate uppercase">
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <p className="text-[10px] font-black tracking-tight text-foreground truncate uppercase opacity-70">
                                                                             {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
                                                                         </p>
-                                                                        <p className="text-[10px] font-bold text-muted-foreground truncate">
-                                                                            {getCompanyDisplay(invoice)}
+                                                                        <p className="text-xs font-bold text-foreground truncate leading-tight">
+                                                                            {truncatedName}
                                                                         </p>
                                                                     </div>
-                                                                    <div className="text-right">
+                                                                    <div className="text-right shrink-0">
                                                                         <p className="text-xs font-black text-primary">
                                                                             {invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
+                                                                        </p>
+                                                                        <p className="text-[9px] font-medium text-muted-foreground">
+                                                                            Net: {invoice.netTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
                                                                         </p>
                                                                     </div>
                                                                 </div>
                                                                 
-                                                                <div className="mt-1.5 flex items-center justify-between border-t border-border/30 pt-1">
+                                                                <div className="mt-1 flex items-center justify-between border-t border-border/30 pt-1">
                                                                     <div className="flex items-center gap-3 text-[9px] font-medium text-muted-foreground">
                                                                         <span className="flex items-center gap-1">
                                                                             <CalendarDays className="h-2.5 w-2.5" />
                                                                             {format(parseISO(invoice.billDate), 'dd MMM')}
                                                                         </span>
-                                                                        <span className="flex items-center gap-1">
-                                                                            <ReceiptIndianRupee className="h-2.5 w-2.5" />
-                                                                            Net: {invoice.netTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
-                                                                        </span>
                                                                     </div>
                                                                     <div className={cn(
                                                                         "px-1 py-0.5 rounded-[4px] text-[7px] font-black uppercase tracking-widest",
-                                                                        isVithal ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-700"
+                                                                        isVithal ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-700"
                                                                     )}>
                                                                         {invoice.enterprise}
                                                                     </div>
