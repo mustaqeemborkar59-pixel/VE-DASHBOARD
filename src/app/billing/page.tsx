@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useMemo, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import AppLayout from "@/components/app-layout";
@@ -24,7 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { InvoicePreview } from '@/components/invoice-preview';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/Accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -502,7 +503,7 @@ export default function BillingPage() {
   
   const initialFormState = {
     companyId: '',
-    billDate: toISODateString(new Date()),
+    billDate: format(new Date(), 'yyyy-MM-dd'),
     billingMonth: toMonthString(new Date()),
     poNumber: 'AGREEMENT',
     site: '',
@@ -515,7 +516,7 @@ export default function BillingPage() {
   };
 
   const [companyId, setCompanyId] = useState<string>('');
-  const [billDate, setBillDate] = useState<string>(toISODateString(new Date()));
+  const [billDate, setBillDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [billingMonth, setBillingMonth] = useState<string>(toMonthString(new Date()));
   const [poNumber, setPoNumber] = useState('AGREEMENT');
   const [site, setSite] = useState('');
@@ -535,11 +536,11 @@ export default function BillingPage() {
 
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [invoiceToDuplicate, setInvoiceToDuplicate] = useState<Invoice | null>(null);
-  const [newBillDateForDuplicate, setNewBillDateForDuplicate] = useState<string>(toISODateString(new Date()));
+  const [newBillDateForDuplicate, setNewBillDateForDuplicate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
   const [isBulkDuplicateDialogOpen, setIsBulkDuplicateDialogOpen] = useState(false);
-  const [newBillDateForBulk, setNewBillDateForBulk] = useState<string>(toISODateString(new Date()));
+  const [newBillDateForBulk, setNewBillDateForBulk] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
 
 
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
@@ -677,7 +678,7 @@ export default function BillingPage() {
   }, []);
 
   const openDuplicateDialog = useCallback((invoice: Invoice) => {
-    setNewBillDateForDuplicate(toISODateString(new Date()));
+    setNewBillDateForDuplicate(format(new Date(), 'yyyy-MM-dd'));
     handleDelayedAction(() => setInvoiceToDuplicate(invoice));
   }, []);
   
@@ -1265,8 +1266,6 @@ export default function BillingPage() {
       const newSelection = checked
         ? [...prev, invoiceId]
         : prev.filter(id => id !== invoiceId);
-      
-      // The order is based on the selection sequence
       return newSelection;
     });
   };
