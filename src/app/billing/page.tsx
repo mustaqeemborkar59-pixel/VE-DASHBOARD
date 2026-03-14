@@ -12,7 +12,7 @@ import { collection, query, orderBy, doc, setDoc, writeBatch, deleteField } from
 import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions, BankAccount, InvoiceTemplate, InvoiceItem as LibInvoiceItem, DocumentSettings } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow, AlignLeft, AlignCenter, AlignRight, ChevronDown, CalendarDays, Wallet, Banknote, ReceiptIndianRupee } from 'lucide-react';
+import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow, AlignLeft, AlignCenter, AlignRight, ChevronDown, CalendarDays, ReceiptIndianRupee } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -225,7 +225,6 @@ const InvoiceActions = ({
           size="icon"
           className="hidden md:inline-flex h-8 w-8 p-0 cursor-pointer"
           type="button"
-          onPointerDown={(e) => e.stopPropagation()}
         >
           <EllipsisVertical className="h-4 w-4" />
         </Button>
@@ -336,12 +335,12 @@ const InvoiceList = ({
                                                             setActiveInvoiceForAction(invoice);
                                                         }}
                                                         className={cn(
-                                                            "relative group border rounded-xl p-3 bg-card active:scale-[0.98] transition-all shadow-sm select-none border-l-4",
+                                                            "relative group border rounded-xl p-2 bg-card active:scale-[0.98] transition-all shadow-sm select-none border-l-4",
                                                             isVithal ? "border-l-red-500" : "border-l-blue-600",
                                                             isSelected && "ring-2 ring-primary ring-offset-2"
                                                         )}
                                                     >
-                                                        <div className="flex items-center gap-3">
+                                                        <div className="flex items-start gap-2">
                                                             <div
                                                                 id={`select-inv-mob-${invoice.id}`}
                                                                 onClick={(e) => {
@@ -349,7 +348,7 @@ const InvoiceList = ({
                                                                     handleSelectInvoice(invoice.id, !isSelected);
                                                                 }}
                                                                 className={cn(
-                                                                    "h-5 w-5 shrink-0 rounded-md border-2 border-primary flex items-center justify-center cursor-pointer transition-colors",
+                                                                    "h-5 w-5 shrink-0 rounded-md border-2 border-primary flex items-center justify-center cursor-pointer transition-colors mt-1",
                                                                     isSelected ? "bg-primary text-primary-foreground" : "bg-background"
                                                                 )}
                                                                 role="checkbox"
@@ -363,37 +362,33 @@ const InvoiceList = ({
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex justify-between items-start gap-2">
                                                                     <div className="min-w-0">
-                                                                        <p className="text-sm font-black tracking-tight text-foreground truncate uppercase">
+                                                                        <p className="text-xs font-black tracking-tight text-foreground truncate uppercase">
                                                                             {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
                                                                         </p>
-                                                                        <p className="text-[11px] font-bold text-muted-foreground line-clamp-1">
+                                                                        <p className="text-[10px] font-bold text-muted-foreground truncate">
                                                                             {getCompanyDisplay(invoice)}
                                                                         </p>
                                                                     </div>
                                                                     <div className="text-right">
-                                                                        <p className="text-sm font-black text-primary">
+                                                                        <p className="text-xs font-black text-primary">
                                                                             {invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
-                                                                        </p>
-                                                                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">
-                                                                            Total
                                                                         </p>
                                                                     </div>
                                                                 </div>
                                                                 
-                                                                <div className="mt-2 flex items-center justify-between border-t border-border/50 pt-2">
-                                                                    <div className="flex items-center gap-3 text-[10px] font-medium text-muted-foreground">
+                                                                <div className="mt-1.5 flex items-center justify-between border-t border-border/30 pt-1">
+                                                                    <div className="flex items-center gap-3 text-[9px] font-medium text-muted-foreground">
                                                                         <span className="flex items-center gap-1">
-                                                                            <CalendarDays className="h-3 w-3" />
+                                                                            <CalendarDays className="h-2.5 w-2.5" />
                                                                             {format(parseISO(invoice.billDate), 'dd MMM')}
                                                                         </span>
-                                                                        <span className="h-3 w-px bg-border" />
                                                                         <span className="flex items-center gap-1">
-                                                                            <ReceiptIndianRupee className="h-3 w-3" />
+                                                                            <ReceiptIndianRupee className="h-2.5 w-2.5" />
                                                                             Net: {invoice.netTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
                                                                         </span>
                                                                     </div>
                                                                     <div className={cn(
-                                                                        "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                                                                        "px-1 py-0.5 rounded-[4px] text-[7px] font-black uppercase tracking-widest",
                                                                         isVithal ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-700"
                                                                     )}>
                                                                         {invoice.enterprise}
@@ -481,10 +476,6 @@ export default function BillingPage() {
   const [activeTab, setActiveTab] = useState<Enterprise>('Vithal');
   const [formEnterprise, setFormEnterprise] = useState<Enterprise>(activeTab);
   
-  const toISODateString = (date: Date) => {
-    return format(date, 'yyyy-MM-dd');
-  }
-
   const toMonthString = (date: Date) => {
     return format(date, 'yyyy-MM');
   }
@@ -593,7 +584,6 @@ export default function BillingPage() {
   const { data: rvBankAccounts, isLoading: isLoadingRvBanks } = useCollection<BankAccount>(rvBankAccountsQuery);
   const isLoadingBankAccounts = isLoadingVithalBanks || isLoadingRvBanks;
   
-  const isLoadingSettings = isLoadingVinalSettings || isLoadingRvSettings;
   const myCompanyDetails = activeTab === 'Vithal' ? vithalCompanyDetails : rvCompanyDetails;
 
 
@@ -1350,7 +1340,6 @@ export default function BillingPage() {
                                             size="sm" 
                                             disabled={skippedBillNumbers.length === 0} 
                                             className="h-8 text-xs focus-visible:ring-0"
-                                            onPointerDown={(e) => e.stopPropagation()}
                                         >
                                             <FilePlus2 className="mr-1.5 h-3.5 w-3.5" />
                                             Fill Missing
@@ -1445,7 +1434,6 @@ export default function BillingPage() {
                                         variant="outline" 
                                         size="sm" 
                                         className="ml-4 shrink-0 h-8 text-xs"
-                                        onPointerDown={(e) => e.stopPropagation()}
                                     >
                                         {formEnterprise}
                                         <ChevronDown className="ml-1.5 h-3 w-3" />
@@ -1547,7 +1535,6 @@ export default function BillingPage() {
                                                 type="button" 
                                                 variant="outline" 
                                                 className="h-7 px-2 text-[10px] sm:text-xs"
-                                                onPointerDown={(e) => e.stopPropagation()}
                                             >
                                                 <Pilcrow className="h-3 w-3 mr-1" />
                                                 Size
@@ -1800,9 +1787,9 @@ export default function BillingPage() {
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="py-2">
-                    <Label htmlFor="newBulkBillDate" className="text-xs">New Bill Date</Label>
+                    <Label htmlFor="newBillDateForBulk" className="text-xs">New Bill Date</Label>
                     <Input
-                        id="newBulkBillDate"
+                        id="newBillDateForBulk"
                         type="date"
                         value={newBillDateForBulk}
                         onChange={(e) => setNewBillDateForBulk(e.target.value)}

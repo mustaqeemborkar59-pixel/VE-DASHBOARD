@@ -4,7 +4,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, Settings, User, ReceiptText, Building, Banknote, ScrollText, StickyNote, WalletCards, CalendarCheck } from 'lucide-react';
+import { LogOut, Settings, User, ReceiptText, Building, Banknote, StickyNote, WalletCards, CalendarCheck } from 'lucide-react';
 import { useEffect } from 'react';
 
 import {

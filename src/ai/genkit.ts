@@ -1,8 +1,6 @@
-'use client';
 
-import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
-
-export const ai = genkit({
-  plugins: [googleAI()],
-});
+/**
+ * @fileOverview Genkit initialization file.
+ * This file is currently empty as AI features have been removed.
+ */
+export {};
