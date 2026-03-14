@@ -12,7 +12,7 @@ import { collection, query, orderBy, doc, setDoc, writeBatch, deleteField } from
 import { Company, Invoice, CompanySettings, PageMargin, DownloadOptions, BankAccount, InvoiceTemplate, InvoiceItem as LibInvoiceItem, DocumentSettings } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow, AlignLeft, AlignCenter, AlignRight, ChevronDown, CalendarDays, Wallet } from 'lucide-react';
+import { Plus, Trash2, Pencil, PlusCircle, EllipsisVertical, Download, Eye, FileText, Settings, Folder, FilePlus2, Copy, X, Bold, Pilcrow, AlignLeft, AlignCenter, AlignRight, ChevronDown, CalendarDays, Wallet, Banknote, ReceiptIndianRupee } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ToWords } from 'to-words';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -361,32 +361,54 @@ const InvoiceList = ({
                                                                     )}
                                                                 </div>
                                                                 <div className="space-y-1 min-w-0">
-                                                                    <div className="text-sm font-black tracking-tight text-foreground truncate uppercase">
+                                                                    <div className="text-base font-black tracking-tight text-foreground truncate uppercase flex items-center gap-2">
                                                                         {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
                                                                     </div>
-                                                                    <div className="text-[11px] font-bold text-muted-foreground line-clamp-1">
+                                                                    <div className="text-xs font-bold text-foreground line-clamp-1 opacity-80">
                                                                         {getCompanyDisplay(invoice)}
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                             <div className="flex flex-col items-end gap-1.5">
-                                                                <div className="px-2 py-1 bg-muted rounded-lg text-right">
-                                                                    <p className="text-[10px] font-black text-foreground">
+                                                                <div className="px-2.5 py-1.5 bg-primary/10 rounded-xl text-right border border-primary/10">
+                                                                    <p className="text-xs font-black text-primary">
                                                                         {invoice.grandTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
                                                                     </p>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div className="mt-3 flex items-center justify-between border-t pt-2 border-dashed">
-                                                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-muted-foreground uppercase">
-                                                                <CalendarDays className="h-3 w-3" />
-                                                                {format(parseISO(invoice.billDate), 'dd MMM, yyyy')}
+
+                                                        {/* Details Row */}
+                                                        <div className="mt-4 grid grid-cols-2 gap-3 bg-muted/30 p-2.5 rounded-xl border border-border/50">
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-1">
+                                                                    <ReceiptIndianRupee className="h-2.5 w-2.5" /> Net Amount
+                                                                </span>
+                                                                <span className="text-xs font-bold text-foreground/80">
+                                                                    {invoice.netTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
+                                                                </span>
                                                             </div>
-                                                            <div className={cn(
-                                                                "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest",
-                                                                isVithal ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-700"
-                                                            )}>
-                                                                {invoice.enterprise}
+                                                            <div className="flex flex-col gap-0.5 border-l pl-3">
+                                                                <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-1">
+                                                                    <CalendarDays className="h-2.5 w-2.5" /> Bill Date
+                                                                </span>
+                                                                <span className="text-xs font-bold text-foreground/80">
+                                                                    {format(parseISO(invoice.billDate), 'dd MMM, yy')}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="mt-3 flex items-center justify-between pt-1">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <div className={cn(
+                                                                    "px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border",
+                                                                    isVithal ? "bg-red-50 text-red-600 border-red-100" : "bg-blue-50 text-blue-700 border-blue-100"
+                                                                )}>
+                                                                    {invoice.enterprise}
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-[9px] font-bold text-muted-foreground opacity-50 italic">
+                                                                Long press for options
                                                             </div>
                                                         </div>
                                                     </div>
