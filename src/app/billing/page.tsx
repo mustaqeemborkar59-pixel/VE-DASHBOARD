@@ -168,11 +168,11 @@ const DownloadOptionsFields = React.memo(({ options, setOptions }: { options: Do
                     <Checkbox id="myBank" checked={options.myCompany.showBankDetails} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showBankDetails: !!checked} }))} />
                     <Label htmlFor="myBank">Show Bank Details</Label>
                 </div>
-                 <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2">
                     <Checkbox id="mySac" checked={options.myCompany.showSacCode} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showSacCode: !!checked} }))} />
                     <Label htmlFor="mySac">Show SAC Code</Label>
                 </div>
-                 <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2">
                     <Checkbox id="myServiceTax" checked={options.myCompany.showServiceTaxCode} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, myCompany: {...prev.myCompany, showServiceTaxCode: !!checked} }))} />
                     <Label htmlFor="myServiceTax">Show Service Tax Code</Label>
                 </div>
@@ -1802,17 +1802,12 @@ export default function BillingPage() {
 
         {/* Mobile Actions Dialog (Triggered by Long Press) */}
         <Dialog open={!!activeInvoiceForAction} onOpenChange={(open) => !open && setActiveInvoiceForAction(null)}>
-            <DialogContent className="sm:max-w-xs p-0 overflow-hidden rounded-t-3xl sm:rounded-3xl border-none shadow-2xl">
-                <DialogHeader className="p-4 bg-muted/30 border-b flex items-center justify-between space-y-0">
-                    <div className="space-y-0.5 text-left">
-                        <DialogTitle className="text-[10px] font-bold text-muted-foreground uppercase">Invoice Actions</DialogTitle>
-                        <DialogDescription className="text-xs font-black text-foreground">
-                            Bill No. {activeInvoiceForAction?.billNo}-{activeInvoiceForAction?.billNoSuffix || 'MHE'}
-                        </DialogDescription>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => setActiveInvoiceForAction(null)} className="h-8 w-8 rounded-full">
-                        <X className="h-4 w-4" />
-                    </Button>
+            <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-xs p-0 overflow-hidden rounded-3xl border-none shadow-2xl">
+                <DialogHeader className="p-4 bg-muted/30 border-b flex flex-col items-start space-y-0.5">
+                    <DialogTitle className="text-[10px] font-bold text-muted-foreground uppercase">Invoice Actions</DialogTitle>
+                    <DialogDescription className="text-xs font-black text-foreground">
+                        Bill No. {activeInvoiceForAction?.billNo}-{activeInvoiceForAction?.billNoSuffix || 'MHE'}
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="p-2 grid gap-1">
                     <Button variant="ghost" className="justify-start h-12 gap-3 px-4 font-bold text-sm rounded-xl" onClick={() => { const inv = activeInvoiceForAction!; setActiveInvoiceForAction(null); openPreviewDialog(inv); }}>
