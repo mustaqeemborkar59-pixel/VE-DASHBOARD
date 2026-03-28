@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import AppLayout from "@/components/app-layout";
@@ -324,8 +323,9 @@ const InvoiceList = ({
                                                 const isSelected = selectedInvoices.includes(invoice.id);
                                                 const selectionIndex = isSelected ? selectedInvoices.indexOf(invoice.id) + 1 : 0;
                                                 const isVithal = invoice.enterprise === 'Vithal';
-                                                const companyName = getCompanyDisplay(invoice);
-                                                const truncatedName = companyName.length > 25 ? companyName.substring(0, 25) + "..." : companyName;
+                                                
+                                                const rawName = getCompanyDisplay(invoice);
+                                                const companyName = rawName.length > 25 ? rawName.substring(0, 25) + "..." : rawName;
                                                 
                                                 return (
                                                     <div 
@@ -368,7 +368,7 @@ const InvoiceList = ({
                                                                             {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
                                                                         </p>
                                                                         <p className="text-xs font-bold text-foreground truncate leading-tight">
-                                                                            {truncatedName}
+                                                                            {companyName}
                                                                         </p>
                                                                     </div>
                                                                     <div className="text-right shrink-0">

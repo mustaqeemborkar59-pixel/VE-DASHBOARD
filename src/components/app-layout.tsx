@@ -1,10 +1,9 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, Settings, User, ReceiptText, Building, Banknote, StickyNote, WalletCards, CalendarCheck } from 'lucide-react';
+import { LogOut, Settings, User, ReceiptText, Building, Banknote, StickyNote, WalletCards, CalendarCheck, Mail } from 'lucide-react';
 import { useEffect } from 'react';
 
 import {
@@ -37,6 +36,7 @@ const navItems = [
   { href: '/companies', label: 'Companies', icon: Building },
   { href: '/inventory', label: 'Inventory', icon: Warehouse },
   { href: '/billing', label: 'Billing', icon: ReceiptText },
+  { href: '/envelopes', label: 'Envelopes', icon: Mail },
   { href: '/payments', label: 'Payments', icon: Banknote },
   { href: '/salary', label: 'Salary', icon: WalletCards },
   { href: '/notes', label: 'Notes', icon: StickyNote },
@@ -140,14 +140,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </Sidebar>
       <SidebarInset>
         <header className={cn(
-          "sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-card/75 px-4 backdrop-blur-sm sm:px-6 lg:h-[60px]"
+          "sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-card/75 px-4 backdrop-blur-sm sm:px-6 lg:h-[60px] print:hidden"
         )}>
           <SidebarTrigger className="md:hidden" />
           <div className="w-full flex-1">
           </div>
           <ThemeToggle />
         </header>
-        <main className="flex-1 overflow-auto p-3 sm:p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-3 sm:p-6 print:p-0">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );
