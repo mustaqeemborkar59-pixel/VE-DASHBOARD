@@ -292,7 +292,7 @@ const InvoiceList = ({
     getCompanyDisplay: (invoice: Invoice) => string;
     setActiveInvoiceForAction: (invoice: Invoice) => void;
 } & Omit<React.ComponentProps<typeof InvoiceActions>, 'invoice'>) => (
-  <>
+  <div className="w-full max-w-full overflow-hidden">
     {isLoadingInvoices ? (
         <div className="text-center py-10 text-muted-foreground">Loading invoices...</div>
     ) : invoices.length > 0 ? (
@@ -317,6 +317,7 @@ const InvoiceList = ({
                                          </div>
                                     </AccordionTrigger>
                                     <AccordionContent className="pt-2">
+                                        {/* Mobile Optimized Compact List */}
                                         <div className="md:hidden w-full max-w-full overflow-hidden">
                                             <div className="space-y-2 p-1">
                                             {month.invoices.map((invoice: Invoice) => {
@@ -324,6 +325,7 @@ const InvoiceList = ({
                                                 const selectionIndex = isSelected ? selectedInvoices.indexOf(invoice.id) + 1 : 0;
                                                 const isVithal = invoice.enterprise === 'Vithal';
                                                 
+                                                // 25 char strict truncation
                                                 const rawName = getCompanyDisplay(invoice);
                                                 const companyName = rawName.length > 25 ? rawName.substring(0, 25) + "..." : rawName;
                                                 
@@ -402,6 +404,7 @@ const InvoiceList = ({
                                             })}
                                             </div>
                                         </div>
+                                        {/* Desktop Table View */}
                                         <Table className="hidden md:table">
                                             <TableHeader>
                                                 <TableRow>
@@ -467,7 +470,7 @@ const InvoiceList = ({
             No invoices found for this enterprise. Click "Add Invoice" to get started.
         </div>
     )}
-  </>
+  </div>
 );
 
 export default function BillingPage() {
@@ -1416,6 +1419,7 @@ export default function BillingPage() {
             </Card>
         </Tabs>
 
+        {/* Invoice Form Dialog */}
         <Dialog open={isFormDialogOpen} onOpenChange={(open) => setIsFormDialogOpen(open)}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-4 sm:p-6 pr-14 pb-0">
@@ -1739,6 +1743,7 @@ export default function BillingPage() {
             </DialogContent>
         </Dialog>
 
+        {/* Delete Confirmation Alert */}
         <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && setInvoiceToDelete(null)}>
             <AlertDialogContent className="max-w-[90vw] sm:max-w-md p-4 sm:p-6">
                 <AlertDialogHeader>
@@ -1754,6 +1759,7 @@ export default function BillingPage() {
             </AlertDialogContent>
         </AlertDialog>
 
+        {/* Single Duplicate Dialog */}
         <AlertDialog open={!!invoiceToDuplicate} onOpenChange={(open) => !open && setInvoiceToDuplicate(null)}>
             <AlertDialogContent className="max-w-[90vw] sm:max-w-md p-4 sm:p-6">
                 <AlertDialogHeader>
@@ -1779,6 +1785,7 @@ export default function BillingPage() {
             </AlertDialogContent>
         </AlertDialog>
 
+        {/* Bulk Duplicate Dialog */}
         <AlertDialog open={isBulkDuplicateDialogOpen} onOpenChange={setIsBulkDuplicateDialogOpen}>
             <AlertDialogContent className="max-w-[95vw] sm:max-w-md p-4 sm:p-6">
                 <AlertDialogHeader>
@@ -1804,6 +1811,7 @@ export default function BillingPage() {
             </AlertDialogContent>
         </AlertDialog>
         
+        {/* Preview Dialog */}
         <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
             <DialogContent className="max-w-4xl p-0">
                  <DialogHeader className="p-4 sm:p-6 pb-2">
