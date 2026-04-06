@@ -442,6 +442,10 @@
             "type": "number",
             "description": "Advance amount already paid by the client."
         },
+        "isDuplicate": {
+          "type": "boolean",
+          "description": "Indicates if this invoice was duplicated and is pending review."
+        },
         "myCompanyDetails": {
           "$ref": "#/entities/CompanySettings",
           "description": "A snapshot of the user's company details at the time of invoice creation."

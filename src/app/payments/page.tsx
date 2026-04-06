@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
@@ -285,7 +286,7 @@ export default function PaymentsPage() {
     const data = filteredInvoices.map(inv => ({
         'Bill No': `${inv.billNo}-${inv.billNoSuffix || 'MHE'}`,
         'Date': format(new Date(inv.billDate), 'dd-MMM-yyyy'),
-        'Company': inv.companyName,
+        'Company': inv.companyName.toUpperCase(), // COMPANY NAME IN CAPITAL
         'Grand Total': inv.grandTotal,
         'Taxable Amount': inv.taxableAmount,
         'TDS %': inv.tdsPercentage || 0,
@@ -671,7 +672,7 @@ export default function PaymentsPage() {
                              <TableRow key={invoice.id}>
                               <TableCell className="font-medium text-center p-2 text-sm">{invoice.billNo}-{invoice.billNoSuffix || 'MHE'}</TableCell>
                               <TableCell className="p-2">
-                                <div className="font-medium truncate max-w-[200px] text-sm">{invoice.companyName}</div>
+                                <div className="font-medium truncate max-w-[200px] text-sm uppercase">{invoice.companyName}</div>
                                 <div className="text-[10px] text-muted-foreground">{format(parseISO(invoice.billDate), 'dd-MMM-yyyy')}</div>
                               </TableCell>
                               <TableCell className="text-right p-2 text-xs">

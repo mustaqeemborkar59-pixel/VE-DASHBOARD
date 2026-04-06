@@ -197,6 +197,7 @@ export type Invoice = {
     discount?: number;
     discountType?: 'before_gst' | 'after_gst';
     advanceReceived?: number;
+    isDuplicate?: boolean;
     myCompanyDetails: CompanySettings; // Snapshot of my company settings
     clientCompanyDetails: Company; // Snapshot of client company details
     selectedBankAccount?: BankAccount; // Snapshot of selected bank account

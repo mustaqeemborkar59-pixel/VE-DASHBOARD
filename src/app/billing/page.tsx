@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useMemo, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import AppLayout from "@/components/app-layout";
@@ -29,6 +30,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 
 const AutoHeightTextarea = React.memo(forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => {
@@ -325,7 +327,6 @@ const InvoiceList = ({
                                                 const selectionIndex = isSelected ? selectedInvoices.indexOf(invoice.id) + 1 : 0;
                                                 const isVithal = invoice.enterprise === 'Vithal';
                                                 
-                                                // 25 char strict truncation
                                                 const rawName = getCompanyDisplay(invoice);
                                                 const companyName = rawName.length > 25 ? rawName.substring(0, 25) + "..." : rawName;
                                                 
@@ -366,8 +367,11 @@ const InvoiceList = ({
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex justify-between items-start gap-2">
                                                                     <div className="min-w-0 flex-1">
-                                                                        <p className="text-[10px] font-black tracking-tight text-foreground truncate uppercase opacity-70">
+                                                                        <p className="text-[10px] font-black tracking-tight text-foreground truncate uppercase opacity-70 flex items-center gap-1.5">
                                                                             {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
+                                                                            {invoice.isDuplicate && (
+                                                                                <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 text-[7px] py-0 px-1 rounded-sm h-3.5 uppercase font-black">Duplicate</Badge>
+                                                                            )}
                                                                         </p>
                                                                         <p className="text-xs font-bold text-foreground truncate leading-tight">
                                                                             {companyName}
@@ -443,7 +447,12 @@ const InvoiceList = ({
                                                                 </div>
                                                             </TableCell>
                                                             <TableCell className="font-medium cursor-pointer py-2" onClick={() => actionProps.openPreviewDialog(invoice)}>
-                                                                {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
+                                                                <div className="flex items-center gap-2">
+                                                                    {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
+                                                                    {invoice.isDuplicate && (
+                                                                        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 text-[10px] py-0 px-1 uppercase font-bold">Duplicate</Badge>
+                                                                    )}
+                                                                </div>
                                                             </TableCell>
                                                             <TableCell onClick={() => actionProps.openPreviewDialog(invoice)} className="cursor-pointer py-2">{getCompanyDisplay(invoice)}</TableCell>
                                                             <TableCell onClick={() => actionProps.openPreviewDialog(invoice)} className="cursor-pointer py-2">{format(parseISO(invoice.billDate), 'dd MMM, yyyy')}</TableCell>
@@ -936,7 +945,10 @@ export default function BillingPage() {
   };
 
   const applyMarkdown = (markdown: 'bold' | 'size', size?: number) => {
-    if (!activeInput) return;
+    if (!activeInput) {
+        toast({ title: "Select item first", description: "Click inside an item field to apply styling." });
+        return;
+    };
 
     const { key, field } = activeInput;
     const itemToUpdate = items.find(item => item.key === key);
@@ -950,7 +962,21 @@ export default function BillingPage() {
     const value = textarea.value;
     const selectedText = value.substring(start, end);
 
-    if (!selectedText) return;
+    if (!selectedText) {
+        // If nothing selected, just wrap the cursor or append
+        let snippet = "";
+        if (markdown === 'bold') snippet = "****";
+        else snippet = `<s:${size}></s:${size}>`;
+        
+        const newText = value.substring(0, start) + snippet + value.substring(end);
+        handleItemChange(key, field, newText);
+        setTimeout(() => {
+            textarea.focus();
+            const offset = markdown === 'bold' ? 2 : 5 + String(size).length;
+            textarea.setSelectionRange(start + offset, start + offset);
+        }, 0);
+        return;
+    }
 
     let newText;
     if (markdown === 'bold') {
@@ -1053,6 +1079,7 @@ export default function BillingPage() {
         discount: calculations.discountAmount,
         discountType: discountType,
         advanceReceived: calculations.advanceAmount,
+        isDuplicate: false, // Explicitly set to false on save to "finalize"
         myCompanyDetails: editingInvoice?.myCompanyDetails || myCompanyDetailsForForm!,
         clientCompanyDetails: selectedCompanyForNewInvoice,
         selectedBankAccount: selectedBankAccount,
@@ -1120,6 +1147,7 @@ export default function BillingPage() {
         billDate: newBillDateForDuplicate,
         billingMonth: format(parseISO(newBillDateForDuplicate), 'yyyy-MM'),
         enterprise: activeTab,
+        isDuplicate: true, // Tag as duplicate
     };
     
     addDocumentNonBlocking(collection(firestore, 'invoices'), duplicatedInvoiceData);
@@ -1138,11 +1166,11 @@ export default function BillingPage() {
     }
 
     const batch = writeBatch(firestore);
-    const invoicesToDuplicate = selectedInvoices.map(id => allInvoices?.find(inv => inv.id === id)).filter((inv): inv is Invoice => !!inv);
+    const invoicesToDuplicateItems = selectedInvoices.map(id => allInvoices?.find(inv => inv.id === id)).filter((inv): inv is Invoice => !!inv);
 
     let currentBillNumber = nextBillNumber;
 
-    for (const invoice of invoicesToDuplicate) {
+    for (const invoice of invoicesToDuplicateItems) {
         const { id, billNo, billDate, ...restOfInvoice } = invoice;
         const newInvoiceRef = doc(collection(firestore, 'invoices'));
         batch.set(newInvoiceRef, {
@@ -1151,6 +1179,7 @@ export default function BillingPage() {
             billDate: newBillDateForBulk,
             billingMonth: format(parseISO(newBillDateForBulk), 'yyyy-MM'),
             enterprise: activeTab,
+            isDuplicate: true, // Tag as duplicate
         });
         currentBillNumber++;
     }
@@ -1528,9 +1557,9 @@ export default function BillingPage() {
 
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
-                                <Label className="text-xs sm:text-sm">Particulars</Label>
+                                <Label className="text-xs sm:text-sm">Particulars Editor</Label>
                                 <div className="flex items-center gap-1 border rounded-md p-1 bg-muted/50">
-                                    <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => applyMarkdown('bold')}>
+                                    <Button type="button" variant="outline" size="icon" title="Bold" className="h-7 w-7" onClick={() => applyMarkdown('bold')}>
                                         <Bold className="h-3.5 w-3.5" />
                                     </Button>
 
@@ -1545,9 +1574,9 @@ export default function BillingPage() {
                                                 Size
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent className="z-50">
+                                        <DropdownMenuContent className="z-[150]">
                                             <DropdownMenuRadioGroup onValueChange={(size) => applyMarkdown('size', parseInt(size, 10))}>
-                                                {[9, 10, 11, 12, 14].map(s => (
+                                                {[9, 10, 11, 12, 14, 16].map(s => (
                                                     <DropdownMenuRadioItem key={s} value={String(s)} className="text-xs">{s} pt</DropdownMenuRadioItem>
                                                 ))}
                                             </DropdownMenuRadioGroup>
@@ -1765,7 +1794,7 @@ export default function BillingPage() {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Duplicate Invoice</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Select a new bill date for the duplicated invoice.
+                        Select a new bill date for the duplicated invoice. It will be marked as "DUPLICATE" until updated.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="py-2">
