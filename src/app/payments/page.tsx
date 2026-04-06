@@ -35,7 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, XCircle, Info, Trash2, Download } from "lucide-react";
+import { PlusCircle, Search, XCircle, Info, Trash2, Download, FileSpreadsheet } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
@@ -45,6 +45,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 import { generatePaymentSummaryPdf } from '@/lib/payment-summary-generator';
+import * as XLSX from 'xlsx';
 
 
 type Enterprise = 'Vithal' | 'RV';
@@ -275,6 +276,36 @@ export default function PaymentsPage() {
     toast({ title: 'Downloading', description: `Summary Statement for ${selectedCompanyName} is being generated.` });
   }
 
+  const handleDownloadExcel = () => {
+    if (filteredInvoices.length === 0) {
+        toast({ variant: 'destructive', title: 'No Data', description: 'No records to export.' });
+        return;
+    }
+
+    const data = filteredInvoices.map(inv => ({
+        'Bill No': `${inv.billNo}-${inv.billNoSuffix || 'MHE'}`,
+        'Date': format(new Date(inv.billDate), 'dd-MMM-yyyy'),
+        'Company': inv.companyName,
+        'Grand Total': inv.grandTotal,
+        'Taxable Amount': inv.taxableAmount,
+        'TDS %': inv.tdsPercentage || 0,
+        'TDS Amount': inv.tdsAmount,
+        'Total Received': inv.totalPaid,
+        'Balance Due': inv.balance,
+        'Status': inv.status,
+        'Enterprise': inv.enterprise
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Payments");
+    
+    const fileName = `Payments_${activeTab}_${format(new Date(), 'dd-MMM-yyyy')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    
+    toast({ title: 'Excel Downloaded', description: 'Payment records saved to your device.' });
+  }
+
   const handleOpenPaymentDialog = (invoice: ProcessedInvoice) => {
     closeAllDialogs();
     setSelectedInvoiceForPayment(invoice);
@@ -400,16 +431,28 @@ export default function PaymentsPage() {
                     <CardTitle>Payment Tracking</CardTitle>
                     <CardDescription>Monitor and manage invoice payments.</CardDescription>
                 </div>
-                <Button 
-                    onClick={handleDownloadSummary} 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-9 px-4 text-xs font-bold border-primary/20 hover:bg-primary/5 shadow-sm"
-                    disabled={filteredInvoices.length === 0}
-                >
-                    <Download className="mr-2 h-4 w-4 text-primary" />
-                    Download Summary Statement
-                </Button>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <Button 
+                        onClick={handleDownloadExcel} 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-9 px-4 text-xs font-bold border-green-200 hover:bg-green-50 shadow-sm"
+                        disabled={filteredInvoices.length === 0}
+                    >
+                        <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
+                        Download as Excel
+                    </Button>
+                    <Button 
+                        onClick={handleDownloadSummary} 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-9 px-4 text-xs font-bold border-primary/20 hover:bg-primary/5 shadow-sm"
+                        disabled={filteredInvoices.length === 0}
+                    >
+                        <Download className="mr-2 h-4 w-4 text-primary" />
+                        Download Summary Statement
+                    </Button>
+                </div>
               </div>
               <TabsList className="grid w-full grid-cols-2 mt-4">
                   <TabsTrigger value="Vithal" className="text-xs sm:text-sm">Vithal Enterprises</TabsTrigger>
