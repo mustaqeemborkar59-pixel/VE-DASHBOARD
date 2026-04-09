@@ -951,9 +951,6 @@ export default function BillingPage() {
     };
 
     const { key, field } = activeInput;
-    const itemToUpdate = items.find(item => item.key === key);
-    if (!itemToUpdate) return;
-    
     const textarea = document.getElementById(`${field}-${key}`) as HTMLTextAreaElement;
     if (!textarea) return;
     
@@ -962,37 +959,42 @@ export default function BillingPage() {
     const value = textarea.value;
     const selectedText = value.substring(start, end);
 
-    if (!selectedText) {
-        // If nothing selected, just wrap the cursor or append
-        let snippet = "";
-        if (markdown === 'bold') snippet = "****";
-        else snippet = `<s:${size}></s:${size}>`;
-        
-        const newText = value.substring(0, start) + snippet + value.substring(end);
-        handleItemChange(key, field, newText);
-        setTimeout(() => {
-            textarea.focus();
-            const offset = markdown === 'bold' ? 2 : 5 + String(size).length;
-            textarea.setSelectionRange(start + offset, start + offset);
-        }, 0);
-        return;
-    }
+    let snippet = "";
+    let cursorOffset = 0;
+    let finalSelectionLength = 0;
 
-    let newText;
     if (markdown === 'bold') {
-        newText = `${value.substring(0, start)}**${selectedText}**${value.substring(end)}`;
+        if (selectedText) {
+            snippet = `**${selectedText}**`;
+            finalSelectionLength = snippet.length;
+        } else {
+            snippet = "****";
+            cursorOffset = 2;
+        }
     } else if (markdown === 'size' && size) {
-        newText = `${value.substring(0, start)}<s:${size}>${selectedText}</s:${size}>${value.substring(end)}`;
-    } else {
-        return;
+        if (selectedText) {
+            snippet = `<s:${size}>${selectedText}</s:${size}>`;
+            finalSelectionLength = snippet.length;
+        } else {
+            snippet = `<s:${size}></s:${size}>`;
+            cursorOffset = 5 + String(size).length;
+        }
     }
 
+    const newText = value.substring(0, start) + snippet + value.substring(end);
     handleItemChange(key, field, newText);
     
     setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start, end + (markdown === 'bold' ? 4 : 7 + String(size).length * 2 + 3));
-    }, 0);
+        const updatedTextarea = document.getElementById(`${field}-${key}`) as HTMLTextAreaElement;
+        if (updatedTextarea) {
+            updatedTextarea.focus();
+            if (selectedText) {
+                updatedTextarea.setSelectionRange(start, start + finalSelectionLength);
+            } else {
+                updatedTextarea.setSelectionRange(start + cursorOffset, start + cursorOffset);
+            }
+        }
+    }, 50);
   };
   
   const handleFormSubmit = async () => {
@@ -1574,13 +1576,15 @@ export default function BillingPage() {
                                                 Size
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent className="z-[150]">
-                                            <DropdownMenuRadioGroup onValueChange={(size) => applyMarkdown('size', parseInt(size, 10))}>
+                                        <DropdownMenuPortal>
+                                            <DropdownMenuContent className="z-[150]">
                                                 {[9, 10, 11, 12, 14, 16].map(s => (
-                                                    <DropdownMenuRadioItem key={s} value={String(s)} className="text-xs">{s} pt</DropdownMenuRadioItem>
+                                                    <DropdownMenuItem key={s} onSelect={() => applyMarkdown('size', s)} className="text-xs cursor-pointer">
+                                                        {s} pt
+                                                    </DropdownMenuItem>
                                                 ))}
-                                            </DropdownMenuRadioGroup>
-                                        </DropdownMenuContent>
+                                            </DropdownMenuContent>
+                                        </DropdownMenuPortal>
                                     </DropdownMenu>
                                 </div>
                             </div>
