@@ -85,6 +85,7 @@ type VisibleFields = {
     mastHeight: boolean;
     siteInfo: boolean;
     remarks: boolean;
+    makeModel: boolean;
 };
 
 const defaultVisibleFields: VisibleFields = {
@@ -100,9 +101,10 @@ const defaultVisibleFields: VisibleFields = {
     mastHeight: true,
     siteInfo: true,
     remarks: true,
+    makeModel: true,
 };
 
-const SETTINGS_STORAGE_KEY = 've_forklift_card_prefs';
+const SETTINGS_STORAGE_KEY = 've_forklift_card_prefs_v2';
 
 export default function ForkliftsPage() {
   const { firestore, user } = useFirebase();

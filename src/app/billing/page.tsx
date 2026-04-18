@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import AppLayout from "@/components/app-layout";
@@ -367,7 +366,7 @@ const InvoiceList = ({
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex justify-between items-start gap-2">
                                                                     <div className="min-w-0 flex-1">
-                                                                        <div className="text-[10px] font-black tracking-tight text-foreground truncate uppercase opacity-70 flex items-center gap-1.5">
+                                                                        <div className="text-[10px] font-black tracking-tight text-foreground truncate uppercase opacity-70 flex items-center gap-1.5 h-4">
                                                                             {invoice.billNo}-{invoice.billNoSuffix || 'MHE'}
                                                                             {invoice.isDuplicate && (
                                                                                 <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 text-[7px] py-0 px-1 rounded-sm h-3.5 uppercase font-black">Duplicate</Badge>
