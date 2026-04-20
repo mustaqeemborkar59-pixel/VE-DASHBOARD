@@ -74,6 +74,7 @@ const searchFieldLabels: Record<SearchField, string> = {
 
 type VisibleFields = {
     serialNumber: boolean;
+    makeModel: boolean;
     status: boolean;
     mfgYear: boolean;
     firm: boolean;
@@ -85,11 +86,11 @@ type VisibleFields = {
     mastHeight: boolean;
     siteInfo: boolean;
     remarks: boolean;
-    makeModel: boolean;
 };
 
 const defaultVisibleFields: VisibleFields = {
     serialNumber: true,
+    makeModel: true,
     status: true,
     mfgYear: true,
     firm: true,
@@ -101,7 +102,6 @@ const defaultVisibleFields: VisibleFields = {
     mastHeight: true,
     siteInfo: true,
     remarks: true,
-    makeModel: true,
 };
 
 const SETTINGS_STORAGE_KEY = 've_forklift_card_prefs_v2';
@@ -808,7 +808,7 @@ export default function ForkliftsPage() {
                         )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-x-10 gap-y-10">
+                    <div className="grid grid-cols-2 gap-x-10 gap-y-8">
                         {visibleFields.serialNumber && (
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] flex items-center gap-1.5"><Hash className="h-3 w-3"/> Serial Number</Label>
@@ -828,6 +828,15 @@ export default function ForkliftsPage() {
                                         {getLocationText(forkliftToDownload).toUpperCase()}
                                     </div>
                                 </div>
+                            </div>
+                        )}
+
+                        {visibleFields.makeModel && (
+                            <div className="col-span-2 space-y-1">
+                                <Label className="text-[10px] uppercase font-black text-slate-400 tracking-[0.2em]">Make & Model No.</Label>
+                                <p className="text-xl font-black text-slate-900 leading-none uppercase">
+                                    {forkliftToDownload.make} {forkliftToDownload.model}
+                                </p>
                             </div>
                         )}
                         
@@ -957,6 +966,10 @@ export default function ForkliftsPage() {
                                 <div className="flex items-center space-x-3 group">
                                     <Checkbox id="field-serial" checked={visibleFields.serialNumber} onCheckedChange={(c) => updateVisibleFields({serialNumber: !!c})} className="h-5 w-5" />
                                     <Label htmlFor="field-serial" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">Serial Number</Label>
+                                </div>
+                                <div className="flex items-center space-x-3 group">
+                                    <Checkbox id="field-makemodel" checked={visibleFields.makeModel} onCheckedChange={(c) => updateVisibleFields({makeModel: !!c})} className="h-5 w-5" />
+                                    <Label htmlFor="field-makemodel" className="text-sm font-medium cursor-pointer group-hover:text-primary transition-colors py-1">Make & Model No.</Label>
                                 </div>
                                 <div className="flex items-center space-x-3 group">
                                     <Checkbox id="field-status" checked={visibleFields.status} onCheckedChange={(c) => updateVisibleFields({status: !!c})} className="h-5 w-5" />
