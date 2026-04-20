@@ -279,7 +279,7 @@ export default function ForkliftSheetPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-3xl font-black text-slate-900 leading-none mb-1">{sheetData.serialNumber || 'SN-XXXX'}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Document ID: FS-{format(new Date(), 'YYMMdd')}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Document ID: FS-{format(new Date(), 'yyMMdd')}</p>
                   </div>
                 </div>
 
