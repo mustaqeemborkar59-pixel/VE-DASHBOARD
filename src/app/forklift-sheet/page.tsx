@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import AppLayout from "@/components/app-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,11 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { FileSpreadsheet, Printer, RefreshCw, Trash2, Zap, Settings, Ruler, Info } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { FileSpreadsheet, Printer, RefreshCw, Trash2, Zap, Settings, Ruler, Info, Upload, FileDown, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import * as XLSX from 'xlsx';
+import { useToast } from '@/hooks/use-toast';
+import { useDropzone } from 'react-dropzone';
 
 export default function ForkliftSheetPage() {
+  const { toast } = useToast();
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [sheetData, setSheetData] = useState({
     serialNumber: '',
     make: '',
@@ -66,6 +72,70 @@ export default function ForkliftSheetPage() {
     }
   };
 
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      try {
+        const data = e.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+        if (json.length > 0) {
+          const firstRow = json[0];
+          // Map Excel columns to state keys
+          setSheetData({
+            serialNumber: String(firstRow.serialNumber || firstRow['Serial No'] || ''),
+            make: String(firstRow.make || firstRow['Make'] || ''),
+            model: String(firstRow.model || firstRow['Model'] || ''),
+            year: String(firstRow.year || firstRow['Year'] || ''),
+            capacity: String(firstRow.capacity || firstRow['Capacity'] || ''),
+            mastType: String(firstRow.mastType || firstRow['Mast Type'] || ''),
+            liftHeight: String(firstRow.liftHeight || firstRow['Max Lift'] || ''),
+            forkLength: String(firstRow.forkLength || firstRow['Fork Length'] || ''),
+            voltage: String(firstRow.voltage || firstRow['Voltage'] || ''),
+            ampere: String(firstRow.ampere || firstRow['Ampere'] || ''),
+            batteryType: String(firstRow.batteryType || firstRow['Battery'] || ''),
+            chargerType: String(firstRow.chargerType || firstRow['Charger'] || ''),
+            weight: String(firstRow.weight || firstRow['Weight'] || ''),
+            length: String(firstRow.length || ''),
+            width: String(firstRow.width || ''),
+            radius: String(firstRow.radius || firstRow['Turning Radius'] || ''),
+            remarks: String(firstRow.remarks || firstRow['Notes'] || ''),
+          });
+          toast({ title: "Import Successful", description: "Data has been populated from Excel." });
+          setIsImportOpen(false);
+        } else {
+          toast({ variant: 'destructive', title: "Import Failed", description: "The Excel file seems to be empty." });
+        }
+      } catch (err) {
+        toast({ variant: 'destructive', title: "Error", description: "Could not read the Excel file." });
+      }
+    };
+    reader.readAsBinaryString(file);
+  }, [toast]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'], 'text/csv': ['.csv'] },
+    maxFiles: 1
+  });
+
+  const downloadSample = () => {
+    const headers = Object.keys(sheetData).join(',');
+    const sampleRow = "F-100,Toyota,8FGCU25,2023,3.0,Triple,4500,1070,48V,450,Lead Acid,Standard,4800,,,2100,Good Condition";
+    const csvContent = `${headers}\n${sampleRow}`;
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'forklift_sheet_sample.csv';
+    link.click();
+  };
+
   return (
     <AppLayout>
       <div className="flex flex-col gap-6 max-w-6xl mx-auto animate-in fade-in duration-500 print:hidden">
@@ -76,10 +146,13 @@ export default function ForkliftSheetPage() {
               Forklift Technical Sheet
             </h1>
             <p className="text-sm text-muted-foreground uppercase font-bold tracking-widest opacity-70">
-              Standalone Specification Generator
+              Excel-Ready Specification Generator
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" onClick={() => setIsImportOpen(true)} className="h-10 px-4 font-bold border-primary/20 text-primary hover:bg-primary/5">
+                <Upload className="mr-2 h-4 w-4" /> Import Excel
+            </Button>
             <Button variant="outline" onClick={handleClear} className="h-10 px-4 font-bold border-destructive/20 text-destructive hover:bg-destructive/5">
                 <Trash2 className="mr-2 h-4 w-4" /> Clear
             </Button>
@@ -94,7 +167,7 @@ export default function ForkliftSheetPage() {
           <Card className="lg:col-span-5 border-none shadow-xl rounded-2xl bg-card">
             <CardHeader className="border-b pb-4">
               <CardTitle className="text-lg">Editor</CardTitle>
-              <CardDescription>Fill technical specs manually.</CardDescription>
+              <CardDescription>Fill technical specs manually or via Excel.</CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="space-y-4">
@@ -311,6 +384,49 @@ export default function ForkliftSheetPage() {
           </div>
         </div>
       </div>
+
+      {/* Excel Import Dialog */}
+      <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+        <DialogContent className="max-w-[95vw] sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-primary" /> Import Technical Data
+            </DialogTitle>
+            <DialogDescription>
+              Upload an Excel/CSV file to fill the spec sheet instantly.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div 
+            {...getRootProps()} 
+            className={cn(
+              "p-10 border-2 border-dashed rounded-2xl text-center cursor-pointer transition-all",
+              isDragActive ? "border-primary bg-primary/5" : "border-muted-foreground/20 hover:border-primary/50"
+            )}
+          >
+            <input {...getInputProps()} />
+            <FileSpreadsheet className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+            <p className="text-sm font-bold text-foreground">Click to select or drag Excel file here</p>
+            <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-widest">Supports .xlsx and .csv</p>
+          </div>
+
+          <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-xl">
+             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Info className="h-4 w-4 text-primary" />
+             </div>
+             <p className="text-[11px] text-muted-foreground leading-snug">
+               Ensure your Excel has columns like <b>serialNumber</b>, <b>make</b>, <b>model</b>, etc.
+             </p>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="ghost" onClick={downloadSample} className="text-xs font-bold w-full sm:w-auto">
+              <FileDown className="mr-2 h-4 w-4" /> Download Sample
+            </Button>
+            <Button variant="outline" onClick={() => setIsImportOpen(false)} className="w-full sm:w-auto">Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Print Styles */}
       <style dangerouslySetInnerHTML={{ __html: `
