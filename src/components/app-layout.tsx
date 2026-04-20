@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, Settings, User, ReceiptText, Building, Banknote, StickyNote, WalletCards, CalendarCheck, Mail } from 'lucide-react';
+import { LogOut, Settings, User, ReceiptText, Building, Banknote, StickyNote, WalletCards, CalendarCheck, Mail, FileSpreadsheet } from 'lucide-react';
 import { useEffect } from 'react';
 
 import {
@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/forklifts', label: 'Forklifts', icon: ForkliftIcon },
+  { href: '/forklift-sheet', label: 'Forklift Sheet', icon: FileSpreadsheet },
   { href: '/reports', label: 'Job Cards', icon: Wrench },
   { href: '/attendance', label: 'Attendance', icon: CalendarCheck },
   { href: '/employees', label: 'Employees', icon: User },
