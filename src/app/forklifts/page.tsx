@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Forklift, JobCard, Company } from "@/lib/data";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle, Download, MapPin, CalendarDays, Zap, Ruler, Hash } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle, Download, MapPin, CalendarDays, Zap, Ruler, Hash, FileSpreadsheet } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy, deleteField } from "firebase/firestore";
 import { useState, useMemo, Fragment, useCallback, useEffect } from "react";
@@ -41,6 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ForkliftForm, ForkliftFormData } from "@/components/forklift-form";
 import { ForkliftImportDialog } from "@/components/forklift-import-dialog";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -109,6 +110,7 @@ const SETTINGS_STORAGE_KEY = 've_forklift_card_prefs_v2';
 export default function ForkliftsPage() {
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
+  const router = useRouter();
   
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [forkliftToDelete, setForkliftToDelete] = useState<Forklift | null>(null);
@@ -442,7 +444,11 @@ export default function ForkliftsPage() {
                   <EllipsisVertical className="h-4 w-4" />
               </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-40" align="end" onMouseLeave={(e) => (e.currentTarget as HTMLElement).blur()}>
+          <DropdownMenuContent className="w-48" align="end" onMouseLeave={(e) => (e.currentTarget as HTMLElement).blur()}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); router.push(`/forklift-sheet?id=${forklift.id}`); }}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4 text-primary" />
+                  Open Technical Sheet
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openDownloadSettings(forklift); }} disabled={isDownloading === forklift.id}>
                   <Download className="mr-2 h-4 w-4" />
                   Download Card
@@ -661,6 +667,15 @@ export default function ForkliftsPage() {
                                     <TableCell colSpan={8} className="p-0 border-b bg-muted/10">
                                         <div className="p-4 sm:p-6 space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
                                           <div className="flex justify-end gap-2">
+                                               <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                className="h-8 text-[10px] sm:text-xs font-bold border-primary/20 hover:bg-primary/5" 
+                                                onClick={(e) => { e.stopPropagation(); router.push(`/forklift-sheet?id=${forklift.id}`); }}
+                                              >
+                                                  <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-primary" />
+                                                  Open Tech Sheet
+                                              </Button>
                                               <Button 
                                                 variant="outline" 
                                                 size="sm" 
@@ -695,8 +710,7 @@ export default function ForkliftsPage() {
                                                       <CalendarDays className="h-3 w-3 text-primary" />
                                                       {forklift.locationAssignmentDate 
                                                           ? format(parseISO(forklift.locationAssignmentDate), 'dd MMM yyyy') 
-                                                          : 'N/A'
-                                                      }
+                                                          : 'Not Set'}
                                                   </p>
                                               </div>
                                             <div className="space-y-1">
