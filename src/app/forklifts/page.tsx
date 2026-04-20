@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
 import { Forklift, JobCard, Company } from "@/lib/data";
-import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle, Download, MapPin, CalendarDays, Zap, Ruler, Hash, FileSpreadsheet } from "lucide-react";
+import { EllipsisVertical, Pencil, PlusCircle, Search, Warehouse, User, Phone, Wrench, ListFilter, Upload, AlertTriangle, ChevronDown, XCircle, Download, MapPin, CalendarDays, Zap, Ruler, Hash } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, where, orderBy, deleteField } from "firebase/firestore";
 import { useState, useMemo, Fragment, useCallback, useEffect } from "react";
@@ -445,10 +445,6 @@ export default function ForkliftsPage() {
               </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-48" align="end" onMouseLeave={(e) => (e.currentTarget as HTMLElement).blur()}>
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); router.push(`/forklift-sheet?id=${forklift.id}`); }}>
-                  <FileSpreadsheet className="mr-2 h-4 w-4 text-primary" />
-                  Open Technical Sheet
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openDownloadSettings(forklift); }} disabled={isDownloading === forklift.id}>
                   <Download className="mr-2 h-4 w-4" />
                   Download Card
@@ -667,15 +663,6 @@ export default function ForkliftsPage() {
                                     <TableCell colSpan={8} className="p-0 border-b bg-muted/10">
                                         <div className="p-4 sm:p-6 space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
                                           <div className="flex justify-end gap-2">
-                                               <Button 
-                                                variant="outline" 
-                                                size="sm" 
-                                                className="h-8 text-[10px] sm:text-xs font-bold border-primary/20 hover:bg-primary/5" 
-                                                onClick={(e) => { e.stopPropagation(); router.push(`/forklift-sheet?id=${forklift.id}`); }}
-                                              >
-                                                  <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-primary" />
-                                                  Open Tech Sheet
-                                              </Button>
                                               <Button 
                                                 variant="outline" 
                                                 size="sm" 
@@ -1087,7 +1074,7 @@ export default function ForkliftsPage() {
               </div>
               <AlertDialogTitle className="text-xl font-black">Remove from Fleet?</AlertDialogTitle>
               <AlertDialogDescription className="text-sm font-medium leading-relaxed">
-                This will permanently delete unit <span className="font-bold text-foreground">"{forkliftToDelete?.serialNumber}"</span> from the database. All linked site history will be lost.
+                This action will permanently delete unit <span className="font-bold text-foreground">"{forkliftToDelete?.serialNumber}"</span> from the database. All linked site history will be lost.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row gap-2">
