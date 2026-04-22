@@ -49,22 +49,22 @@ export const generatePaymentSummaryPdf = (
     doc.setTextColor(200, 0, 0); // Bold Red
     doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, pageWidth / 2, 22, { align: 'center' });
     
-    // 3. First Red Line
+    // 3. First Red Line - Extended to edge
     doc.setDrawColor(200, 0, 0);
     doc.setLineWidth(0.5);
-    doc.line(15, 26, pageWidth - 15, 26);
+    doc.line(10, 26, pageWidth - 10, 26);
 
-    // 4. Address Line (Size 14) - Center Aligned
-    doc.setFontSize(14);
+    // 4. Address Line (Reduced font size to 8.5 to fit on one line)
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(0, 0, 0);
     const addressStr = "Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604. ● Email : vithal_enterprises@yahoo.in";
-    doc.text(addressStr, pageWidth / 2, 33, { align: 'center' });
+    doc.text(addressStr, pageWidth / 2, 31, { align: 'center' });
 
-    // 5. Second Red Line
+    // 5. Second Red Line - Extended to edge
     doc.setDrawColor(200, 0, 0);
     doc.setLineWidth(0.5);
-    doc.line(15, 36, pageWidth - 15, 36);
+    doc.line(10, 34, pageWidth - 10, 34);
 
     let currentY = 48;
     
