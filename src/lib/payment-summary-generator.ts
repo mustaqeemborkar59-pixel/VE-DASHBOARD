@@ -32,33 +32,27 @@ export const generatePaymentSummaryPdf = (
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // --- Header Section (Letterhead Style) ---
+    // --- Professional Header Section ---
     
-    // 1. GST (Left Side)
-    doc.setFontSize(9);
+    // 1. Top Row: GST (Left) and Mobile Numbers (Right)
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(60, 60, 60);
-    doc.text(`GSTIN: ${filters.firmGstin || 'N/A'}`, 15, 20);
+    // Top Left - GST
+    doc.text(`GSTIN: ${filters.firmGstin || 'N/A'}`, 15, 12);
+    // Top Right - Mobile Numbers
+    doc.text("Mob: 9821728079, 9987559327", pageWidth - 15, 12, { align: 'right' });
 
-    // 2. Firm Name (Center)
-    doc.setFontSize(22);
+    // 2. Middle Row: Firm Name (Centered and Large)
+    doc.setFontSize(26);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(200, 0, 0); // Bold Red
-    doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, pageWidth / 2, 20, { align: 'center' });
+    doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, pageWidth / 2, 22, { align: 'center' });
     
-    // 3. Mobile Numbers (Right Side)
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(60, 60, 60);
-    doc.text("9821728079", pageWidth - 15, 17, { align: 'right' });
-    doc.text("9987559327", pageWidth - 15, 22, { align: 'right' });
-    
-    // Horizontal Double Line for Letterhead
+    // 3. Header Bottom: Single Professional Line
     doc.setDrawColor(200, 0, 0);
-    doc.setLineWidth(0.8);
+    doc.setLineWidth(0.6);
     doc.line(15, 26, pageWidth - 15, 26);
-    doc.setLineWidth(0.2);
-    doc.line(15, 27, pageWidth - 15, 27);
 
     let currentY = 38;
     
