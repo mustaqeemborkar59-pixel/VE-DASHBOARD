@@ -32,9 +32,14 @@ export const generatePaymentSummaryPdf = (
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     
+    // Ensure global character spacing is reset at the start
+    if ((doc as any).setCharSpace) {
+        (doc as any).setCharSpace(0);
+    }
+
     // --- Professional Header Section (Edge-to-Edge Style) ---
     
-    // 1. Top Row: GST (Left) and Mobile Numbers (Right) - Top Aligned
+    // 1. Top Row: GST (Left) and Mobile Numbers (Right)
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(60, 60, 60);
@@ -55,22 +60,25 @@ export const generatePaymentSummaryPdf = (
     doc.line(0, 25, pageWidth, 25);
 
     // 4. Address Line (Compact with specific properties)
-    // Removed letter spacing (setCharSpace) and tightened lines
+    // Force zero character spacing again just for this line to prevent "P r a t i k" issue
+    if ((doc as any).setCharSpace) {
+        (doc as any).setCharSpace(0);
+    }
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'bold'); 
     doc.setTextColor(200, 0, 0); // Color RED
     
-    // Ensure absolutely no extra character spacing
-    if ((doc as any).setCharSpace) {
-        (doc as any).setCharSpace(0);
-    }
-    
     const addressStr = "Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604. ● Email : vithal_enterprises@yahoo.in";
-    // We place the text exactly between the tighter lines (25 to 30.5)
+    // We place the text exactly between the tighter lines
     doc.text(addressStr, pageWidth / 2, 28.5, { align: 'center' });
 
     // 5. Second Red Line - Edge to Edge (0 Padding) - Closer to text
     doc.line(0, 30.5, pageWidth, 30.5);
+
+    // Reset character spacing for the rest of the document
+    if ((doc as any).setCharSpace) {
+        (doc as any).setCharSpace(0);
+    }
 
     let currentY = 48;
     
