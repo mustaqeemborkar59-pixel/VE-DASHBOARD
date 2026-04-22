@@ -35,7 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, XCircle, Info, Trash2, Download, FileSpreadsheet, MapPin, FileText } from "lucide-react";
+import { PlusCircle, Search, XCircle, Info, Trash2, Download, FileSpreadsheet, MapPin, FileText, User, Building2, Phone, Fingerprint } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
@@ -46,6 +46,8 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 import { generatePaymentSummaryPdf } from '@/lib/payment-summary-generator';
 import * as XLSX from 'xlsx';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 
 type Enterprise = 'Vithal' | 'RV';
@@ -103,6 +105,10 @@ export default function PaymentsPage() {
   const [tempAddress, setTempAddress] = useState('');
   const [tempSubject, setTempSubject] = useState('');
   const [tempDescription, setTempDescription] = useState('');
+  const [tempClientName, setTempClientName] = useState('');
+  const [tempClientGstin, setTempClientGstin] = useState('');
+  const [tempFirmGstin, setTempFirmGstin] = useState('');
+  const [tempFirmMobiles, setTempFirmMobiles] = useState('');
 
 
   // Payment Form State
@@ -266,7 +272,13 @@ export default function PaymentsPage() {
     }
     
     const selectedCompanyObj = companies?.find(c => c.id === companyFilter);
+    const settings = activeTab === 'Vithal' ? vithalSettings : rvSettings;
+
+    setTempClientName(selectedCompanyObj?.name || 'ESTEEMED CLIENT');
+    setTempClientGstin(selectedCompanyObj?.gstin || '');
     setTempAddress(selectedCompanyObj?.address || '');
+    setTempFirmGstin(settings?.gstin || '');
+    setTempFirmMobiles("9821728079, 9987559327");
     
     let monthLabel = '';
     if (monthFilter !== 'All') {
@@ -284,12 +296,6 @@ export default function PaymentsPage() {
   }
 
   const executeDownloadSummary = () => {
-    const selectedCompanyObj = companies?.find(c => c.id === companyFilter);
-    const selectedCompanyName = selectedCompanyObj ? selectedCompanyObj.name : 'All';
-    const selectedCompanyGstin = selectedCompanyObj ? selectedCompanyObj.gstin : '';
-    
-    const settings = activeTab === 'Vithal' ? vithalSettings : rvSettings;
-
     let selectedMonthLabel = 'All';
     if (monthFilter !== 'All') {
         try {
@@ -298,18 +304,18 @@ export default function PaymentsPage() {
     }
 
     generatePaymentSummaryPdf(filteredInvoices, activeTab, {
-        company: selectedCompanyName,
-        address: tempAddress || selectedCompanyObj?.address || '',
-        gstin: selectedCompanyGstin,
+        company: tempClientName,
+        address: tempAddress || '',
+        gstin: tempClientGstin,
         month: selectedMonthLabel,
         year: yearFilter,
-        firmGstin: settings?.gstin,
-        firmMobile: settings?.contactNumber,
+        firmGstin: tempFirmGstin,
+        firmMobile: tempFirmMobiles,
         customSubject: tempSubject,
         customDescription: tempDescription
     });
     
-    toast({ title: 'Downloading', description: `Balance Confirmation Letter for ${selectedCompanyName} is ready.` });
+    toast({ title: 'Downloading', description: `Balance Confirmation Letter for ${tempClientName} is ready.` });
     setIsDownloadPromptOpen(false);
   }
 
@@ -514,7 +520,7 @@ export default function PaymentsPage() {
             <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800 p-4">
               <div className="space-y-1">
                 <p className="text-[10px] font-medium text-orange-700 dark:text-orange-300 uppercase">Total TDS</p>
-                <div className="text-lg sm:text-2xl font-bold text-orange-900 dark:text-orange-100">{formatCurrency(summary.totalTds)}</div>
+                <div className="text-lg sm:text-2xl font-bold text-orange-900 dark:text-blue-100">{formatCurrency(summary.totalTds)}</div>
               </div>
             </Card>
             <Card className="bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800 p-4">
@@ -758,53 +764,108 @@ export default function PaymentsPage() {
         
         {/* Download Summary Customization Dialog */}
         <Dialog open={isDownloadPromptOpen} onOpenChange={setIsDownloadPromptOpen}>
-            <DialogContent className="max-w-[95vw] sm:max-w-lg rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
-                <DialogHeader className="p-6 bg-primary/5 border-b border-primary/10">
+            <DialogContent className="max-w-[95vw] sm:max-w-2xl rounded-2xl border-none shadow-2xl p-0 overflow-hidden max-h-[90vh] flex flex-col">
+                <DialogHeader className="p-4 sm:p-6 bg-primary/5 border-b border-primary/10 shrink-0">
                     <DialogTitle className="flex items-center gap-2">
                         <FileText className="h-5 w-5 text-primary" />
                         Download Customization
                     </DialogTitle>
                     <DialogDescription className="text-xs">
-                        Review and temporarily edit details for the Balance Confirmation Letter. 
+                        Review and edit details for the Balance Confirmation Letter. 
                         Changes here will NOT be saved to the database.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="p-6 space-y-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="tempSubject" className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Document Subject</Label>
-                        <Input 
-                            id="tempSubject"
-                            value={tempSubject}
-                            onChange={(e) => setTempSubject(e.target.value)}
-                            className="h-10 rounded-xl font-bold text-sm"
-                            placeholder="e.g. Balance Confirmation Statement"
-                        />
+                <ScrollArea className="flex-1">
+                    <div className="p-4 sm:p-6 space-y-6">
+                        {/* Section: Document Metadata */}
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2">
+                                <FileText className="h-3 w-3" /> Letter Content
+                            </h3>
+                            <div className="grid gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="tempSubject" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Document Subject</Label>
+                                    <Input 
+                                        id="tempSubject"
+                                        value={tempSubject}
+                                        onChange={(e) => setTempSubject(e.target.value)}
+                                        className="h-10 rounded-xl font-bold text-sm"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="tempDescription" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Introduction Paragraph</Label>
+                                    <Textarea 
+                                        id="tempDescription"
+                                        value={tempDescription}
+                                        onChange={(e) => setTempDescription(e.target.value)}
+                                        className="min-h-[80px] text-sm leading-relaxed rounded-xl focus-visible:ring-primary/20"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <Separator className="opacity-50" />
+
+                        {/* Section: Client & Firm Info */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* Client Column */}
+                            <div className="space-y-4">
+                                <h3 className="text-[10px] font-black uppercase text-blue-600 tracking-widest flex items-center gap-2">
+                                    <Building2 className="h-3 w-3" /> Recipient Details
+                                </h3>
+                                <div className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[9px] font-bold uppercase text-muted-foreground">Client Name</Label>
+                                        <div className="relative">
+                                            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/50" />
+                                            <Input value={tempClientName} onChange={e => setTempClientName(e.target.value)} className="pl-8 h-9 text-xs font-bold" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[9px] font-bold uppercase text-muted-foreground">Client GSTIN</Label>
+                                        <div className="relative">
+                                            <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/50" />
+                                            <Input value={tempClientGstin} onChange={e => setTempClientGstin(e.target.value)} className="pl-8 h-9 text-xs font-mono" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[9px] font-bold uppercase text-muted-foreground">Client Address</Label>
+                                        <div className="relative">
+                                            <MapPin className="absolute left-3 top-3 h-3 w-3 text-muted-foreground/50" />
+                                            <Textarea value={tempAddress} onChange={e => setTempAddress(e.target.value)} className="pl-8 min-h-[80px] text-xs resize-none" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Firm Column */}
+                            <div className="space-y-4">
+                                <h3 className="text-[10px] font-black uppercase text-amber-600 tracking-widest flex items-center gap-2">
+                                    <User className="h-3 w-3" /> Sender Details
+                                </h3>
+                                <div className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[9px] font-bold uppercase text-muted-foreground">Your GSTIN</Label>
+                                        <div className="relative">
+                                            <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/50" />
+                                            <Input value={tempFirmGstin} onChange={e => setTempFirmGstin(e.target.value)} className="pl-8 h-9 text-xs font-mono" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[9px] font-bold uppercase text-muted-foreground">Contact Mobiles</Label>
+                                        <div className="relative">
+                                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/50" />
+                                            <Input value={tempFirmMobiles} onChange={e => setTempFirmMobiles(e.target.value)} className="pl-8 h-9 text-xs font-mono" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="tempDescription" className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Introduction Paragraph</Label>
-                        <Textarea 
-                            id="tempDescription"
-                            value={tempDescription}
-                            onChange={(e) => setTempDescription(e.target.value)}
-                            className="min-h-[100px] text-sm leading-relaxed rounded-xl focus-visible:ring-primary/20"
-                            placeholder="Enter the introductory text..."
-                        />
-                        <p className="text-[9px] text-muted-foreground italic">"Dear Sir," will be added automatically before this text.</p>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="tempAddress" className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Client Address</Label>
-                        <Textarea 
-                            id="tempAddress"
-                            value={tempAddress}
-                            onChange={(e) => setTempAddress(e.target.value)}
-                            className="min-h-[100px] text-sm leading-relaxed rounded-xl focus-visible:ring-primary/20"
-                            placeholder="Enter the address to show in PDF..."
-                        />
-                    </div>
-                </div>
-                <DialogFooter className="p-6 bg-muted/10 gap-3">
-                    <Button variant="ghost" onClick={() => setIsDownloadPromptOpen(false)} className="rounded-xl font-bold">Cancel</Button>
-                    <Button onClick={executeDownloadSummary} className="rounded-xl font-bold px-8 shadow-lg shadow-primary/20">
+                </ScrollArea>
+                <DialogFooter className="p-4 sm:p-6 bg-muted/10 gap-3 shrink-0 border-t flex flex-row">
+                    <Button variant="ghost" onClick={() => setIsDownloadPromptOpen(false)} className="flex-1 rounded-xl font-bold h-11">Cancel</Button>
+                    <Button onClick={executeDownloadSummary} className="flex-[1.5] rounded-xl font-bold px-8 shadow-lg shadow-primary/20 h-11">
                         <Download className="mr-2 h-4 w-4" /> Generate PDF
                     </Button>
                 </DialogFooter>
