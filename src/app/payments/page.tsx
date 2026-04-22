@@ -35,7 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, XCircle, Info, Trash2, Download, FileSpreadsheet, MapPin, FileText, User, Building2, Phone, Fingerprint } from "lucide-react";
+import { PlusCircle, Search, XCircle, Info, Trash2, Download, FileSpreadsheet, MapPin, FileText, User, Building2, Phone, Fingerprint, Loader2 } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
@@ -46,9 +46,8 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 import { generatePaymentSummaryPdf } from '@/lib/payment-summary-generator';
 import * as XLSX from 'xlsx';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Enterprise = 'Vithal' | 'RV';
 type PaymentStatus = 'All' | 'Received' | 'Partial' | 'Pending';
@@ -64,6 +63,7 @@ type ProcessedInvoice = Invoice & {
     status: Omit<PaymentStatus, 'All'>;
 };
 
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function PaymentsPage() {
   const { firestore, user } = useFirebase();
@@ -520,7 +520,7 @@ export default function PaymentsPage() {
             <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800 p-4">
               <div className="space-y-1">
                 <p className="text-[10px] font-medium text-orange-700 dark:text-orange-300 uppercase">Total TDS</p>
-                <div className="text-lg sm:text-2xl font-bold text-orange-900 dark:text-blue-100">{formatCurrency(summary.totalTds)}</div>
+                <div className="text-lg sm:text-2xl font-bold text-green-900 dark:text-blue-100">{formatCurrency(summary.totalTds)}</div>
               </div>
             </Card>
             <Card className="bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800 p-4">
@@ -764,7 +764,7 @@ export default function PaymentsPage() {
         
         {/* Download Summary Customization Dialog */}
         <Dialog open={isDownloadPromptOpen} onOpenChange={setIsDownloadPromptOpen}>
-            <DialogContent className="max-w-[95vw] sm:max-w-2xl rounded-2xl border-none shadow-2xl p-0 overflow-hidden max-h-[90vh] flex flex-col">
+            <DialogContent className="max-w-[95vw] sm:max-w-2xl rounded-2xl border-none shadow-2xl p-0 overflow-hidden max-h-[95vh] sm:max-h-[90vh] flex flex-col">
                 <DialogHeader className="p-4 sm:p-6 bg-primary/5 border-b border-primary/10 shrink-0">
                     <DialogTitle className="flex items-center gap-2">
                         <FileText className="h-5 w-5 text-primary" />
@@ -772,10 +772,11 @@ export default function PaymentsPage() {
                     </DialogTitle>
                     <DialogDescription className="text-xs">
                         Review and edit details for the Balance Confirmation Letter. 
-                        Changes here will NOT be saved to the database.
                     </DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="flex-1">
+                
+                {/* Scrollable Form Container */}
+                <div className="flex-1 overflow-y-auto">
                     <div className="p-4 sm:p-6 space-y-6">
                         {/* Section: Document Metadata */}
                         <div className="space-y-4">
@@ -798,7 +799,7 @@ export default function PaymentsPage() {
                                         id="tempDescription"
                                         value={tempDescription}
                                         onChange={(e) => setTempDescription(e.target.value)}
-                                        className="min-h-[80px] text-sm leading-relaxed rounded-xl focus-visible:ring-primary/20"
+                                        className="min-h-[100px] text-sm leading-relaxed rounded-xl focus-visible:ring-primary/20"
                                     />
                                 </div>
                             </div>
@@ -862,7 +863,8 @@ export default function PaymentsPage() {
                             </div>
                         </div>
                     </div>
-                </ScrollArea>
+                </div>
+
                 <DialogFooter className="p-4 sm:p-6 bg-muted/10 gap-3 shrink-0 border-t flex flex-row">
                     <Button variant="ghost" onClick={() => setIsDownloadPromptOpen(false)} className="flex-1 rounded-xl font-bold h-11">Cancel</Button>
                     <Button onClick={executeDownloadSummary} className="flex-[1.5] rounded-xl font-bold px-8 shadow-lg shadow-primary/20 h-11">
