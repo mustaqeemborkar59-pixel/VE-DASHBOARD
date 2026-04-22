@@ -26,7 +26,7 @@ const loadImage = (url: string): Promise<HTMLImageElement> => {
         img.crossOrigin = 'Anonymous';
         img.onload = () => resolve(img);
         img.onerror = (err) => {
-            console.error("Image load error for " + url, err);
+            // Silently reject if image is missing to prevent app-breaking errors
             reject(err);
         };
         img.src = url;
@@ -76,11 +76,15 @@ export const generatePaymentSummaryPdf = async (
     doc.setLineWidth(0.5);
     doc.line(0, 25, pageWidth, 25);
 
-    // 4. Address Line
+    // 4. Address Line (Normal Properties with Red Color)
     doc.setFontSize(7.5); 
     doc.setFont('helvetica', 'normal'); 
     doc.setTextColor(200, 0, 0); // Color RED
-    const addressStr = `Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604. . . Email : vithal_enterprises@yahoo.in`;
+    // Reset spacing to zero to fix "P r a t i k" issue
+    if ((doc as any).setCharSpace) {
+        (doc as any).setCharSpace(0);
+    }
+    const addressStr = `Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604.  . Email : vithal_enterprises@yahoo.in`;
     doc.text(addressStr, pageWidth / 2, 28.5, { align: 'center' });
 
     // 5. Second Red Line - Edge to Edge
@@ -236,14 +240,14 @@ export const generatePaymentSummaryPdf = async (
     signY += 6;
     doc.text('Yours truly,', 15, signY);
 
-    // Render Vithal Stamp if applicable
+    // Render Vithal Stamp if applicable - Wrapped in try/catch to avoid load errors
     if (enterprise.toLowerCase() === 'vithal') {
         try {
             const stampImg = await loadImage('/vithal-stamp.png');
             // Adding stamp on the right side of signature
             doc.addImage(stampImg, 'PNG', pageWidth - 70, signY - 5, 40, 40);
         } catch (e) {
-            console.warn("Vithal stamp not found in /public folder.");
+            // Silently continue if stamp is missing
         }
     }
 
