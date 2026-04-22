@@ -27,6 +27,7 @@ export const generatePaymentSummaryPdf = (
         year?: string;
         firmGstin?: string;
         firmMobile?: string;
+        customSubject?: string;
     }
 ) => {
     const doc = new jsPDF('p', 'mm', 'a4');
@@ -65,8 +66,8 @@ export const generatePaymentSummaryPdf = (
     doc.setFont('helvetica', 'bold'); 
     doc.setTextColor(200, 0, 0); // Color RED
     
-    // Using a standard dot '.' instead of Unicode '●' to prevent encoding issues (%Ï)
-    const addressStr = "Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604. . Email : vithal_enterprises@yahoo.in";
+    // Using standard dot characters for bullet points to prevent encoding issues
+    const addressStr = "Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604. . . Email : vithal_enterprises@yahoo.in";
     doc.text(addressStr, pageWidth / 2, 28.5, { align: 'center' });
 
     // 5. Second Red Line - Edge to Edge
@@ -108,24 +109,32 @@ export const generatePaymentSummaryPdf = (
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(0, 0, 0);
             doc.text(`GSTIN: ${filters.gstin}`, 15, currentY);
-            currentY += 10;
+            currentY += 8;
         }
     } else {
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.text('Client: All Active Clients', 15, currentY);
-        currentY += 12;
+        currentY += 10;
     }
 
     // --- Subject Line ---
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    const subject = `Subject: Balance Confirmation Statement for ${filters.month || ''} ${filters.year !== 'All' ? filters.year : ''}`.trim();
+    const subject = `Subject: ${filters.customSubject || 'Balance Confirmation Statement'}`.trim();
     doc.text(subject, pageWidth / 2, currentY, { align: 'center' });
     const subjWidth = doc.getTextWidth(subject);
     doc.line((pageWidth / 2) - (subjWidth / 2), currentY + 1, (pageWidth / 2) + (subjWidth / 2), currentY + 1);
     currentY += 12;
+
+    // --- Introduction Text ---
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    const introText = `Dear Sir, This is to inform you about the outstanding balance of your esteemed organization ${filters.company && filters.company !== 'All' ? `M/s ${filters.company.toUpperCase()}` : ''} as per our records mentioned below:`;
+    const introLines = doc.splitTextToSize(introText, pageWidth - 30);
+    doc.text(introLines, 15, currentY);
+    currentY += (introLines.length * 5) + 5;
 
     // --- Table Data ---
     const tableBody = invoices.map(inv => [
@@ -157,7 +166,14 @@ export const generatePaymentSummaryPdf = (
             totalBalance.toLocaleString('en-IN')
         ]],
         theme: 'grid',
-        headStyles: { fillColor: [50, 50, 50], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+        headStyles: { 
+            fillColor: [255, 255, 255], 
+            textColor: [0, 0, 0], 
+            fontStyle: 'bold', 
+            halign: 'center',
+            lineWidth: 0.1,
+            lineColor: [0, 0, 0]
+        },
         footStyles: { 
             fillColor: [245, 245, 245], 
             textColor: [0, 0, 0], 
@@ -177,7 +193,7 @@ export const generatePaymentSummaryPdf = (
         },
         styles: { 
             fontSize: 8.5, 
-            cellPadding: 3, 
+            cellPadding: 1.5, // Reduced padding as requested
             overflow: 'linebreak',
             lineColor: [0, 0, 0],
             lineWidth: 0.1,
@@ -196,14 +212,21 @@ export const generatePaymentSummaryPdf = (
     doc.text(`Total Outstanding Balance: INR ${totalBalance.toLocaleString('en-IN')}/-`, 15, finalY + 7);
     
     // --- Signature Section ---
-    const signY = finalY + 25;
+    let signY = finalY + 25;
     doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
     doc.text('Thanking You,', 15, signY);
-    doc.text(`For ${enterprise.toUpperCase()} ENTERPRISES`, 15, signY + 6);
+    signY += 6;
+    doc.text('Yours truly,', 15, signY);
+    signY += 6;
+    doc.text(`For M/S ${enterprise.toUpperCase()} ENTERPRISES`, 15, signY);
     
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(8);
-    doc.text('(Authorized Signatory)', 15, signY + 25);
+    signY += 22; // Space for signature
+    doc.setFont('helvetica', 'bold');
+    doc.text('TEJAS.R.MAVLANKAR', 15, signY);
+    signY += 5;
+    doc.setFontSize(9);
+    doc.text('Mob: 9987559327', 15, signY);
 
     // --- Footer ---
     doc.setTextColor(150, 150, 150);

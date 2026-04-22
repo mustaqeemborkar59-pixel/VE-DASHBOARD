@@ -35,7 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, XCircle, Info, Trash2, Download, FileSpreadsheet, MapPin } from "lucide-react";
+import { PlusCircle, Search, XCircle, Info, Trash2, Download, FileSpreadsheet, MapPin, FileText } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
@@ -98,9 +98,10 @@ export default function PaymentsPage() {
   const [invoiceForDetails, setInvoiceForDetails] = useState<ProcessedInvoice | null>(null);
   const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
 
-  // Address Edit Dialog State
-  const [isAddressPromptOpen, setIsAddressPromptOpen] = useState(false);
+  // Download Dialog State
+  const [isDownloadPromptOpen, setIsDownloadPromptOpen] = useState(false);
   const [tempAddress, setTempAddress] = useState('');
+  const [tempSubject, setTempSubject] = useState('');
 
 
   // Payment Form State
@@ -117,7 +118,7 @@ export default function PaymentsPage() {
     setIsDetailsDialogOpen(false);
     setInvoiceForDetails(null);
     setPaymentToDelete(null);
-    setIsAddressPromptOpen(false);
+    setIsDownloadPromptOpen(false);
   }, []);
 
   useEffect(() => {
@@ -263,23 +264,26 @@ export default function PaymentsPage() {
         return;
     }
     
-    if (companyFilter === 'All') {
-        // If All companies, just generate without address prompt
-        executeDownloadSummary(null);
-    } else {
-        // Prompt for address edit
-        const selectedCompanyObj = companies?.find(c => c.id === companyFilter);
-        setTempAddress(selectedCompanyObj?.address || '');
-        setIsAddressPromptOpen(true);
+    const selectedCompanyObj = companies?.find(c => c.id === companyFilter);
+    setTempAddress(selectedCompanyObj?.address || '');
+    
+    let monthLabel = '';
+    if (monthFilter !== 'All') {
+        try {
+            monthLabel = format(parseISO(`${monthFilter}-01`), 'MMMM');
+        } catch(e) {}
     }
+    const defaultSubject = `Balance Confirmation Statement for ${monthLabel} ${yearFilter !== 'All' ? yearFilter : ''}`.trim();
+    setTempSubject(defaultSubject);
+    
+    setIsDownloadPromptOpen(true);
   }
 
-  const executeDownloadSummary = (finalAddress: string | null) => {
+  const executeDownloadSummary = () => {
     const selectedCompanyObj = companies?.find(c => c.id === companyFilter);
     const selectedCompanyName = selectedCompanyObj ? selectedCompanyObj.name : 'All';
     const selectedCompanyGstin = selectedCompanyObj ? selectedCompanyObj.gstin : '';
     
-    // Firm details for letterhead
     const settings = activeTab === 'Vithal' ? vithalSettings : rvSettings;
 
     let selectedMonthLabel = 'All';
@@ -291,16 +295,17 @@ export default function PaymentsPage() {
 
     generatePaymentSummaryPdf(filteredInvoices, activeTab, {
         company: selectedCompanyName,
-        address: finalAddress || selectedCompanyObj?.address || '',
+        address: tempAddress || selectedCompanyObj?.address || '',
         gstin: selectedCompanyGstin,
         month: selectedMonthLabel,
         year: yearFilter,
         firmGstin: settings?.gstin,
-        firmMobile: settings?.contactNumber
+        firmMobile: settings?.contactNumber,
+        customSubject: tempSubject
     });
     
     toast({ title: 'Downloading', description: `Balance Confirmation Letter for ${selectedCompanyName} is ready.` });
-    setIsAddressPromptOpen(false);
+    setIsDownloadPromptOpen(false);
   }
 
   const handleDownloadExcel = () => {
@@ -510,7 +515,7 @@ export default function PaymentsPage() {
             <Card className="bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800 p-4">
               <div className="space-y-1">
                 <p className="text-[10px] font-medium text-red-700 dark:text-red-300 uppercase">Total Pending</p>
-                <div className="text-lg sm:text-2xl font-bold text-red-900 dark:text-red-100">{formatCurrency(summary.totalPending)}</div>
+                <div className="text-lg sm:text-2xl font-bold text-red-900 dark:text-blue-100">{formatCurrency(summary.totalPending)}</div>
               </div>
             </Card>
           </div>
@@ -746,34 +751,44 @@ export default function PaymentsPage() {
           </Card>
         </Tabs>
         
-        {/* Address Prompt Dialog */}
-        <Dialog open={isAddressPromptOpen} onOpenChange={setIsAddressPromptOpen}>
+        {/* Download Summary Customization Dialog */}
+        <Dialog open={isDownloadPromptOpen} onOpenChange={setIsDownloadPromptOpen}>
             <DialogContent className="max-w-[95vw] sm:max-w-lg rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
                 <DialogHeader className="p-6 bg-primary/5 border-b border-primary/10">
                     <DialogTitle className="flex items-center gap-2">
-                        <MapPin className="h-5 w-5 text-primary" />
-                        Verify Client Address
+                        <FileText className="h-5 w-5 text-primary" />
+                        Download Customization
                     </DialogTitle>
                     <DialogDescription className="text-xs">
-                        Review and temporarily edit the client address for this specific Balance Confirmation Letter. 
-                        This will NOT change the saved company profile.
+                        Review and temporarily edit details for the Balance Confirmation Letter. 
+                        Changes here will NOT be saved to the database.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="p-6 space-y-4">
+                <div className="p-6 space-y-6">
                     <div className="space-y-2">
-                        <Label htmlFor="tempAddress" className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Billing Address (A4 Document Only)</Label>
+                        <Label htmlFor="tempSubject" className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Document Subject</Label>
+                        <Input 
+                            id="tempSubject"
+                            value={tempSubject}
+                            onChange={(e) => setTempSubject(e.target.value)}
+                            className="h-10 rounded-xl font-bold text-sm"
+                            placeholder="e.g. Balance Confirmation Statement"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="tempAddress" className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Client Address</Label>
                         <Textarea 
                             id="tempAddress"
                             value={tempAddress}
                             onChange={(e) => setTempAddress(e.target.value)}
-                            className="min-h-[140px] text-sm leading-relaxed rounded-xl focus-visible:ring-primary/20"
+                            className="min-h-[120px] text-sm leading-relaxed rounded-xl focus-visible:ring-primary/20"
                             placeholder="Enter the address to show in PDF..."
                         />
                     </div>
                 </div>
                 <DialogFooter className="p-6 bg-muted/10 gap-3">
-                    <Button variant="ghost" onClick={() => setIsAddressPromptOpen(false)} className="rounded-xl font-bold">Cancel</Button>
-                    <Button onClick={() => executeDownloadSummary(tempAddress)} className="rounded-xl font-bold px-8 shadow-lg shadow-primary/20">
+                    <Button variant="ghost" onClick={() => setIsDownloadPromptOpen(false)} className="rounded-xl font-bold">Cancel</Button>
+                    <Button onClick={executeDownloadSummary} className="rounded-xl font-bold px-8 shadow-lg shadow-primary/20">
                         <Download className="mr-2 h-4 w-4" /> Generate PDF
                     </Button>
                 </DialogFooter>
