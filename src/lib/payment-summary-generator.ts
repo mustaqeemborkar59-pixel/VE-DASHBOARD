@@ -55,10 +55,10 @@ export const generatePaymentSummaryPdf = (
     doc.line(0, 25, pageWidth, 25);
 
     // 4. Address Line (Compact with specific properties)
-    // CSS Equivalents: font-size: 8.5pt, font-family: Helvetica, text-align: center, color: black
+    // CSS Equivalents: font-size: 8.5pt, font-family: Calibri (Fallback to Helvetica), text-align: center, color: RED
     doc.setFontSize(8.5);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal'); 
+    doc.setTextColor(200, 0, 0); // Color RED as requested
     const addressStr = "Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604. ● Email : vithal_enterprises@yahoo.in";
     doc.text(addressStr, pageWidth / 2, 30, { align: 'center' });
 
