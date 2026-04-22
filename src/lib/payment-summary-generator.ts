@@ -32,20 +32,18 @@ export const generatePaymentSummaryPdf = (
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Ensure global character spacing is reset at the start to prevent spacing issues
+    // Ensure global character spacing is reset at the start
     if ((doc as any).setCharSpace) {
         (doc as any).setCharSpace(0);
     }
 
-    // --- Professional Header Section (Edge-to-Edge Style) ---
+    // --- Professional Header Section ---
     
     // 1. Top Row: GST (Left) and Mobile Numbers (Right)
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(60, 60, 60);
-    // Top Left - GST
     doc.text(`GSTIN: ${filters.firmGstin || 'N/A'}`, 15, 8);
-    // Top Right - Mobile Numbers
     doc.text("Mob: 9821728079, 9987559327", pageWidth - 15, 8, { align: 'right' });
 
     // 2. Middle Row: Firm Name (Centered and Large)
@@ -54,24 +52,24 @@ export const generatePaymentSummaryPdf = (
     doc.setTextColor(200, 0, 0); // Bold Red
     doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, pageWidth / 2, 21, { align: 'center' });
     
-    // 3. First Red Line - Edge to Edge (0 Padding)
+    // 3. First Red Line - Edge to Edge
     doc.setDrawColor(200, 0, 0);
     doc.setLineWidth(0.5);
     doc.line(0, 25, pageWidth, 25);
 
-    // 4. Address Line (Compact with standard rendering properties but Red color)
+    // 4. Address Line (Compact with standard rendering and RED color)
     if ((doc as any).setCharSpace) {
-        (doc as any).setCharSpace(0); // Explicitly reset spacing for this line
+        (doc as any).setCharSpace(0); // Aggressively reset character spacing
     }
     doc.setFontSize(7.5); 
     doc.setFont('helvetica', 'bold'); 
     doc.setTextColor(200, 0, 0); // Color RED
     
-    const addressStr = "Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604. ● Email : vithal_enterprises@yahoo.in";
-    // We place the text exactly between the tighter lines
+    // Using a standard dot '.' instead of Unicode '●' to prevent encoding issues (%Ï)
+    const addressStr = "Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604. . Email : vithal_enterprises@yahoo.in";
     doc.text(addressStr, pageWidth / 2, 28.5, { align: 'center' });
 
-    // 5. Second Red Line - Edge to Edge (0 Padding) - Closer to text
+    // 5. Second Red Line - Edge to Edge
     doc.line(0, 30.5, pageWidth, 30.5);
 
     // Reset properties for the rest of the document
@@ -125,7 +123,6 @@ export const generatePaymentSummaryPdf = (
     doc.setTextColor(0, 0, 0);
     const subject = `Subject: Balance Confirmation Statement for ${filters.month || ''} ${filters.year !== 'All' ? filters.year : ''}`.trim();
     doc.text(subject, pageWidth / 2, currentY, { align: 'center' });
-    // Underline subject
     const subjWidth = doc.getTextWidth(subject);
     doc.line((pageWidth / 2) - (subjWidth / 2), currentY + 1, (pageWidth / 2) + (subjWidth / 2), currentY + 1);
     currentY += 12;
@@ -141,11 +138,10 @@ export const generatePaymentSummaryPdf = (
         inv.balance.toLocaleString('en-IN'),
     ]);
 
-    // Totals
+    const totalBalance = invoices.reduce((sum, inv) => sum + inv.balance, 0);
     const totalBilled = invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
     const totalPaid = invoices.reduce((sum, inv) => sum + inv.totalPaid, 0);
     const totalTds = invoices.reduce((sum, inv) => sum + inv.tdsAmount, 0);
-    const totalBalance = invoices.reduce((sum, inv) => sum + inv.balance, 0);
 
     autoTable(doc, {
         startY: currentY,
@@ -214,7 +210,6 @@ export const generatePaymentSummaryPdf = (
     doc.setFontSize(7.5);
     doc.text(`* This is a system-generated Balance Confirmation Letter. Generated on: ${format(new Date(), 'dd MMM yyyy, p')}`, pageWidth / 2, 285, { align: 'center' });
 
-    // Dynamic Filename
     const sanitizedCompanyName = filters.company && filters.company !== 'All' 
         ? filters.company.replace(/[^a-zA-Z0-9]/g, '_') 
         : 'Payment_Summary';
