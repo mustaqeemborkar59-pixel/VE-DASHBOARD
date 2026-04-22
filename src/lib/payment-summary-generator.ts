@@ -54,7 +54,8 @@ export const generatePaymentSummaryPdf = (
     doc.setLineWidth(0.5);
     doc.line(0, 25, pageWidth, 25);
 
-    // 4. Address Line (Compact with 0 text gap)
+    // 4. Address Line (Compact with specific properties)
+    // CSS Equivalents: font-size: 8.5pt, font-family: Helvetica, text-align: center, color: black
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(0, 0, 0);
