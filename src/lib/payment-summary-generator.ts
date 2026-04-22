@@ -33,25 +33,32 @@ export const generatePaymentSummaryPdf = (
     const pageWidth = doc.internal.pageSize.getWidth();
     
     // --- Header Section (Letterhead Style) ---
-    // Firm Name (Top Left - Red Bold)
-    doc.setFontSize(22);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(200, 0, 0); // Bold Red
-    doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, 15, 20);
     
-    // Firm Contact Details (Top Right)
+    // 1. GST (Left Side)
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(60, 60, 60);
-    doc.text(`GSTIN: ${filters.firmGstin || 'N/A'}`, pageWidth - 15, 15, { align: 'right' });
-    doc.text(`Mobile: ${filters.firmMobile || 'N/A'}`, pageWidth - 15, 20, { align: 'right' });
+    doc.text(`GSTIN: ${filters.firmGstin || 'N/A'}`, 15, 20);
+
+    // 2. Firm Name (Center)
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(200, 0, 0); // Bold Red
+    doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, pageWidth / 2, 20, { align: 'center' });
+    
+    // 3. Mobile Numbers (Right Side)
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(60, 60, 60);
+    doc.text("9821728079", pageWidth - 15, 17, { align: 'right' });
+    doc.text("9987559327", pageWidth - 15, 22, { align: 'right' });
     
     // Horizontal Double Line for Letterhead
     doc.setDrawColor(200, 0, 0);
     doc.setLineWidth(0.8);
-    doc.line(15, 25, pageWidth - 15, 25);
-    doc.setLineWidth(0.2);
     doc.line(15, 26, pageWidth - 15, 26);
+    doc.setLineWidth(0.2);
+    doc.line(15, 27, pageWidth - 15, 27);
 
     let currentY = 38;
     
@@ -135,7 +142,7 @@ export const generatePaymentSummaryPdf = (
             totalBalance.toLocaleString('en-IN')
         ]],
         theme: 'grid',
-        headStyles: { fillColor: [200, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+        headStyles: { fillColor: [50, 50, 50], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
         footStyles: { 
             fillColor: [245, 245, 245], 
             textColor: [0, 0, 0], 
