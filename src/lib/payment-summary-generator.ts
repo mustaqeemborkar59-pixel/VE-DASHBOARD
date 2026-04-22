@@ -64,7 +64,7 @@ export const generatePaymentSummaryPdf = (
     if ((doc as any).setCharSpace) {
         (doc as any).setCharSpace(0);
     }
-    doc.setFontSize(8.5);
+    doc.setFontSize(7.5); // Reduced from 8.5 to 7.5 to ensure it fits the A4 page width
     doc.setFont('helvetica', 'bold'); 
     doc.setTextColor(200, 0, 0); // Color RED
     
