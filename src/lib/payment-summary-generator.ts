@@ -32,7 +32,7 @@ export const generatePaymentSummaryPdf = (
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Ensure global character spacing is reset at the start
+    // Ensure global character spacing is reset at the start to prevent spacing issues
     if ((doc as any).setCharSpace) {
         (doc as any).setCharSpace(0);
     }
@@ -59,12 +59,11 @@ export const generatePaymentSummaryPdf = (
     doc.setLineWidth(0.5);
     doc.line(0, 25, pageWidth, 25);
 
-    // 4. Address Line (Compact with specific properties)
-    // Force zero character spacing again just for this line to prevent "P r a t i k" issue
+    // 4. Address Line (Compact with standard rendering properties but Red color)
     if ((doc as any).setCharSpace) {
-        (doc as any).setCharSpace(0);
+        (doc as any).setCharSpace(0); // Explicitly reset spacing for this line
     }
-    doc.setFontSize(7.5); // Reduced from 8.5 to 7.5 to ensure it fits the A4 page width
+    doc.setFontSize(7.5); 
     doc.setFont('helvetica', 'bold'); 
     doc.setTextColor(200, 0, 0); // Color RED
     
@@ -75,7 +74,7 @@ export const generatePaymentSummaryPdf = (
     // 5. Second Red Line - Edge to Edge (0 Padding) - Closer to text
     doc.line(0, 30.5, pageWidth, 30.5);
 
-    // Reset character spacing for the rest of the document
+    // Reset properties for the rest of the document
     if ((doc as any).setCharSpace) {
         (doc as any).setCharSpace(0);
     }
