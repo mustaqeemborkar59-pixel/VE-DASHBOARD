@@ -16,7 +16,24 @@ type ProcessedInvoice = {
     enterprise: string;
 };
 
-export const generatePaymentSummaryPdf = (
+const loadImage = (url: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+        if (typeof window === 'undefined') {
+            reject('Server environment');
+            return;
+        }
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = (err) => {
+            console.error("Image load error for " + url, err);
+            reject(err);
+        };
+        img.src = url;
+    });
+};
+
+export const generatePaymentSummaryPdf = async (
     invoices: ProcessedInvoice[], 
     enterprise: string,
     filters: { 
@@ -46,7 +63,7 @@ export const generatePaymentSummaryPdf = (
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(60, 60, 60);
     doc.text(`GSTIN: ${filters.firmGstin || 'N/A'}`, 15, 8);
-    doc.text("Mob: 9821728079, 9987559327", pageWidth - 15, 8, { align: 'right' });
+    doc.text(`Mob: ${filters.firmMobile || '9821728079, 9987559327'}`, pageWidth - 15, 8, { align: 'right' });
 
     // 2. Middle Row: Firm Name (Centered and Large)
     doc.setFontSize(26);
@@ -59,22 +76,17 @@ export const generatePaymentSummaryPdf = (
     doc.setLineWidth(0.5);
     doc.line(0, 25, pageWidth, 25);
 
-    // 4. Address Line (Compact with standard rendering and RED color)
-    if ((doc as any).setCharSpace) {
-        (doc as any).setCharSpace(0); // Aggressively reset character spacing
-    }
+    // 4. Address Line
     doc.setFontSize(7.5); 
     doc.setFont('helvetica', 'normal'); 
     doc.setTextColor(200, 0, 0); // Color RED
-    
-    // Standard dot character for bullet point to prevent encoding issues
     const addressStr = `Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604. . . Email : vithal_enterprises@yahoo.in`;
     doc.text(addressStr, pageWidth / 2, 28.5, { align: 'center' });
 
     // 5. Second Red Line - Edge to Edge
     doc.line(0, 30.5, pageWidth, 30.5);
 
-    // Reset properties for the rest of the document
+    // Reset character spacing for body
     if ((doc as any).setCharSpace) {
         (doc as any).setCharSpace(0);
     }
@@ -112,11 +124,6 @@ export const generatePaymentSummaryPdf = (
             doc.text(`GSTIN: ${filters.gstin}`, 15, currentY);
             currentY += 8;
         }
-    } else {
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Client: All Active Clients', 15, currentY);
-        currentY += 10;
     }
 
     // --- Subject Line ---
@@ -126,7 +133,6 @@ export const generatePaymentSummaryPdf = (
     const subject = `Subject: ${filters.customSubject || 'Balance Confirmation Statement'}`.trim();
     doc.text(subject, pageWidth / 2, currentY, { align: 'center' });
     
-    // Draw thin black line under subject
     const subjWidth = doc.getTextWidth(subject);
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.1);
@@ -142,7 +148,7 @@ export const generatePaymentSummaryPdf = (
 
     // --- Introduction Paragraph ---
     doc.setFont('helvetica', 'normal');
-    const introText = filters.customDescription || `This is to inform you about the outstanding balance of your esteemed organization ${filters.company && filters.company !== 'All' ? `M/s ${filters.company.toUpperCase()}` : ''} as per our records mentioned below:`;
+    const introText = filters.customDescription || `This is to inform you about the outstanding balance as per our records mentioned below:`;
     const introLines = doc.splitTextToSize(introText, pageWidth - 30);
     doc.text(introLines, 15, currentY);
     currentY += (introLines.length * 5) + 5;
@@ -229,10 +235,22 @@ export const generatePaymentSummaryPdf = (
     doc.text('Thanking You,', 15, signY);
     signY += 6;
     doc.text('Yours truly,', 15, signY);
+
+    // Render Vithal Stamp if applicable
+    if (enterprise.toLowerCase() === 'vithal') {
+        try {
+            const stampImg = await loadImage('/vithal-stamp.png');
+            // Adding stamp on the right side of signature
+            doc.addImage(stampImg, 'PNG', pageWidth - 70, signY - 5, 40, 40);
+        } catch (e) {
+            console.warn("Vithal stamp not found in /public folder.");
+        }
+    }
+
     signY += 6;
     doc.text(`For M/S ${enterprise.toUpperCase()} ENTERPRISES`, 15, signY);
     
-    signY += 22; // Space for signature
+    signY += 22; 
     doc.setFont('helvetica', 'bold');
     doc.text('TEJAS.R.MAVLANKAR', 15, signY);
     signY += 5;

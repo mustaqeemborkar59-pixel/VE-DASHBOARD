@@ -102,6 +102,7 @@ export default function PaymentsPage() {
 
   // Download Dialog State
   const [isDownloadPromptOpen, setIsDownloadPromptOpen] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [tempAddress, setTempAddress] = useState('');
   const [tempSubject, setTempSubject] = useState('');
   const [tempDescription, setTempDescription] = useState('');
@@ -295,7 +296,7 @@ export default function PaymentsPage() {
     setIsDownloadPromptOpen(true);
   }
 
-  const executeDownloadSummary = () => {
+  const executeDownloadSummary = async () => {
     let selectedMonthLabel = 'All';
     if (monthFilter !== 'All') {
         try {
@@ -303,20 +304,24 @@ export default function PaymentsPage() {
         } catch(e) {}
     }
 
-    generatePaymentSummaryPdf(filteredInvoices, activeTab, {
-        company: tempClientName,
-        address: tempAddress || '',
-        gstin: tempClientGstin,
-        month: selectedMonthLabel,
-        year: yearFilter,
-        firmGstin: tempFirmGstin,
-        firmMobile: tempFirmMobiles,
-        customSubject: tempSubject,
-        customDescription: tempDescription
-    });
-    
-    toast({ title: 'Downloading', description: `Balance Confirmation Letter for ${tempClientName} is ready.` });
-    setIsDownloadPromptOpen(false);
+    setIsGeneratingPdf(true);
+    try {
+        await generatePaymentSummaryPdf(filteredInvoices, activeTab, {
+            company: tempClientName,
+            address: tempAddress || '',
+            gstin: tempClientGstin,
+            month: selectedMonthLabel,
+            year: yearFilter,
+            firmGstin: tempFirmGstin,
+            firmMobile: tempFirmMobiles,
+            customSubject: tempSubject,
+            customDescription: tempDescription
+        });
+        toast({ title: 'Downloading', description: `Balance Confirmation Letter for ${tempClientName} is ready.` });
+    } finally {
+        setIsGeneratingPdf(false);
+        setIsDownloadPromptOpen(false);
+    }
   }
 
   const handleDownloadExcel = () => {
@@ -866,9 +871,9 @@ export default function PaymentsPage() {
                 </div>
 
                 <DialogFooter className="p-4 sm:p-6 bg-muted/10 gap-3 shrink-0 border-t flex flex-row">
-                    <Button variant="ghost" onClick={() => setIsDownloadPromptOpen(false)} className="flex-1 rounded-xl font-bold h-11">Cancel</Button>
-                    <Button onClick={executeDownloadSummary} className="flex-[1.5] rounded-xl font-bold px-8 shadow-lg shadow-primary/20 h-11">
-                        <Download className="mr-2 h-4 w-4" /> Generate PDF
+                    <Button variant="ghost" onClick={() => setIsDownloadPromptOpen(false)} className="flex-1 rounded-xl font-bold h-11" disabled={isGeneratingPdf}>Cancel</Button>
+                    <Button onClick={executeDownloadSummary} className="flex-[1.5] rounded-xl font-bold px-8 shadow-lg shadow-primary/20 h-11" disabled={isGeneratingPdf}>
+                        {isGeneratingPdf ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : <><Download className="mr-2 h-4 w-4" /> Generate PDF</>}
                     </Button>
                 </DialogFooter>
             </DialogContent>
