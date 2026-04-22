@@ -57,15 +57,17 @@ export const generatePaymentSummaryPdf = (
     // 4. Address Line (Compact with specific properties)
     // CSS Equivalents: font-size: 8.5pt, font-family: Calibri (Fallback to Helvetica), text-align: center, color: RED
     doc.setFontSize(8.5);
-    doc.setFont('helvetica', 'normal'); 
+    doc.setFont('helvetica', 'bold'); // Bold for better readability
     doc.setTextColor(200, 0, 0); // Color RED as requested
+    // Ensure normal letter spacing by resetting character spacing
+    (doc as any).setCharSpace(0); 
+    
     const addressStr = "Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604. ● Email : vithal_enterprises@yahoo.in";
-    doc.text(addressStr, pageWidth / 2, 30, { align: 'center' });
+    // We place the text exactly between the lines (25 to 31.5)
+    doc.text(addressStr, pageWidth / 2, 29, { align: 'center' });
 
-    // 5. Second Red Line - Edge to Edge (0 Padding)
-    doc.setDrawColor(200, 0, 0);
-    doc.setLineWidth(0.5);
-    doc.line(0, 33, pageWidth, 33);
+    // 5. Second Red Line - Edge to Edge (0 Padding) - Closer to text
+    doc.line(0, 31.5, pageWidth, 31.5);
 
     let currentY = 48;
     
