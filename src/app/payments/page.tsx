@@ -102,6 +102,7 @@ export default function PaymentsPage() {
   const [isDownloadPromptOpen, setIsDownloadPromptOpen] = useState(false);
   const [tempAddress, setTempAddress] = useState('');
   const [tempSubject, setTempSubject] = useState('');
+  const [tempDescription, setTempDescription] = useState('');
 
 
   // Payment Form State
@@ -275,6 +276,9 @@ export default function PaymentsPage() {
     }
     const defaultSubject = `Balance Confirmation Statement for ${monthLabel} ${yearFilter !== 'All' ? yearFilter : ''}`.trim();
     setTempSubject(defaultSubject);
+
+    const companyDisplay = selectedCompanyObj ? `M/s ${selectedCompanyObj.name.toUpperCase()}` : 'your esteemed organization';
+    setTempDescription(`This is to inform you about the outstanding balance of ${companyDisplay} as per our records mentioned below:`);
     
     setIsDownloadPromptOpen(true);
   }
@@ -301,7 +305,8 @@ export default function PaymentsPage() {
         year: yearFilter,
         firmGstin: settings?.gstin,
         firmMobile: settings?.contactNumber,
-        customSubject: tempSubject
+        customSubject: tempSubject,
+        customDescription: tempDescription
     });
     
     toast({ title: 'Downloading', description: `Balance Confirmation Letter for ${selectedCompanyName} is ready.` });
@@ -503,7 +508,7 @@ export default function PaymentsPage() {
             <Card className="bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800 p-4">
               <div className="space-y-1">
                 <p className="text-[10px] font-medium text-green-700 dark:text-green-300 uppercase">Total Received</p>
-                <div className="text-lg sm:text-2xl font-bold text-green-900 dark:text-green-100">{formatCurrency(summary.totalPaid)}</div>
+                <div className="text-lg sm:text-2xl font-bold text-green-900 dark:text-blue-100">{formatCurrency(summary.totalPaid)}</div>
               </div>
             </Card>
             <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800 p-4">
@@ -776,12 +781,23 @@ export default function PaymentsPage() {
                         />
                     </div>
                     <div className="space-y-2">
+                        <Label htmlFor="tempDescription" className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Introduction Paragraph</Label>
+                        <Textarea 
+                            id="tempDescription"
+                            value={tempDescription}
+                            onChange={(e) => setTempDescription(e.target.value)}
+                            className="min-h-[100px] text-sm leading-relaxed rounded-xl focus-visible:ring-primary/20"
+                            placeholder="Enter the introductory text..."
+                        />
+                        <p className="text-[9px] text-muted-foreground italic">"Dear Sir," will be added automatically before this text.</p>
+                    </div>
+                    <div className="space-y-2">
                         <Label htmlFor="tempAddress" className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Client Address</Label>
                         <Textarea 
                             id="tempAddress"
                             value={tempAddress}
                             onChange={(e) => setTempAddress(e.target.value)}
-                            className="min-h-[120px] text-sm leading-relaxed rounded-xl focus-visible:ring-primary/20"
+                            className="min-h-[100px] text-sm leading-relaxed rounded-xl focus-visible:ring-primary/20"
                             placeholder="Enter the address to show in PDF..."
                         />
                     </div>

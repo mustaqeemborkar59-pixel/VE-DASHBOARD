@@ -28,6 +28,7 @@ export const generatePaymentSummaryPdf = (
         firmGstin?: string;
         firmMobile?: string;
         customSubject?: string;
+        customDescription?: string;
     }
 ) => {
     const doc = new jsPDF('p', 'mm', 'a4');
@@ -63,11 +64,11 @@ export const generatePaymentSummaryPdf = (
         (doc as any).setCharSpace(0); // Aggressively reset character spacing
     }
     doc.setFontSize(7.5); 
-    doc.setFont('helvetica', 'bold'); 
+    doc.setFont('helvetica', 'normal'); 
     doc.setTextColor(200, 0, 0); // Color RED
     
-    // Using standard dot characters for bullet points to prevent encoding issues
-    const addressStr = "Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604. . . Email : vithal_enterprises@yahoo.in";
+    // Standard dot character for bullet point to prevent encoding issues
+    const addressStr = `Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604. . . Email : vithal_enterprises@yahoo.in`;
     doc.text(addressStr, pageWidth / 2, 28.5, { align: 'center' });
 
     // 5. Second Red Line - Edge to Edge
@@ -124,14 +125,24 @@ export const generatePaymentSummaryPdf = (
     doc.setTextColor(0, 0, 0);
     const subject = `Subject: ${filters.customSubject || 'Balance Confirmation Statement'}`.trim();
     doc.text(subject, pageWidth / 2, currentY, { align: 'center' });
+    
+    // Draw thin black line under subject
     const subjWidth = doc.getTextWidth(subject);
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.1);
     doc.line((pageWidth / 2) - (subjWidth / 2), currentY + 1, (pageWidth / 2) + (subjWidth / 2), currentY + 1);
+    
     currentY += 12;
 
-    // --- Introduction Text ---
+    // --- Salutation ---
     doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Dear Sir,', 15, currentY);
+    currentY += 6;
+
+    // --- Introduction Paragraph ---
     doc.setFont('helvetica', 'normal');
-    const introText = `Dear Sir, This is to inform you about the outstanding balance of your esteemed organization ${filters.company && filters.company !== 'All' ? `M/s ${filters.company.toUpperCase()}` : ''} as per our records mentioned below:`;
+    const introText = filters.customDescription || `This is to inform you about the outstanding balance of your esteemed organization ${filters.company && filters.company !== 'All' ? `M/s ${filters.company.toUpperCase()}` : ''} as per our records mentioned below:`;
     const introLines = doc.splitTextToSize(introText, pageWidth - 30);
     doc.text(introLines, 15, currentY);
     currentY += (introLines.length * 5) + 5;
@@ -193,7 +204,7 @@ export const generatePaymentSummaryPdf = (
         },
         styles: { 
             fontSize: 8.5, 
-            cellPadding: 1.5, // Reduced padding as requested
+            cellPadding: 1.5,
             overflow: 'linebreak',
             lineColor: [0, 0, 0],
             lineWidth: 0.1,
