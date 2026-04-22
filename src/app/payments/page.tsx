@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
@@ -36,11 +35,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, XCircle, Info, Trash2, Download, FileSpreadsheet } from "lucide-react";
+import { PlusCircle, Search, XCircle, Info, Trash2, Download, FileSpreadsheet, MapPin } from "lucide-react";
 import AppLayout from "@/components/app-layout";
-import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
-import { Invoice, Company, Payment } from '@/lib/data';
+import { Invoice, Company, Payment, CompanySettings } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -72,10 +71,15 @@ export default function PaymentsPage() {
   const invoicesQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'invoices'), orderBy('billNo', 'asc')) : null, [firestore, user]);
   const companiesQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'companies'), orderBy('name')) : null, [firestore, user]);
   const paymentsQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'payments'), orderBy('paymentDate', 'desc')) : null, [firestore, user]);
+  
+  const vithalSettingsRef = useMemoFirebase(() => firestore && user ? doc(firestore, 'companySettings', 'vithal') : null, [firestore, user]);
+  const rvSettingsRef = useMemoFirebase(() => firestore && user ? doc(firestore, 'companySettings', 'rv') : null, [firestore, user]);
 
   const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesQuery);
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
   const { data: payments, isLoading: isLoadingPayments } = useCollection<Payment>(paymentsQuery);
+  const { data: vithalSettings } = useDoc<CompanySettings>(vithalSettingsRef);
+  const { data: rvSettings } = useDoc<CompanySettings>(rvSettingsRef);
 
   const isLoading = isLoadingInvoices || isLoadingCompanies || isLoadingPayments;
 
@@ -94,6 +98,10 @@ export default function PaymentsPage() {
   const [invoiceForDetails, setInvoiceForDetails] = useState<ProcessedInvoice | null>(null);
   const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
 
+  // Address Edit Dialog State
+  const [isAddressPromptOpen, setIsAddressPromptOpen] = useState(false);
+  const [tempAddress, setTempAddress] = useState('');
+
 
   // Payment Form State
   const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -109,6 +117,7 @@ export default function PaymentsPage() {
     setIsDetailsDialogOpen(false);
     setInvoiceForDetails(null);
     setPaymentToDelete(null);
+    setIsAddressPromptOpen(false);
   }, []);
 
   useEffect(() => {
@@ -248,17 +257,31 @@ export default function PaymentsPage() {
     setMonthFilter('All');
   };
   
-  const handleDownloadSummary = () => {
+  const handleStartDownloadSummary = () => {
     if (filteredInvoices.length === 0) {
         toast({ variant: 'destructive', title: 'No Data', description: 'No invoices found for the current filters.' });
         return;
     }
     
+    if (companyFilter === 'All') {
+        // If All companies, just generate without address prompt
+        executeDownloadSummary(null);
+    } else {
+        // Prompt for address edit
+        const selectedCompanyObj = companies?.find(c => c.id === companyFilter);
+        setTempAddress(selectedCompanyObj?.address || '');
+        setIsAddressPromptOpen(true);
+    }
+  }
+
+  const executeDownloadSummary = (finalAddress: string | null) => {
     const selectedCompanyObj = companies?.find(c => c.id === companyFilter);
     const selectedCompanyName = selectedCompanyObj ? selectedCompanyObj.name : 'All';
-    const selectedCompanyAddress = selectedCompanyObj ? selectedCompanyObj.address : '';
     const selectedCompanyGstin = selectedCompanyObj ? selectedCompanyObj.gstin : '';
     
+    // Firm details for letterhead
+    const settings = activeTab === 'Vithal' ? vithalSettings : rvSettings;
+
     let selectedMonthLabel = 'All';
     if (monthFilter !== 'All') {
         try {
@@ -268,13 +291,16 @@ export default function PaymentsPage() {
 
     generatePaymentSummaryPdf(filteredInvoices, activeTab, {
         company: selectedCompanyName,
-        address: selectedCompanyAddress,
+        address: finalAddress || selectedCompanyObj?.address || '',
         gstin: selectedCompanyGstin,
         month: selectedMonthLabel,
-        year: yearFilter
+        year: yearFilter,
+        firmGstin: settings?.gstin,
+        firmMobile: settings?.contactNumber
     });
     
-    toast({ title: 'Downloading', description: `Summary Statement for ${selectedCompanyName} is being generated.` });
+    toast({ title: 'Downloading', description: `Balance Confirmation Letter for ${selectedCompanyName} is ready.` });
+    setIsAddressPromptOpen(false);
   }
 
   const handleDownloadExcel = () => {
@@ -286,7 +312,7 @@ export default function PaymentsPage() {
     const data = filteredInvoices.map(inv => ({
         'Bill No': `${inv.billNo}-${inv.billNoSuffix || 'MHE'}`,
         'Date': format(new Date(inv.billDate), 'dd-MMM-yyyy'),
-        'Company': inv.companyName.toUpperCase(), // COMPANY NAME IN CAPITAL
+        'Company': inv.companyName.toUpperCase(), 
         'Grand Total': inv.grandTotal,
         'Taxable Amount': inv.taxableAmount,
         'TDS %': inv.tdsPercentage || 0,
@@ -444,7 +470,7 @@ export default function PaymentsPage() {
                         Download as Excel
                     </Button>
                     <Button 
-                        onClick={handleDownloadSummary} 
+                        onClick={handleStartDownloadSummary} 
                         variant="outline" 
                         size="sm" 
                         className="h-9 px-4 text-xs font-bold border-primary/20 hover:bg-primary/5 shadow-sm"
@@ -720,6 +746,40 @@ export default function PaymentsPage() {
           </Card>
         </Tabs>
         
+        {/* Address Prompt Dialog */}
+        <Dialog open={isAddressPromptOpen} onOpenChange={setIsAddressPromptOpen}>
+            <DialogContent className="max-w-[95vw] sm:max-w-lg rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
+                <DialogHeader className="p-6 bg-primary/5 border-b border-primary/10">
+                    <DialogTitle className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-primary" />
+                        Verify Client Address
+                    </DialogTitle>
+                    <DialogDescription className="text-xs">
+                        Review and temporarily edit the client address for this specific Balance Confirmation Letter. 
+                        This will NOT change the saved company profile.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="p-6 space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="tempAddress" className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Billing Address (A4 Document Only)</Label>
+                        <Textarea 
+                            id="tempAddress"
+                            value={tempAddress}
+                            onChange={(e) => setTempAddress(e.target.value)}
+                            className="min-h-[140px] text-sm leading-relaxed rounded-xl focus-visible:ring-primary/20"
+                            placeholder="Enter the address to show in PDF..."
+                        />
+                    </div>
+                </div>
+                <DialogFooter className="p-6 bg-muted/10 gap-3">
+                    <Button variant="ghost" onClick={() => setIsAddressPromptOpen(false)} className="rounded-xl font-bold">Cancel</Button>
+                    <Button onClick={() => executeDownloadSummary(tempAddress)} className="rounded-xl font-bold px-8 shadow-lg shadow-primary/20">
+                        <Download className="mr-2 h-4 w-4" /> Generate PDF
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
         <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
             <DialogContent className="max-w-[95vw] sm:max-w-md p-4 sm:p-6">
                 <DialogHeader>
