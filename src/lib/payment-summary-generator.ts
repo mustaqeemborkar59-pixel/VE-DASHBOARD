@@ -96,13 +96,18 @@ export const generatePaymentSummaryPdf = async (
     doc.setLineWidth(0.5);
     doc.line(0, topPadding + 25, pageWidth, topPadding + 25);
 
-    doc.setFontSize(9.5); 
-    doc.setFont('helvetica', 'normal'); 
-    doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]); 
-    const addressStr = `Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604.  .  Email : vithal_enterprises@yahoo.in`;
-    doc.text(addressStr, pageWidth / 2, topPadding + 28.5, { align: 'center' });
-
-    doc.line(0, topPadding + 30.5, pageWidth, topPadding + 30.5);
+    // Only show header address for Vithal
+    if (!isRV) {
+        doc.setFontSize(9.5); 
+        doc.setFont('helvetica', 'normal'); 
+        doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]); 
+        const addressStr = `Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604.  .  Email : vithal_enterprises@yahoo.in`;
+        doc.text(addressStr, pageWidth / 2, topPadding + 28.5, { align: 'center' });
+        doc.line(0, topPadding + 30.5, pageWidth, topPadding + 30.5);
+    } else {
+        // For RV, just the second line to close the header
+        doc.line(0, topPadding + 27, pageWidth, topPadding + 27);
+    }
 
     let currentY = topPadding + 48;
     
@@ -258,30 +263,46 @@ export const generatePaymentSummaryPdf = async (
     signY += 6;
     doc.text(`For M/S ${enterprise.toUpperCase()} ENTERPRISES`, 15, signY);
 
+    // Sign gap (vertical centering)
+    const signGap = 12; 
+    const stampSize = 35;
+    const stampY = signY + (signGap / 2) - (stampSize / 2);
+
     if (!isRV) {
         try {
             const stampImg = await loadImage('/vithal-stamp.png');
-            doc.addImage(stampImg, 'PNG', 75, signY - 11.5, 35, 35);
+            doc.addImage(stampImg, 'PNG', 75, stampY, stampSize, stampSize);
         } catch (e) { }
     }
     
-    signY += 12; 
+    signY += signGap; 
     doc.setFont('helvetica', 'bold');
     doc.text('TEJAS.R.MAVLANKAR', 15, signY);
     signY += 5;
     doc.setFontSize(9);
     doc.text('Mob: 9987559327', 15, signY);
 
-    const footerY = 282;
+    // Footer Implementation
+    const footerY = 278; 
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
     doc.line(0, footerY, pageWidth, footerY);
 
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
-    const worksAddress = "Works : - S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
-    doc.text(worksAddress, pageWidth / 2, footerY + 5, { align: 'center' });
+
+    if (isRV) {
+        // Two line footer for RV
+        const rvOffice = "Office : A/404, Astraea, Rustomjee Urbania, Off Eastern Express Highway, Majiwada, Thane - 400601";
+        const rvWork = "Work : S. No. 14/6A, Khot Banglow, Nr. Transformer, Bhandarli, Pimpri, Thane - 400 612";
+        doc.text(rvOffice, pageWidth / 2, footerY + 5, { align: 'center' });
+        doc.text(rvWork, pageWidth / 2, footerY + 9.5, { align: 'center' });
+    } else {
+        // Single line footer for Vithal
+        const vWorks = "Works : - S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
+        doc.text(vWorks, pageWidth / 2, footerY + 6, { align: 'center' });
+    }
 
     const sanitizedCompanyName = filters.company && filters.company !== 'All' 
         ? filters.company.replace(/[^a-zA-Z0-9]/g, '_') 
