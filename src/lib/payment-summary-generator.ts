@@ -103,13 +103,13 @@ export const generatePaymentSummaryPdf = async (
         const subY = topPadding + 28;
         doc.text(subtitle, subX, subY, { align: 'center' });
 
-        // Decoration lines - Extended to ends with 10mm (40px approx) gap
+        // Decoration lines - Extended to ends with 10mm gap
         const edgeGap = 10;
-        const textGap = 3; // Reduced gap for proximity
+        const textGap = 3; 
         const lineSpacing = 0.7;
         
         doc.setLineWidth(0.15);
-        doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]); // Set line color to Blue for RV
+        doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]); 
         
         // Left Triple Lines
         const leftEndX = subX - (subWidth / 2) - textGap;
@@ -300,12 +300,12 @@ export const generatePaymentSummaryPdf = async (
     signY += 6;
     doc.text(`For M/S ${enterprise.toUpperCase()} ENTERPRISES`, 15, signY);
 
-    // Sign gap (vertical centering)
+    // Sign gap (vertically centered stamp)
     const signGap = 12; 
     const stampSize = 35;
     const stampY = signY + (signGap / 2) - (stampSize / 2);
 
-    const stampFile = isRV ? '/rv-stamp.png' : '/vital-stamp.png';
+    const stampFile = isRV ? '/rv-stamp.png' : '/vithal-stamp.png';
     try {
         const stampImg = await loadImage(stampFile);
         doc.addImage(stampImg, 'PNG', 75, stampY, stampSize, stampSize);
@@ -320,8 +320,12 @@ export const generatePaymentSummaryPdf = async (
     doc.setFontSize(9);
     doc.text('Mob: 9987559327', 15, signY);
 
-    // Footer Implementation (25px padding approx 6.6mm)
-    const footerY = 284; 
+    // Footer Implementation (20px padding approx 7mm from last line to bottom)
+    // A4 = 297mm. 297 - 7 = 290mm target for last line.
+    // RV last line is footerY + 11. So 279 + 11 = 290.
+    // Vithal last line is footerY + 6. So 284 + 6 = 290.
+    const footerY = isRV ? 279 : 284; 
+    
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
     doc.line(0, footerY, pageWidth, footerY);
@@ -354,7 +358,7 @@ export const generatePaymentSummaryPdf = async (
         drawCenteredBoldLabelLine(workLabel, workValue, footerY + 11);
     } else {
         const vWorksLabel = "Works : ";
-        const vWorksValue = "- S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
+        const vWorksValue = "S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
         drawCenteredBoldLabelLine(vWorksLabel, vWorksValue, footerY + 6);
     }
 
