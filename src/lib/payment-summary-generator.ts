@@ -268,11 +268,13 @@ export const generatePaymentSummaryPdf = async (
     const stampSize = 35;
     const stampY = signY + (signGap / 2) - (stampSize / 2);
 
-    if (!isRV) {
-        try {
-            const stampImg = await loadImage('/vithal-stamp.png');
-            doc.addImage(stampImg, 'PNG', 75, stampY, stampSize, stampSize);
-        } catch (e) { }
+    // Try to load stamp for both enterprises
+    const stampFile = isRV ? '/rv-stamp.png' : '/vithal-stamp.png';
+    try {
+        const stampImg = await loadImage(stampFile);
+        doc.addImage(stampImg, 'PNG', 75, stampY, stampSize, stampSize);
+    } catch (e) {
+        // Fallback or skip if not found
     }
     
     signY += signGap; 
@@ -283,27 +285,43 @@ export const generatePaymentSummaryPdf = async (
     doc.text('Mob: 9987559327', 15, signY);
 
     // Footer Implementation
-    // Halved bottom padding: RV (297-283 = 14mm), Vithal (297-288 = 9mm)
-    // Adjusting to target roughly 25px (6.6mm) clearance for the last line of text
     const footerY = isRV ? 279 : 284; 
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
     doc.line(0, footerY, pageWidth, footerY);
 
-    doc.setFontSize(11); // Set to 11 as requested
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
 
+    const drawCenteredBoldLabelLine = (label: string, value: string, y: number) => {
+        doc.setFont('helvetica', 'bold');
+        const labelWidth = doc.getTextWidth(label);
+        doc.setFont('helvetica', 'normal');
+        const valueWidth = doc.getTextWidth(value);
+        const totalWidth = labelWidth + valueWidth;
+        const startX = (pageWidth - totalWidth) / 2;
+
+        doc.setFont('helvetica', 'bold');
+        doc.text(label, startX, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(value, startX + labelWidth, y);
+    };
+
     if (isRV) {
-        // Two line footer for RV
-        const rvOffice = "Office : A/404, Astraea, Rustomjee Urbania, Off Eastern Express Highway, Majiwada, Thane - 400601";
-        const rvWork = "Work : S. No. 14/6A, Khot Banglow, Nr. Transformer, Bhandarli, Pimpri, Thane - 400 612";
-        doc.text(rvOffice, pageWidth / 2, footerY + 6, { align: 'center' });
-        doc.text(rvWork, pageWidth / 2, footerY + 11, { align: 'center' });
+        // Two line footer for RV with bold labels
+        const officeLabel = "Office : ";
+        const officeValue = "A/404, Astraea, Rustomjee Urbania, Off Eastern Express Highway, Majiwada, Thane - 400601";
+        const workLabel = "Work : ";
+        const workValue = "S. No. 14/6A, Khot Banglow, Nr. Transformer, Bhandarli, Pimpri, Thane - 400 612";
+        
+        drawCenteredBoldLabelLine(officeLabel, officeValue, footerY + 6);
+        drawCenteredBoldLabelLine(workLabel, workValue, footerY + 11);
     } else {
-        // Single line footer for Vithal
-        const vWorks = "Works : - S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
-        doc.text(vWorks, pageWidth / 2, footerY + 6, { align: 'center' });
+        // Single line footer for Vithal with bold label
+        const vWorksLabel = "Works : ";
+        const vWorksValue = "- S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
+        drawCenteredBoldLabelLine(vWorksLabel, vWorksValue, footerY + 6);
     }
 
     const sanitizedCompanyName = filters.company && filters.company !== 'All' 
