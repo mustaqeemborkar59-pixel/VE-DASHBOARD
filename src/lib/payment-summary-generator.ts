@@ -283,12 +283,13 @@ export const generatePaymentSummaryPdf = async (
     doc.text('Mob: 9987559327', 15, signY);
 
     // Footer Implementation
-    const footerY = isRV ? 270 : 278; 
+    // Halved bottom padding: RV (297-283.5 = 13.5mm), Vithal (297-287.5 = 9.5mm)
+    const footerY = isRV ? 283 : 288; 
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
     doc.line(0, footerY, pageWidth, footerY);
 
-    doc.setFontSize(isRV ? 10 : 8.5);
+    doc.setFontSize(12); // Increased to 12
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
 
