@@ -116,21 +116,21 @@ export default function EnvelopesPage() {
             <CardContent className="p-8 flex items-center justify-center min-h-[400px]">
               {selectedCompany ? (
                 <div 
-                  className="bg-white border-2 border-dashed border-muted-foreground/30 shadow-2xl relative flex flex-col p-8 overflow-hidden font-sans text-black"
+                  className="bg-white border-2 border-dashed border-muted-foreground/30 shadow-2xl relative flex flex-col p-10 overflow-hidden font-sans text-black"
                   style={{ width: '550px', height: '275px' }} // Scale-down aspect ratio of DL
                 >
-                  {/* To Section */}
-                  <div className="mt-auto mb-10 ml-auto mr-10 w-[300px]">
-                    <p className="font-black text-primary uppercase text-[10px] mb-1.5 tracking-[0.2em]">Recipient (To):</p>
-                    <div className="border-l-4 border-primary pl-4 py-1">
-                      <p className="font-black text-lg text-gray-900 leading-none mb-2">{selectedCompany.name.toUpperCase()}</p>
-                      <p className="text-sm text-gray-700 font-medium leading-relaxed whitespace-pre-wrap">{selectedCompany.address}</p>
+                  {/* Recipient Section (Positioned at Top-Left like 'From') */}
+                  <div className="w-[400px]">
+                    <p className="font-black text-primary uppercase text-[10px] mb-2 tracking-[0.2em]">Recipient (To):</p>
+                    <div className="border-l-8 border-primary pl-5 py-2">
+                      <p className="font-black text-2xl text-gray-900 leading-none mb-3">{selectedCompany.name.toUpperCase()}</p>
+                      <p className="text-lg text-gray-700 font-bold leading-relaxed whitespace-pre-wrap">{selectedCompany.address}</p>
                     </div>
                   </div>
 
                   {/* Stamp Placeholder */}
-                  <div className="absolute top-6 right-6 w-12 h-14 border border-dashed border-muted-foreground/20 rounded flex items-center justify-center">
-                    <span className="text-[8px] font-black text-muted-foreground/30 uppercase -rotate-45">Stamp</span>
+                  <div className="absolute top-6 right-6 w-14 h-16 border-2 border-dashed border-muted-foreground/20 rounded-xl flex items-center justify-center">
+                    <span className="text-[10px] font-black text-muted-foreground/30 uppercase -rotate-45">Stamp</span>
                   </div>
                 </div>
               ) : (
@@ -160,12 +160,12 @@ export default function EnvelopesPage() {
         
         {selectedCompany && (
           <div className="w-[220mm] h-[110mm] relative p-[10mm] text-black font-sans box-border bg-white">
-            {/* To Address */}
-            <div className="absolute top-[45mm] left-[100mm] w-[100mm]">
-              <p className="font-bold text-[10pt] uppercase tracking-wider mb-2">To,</p>
+            {/* Recipient Address (Top-Left area) */}
+            <div className="absolute top-[15mm] left-[15mm] w-[150mm]">
+              <p className="font-bold text-[10pt] uppercase tracking-widest mb-3 text-gray-500">To,</p>
               <div className="pl-[2mm]">
-                <p className="font-bold text-[14pt] leading-none mb-2">{selectedCompany.name.toUpperCase()}</p>
-                <p className="text-[11pt] font-medium leading-relaxed uppercase">{selectedCompany.address}</p>
+                <p className="font-black text-[20pt] leading-tight mb-3">{selectedCompany.name.toUpperCase()}</p>
+                <p className="text-[14pt] font-bold leading-snug uppercase">{selectedCompany.address}</p>
               </div>
             </div>
           </div>
