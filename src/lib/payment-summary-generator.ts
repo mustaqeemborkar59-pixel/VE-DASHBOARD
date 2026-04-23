@@ -185,7 +185,7 @@ export const generatePaymentSummaryPdf = async (
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    const subject = `Subject: ${filters.customSubject || 'Balance Confirmation Statement'}`.trim();
+    const subject = `Sub : ${filters.customSubject || 'Balance Confirmation Statement'}`.trim();
     doc.text(subject, pageWidth / 2, currentY, { align: 'center' });
     
     const subjWidth = doc.getTextWidth(subject);
@@ -321,9 +321,6 @@ export const generatePaymentSummaryPdf = async (
     doc.text('Mob: 9987559327', 15, signY);
 
     // Footer Implementation (20px padding approx 7mm from last line to bottom)
-    // A4 = 297mm. 297 - 7 = 290mm target for last line.
-    // RV last line is footerY + 11. So 279 + 11 = 290.
-    // Vithal last line is footerY + 6. So 284 + 6 = 290.
     const footerY = isRV ? 279 : 284; 
     
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
