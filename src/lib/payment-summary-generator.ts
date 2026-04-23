@@ -53,6 +53,9 @@ export const generatePaymentSummaryPdf = async (
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
+    // Top Padding Offset (30px is approx 8mm)
+    const topPadding = 8;
+
     // Ensure global character spacing is reset at the start
     if ((doc as any).setCharSpace) {
         (doc as any).setCharSpace(0);
@@ -64,19 +67,19 @@ export const generatePaymentSummaryPdf = async (
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(60, 60, 60);
-    doc.text(`GSTIN: ${filters.firmGstin || 'N/A'}`, 15, 8);
-    doc.text(`Mob: ${filters.firmMobile || '9821728079, 9987559327'}`, pageWidth - 15, 8, { align: 'right' });
+    doc.text(`GSTIN: ${filters.firmGstin || 'N/A'}`, 15, topPadding + 8);
+    doc.text(`Mob: ${filters.firmMobile || '9821728079, 9987559327'}`, pageWidth - 15, topPadding + 8, { align: 'right' });
 
     // 2. Middle Row: Firm Name (Centered)
     doc.setFontSize(30);
     doc.setFont('times', 'bold');
     doc.setTextColor(200, 0, 0); // Bold Red
-    doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, pageWidth / 2, 21, { align: 'center' });
+    doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, pageWidth / 2, topPadding + 21, { align: 'center' });
     
     // 3. First Red Line - Edge to Edge
     doc.setDrawColor(200, 0, 0);
     doc.setLineWidth(0.5);
-    doc.line(0, 25, pageWidth, 25);
+    doc.line(0, topPadding + 25, pageWidth, topPadding + 25);
 
     // 4. Address Line (Color RED)
     doc.setFontSize(9.5); 
@@ -86,17 +89,17 @@ export const generatePaymentSummaryPdf = async (
         (doc as any).setCharSpace(0);
     }
     const addressStr = `Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604.  .  Email : vithal_enterprises@yahoo.in`;
-    doc.text(addressStr, pageWidth / 2, 28.5, { align: 'center' });
+    doc.text(addressStr, pageWidth / 2, topPadding + 28.5, { align: 'center' });
 
     // 5. Second Red Line - Edge to Edge
-    doc.line(0, 30.5, pageWidth, 30.5);
+    doc.line(0, topPadding + 30.5, pageWidth, topPadding + 30.5);
 
     // Reset character spacing for body
     if ((doc as any).setCharSpace) {
         (doc as any).setCharSpace(0);
     }
 
-    let currentY = 48;
+    let currentY = topPadding + 48;
     
     // --- Date and "To" Section ---
     doc.setFontSize(10);
@@ -248,7 +251,7 @@ export const generatePaymentSummaryPdf = async (
     if (enterprise.toLowerCase() === 'vithal') {
         try {
             const stampImg = await loadImage('/vithal-stamp.png');
-            // Stamp size updated to 35x35 px
+            // Stamp size 35x35 px
             doc.addImage(stampImg, 'PNG', 75, signY - 3, 35, 35);
         } catch (e) {
             // Silently continue if stamp is missing
