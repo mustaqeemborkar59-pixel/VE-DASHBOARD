@@ -26,7 +26,6 @@ const loadImage = (url: string): Promise<HTMLImageElement> => {
         img.crossOrigin = 'Anonymous';
         img.onload = () => resolve(img);
         img.onerror = (err) => {
-            // Silently reject if image is missing to prevent app-breaking errors
             reject(err);
         };
         img.src = url;
@@ -54,7 +53,7 @@ export const generatePaymentSummaryPdf = async (
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Default column visibility if not provided
+    // Dynamic Column visibility
     const cols = filters.visibleColumns || {
         billNo: true,
         date: true,
@@ -65,10 +64,12 @@ export const generatePaymentSummaryPdf = async (
         balance: true
     };
     
-    // Top Padding Offset (30px is approx 8mm)
-    const topPadding = 8;
+    // Branding Color Logic
+    const isRV = enterprise.toLowerCase().includes('rv');
+    const themeColor: [number, number, number] = isRV ? [0, 51, 102] : [200, 0, 0]; // Dark Blue for RV, Red for Vithal
 
-    // Ensure global character spacing is reset at the start
+    const topPadding = 8; // Approx 30px padding from top
+
     if ((doc as any).setCharSpace) {
         (doc as any).setCharSpace(0);
     }
@@ -85,31 +86,23 @@ export const generatePaymentSummaryPdf = async (
     // 2. Middle Row: Firm Name (Centered)
     doc.setFontSize(30);
     doc.setFont('times', 'bold');
-    doc.setTextColor(200, 0, 0); // Bold Red
+    doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, pageWidth / 2, topPadding + 21, { align: 'center' });
     
-    // 3. First Red Line - Edge to Edge
-    doc.setDrawColor(200, 0, 0);
+    // 3. First Theme Line - Edge to Edge
+    doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
     doc.line(0, topPadding + 25, pageWidth, topPadding + 25);
 
-    // 4. Address Line (Color RED)
+    // 4. Address Line (Theme Color)
     doc.setFontSize(9.5); 
     doc.setFont('helvetica', 'normal'); 
-    doc.setTextColor(200, 0, 0); 
-    if ((doc as any).setCharSpace) {
-        (doc as any).setCharSpace(0);
-    }
+    doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]); 
     const addressStr = `Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604.  .  Email : vithal_enterprises@yahoo.in`;
     doc.text(addressStr, pageWidth / 2, topPadding + 28.5, { align: 'center' });
 
-    // 5. Second Red Line - Edge to Edge
+    // 5. Second Theme Line - Edge to Edge
     doc.line(0, topPadding + 30.5, pageWidth, topPadding + 30.5);
-
-    // Reset character spacing for body
-    if ((doc as any).setCharSpace) {
-        (doc as any).setCharSpace(0);
-    }
 
     let currentY = topPadding + 48;
     
@@ -174,7 +167,7 @@ export const generatePaymentSummaryPdf = async (
     doc.text(introLines, 15, currentY);
     currentY += (introLines.length * 5) + 5;
 
-    // --- Dynamic Table Data Handling ---
+    // --- Table Data ---
     const headers: string[] = [];
     if (cols.billNo) headers.push('Bill No.');
     if (cols.date) headers.push('Date');
@@ -271,35 +264,33 @@ export const generatePaymentSummaryPdf = async (
     signY += 6;
     doc.text(`For M/S ${enterprise.toUpperCase()} ENTERPRISES`, 15, signY);
 
-    // Render Vithal Stamp if applicable
-    if (enterprise.toLowerCase() === 'vithal') {
+    // Render Vithal Stamp if applicable (Vithal or when specifically requested)
+    if (!isRV) {
         try {
             const stampImg = await loadImage('/vithal-stamp.png');
-            // Vertically centering a 35mm stamp in the 12mm signature gap
-            // The gap starts at the current signY (baseline of "For M/S...")
-            // Gap center is at signY + 6. Top of stamp = center - (35/2) = signY - 11.5
+            // Vertically centering 35mm stamp in the 12mm gap between "For M/S" and the Name
             doc.addImage(stampImg, 'PNG', 75, signY - 11.5, 35, 35);
         } catch (e) {
             // Silently continue if stamp is missing
         }
     }
     
-    signY += 12; // 2 lines of gap (approx 12mm)
+    signY += 12; 
     doc.setFont('helvetica', 'bold');
     doc.text('TEJAS.R.MAVLANKAR', 15, signY);
     signY += 5;
     doc.setFontSize(9);
     doc.text('Mob: 9987559327', 15, signY);
 
-    // --- Red Themed Footer with Works Address ---
+    // --- Theme Footer ---
     const footerY = 282;
-    doc.setDrawColor(200, 0, 0);
+    doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
     doc.line(0, footerY, pageWidth, footerY);
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(200, 0, 0);
+    doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
     const worksAddress = "Works : - S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
     doc.text(worksAddress, pageWidth / 2, footerY + 5, { align: 'center' });
 
