@@ -283,13 +283,14 @@ export const generatePaymentSummaryPdf = async (
     doc.text('Mob: 9987559327', 15, signY);
 
     // Footer Implementation
-    // Halved bottom padding: RV (297-283.5 = 13.5mm), Vithal (297-287.5 = 9.5mm)
-    const footerY = isRV ? 283 : 288; 
+    // Halved bottom padding: RV (297-283 = 14mm), Vithal (297-288 = 9mm)
+    // Adjusting to target roughly 25px (6.6mm) clearance for the last line of text
+    const footerY = isRV ? 279 : 284; 
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
     doc.line(0, footerY, pageWidth, footerY);
 
-    doc.setFontSize(12); // Increased to 12
+    doc.setFontSize(11); // Set to 11 as requested
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
 
@@ -298,7 +299,7 @@ export const generatePaymentSummaryPdf = async (
         const rvOffice = "Office : A/404, Astraea, Rustomjee Urbania, Off Eastern Express Highway, Majiwada, Thane - 400601";
         const rvWork = "Work : S. No. 14/6A, Khot Banglow, Nr. Transformer, Bhandarli, Pimpri, Thane - 400 612";
         doc.text(rvOffice, pageWidth / 2, footerY + 6, { align: 'center' });
-        doc.text(rvWork, pageWidth / 2, footerY + 11.5, { align: 'center' });
+        doc.text(rvWork, pageWidth / 2, footerY + 11, { align: 'center' });
     } else {
         // Single line footer for Vithal
         const vWorks = "Works : - S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
