@@ -53,7 +53,6 @@ export const generatePaymentSummaryPdf = async (
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Dynamic Column visibility
     const cols = filters.visibleColumns || {
         billNo: true,
         date: true,
@@ -64,44 +63,45 @@ export const generatePaymentSummaryPdf = async (
         balance: true
     };
     
-    // Branding Color Logic
     const isRV = enterprise.toLowerCase().includes('rv');
-    const themeColor: [number, number, number] = isRV ? [0, 51, 102] : [200, 0, 0]; // Dark Blue for RV, Red for Vithal
+    const themeColor: [number, number, number] = isRV ? [0, 51, 102] : [200, 0, 0]; 
 
-    const topPadding = 8; // Approx 30px padding from top
+    const topPadding = 8; 
 
     if ((doc as any).setCharSpace) {
         (doc as any).setCharSpace(0);
     }
 
-    // --- Professional Header Section ---
-    
-    // 1. Top Row: GST (Left) and Mobile Numbers (Right)
+    // --- Header Section ---
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(60, 60, 60);
+    doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.text(`GSTIN: ${filters.firmGstin || 'N/A'}`, 15, topPadding + 8);
-    doc.text(`Mob: ${filters.firmMobile || '9821728079, 9987559327'}`, pageWidth - 15, topPadding + 8, { align: 'right' });
+    
+    // Dynamic Right Header (Mob & Email)
+    if (isRV) {
+        doc.text(`Mob: 9987559327`, pageWidth - 15, topPadding + 8, { align: 'right' });
+        doc.setFontSize(8);
+        doc.text(`Email: rvent1953@gmail.com`, pageWidth - 15, topPadding + 12, { align: 'right' });
+    } else {
+        doc.text(`Mob: ${filters.firmMobile || '9821728079, 9987559327'}`, pageWidth - 15, topPadding + 8, { align: 'right' });
+    }
 
-    // 2. Middle Row: Firm Name (Centered)
     doc.setFontSize(30);
     doc.setFont('times', 'bold');
     doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, pageWidth / 2, topPadding + 21, { align: 'center' });
     
-    // 3. First Theme Line - Edge to Edge
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
     doc.line(0, topPadding + 25, pageWidth, topPadding + 25);
 
-    // 4. Address Line (Theme Color)
     doc.setFontSize(9.5); 
     doc.setFont('helvetica', 'normal'); 
     doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]); 
     const addressStr = `Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604.  .  Email : vithal_enterprises@yahoo.in`;
     doc.text(addressStr, pageWidth / 2, topPadding + 28.5, { align: 'center' });
 
-    // 5. Second Theme Line - Edge to Edge
     doc.line(0, topPadding + 30.5, pageWidth, topPadding + 30.5);
 
     let currentY = topPadding + 48;
@@ -140,7 +140,6 @@ export const generatePaymentSummaryPdf = async (
         }
     }
 
-    // --- Subject Line ---
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
@@ -154,20 +153,17 @@ export const generatePaymentSummaryPdf = async (
     
     currentY += 12;
 
-    // --- Salutation ---
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text(filters.salutation || 'Dear Sir,', 15, currentY);
     currentY += 6;
 
-    // --- Introduction Paragraph ---
     doc.setFont('helvetica', 'normal');
     const introText = filters.customDescription || `This is to inform you about the outstanding balance as per our records mentioned below:`;
     const introLines = doc.splitTextToSize(introText, pageWidth - 30);
     doc.text(introLines, 15, currentY);
     currentY += (introLines.length * 5) + 5;
 
-    // --- Table Data ---
     const headers: string[] = [];
     if (cols.billNo) headers.push('Bill No.');
     if (cols.date) headers.push('Date');
@@ -245,7 +241,6 @@ export const generatePaymentSummaryPdf = async (
 
     const finalY = (doc as any).lastAutoTable.finalY + 12;
     
-    // --- Final Summary Section ---
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text('We request you to kindly verify the above statement and confirm the outstanding balance.', 15, finalY);
@@ -253,7 +248,6 @@ export const generatePaymentSummaryPdf = async (
     doc.setFont('helvetica', 'bold');
     doc.text(`Total Outstanding Balance: INR ${totalBalance.toLocaleString('en-IN')}/-`, 15, finalY + 7);
     
-    // --- Signature Section ---
     let signY = finalY + 25;
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
@@ -264,15 +258,11 @@ export const generatePaymentSummaryPdf = async (
     signY += 6;
     doc.text(`For M/S ${enterprise.toUpperCase()} ENTERPRISES`, 15, signY);
 
-    // Render Vithal Stamp if applicable (Vithal or when specifically requested)
     if (!isRV) {
         try {
             const stampImg = await loadImage('/vithal-stamp.png');
-            // Vertically centering 35mm stamp in the 12mm gap between "For M/S" and the Name
             doc.addImage(stampImg, 'PNG', 75, signY - 11.5, 35, 35);
-        } catch (e) {
-            // Silently continue if stamp is missing
-        }
+        } catch (e) { }
     }
     
     signY += 12; 
@@ -282,7 +272,6 @@ export const generatePaymentSummaryPdf = async (
     doc.setFontSize(9);
     doc.text('Mob: 9987559327', 15, signY);
 
-    // --- Theme Footer ---
     const footerY = 282;
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
