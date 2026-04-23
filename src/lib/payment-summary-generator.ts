@@ -94,7 +94,7 @@ export const generatePaymentSummaryPdf = async (
         doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
         doc.text(`R.V. ENTERPRISES`, pageWidth / 2, topPadding + 22, { align: 'center' });
 
-        // Subtitle - Increased size as requested
+        // Subtitle
         const subtitle = "Suppliers of Material Handling Equipment & Labour";
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
@@ -105,10 +105,11 @@ export const generatePaymentSummaryPdf = async (
 
         // Decoration lines - Extended to ends with 10mm (40px approx) gap
         const edgeGap = 10;
-        const textGap = 5;
+        const textGap = 3; // Reduced gap for proximity
         const lineSpacing = 0.7;
         
         doc.setLineWidth(0.15);
+        doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]); // Set line color to Blue for RV
         
         // Left Triple Lines
         const leftEndX = subX - (subWidth / 2) - textGap;
@@ -124,7 +125,6 @@ export const generatePaymentSummaryPdf = async (
             doc.line(rightStartX, subY - 1.5 + offset, rightEndX, subY - 1.5 + offset);
         });
 
-        doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
         doc.setLineWidth(0.5);
         doc.line(0, topPadding + 34, pageWidth, topPadding + 34);
     } else {
@@ -305,7 +305,7 @@ export const generatePaymentSummaryPdf = async (
     const stampSize = 35;
     const stampY = signY + (signGap / 2) - (stampSize / 2);
 
-    const stampFile = isRV ? '/rv-stamp.png' : '/vithal-stamp.png';
+    const stampFile = isRV ? '/rv-stamp.png' : '/vital-stamp.png';
     try {
         const stampImg = await loadImage(stampFile);
         doc.addImage(stampImg, 'PNG', 75, stampY, stampSize, stampSize);
