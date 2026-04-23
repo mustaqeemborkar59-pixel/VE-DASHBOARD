@@ -4,18 +4,16 @@ import React, { useState, useMemo } from 'react';
 import AppLayout from "@/components/app-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc } from 'firebase/firestore';
-import { Company, CompanySettings } from '@/lib/data';
-import { Printer, Mail, Search, XCircle, Building2 } from 'lucide-react';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { Company } from '@/lib/data';
+import { Printer, Mail, Search, Building2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 export default function EnvelopesPage() {
   const { firestore, user } = useFirebase();
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
-  const [selectedEnterprise, setSelectedEnterprise] = useState<'Vithal' | 'RV'>('Vithal');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Queries
@@ -24,18 +22,7 @@ export default function EnvelopesPage() {
     [firestore, user]
   );
   
-  const vithalSettingsRef = useMemoFirebase(() => 
-    firestore && user ? doc(firestore, 'companySettings', 'vithal') : null, 
-    [firestore, user]
-  );
-  const rvSettingsRef = useMemoFirebase(() => 
-    firestore && user ? doc(firestore, 'companySettings', 'rv') : null, 
-    [firestore, user]
-  );
-
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
-  const { data: vithalSettings } = useDoc<CompanySettings>(vithalSettingsRef);
-  const { data: rvSettings } = useDoc<CompanySettings>(rvSettingsRef);
 
   const filteredCompanies = useMemo(() => {
     if (!companies) return [];
@@ -50,8 +37,6 @@ export default function EnvelopesPage() {
     [companies, selectedCompanyId]
   );
 
-  const senderSettings = selectedEnterprise === 'Vithal' ? vithalSettings : rvSettings;
-
   const handlePrint = () => {
     window.print();
   };
@@ -65,7 +50,7 @@ export default function EnvelopesPage() {
             Envelope Printer
           </h1>
           <p className="text-sm text-muted-foreground uppercase font-bold tracking-widest opacity-70">
-            Generate Mailing Envelopes for Invoices
+            Generate Mailing Envelopes (Recipient Only)
           </p>
         </div>
 
@@ -74,29 +59,9 @@ export default function EnvelopesPage() {
           <Card className="lg:col-span-1 border-none shadow-lg">
             <CardHeader>
               <CardTitle className="text-lg">Print Options</CardTitle>
-              <CardDescription>Select company and sender enterprise.</CardDescription>
+              <CardDescription>Select a company to print the envelope.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Sender Enterprise</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button 
-                    variant={selectedEnterprise === 'Vithal' ? 'default' : 'outline'} 
-                    onClick={() => setSelectedEnterprise('Vithal')}
-                    className="h-9 text-xs font-bold"
-                  >
-                    Vithal Ent.
-                  </Button>
-                  <Button 
-                    variant={selectedEnterprise === 'RV' ? 'default' : 'outline'} 
-                    onClick={() => setSelectedEnterprise('RV')}
-                    className="h-9 text-xs font-bold"
-                  >
-                    RV Ent.
-                  </Button>
-                </div>
-              </div>
-
               <div className="space-y-3">
                 <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Select Client Company</label>
                 <div className="relative">
@@ -108,7 +73,7 @@ export default function EnvelopesPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <div className="max-h-[300px] overflow-y-auto border rounded-xl divide-y">
+                <div className="max-h-[350px] overflow-y-auto border rounded-xl divide-y">
                   {isLoadingCompanies ? (
                     <div className="p-4 text-center text-xs text-muted-foreground">Loading...</div>
                   ) : filteredCompanies.length > 0 ? (
@@ -154,14 +119,6 @@ export default function EnvelopesPage() {
                   className="bg-white border-2 border-dashed border-muted-foreground/30 shadow-2xl relative flex flex-col p-8 overflow-hidden font-sans text-black"
                   style={{ width: '550px', height: '275px' }} // Scale-down aspect ratio of DL
                 >
-                  {/* From Section */}
-                  <div className="absolute top-6 left-6 max-w-[200px] text-[10px] leading-tight">
-                    <p className="font-black text-primary uppercase mb-1 border-b border-primary/20 pb-0.5">Sender (From):</p>
-                    <p className="font-bold text-gray-900">{senderSettings?.companyName || (selectedEnterprise === 'Vithal' ? 'VITHAL ENTERPRISES' : 'R.V ENTERPRISES')}</p>
-                    <p className="text-gray-600 line-clamp-3">{senderSettings?.address || 'Company Address'}</p>
-                    <p className="text-gray-600 mt-1 font-medium">{senderSettings?.contactNumber || ''}</p>
-                  </div>
-
                   {/* To Section */}
                   <div className="mt-auto mb-10 ml-auto mr-10 w-[300px]">
                     <p className="font-black text-primary uppercase text-[10px] mb-1.5 tracking-[0.2em]">Recipient (To):</p>
@@ -203,14 +160,6 @@ export default function EnvelopesPage() {
         
         {selectedCompany && (
           <div className="w-[220mm] h-[110mm] relative p-[10mm] text-black font-sans box-border bg-white">
-            {/* From Address */}
-            <div className="absolute top-[8mm] left-[10mm] max-w-[80mm] text-[9pt] leading-snug">
-              <p className="font-bold border-b border-black/20 pb-[1mm] mb-[1mm]">Sender:</p>
-              <p className="font-bold">{senderSettings?.companyName.toUpperCase()}</p>
-              <p className="text-gray-800">{senderSettings?.address}</p>
-              <p className="text-gray-800">{senderSettings?.contactNumber}</p>
-            </div>
-
             {/* To Address */}
             <div className="absolute top-[45mm] left-[100mm] w-[100mm]">
               <p className="font-bold text-[10pt] uppercase tracking-wider mb-2">To,</p>
