@@ -258,7 +258,7 @@ export const generatePaymentSummaryPdf = async (
         }
     }
     
-    signY += 22; 
+    signY += 12; // Adjusted to approx 2 lines of space
     doc.setFont('helvetica', 'bold');
     doc.text('TEJAS.R.MAVLANKAR', 15, signY);
     signY += 5;
