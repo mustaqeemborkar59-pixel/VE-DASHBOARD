@@ -67,8 +67,9 @@ export const generatePaymentSummaryPdf = async (
     doc.text(`Mob: ${filters.firmMobile || '9821728079, 9987559327'}`, pageWidth - 15, 8, { align: 'right' });
 
     // 2. Middle Row: Firm Name (Centered and Large)
-    doc.setFontSize(26);
-    doc.setFont('helvetica', 'bold');
+    // Using 'times' as it is the closest standard serif font to Century Schoolbook
+    doc.setFontSize(34);
+    doc.setFont('times', 'bold');
     doc.setTextColor(200, 0, 0); // Bold Red
     doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, pageWidth / 2, 21, { align: 'center' });
     
@@ -77,11 +78,10 @@ export const generatePaymentSummaryPdf = async (
     doc.setLineWidth(0.5);
     doc.line(0, 25, pageWidth, 25);
 
-    // 4. Address Line (Standard Properties with Red Color)
+    // 4. Address Line (Color RED)
     doc.setFontSize(9.5); 
     doc.setFont('helvetica', 'normal'); 
-    doc.setTextColor(200, 0, 0); // Color RED
-    // Reset spacing to zero to fix "P r a t i k" issue
+    doc.setTextColor(200, 0, 0); 
     if ((doc as any).setCharSpace) {
         (doc as any).setCharSpace(0);
     }
@@ -244,7 +244,7 @@ export const generatePaymentSummaryPdf = async (
     signY += 6;
     doc.text(`For M/S ${enterprise.toUpperCase()} ENTERPRISES`, 15, signY);
 
-    // Render Vithal Stamp if applicable - Reduced size by 4px (from 38 to 34)
+    // Render Vithal Stamp if applicable
     if (enterprise.toLowerCase() === 'vithal') {
         try {
             const stampImg = await loadImage('/vithal-stamp.png');
@@ -262,14 +262,14 @@ export const generatePaymentSummaryPdf = async (
     doc.text('Mob: 9987559327', 15, signY);
 
     // --- Red Themed Footer with Works Address ---
-    const footerY = 282; // Positioned for 80px visual gap roughly
+    const footerY = 282;
     doc.setDrawColor(200, 0, 0);
     doc.setLineWidth(0.5);
-    doc.line(0, footerY, pageWidth, footerY); // Red separator line
+    doc.line(0, footerY, pageWidth, footerY);
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(200, 0, 0); // Red color for footer text
+    doc.setTextColor(200, 0, 0);
     const worksAddress = "Works : - S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
     doc.text(worksAddress, pageWidth / 2, footerY + 5, { align: 'center' });
 
