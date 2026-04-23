@@ -76,7 +76,7 @@ export const generatePaymentSummaryPdf = async (
     doc.setLineWidth(0.5);
     doc.line(0, 25, pageWidth, 25);
 
-    // 4. Address Line (Normal Properties with Red Color)
+    // 4. Address Line (Standard Properties with Red Color)
     doc.setFontSize(7.5); 
     doc.setFont('helvetica', 'normal'); 
     doc.setTextColor(200, 0, 0); // Color RED
@@ -240,12 +240,12 @@ export const generatePaymentSummaryPdf = async (
     signY += 6;
     doc.text('Yours truly,', 15, signY);
 
-    // Render Vithal Stamp if applicable - Wrapped in try/catch to avoid load errors
+    // Render Vithal Stamp if applicable - Positioned close to the text on the left
     if (enterprise.toLowerCase() === 'vithal') {
         try {
             const stampImg = await loadImage('/vithal-stamp.png');
-            // Adding stamp on the right side of signature
-            doc.addImage(stampImg, 'PNG', pageWidth - 70, signY - 5, 40, 40);
+            // Positioned at X=75 to be just to the right of "Yours truly"
+            doc.addImage(stampImg, 'PNG', 75, signY - 15, 38, 38);
         } catch (e) {
             // Silently continue if stamp is missing
         }
