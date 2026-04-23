@@ -77,14 +77,14 @@ export const generatePaymentSummaryPdf = async (
     doc.line(0, 25, pageWidth, 25);
 
     // 4. Address Line (Standard Properties with Red Color)
-    doc.setFontSize(7.5); 
+    doc.setFontSize(9.5); 
     doc.setFont('helvetica', 'normal'); 
     doc.setTextColor(200, 0, 0); // Color RED
     // Reset spacing to zero to fix "P r a t i k" issue
     if ((doc as any).setCharSpace) {
         (doc as any).setCharSpace(0);
     }
-    const addressStr = `Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604.  . Email : vithal_enterprises@yahoo.in`;
+    const addressStr = `Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604.  \u2022  Email : vithal_enterprises@yahoo.in`;
     doc.text(addressStr, pageWidth / 2, 28.5, { align: 'center' });
 
     // 5. Second Red Line - Edge to Edge
@@ -240,19 +240,19 @@ export const generatePaymentSummaryPdf = async (
     signY += 6;
     doc.text('Yours truly,', 15, signY);
 
-    // Render Vithal Stamp if applicable - Positioned close to the text on the left
+    signY += 6;
+    doc.text(`For M/S ${enterprise.toUpperCase()} ENTERPRISES`, 15, signY);
+
+    // Render Vithal Stamp if applicable - Positioned lower to align with signature space
     if (enterprise.toLowerCase() === 'vithal') {
         try {
             const stampImg = await loadImage('/vithal-stamp.png');
-            // Positioned at X=75 to be just to the right of "Yours truly"
-            doc.addImage(stampImg, 'PNG', 75, signY - 15, 38, 38);
+            // Positioned at Y=signY-5 to put it centered in the signature space below "For M/S..."
+            doc.addImage(stampImg, 'PNG', 75, signY - 5, 38, 38);
         } catch (e) {
             // Silently continue if stamp is missing
         }
     }
-
-    signY += 6;
-    doc.text(`For M/S ${enterprise.toUpperCase()} ENTERPRISES`, 15, signY);
     
     signY += 22; 
     doc.setFont('helvetica', 'bold');
