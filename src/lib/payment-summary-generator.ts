@@ -235,7 +235,7 @@ export const generatePaymentSummaryPdf = async (
     
     // --- Signature Section ---
     let signY = finalY + 25;
-    doc.setFontSize(10);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.text('Thanking You,', 15, signY);
     signY += 6;
@@ -248,7 +248,7 @@ export const generatePaymentSummaryPdf = async (
     if (enterprise.toLowerCase() === 'vithal') {
         try {
             const stampImg = await loadImage('/vithal-stamp.png');
-            // Increased stamp size by 3px (30 -> 33)
+            // Stamp size remains 33x33 px
             doc.addImage(stampImg, 'PNG', 75, signY - 3, 33, 33);
         } catch (e) {
             // Silently continue if stamp is missing
