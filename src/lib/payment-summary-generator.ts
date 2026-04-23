@@ -130,7 +130,7 @@ export const generatePaymentSummaryPdf = async (
         currentY += 6;
 
         if (filters.address) {
-            doc.setFontSize(8.5); // Reduced size for client address
+            doc.setFontSize(8.5); 
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(60, 60, 60);
             const addressLines = doc.splitTextToSize(filters.address.toUpperCase(), 120);
@@ -202,7 +202,6 @@ export const generatePaymentSummaryPdf = async (
     const totalTds = invoices.reduce((sum, inv) => sum + inv.tdsAmount, 0);
 
     const footRow: string[] = ['TOTAL'];
-    // Fill empty cells for totals based on active columns
     const totalData: Record<string, string> = {
         billed: totalBilled.toLocaleString('en-IN'),
         received: totalPaid.toLocaleString('en-IN'),
@@ -210,9 +209,6 @@ export const generatePaymentSummaryPdf = async (
         balance: totalBalance.toLocaleString('en-IN')
     };
 
-    // Calculate footer content dynamically
-    let foundFirstValField = false;
-    // skip first cell (label)
     for (let i = 1; i < headers.length; i++) {
         const header = headers[i];
         if (header === 'Billed Amt') footRow.push(totalData.billed);
@@ -279,13 +275,16 @@ export const generatePaymentSummaryPdf = async (
     if (enterprise.toLowerCase() === 'vithal') {
         try {
             const stampImg = await loadImage('/vithal-stamp.png');
-            doc.addImage(stampImg, 'PNG', 75, signY - 2, 35, 35);
+            // Vertically centering a 35mm stamp in the 12mm signature gap
+            // The gap starts at the current signY (baseline of "For M/S...")
+            // Gap center is at signY + 6. Top of stamp = center - (35/2) = signY - 11.5
+            doc.addImage(stampImg, 'PNG', 75, signY - 11.5, 35, 35);
         } catch (e) {
             // Silently continue if stamp is missing
         }
     }
     
-    signY += 12; // Adjusted to approx 2 lines of space
+    signY += 12; // 2 lines of gap (approx 12mm)
     doc.setFont('helvetica', 'bold');
     doc.text('TEJAS.R.MAVLANKAR', 15, signY);
     signY += 5;
