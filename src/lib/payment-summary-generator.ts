@@ -50,6 +50,7 @@ export const generatePaymentSummaryPdf = async (
 ) => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     
     // Ensure global character spacing is reset at the start
     if ((doc as any).setCharSpace) {
@@ -243,12 +244,11 @@ export const generatePaymentSummaryPdf = async (
     signY += 6;
     doc.text(`For M/S ${enterprise.toUpperCase()} ENTERPRISES`, 15, signY);
 
-    // Render Vithal Stamp if applicable - Positioned lower to align with signature space
+    // Render Vithal Stamp if applicable - Reduced size by 4px (from 38 to 34)
     if (enterprise.toLowerCase() === 'vithal') {
         try {
             const stampImg = await loadImage('/vithal-stamp.png');
-            // Positioned at Y=signY-5 to put it centered in the signature space below "For M/S..."
-            doc.addImage(stampImg, 'PNG', 75, signY - 5, 38, 38);
+            doc.addImage(stampImg, 'PNG', 75, signY - 5, 34, 34);
         } catch (e) {
             // Silently continue if stamp is missing
         }
@@ -261,10 +261,17 @@ export const generatePaymentSummaryPdf = async (
     doc.setFontSize(9);
     doc.text('Mob: 9987559327', 15, signY);
 
-    // --- Footer ---
-    doc.setTextColor(150, 150, 150);
-    doc.setFontSize(7.5);
-    doc.text(`* This is a system-generated Balance Confirmation Letter. Generated on: ${format(new Date(), 'dd MMM yyyy, p')}`, pageWidth / 2, 285, { align: 'center' });
+    // --- Red Themed Footer with Works Address ---
+    const footerY = 282; // Positioned for 80px visual gap roughly
+    doc.setDrawColor(200, 0, 0);
+    doc.setLineWidth(0.5);
+    doc.line(0, footerY, pageWidth, footerY); // Red separator line
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(200, 0, 0); // Red color for footer text
+    const worksAddress = "Works : - S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
+    doc.text(worksAddress, pageWidth / 2, footerY + 5, { align: 'center' });
 
     const sanitizedCompanyName = filters.company && filters.company !== 'All' 
         ? filters.company.replace(/[^a-zA-Z0-9]/g, '_') 
