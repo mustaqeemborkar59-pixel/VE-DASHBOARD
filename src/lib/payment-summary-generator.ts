@@ -88,44 +88,45 @@ export const generatePaymentSummaryPdf = async (
     }
 
     if (isRV) {
-        // Special Header for R.V. Enterprises
+        // Special Header for R.V. ENTERPRISES
         doc.setFontSize(36);
         doc.setFont('times', 'bold');
         doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
         doc.text(`R.V. ENTERPRISES`, pageWidth / 2, topPadding + 22, { align: 'center' });
 
-        // Subtitle with triple lines
+        // Subtitle - Increased size as requested
         const subtitle = "Suppliers of Material Handling Equipment & Labour";
-        doc.setFontSize(8);
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         const subWidth = doc.getTextWidth(subtitle);
         const subX = pageWidth / 2;
-        const subY = topPadding + 27;
+        const subY = topPadding + 28;
         doc.text(subtitle, subX, subY, { align: 'center' });
 
-        // Decoration lines
-        const lineLength = 12;
-        const gap = 4;
+        // Decoration lines - Extended to ends with 10mm (40px approx) gap
+        const edgeGap = 10;
+        const textGap = 5;
         const lineSpacing = 0.7;
         
         doc.setLineWidth(0.15);
+        
         // Left Triple Lines
-        const leftEndX = subX - (subWidth / 2) - gap;
-        const leftStartX = leftEndX - lineLength;
+        const leftEndX = subX - (subWidth / 2) - textGap;
+        const leftStartX = edgeGap;
         [0, lineSpacing, lineSpacing * 2].forEach(offset => {
-            doc.line(leftStartX, subY - 1 + offset, leftEndX, subY - 1 + offset);
+            doc.line(leftStartX, subY - 1.5 + offset, leftEndX, subY - 1.5 + offset);
         });
 
         // Right Triple Lines
-        const rightStartX = subX + (subWidth / 2) + gap;
-        const rightEndX = rightStartX + lineLength;
+        const rightStartX = subX + (subWidth / 2) + textGap;
+        const rightEndX = pageWidth - edgeGap;
         [0, lineSpacing, lineSpacing * 2].forEach(offset => {
-            doc.line(rightStartX, subY - 1 + offset, rightEndX, subY - 1 + offset);
+            doc.line(rightStartX, subY - 1.5 + offset, rightEndX, subY - 1.5 + offset);
         });
 
         doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
         doc.setLineWidth(0.5);
-        doc.line(0, topPadding + 32, pageWidth, topPadding + 32);
+        doc.line(0, topPadding + 34, pageWidth, topPadding + 34);
     } else {
         // Standard Vithal Enterprises Header
         doc.setFontSize(30);
@@ -145,7 +146,7 @@ export const generatePaymentSummaryPdf = async (
         doc.line(0, topPadding + 30.5, pageWidth, topPadding + 30.5);
     }
 
-    let currentY = isRV ? topPadding + 52 : topPadding + 48;
+    let currentY = isRV ? topPadding + 54 : topPadding + 48;
     
     // --- Date and "To" Section ---
     doc.setFontSize(10);
@@ -304,13 +305,12 @@ export const generatePaymentSummaryPdf = async (
     const stampSize = 35;
     const stampY = signY + (signGap / 2) - (stampSize / 2);
 
-    // Try to load stamp for both enterprises
     const stampFile = isRV ? '/rv-stamp.png' : '/vithal-stamp.png';
     try {
         const stampImg = await loadImage(stampFile);
         doc.addImage(stampImg, 'PNG', 75, stampY, stampSize, stampSize);
     } catch (e) {
-        // Fallback or skip if not found
+        // skip if not found
     }
     
     signY += signGap; 
@@ -320,7 +320,7 @@ export const generatePaymentSummaryPdf = async (
     doc.setFontSize(9);
     doc.text('Mob: 9987559327', 15, signY);
 
-    // Footer Implementation
+    // Footer Implementation (25px padding approx 6.6mm)
     const footerY = 284; 
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
@@ -345,7 +345,6 @@ export const generatePaymentSummaryPdf = async (
     };
 
     if (isRV) {
-        // Two line footer for RV with bold labels
         const officeLabel = "Office : ";
         const officeValue = "A/404, Astraea, Rustomjee Urbania, Off Eastern Express Highway, Majiwada, Thane - 400601";
         const workLabel = "Work : ";
@@ -354,7 +353,6 @@ export const generatePaymentSummaryPdf = async (
         drawCenteredBoldLabelLine(officeLabel, officeValue, footerY + 6);
         drawCenteredBoldLabelLine(workLabel, workValue, footerY + 11);
     } else {
-        // Single line footer for Vithal with bold label
         const vWorksLabel = "Works : ";
         const vWorksValue = "- S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
         drawCenteredBoldLabelLine(vWorksLabel, vWorksValue, footerY + 6);
