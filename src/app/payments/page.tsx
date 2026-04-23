@@ -106,6 +106,7 @@ export default function PaymentsPage() {
   const [tempAddress, setTempAddress] = useState('');
   const [tempSubject, setTempSubject] = useState('');
   const [tempDescription, setTempDescription] = useState('');
+  const [tempSalutation, setTempSalutation] = useState('Dear Sir,');
   const [tempClientName, setTempClientName] = useState('');
   const [tempClientGstin, setTempClientGstin] = useState('');
   const [tempFirmGstin, setTempFirmGstin] = useState('');
@@ -280,6 +281,7 @@ export default function PaymentsPage() {
     setTempAddress(selectedCompanyObj?.address || '');
     setTempFirmGstin(settings?.gstin || '');
     setTempFirmMobiles("9821728079, 9987559327");
+    setTempSalutation('Dear Sir,');
     
     let monthLabel = '';
     if (monthFilter !== 'All') {
@@ -315,7 +317,8 @@ export default function PaymentsPage() {
             firmGstin: tempFirmGstin,
             firmMobile: tempFirmMobiles,
             customSubject: tempSubject,
-            customDescription: tempDescription
+            customDescription: tempDescription,
+            salutation: tempSalutation
         });
         toast({ title: 'Downloading', description: `Balance Confirmation Letter for ${tempClientName} is ready.` });
     } finally {
@@ -518,7 +521,7 @@ export default function PaymentsPage() {
             </Card>
             <Card className="bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800 p-4">
               <div className="space-y-1">
-                <p className="text-[10px] font-medium text-green-700 dark:text-green-300 uppercase">Total Received</p>
+                <p className="text-[10px] font-medium text-green-700 dark:text-blue-300 uppercase">Total Received</p>
                 <div className="text-lg sm:text-2xl font-bold text-green-900 dark:text-blue-100">{formatCurrency(summary.totalPaid)}</div>
               </div>
             </Card>
@@ -789,6 +792,30 @@ export default function PaymentsPage() {
                                 <FileText className="h-3 w-3" /> Letter Content
                             </h3>
                             <div className="grid gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="tempSalutation" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Salutation</Label>
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                        <Select value={tempSalutation} onValueChange={setTempSalutation}>
+                                            <SelectTrigger className="h-10 rounded-xl font-bold text-sm sm:w-1/2">
+                                                <SelectValue placeholder="Salutation" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Dear Sir,">Dear Sir,</SelectItem>
+                                                <SelectItem value="Dear Madam,">Dear Madam,</SelectItem>
+                                                <SelectItem value="Dear Sir / Madam,">Dear Sir / Madam,</SelectItem>
+                                                <SelectItem value="Respected Sir,">Respected Sir,</SelectItem>
+                                                <SelectItem value="To whom it may concern,">To whom it may concern,</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <Input 
+                                            id="tempSalutation"
+                                            value={tempSalutation}
+                                            onChange={(e) => setTempSalutation(e.target.value)}
+                                            placeholder="Custom Salutation..."
+                                            className="h-10 rounded-xl font-bold text-sm flex-1"
+                                        />
+                                    </div>
+                                </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="tempSubject" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Document Subject</Label>
                                     <Input 

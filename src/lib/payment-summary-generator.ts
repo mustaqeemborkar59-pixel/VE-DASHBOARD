@@ -46,6 +46,7 @@ export const generatePaymentSummaryPdf = async (
         firmMobile?: string;
         customSubject?: string;
         customDescription?: string;
+        salutation?: string;
     }
 ) => {
     const doc = new jsPDF('p', 'mm', 'a4');
@@ -66,9 +67,8 @@ export const generatePaymentSummaryPdf = async (
     doc.text(`GSTIN: ${filters.firmGstin || 'N/A'}`, 15, 8);
     doc.text(`Mob: ${filters.firmMobile || '9821728079, 9987559327'}`, pageWidth - 15, 8, { align: 'right' });
 
-    // 2. Middle Row: Firm Name (Centered and Large)
-    // Using 'times' as it is the closest standard serif font to Century Schoolbook
-    doc.setFontSize(34);
+    // 2. Middle Row: Firm Name (Centered)
+    doc.setFontSize(30);
     doc.setFont('times', 'bold');
     doc.setTextColor(200, 0, 0); // Bold Red
     doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, pageWidth / 2, 21, { align: 'center' });
@@ -85,7 +85,7 @@ export const generatePaymentSummaryPdf = async (
     if ((doc as any).setCharSpace) {
         (doc as any).setCharSpace(0);
     }
-    const addressStr = `Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604.  \u2022  Email : vithal_enterprises@yahoo.in`;
+    const addressStr = `Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604.  .  Email : vithal_enterprises@yahoo.in`;
     doc.text(addressStr, pageWidth / 2, 28.5, { align: 'center' });
 
     // 5. Second Red Line - Edge to Edge
@@ -148,7 +148,7 @@ export const generatePaymentSummaryPdf = async (
     // --- Salutation ---
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('Dear Sir,', 15, currentY);
+    doc.text(filters.salutation || 'Dear Sir,', 15, currentY);
     currentY += 6;
 
     // --- Introduction Paragraph ---
@@ -248,7 +248,7 @@ export const generatePaymentSummaryPdf = async (
     if (enterprise.toLowerCase() === 'vithal') {
         try {
             const stampImg = await loadImage('/vithal-stamp.png');
-            doc.addImage(stampImg, 'PNG', 75, signY - 5, 34, 34);
+            doc.addImage(stampImg, 'PNG', 75, signY - 3, 30, 30);
         } catch (e) {
             // Silently continue if stamp is missing
         }
