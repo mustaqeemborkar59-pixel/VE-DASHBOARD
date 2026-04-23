@@ -87,29 +87,65 @@ export const generatePaymentSummaryPdf = async (
         doc.text(`Mob: ${filters.firmMobile || '9821728079, 9987559327'}`, pageWidth - 15, topPadding + 8, { align: 'right' });
     }
 
-    doc.setFontSize(30);
-    doc.setFont('times', 'bold');
-    doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
-    doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, pageWidth / 2, topPadding + 21, { align: 'center' });
-    
-    doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
-    doc.setLineWidth(0.5);
-    doc.line(0, topPadding + 25, pageWidth, topPadding + 25);
+    if (isRV) {
+        // Special Header for R.V. Enterprises
+        doc.setFontSize(36);
+        doc.setFont('times', 'bold');
+        doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
+        doc.text(`R.V. ENTERPRISES`, pageWidth / 2, topPadding + 22, { align: 'center' });
 
-    // Only show header address for Vithal
-    if (!isRV) {
+        // Subtitle with triple lines
+        const subtitle = "Suppliers of Material Handling Equipment & Labour";
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        const subWidth = doc.getTextWidth(subtitle);
+        const subX = pageWidth / 2;
+        const subY = topPadding + 27;
+        doc.text(subtitle, subX, subY, { align: 'center' });
+
+        // Decoration lines
+        const lineLength = 12;
+        const gap = 4;
+        const lineSpacing = 0.7;
+        
+        doc.setLineWidth(0.15);
+        // Left Triple Lines
+        const leftEndX = subX - (subWidth / 2) - gap;
+        const leftStartX = leftEndX - lineLength;
+        [0, lineSpacing, lineSpacing * 2].forEach(offset => {
+            doc.line(leftStartX, subY - 1 + offset, leftEndX, subY - 1 + offset);
+        });
+
+        // Right Triple Lines
+        const rightStartX = subX + (subWidth / 2) + gap;
+        const rightEndX = rightStartX + lineLength;
+        [0, lineSpacing, lineSpacing * 2].forEach(offset => {
+            doc.line(rightStartX, subY - 1 + offset, rightEndX, subY - 1 + offset);
+        });
+
+        doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
+        doc.setLineWidth(0.5);
+        doc.line(0, topPadding + 32, pageWidth, topPadding + 32);
+    } else {
+        // Standard Vithal Enterprises Header
+        doc.setFontSize(30);
+        doc.setFont('times', 'bold');
+        doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
+        doc.text(`${enterprise.toUpperCase()} ENTERPRISES`, pageWidth / 2, topPadding + 21, { align: 'center' });
+        
+        doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
+        doc.setLineWidth(0.5);
+        doc.line(0, topPadding + 25, pageWidth, topPadding + 25);
+        
         doc.setFontSize(9.5); 
         doc.setFont('helvetica', 'normal'); 
         doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]); 
         const addressStr = `Pratik Apartments, C - 101, Waitiwadi, Wagle Estate, Thane - 400 604.  .  Email : vithal_enterprises@yahoo.in`;
         doc.text(addressStr, pageWidth / 2, topPadding + 28.5, { align: 'center' });
         doc.line(0, topPadding + 30.5, pageWidth, topPadding + 30.5);
-    } else {
-        // For RV, just the second line to close the header
-        doc.line(0, topPadding + 27, pageWidth, topPadding + 27);
     }
 
-    let currentY = topPadding + 48;
+    let currentY = isRV ? topPadding + 52 : topPadding + 48;
     
     // --- Date and "To" Section ---
     doc.setFontSize(10);
@@ -285,7 +321,7 @@ export const generatePaymentSummaryPdf = async (
     doc.text('Mob: 9987559327', 15, signY);
 
     // Footer Implementation
-    const footerY = isRV ? 279 : 284; 
+    const footerY = 284; 
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
     doc.line(0, footerY, pageWidth, footerY);
