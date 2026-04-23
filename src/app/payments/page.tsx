@@ -35,7 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, XCircle, Info, Trash2, Download, FileSpreadsheet, MapPin, FileText, User, Building2, Phone, Fingerprint, Loader2 } from "lucide-react";
+import { PlusCircle, Search, XCircle, Info, Trash2, Download, FileSpreadsheet, MapPin, FileText, User, Building2, Phone, Fingerprint, Loader2, CheckSquare2 } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
@@ -48,6 +48,7 @@ import { generatePaymentSummaryPdf } from '@/lib/payment-summary-generator';
 import * as XLSX from 'xlsx';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Checkbox } from '@/components/ui/checkbox';
 
 type Enterprise = 'Vithal' | 'RV';
 type PaymentStatus = 'All' | 'Received' | 'Partial' | 'Pending';
@@ -111,6 +112,15 @@ export default function PaymentsPage() {
   const [tempClientGstin, setTempClientGstin] = useState('');
   const [tempFirmGstin, setTempFirmGstin] = useState('');
   const [tempFirmMobiles, setTempFirmMobiles] = useState('');
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
+    billNo: true,
+    date: true,
+    company: true,
+    billed: true,
+    received: true,
+    tds: true,
+    balance: true
+  });
 
 
   // Payment Form State
@@ -318,7 +328,8 @@ export default function PaymentsPage() {
             firmMobile: tempFirmMobiles,
             customSubject: tempSubject,
             customDescription: tempDescription,
-            salutation: tempSalutation
+            salutation: tempSalutation,
+            visibleColumns: visibleColumns
         });
         toast({ title: 'Downloading', description: `Balance Confirmation Letter for ${tempClientName} is ready.` });
     } finally {
@@ -468,6 +479,10 @@ export default function PaymentsPage() {
       default:
         return <Badge variant="secondary" className="text-[10px] sm:text-xs">{status}</Badge>;
     }
+  }
+
+  const updateVisibleColumn = (key: string, checked: boolean) => {
+    setVisibleColumns(prev => ({ ...prev, [key]: checked }));
   }
 
 
@@ -785,7 +800,34 @@ export default function PaymentsPage() {
                 
                 {/* Scrollable Form Container */}
                 <div className="flex-1 overflow-y-auto">
-                    <div className="p-4 sm:p-6 space-y-6">
+                    <div className="p-4 sm:p-6 space-y-8">
+                        {/* Section: Table Columns Selection */}
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2">
+                                <CheckSquare2 className="h-3 w-3" /> Table Columns
+                            </h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-muted/20 p-4 rounded-xl border border-dashed">
+                                {[
+                                    { id: 'billNo', label: 'Bill No.' },
+                                    { id: 'date', label: 'Date' },
+                                    { id: 'company', label: 'Company Name' },
+                                    { id: 'billed', label: 'Billed Amt' },
+                                    { id: 'received', label: 'Received' },
+                                    { id: 'tds', label: 'TDS' },
+                                    { id: 'balance', label: 'Balance' }
+                                ].map((col) => (
+                                    <div key={col.id} className="flex items-center space-x-2">
+                                        <Checkbox 
+                                            id={`col-${col.id}`} 
+                                            checked={visibleColumns[col.id]} 
+                                            onCheckedChange={(checked) => updateVisibleColumn(col.id, !!checked)} 
+                                        />
+                                        <Label htmlFor={`col-${col.id}`} className="text-xs font-bold cursor-pointer">{col.label}</Label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         {/* Section: Document Metadata */}
                         <div className="space-y-4">
                             <h3 className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2">

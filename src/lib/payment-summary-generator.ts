@@ -47,11 +47,23 @@ export const generatePaymentSummaryPdf = async (
         customSubject?: string;
         customDescription?: string;
         salutation?: string;
+        visibleColumns?: Record<string, boolean>;
     }
 ) => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
+    
+    // Default column visibility if not provided
+    const cols = filters.visibleColumns || {
+        billNo: true,
+        date: true,
+        company: true,
+        billed: true,
+        received: true,
+        tds: true,
+        balance: true
+    };
     
     // Top Padding Offset (30px is approx 8mm)
     const topPadding = 8;
@@ -118,15 +130,16 @@ export const generatePaymentSummaryPdf = async (
         currentY += 6;
 
         if (filters.address) {
-            doc.setFontSize(10);
+            doc.setFontSize(8.5); // Reduced size for client address
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(60, 60, 60);
             const addressLines = doc.splitTextToSize(filters.address.toUpperCase(), 120);
             doc.text(addressLines, 15, currentY);
-            currentY += (addressLines.length * 5) + 2;
+            currentY += (addressLines.length * 4.5) + 2;
         }
 
         if (filters.gstin) {
+            doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(0, 0, 0);
             doc.text(`GSTIN: ${filters.gstin}`, 15, currentY);
@@ -161,35 +174,59 @@ export const generatePaymentSummaryPdf = async (
     doc.text(introLines, 15, currentY);
     currentY += (introLines.length * 5) + 5;
 
-    // --- Table Data ---
-    const tableBody = invoices.map(inv => [
-        `${inv.billNo}-${inv.billNoSuffix || 'MHE'}`,
-        format(new Date(inv.billDate), 'dd-MMM-yy'),
-        inv.companyName.toUpperCase(),
-        inv.grandTotal.toLocaleString('en-IN'),
-        inv.totalPaid.toLocaleString('en-IN'),
-        inv.tdsAmount.toLocaleString('en-IN'),
-        inv.balance.toLocaleString('en-IN'),
-    ]);
+    // --- Dynamic Table Data Handling ---
+    const headers: string[] = [];
+    if (cols.billNo) headers.push('Bill No.');
+    if (cols.date) headers.push('Date');
+    if (cols.company) headers.push('Company Name');
+    if (cols.billed) headers.push('Billed Amt');
+    if (cols.received) headers.push('Received');
+    if (cols.tds) headers.push('TDS');
+    if (cols.balance) headers.push('Balance');
+
+    const tableBody = invoices.map(inv => {
+        const row: string[] = [];
+        if (cols.billNo) row.push(`${inv.billNo}-${inv.billNoSuffix || 'MHE'}`);
+        if (cols.date) row.push(format(new Date(inv.billDate), 'dd-MMM-yy'));
+        if (cols.company) row.push(inv.companyName.toUpperCase());
+        if (cols.billed) row.push(inv.grandTotal.toLocaleString('en-IN'));
+        if (cols.received) row.push(inv.totalPaid.toLocaleString('en-IN'));
+        if (cols.tds) row.push(inv.tdsAmount.toLocaleString('en-IN'));
+        if (cols.balance) row.push(inv.balance.toLocaleString('en-IN'));
+        return row;
+    });
 
     const totalBalance = invoices.reduce((sum, inv) => sum + inv.balance, 0);
     const totalBilled = invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
     const totalPaid = invoices.reduce((sum, inv) => sum + inv.totalPaid, 0);
     const totalTds = invoices.reduce((sum, inv) => sum + inv.tdsAmount, 0);
 
+    const footRow: string[] = ['TOTAL'];
+    // Fill empty cells for totals based on active columns
+    const totalData: Record<string, string> = {
+        billed: totalBilled.toLocaleString('en-IN'),
+        received: totalPaid.toLocaleString('en-IN'),
+        tds: totalTds.toLocaleString('en-IN'),
+        balance: totalBalance.toLocaleString('en-IN')
+    };
+
+    // Calculate footer content dynamically
+    let foundFirstValField = false;
+    // skip first cell (label)
+    for (let i = 1; i < headers.length; i++) {
+        const header = headers[i];
+        if (header === 'Billed Amt') footRow.push(totalData.billed);
+        else if (header === 'Received') footRow.push(totalData.received);
+        else if (header === 'TDS') footRow.push(totalData.tds);
+        else if (header === 'Balance') footRow.push(totalData.balance);
+        else footRow.push('');
+    }
+
     autoTable(doc, {
         startY: currentY,
-        head: [['Bill No.', 'Date', 'Company Name', 'Billed Amt', 'Received', 'TDS', 'Balance']],
+        head: [headers],
         body: tableBody,
-        foot: [[
-            'TOTAL', 
-            '', 
-            '',
-            totalBilled.toLocaleString('en-IN'), 
-            totalPaid.toLocaleString('en-IN'), 
-            totalTds.toLocaleString('en-IN'), 
-            totalBalance.toLocaleString('en-IN')
-        ]],
+        foot: [footRow],
         theme: 'grid',
         headStyles: { 
             fillColor: [255, 255, 255], 
@@ -206,15 +243,6 @@ export const generatePaymentSummaryPdf = async (
             halign: 'right',
             lineWidth: 0.1,
             lineColor: [0, 0, 0]
-        },
-        columnStyles: {
-            0: { halign: 'center', cellWidth: 20 },
-            1: { halign: 'center', cellWidth: 22 },
-            2: { halign: 'left' },
-            3: { halign: 'right', cellWidth: 25 },
-            4: { halign: 'right', cellWidth: 25 },
-            5: { halign: 'right', cellWidth: 18 },
-            6: { halign: 'right', cellWidth: 25 },
         },
         styles: { 
             fontSize: 8.5, 
@@ -251,8 +279,7 @@ export const generatePaymentSummaryPdf = async (
     if (enterprise.toLowerCase() === 'vithal') {
         try {
             const stampImg = await loadImage('/vithal-stamp.png');
-            // Stamp size 35x35 px
-            doc.addImage(stampImg, 'PNG', 75, signY - 3, 35, 35);
+            doc.addImage(stampImg, 'PNG', 75, signY - 2, 35, 35);
         } catch (e) {
             // Silently continue if stamp is missing
         }
