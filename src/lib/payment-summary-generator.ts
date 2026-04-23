@@ -248,8 +248,8 @@ export const generatePaymentSummaryPdf = async (
     if (enterprise.toLowerCase() === 'vithal') {
         try {
             const stampImg = await loadImage('/vithal-stamp.png');
-            // Stamp size remains 33x33 px
-            doc.addImage(stampImg, 'PNG', 75, signY - 3, 33, 33);
+            // Stamp size updated to 35x35 px
+            doc.addImage(stampImg, 'PNG', 75, signY - 3, 35, 35);
         } catch (e) {
             // Silently continue if stamp is missing
         }
