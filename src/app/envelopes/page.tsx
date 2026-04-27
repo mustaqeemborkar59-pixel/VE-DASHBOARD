@@ -119,12 +119,12 @@ export default function EnvelopesPage() {
                   className="bg-white border-2 border-dashed border-muted-foreground/30 shadow-2xl relative flex flex-col p-10 overflow-hidden font-sans text-black"
                   style={{ width: '550px', height: '275px' }} // Scale-down aspect ratio of DL
                 >
-                  {/* Recipient Section (Positioned at Top-Left like 'From') */}
+                  {/* Recipient Section */}
                   <div className="w-[400px]">
-                    <p className="font-black text-primary uppercase text-[10px] mb-2 tracking-[0.2em]">Recipient (To):</p>
-                    <div className="border-l-8 border-primary pl-5 py-2">
-                      <p className="font-black text-2xl text-gray-900 leading-none mb-3">{selectedCompany.name.toUpperCase()}</p>
-                      <p className="text-lg text-gray-700 font-bold leading-relaxed whitespace-pre-wrap">{selectedCompany.address}</p>
+                    <p className="font-black text-primary uppercase text-[9px] mb-2 tracking-[0.2em]">Recipient (To):</p>
+                    <div className="border-l-4 border-primary pl-4 py-1">
+                      <p className="font-black text-xl text-gray-900 leading-none mb-2">{selectedCompany.name.toUpperCase()}</p>
+                      <p className="text-base text-gray-700 font-bold leading-relaxed whitespace-pre-wrap">{selectedCompany.address}</p>
                     </div>
                   </div>
 
@@ -160,12 +160,12 @@ export default function EnvelopesPage() {
         
         {selectedCompany && (
           <div className="w-[220mm] h-[110mm] relative p-[10mm] text-black font-sans box-border bg-white">
-            {/* Recipient Address (Top-Left area) */}
-            <div className="absolute top-[15mm] left-[15mm] w-[150mm]">
-              <p className="font-bold text-[10pt] uppercase tracking-widest mb-3 text-gray-500">To,</p>
+            {/* Recipient Address (Top-Left area, shifted further left) */}
+            <div className="absolute top-[15mm] left-[10mm] w-[160mm]">
+              <p className="font-bold text-[9pt] uppercase tracking-widest mb-2 text-gray-500">To,</p>
               <div className="pl-[2mm]">
-                <p className="font-black text-[20pt] leading-tight mb-3">{selectedCompany.name.toUpperCase()}</p>
-                <p className="text-[14pt] font-bold leading-snug uppercase">{selectedCompany.address}</p>
+                <p className="font-black text-[15pt] leading-tight mb-2">{selectedCompany.name.toUpperCase()}</p>
+                <p className="text-[11pt] font-bold leading-snug uppercase">{selectedCompany.address}</p>
               </div>
             </div>
           </div>
