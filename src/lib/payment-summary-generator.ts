@@ -2,7 +2,7 @@
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { format } from 'date-fns';
+import { format, parseISO, differenceInDays } from 'date-fns';
 
 type ProcessedInvoice = {
     billNo: number;
@@ -60,7 +60,8 @@ export const generatePaymentSummaryPdf = async (
         billed: true,
         received: true,
         tds: true,
-        balance: true
+        balance: true,
+        dueDays: false
     };
     
     const isRV = enterprise.toLowerCase().includes('rv');
@@ -103,7 +104,7 @@ export const generatePaymentSummaryPdf = async (
         const subY = topPadding + 28;
         doc.text(subtitle, subX, subY, { align: 'center' });
 
-        // Decoration lines - Extended to ends with 10mm gap
+        // Decoration lines
         const edgeGap = 10;
         const textGap = 3; 
         const lineSpacing = 0.7;
@@ -111,14 +112,12 @@ export const generatePaymentSummaryPdf = async (
         doc.setLineWidth(0.15);
         doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]); 
         
-        // Left Triple Lines
         const leftEndX = subX - (subWidth / 2) - textGap;
         const leftStartX = edgeGap;
         [0, lineSpacing, lineSpacing * 2].forEach(offset => {
             doc.line(leftStartX, subY - 1.5 + offset, leftEndX, subY - 1.5 + offset);
         });
 
-        // Right Triple Lines
         const rightStartX = subX + (subWidth / 2) + textGap;
         const rightEndX = pageWidth - edgeGap;
         [0, lineSpacing, lineSpacing * 2].forEach(offset => {
@@ -214,6 +213,9 @@ export const generatePaymentSummaryPdf = async (
     if (cols.received) headers.push('Received');
     if (cols.tds) headers.push('TDS');
     if (cols.balance) headers.push('Balance');
+    if (cols.dueDays) headers.push('Due Days');
+
+    const today = new Date();
 
     const tableBody = invoices.map(inv => {
         const row: string[] = [];
@@ -224,6 +226,11 @@ export const generatePaymentSummaryPdf = async (
         if (cols.received) row.push(inv.totalPaid.toLocaleString('en-IN'));
         if (cols.tds) row.push(inv.tdsAmount.toLocaleString('en-IN'));
         if (cols.balance) row.push(inv.balance.toLocaleString('en-IN'));
+        if (cols.dueDays) {
+            const billDate = parseISO(inv.billDate);
+            const days = differenceInDays(today, billDate);
+            row.push(days > 0 ? `${days} Days` : '0');
+        }
         return row;
     });
 
@@ -300,7 +307,6 @@ export const generatePaymentSummaryPdf = async (
     signY += 6;
     doc.text(`For M/S ${enterprise.toUpperCase()} ENTERPRISES`, 15, signY);
 
-    // Sign gap (vertically centered stamp)
     const signGap = 12; 
     const stampSize = 35;
     const stampY = signY + (signGap / 2) - (stampSize / 2);
@@ -309,9 +315,7 @@ export const generatePaymentSummaryPdf = async (
     try {
         const stampImg = await loadImage(stampFile);
         doc.addImage(stampImg, 'PNG', 75, stampY, stampSize, stampSize);
-    } catch (e) {
-        // skip if not found
-    }
+    } catch (e) { }
     
     signY += signGap; 
     doc.setFont('helvetica', 'bold');
@@ -320,7 +324,6 @@ export const generatePaymentSummaryPdf = async (
     doc.setFontSize(9);
     doc.text('Mob: 9987559327', 15, signY);
 
-    // Footer Implementation (20px padding approx 7mm from last line to bottom)
     const footerY = isRV ? 279 : 284; 
     
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
@@ -346,17 +349,10 @@ export const generatePaymentSummaryPdf = async (
     };
 
     if (isRV) {
-        const officeLabel = "Office : ";
-        const officeValue = "A/404, Astraea, Rustomjee Urbania, Off Eastern Express Highway, Majiwada, Thane - 400601";
-        const workLabel = "Work : ";
-        const workValue = "S. No. 14/6A, Khot Banglow, Nr. Transformer, Bhandarli, Pimpri, Thane - 400 612";
-        
-        drawCenteredBoldLabelLine(officeLabel, officeValue, footerY + 6);
-        drawCenteredBoldLabelLine(workLabel, workValue, footerY + 11);
+        drawCenteredBoldLabelLine("Office : ", "A/404, Astraea, Rustomjee Urbania, Off Eastern Express Highway, Majiwada, Thane - 400601", footerY + 6);
+        drawCenteredBoldLabelLine("Work : ", "S. No. 14/6A, Khot Banglow, Nr. Transformer, Bhandarli, Pimpri, Thane - 400 612", footerY + 11);
     } else {
-        const vWorksLabel = "Works : ";
-        const vWorksValue = "S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
-        drawCenteredBoldLabelLine(vWorksLabel, vWorksValue, footerY + 6);
+        drawCenteredBoldLabelLine("Works : ", "S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612", footerY + 6);
     }
 
     const sanitizedCompanyName = filters.company && filters.company !== 'All' 

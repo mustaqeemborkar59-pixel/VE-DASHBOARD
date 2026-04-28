@@ -35,7 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, XCircle, Info, Trash2, Download, FileSpreadsheet, MapPin, FileText, User, Building2, Phone, Fingerprint, Loader2, CheckSquare2 } from "lucide-react";
+import { PlusCircle, Search, XCircle, Info, Trash2, Download, FileSpreadsheet, MapPin, FileText, User, Building2, Phone, Fingerprint, Loader2, CheckSquare2, CalendarClock } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
@@ -49,6 +49,7 @@ import * as XLSX from 'xlsx';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 type Enterprise = 'Vithal' | 'RV';
 type PaymentStatus = 'All' | 'Received' | 'Partial' | 'Pending';
@@ -63,8 +64,6 @@ type ProcessedInvoice = Invoice & {
     balance: number;
     status: Omit<PaymentStatus, 'All'>;
 };
-
-import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function PaymentsPage() {
   const { firestore, user } = useFirebase();
@@ -119,7 +118,8 @@ export default function PaymentsPage() {
     billed: true,
     received: true,
     tds: true,
-    balance: true
+    balance: true,
+    dueDays: false // Default to false but available
   });
 
 
@@ -814,7 +814,8 @@ export default function PaymentsPage() {
                                     { id: 'billed', label: 'Billed Amt' },
                                     { id: 'received', label: 'Received' },
                                     { id: 'tds', label: 'TDS' },
-                                    { id: 'balance', label: 'Balance' }
+                                    { id: 'balance', label: 'Balance' },
+                                    { id: 'dueDays', label: 'Due Days', icon: <CalendarClock className="h-3 w-3" /> }
                                 ].map((col) => (
                                     <div key={col.id} className="flex items-center space-x-2">
                                         <Checkbox 
@@ -822,7 +823,10 @@ export default function PaymentsPage() {
                                             checked={visibleColumns[col.id]} 
                                             onCheckedChange={(checked) => updateVisibleColumn(col.id, !!checked)} 
                                         />
-                                        <Label htmlFor={`col-${col.id}`} className="text-xs font-bold cursor-pointer">{col.label}</Label>
+                                        <Label htmlFor={`col-${col.id}`} className="text-xs font-bold cursor-pointer flex items-center gap-1.5">
+                                            {col.label}
+                                            {col.icon}
+                                        </Label>
                                     </div>
                                 ))}
                             </div>
