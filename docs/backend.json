@@ -344,6 +344,14 @@
           "type": "string",
           "description": "GST Identification Number of the company."
         },
+        "kindAttn": {
+          "type": "string",
+          "description": "Default attention person name."
+        },
+        "contactNumber": {
+          "type": "string",
+          "description": "Default contact number for attention person."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"

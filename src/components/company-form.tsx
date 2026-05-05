@@ -12,6 +12,8 @@ export type CompanyFormData = {
   name: string;
   address: string;
   gstin: string;
+  kindAttn: string;
+  contactNumber: string;
 };
 
 interface CompanyFormProps {
@@ -26,6 +28,8 @@ export function CompanyForm({ onSubmit, initialData, mode }: CompanyFormProps) {
     name: '',
     address: '',
     gstin: '',
+    kindAttn: '',
+    contactNumber: '',
   });
 
   useEffect(() => {
@@ -34,12 +38,16 @@ export function CompanyForm({ onSubmit, initialData, mode }: CompanyFormProps) {
         name: initialData.name,
         address: initialData.address,
         gstin: initialData.gstin || '',
+        kindAttn: initialData.kindAttn || '',
+        contactNumber: initialData.contactNumber || '',
       });
     } else {
       setFormData({
         name: '',
         address: '',
         gstin: '',
+        kindAttn: '',
+        contactNumber: '',
       });
     }
   }, [initialData, mode]);
@@ -76,8 +84,17 @@ export function CompanyForm({ onSubmit, initialData, mode }: CompanyFormProps) {
         <Label htmlFor="gstin">GSTIN</Label>
         <Input id="gstin" value={formData.gstin} onChange={handleInputChange} placeholder="e.g., 27AACCA4355K1ZL" />
       </div>
+      <Separator />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid gap-2">
+            <Label htmlFor="kindAttn">Kind Attn</Label>
+            <Input id="kindAttn" value={formData.kindAttn} onChange={handleInputChange} placeholder="e.g., Mr. Ajay Sharma" />
+        </div>
+        <div className="grid gap-2">
+            <Label htmlFor="contactNumber">Mobile Number</Label>
+            <Input id="contactNumber" value={formData.contactNumber} onChange={handleInputChange} placeholder="e.g., 9821000000" />
+        </div>
+      </div>
     </form>
   );
 }
-
-    

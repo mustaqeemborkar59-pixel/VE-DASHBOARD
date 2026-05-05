@@ -99,6 +99,8 @@ export type Company = {
     name: string;
     address: string;
     gstin?: string;
+    kindAttn?: string;
+    contactNumber?: string;
     createdAt: string;
 }
 
