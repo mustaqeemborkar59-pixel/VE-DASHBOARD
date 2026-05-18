@@ -71,9 +71,9 @@ export default function ChallansPage() {
         if (!forkliftSearch) return forklifts;
         const lower = forkliftSearch.toLowerCase();
         return forklifts.filter(f => 
-            f.serialNumber.toLowerCase().includes(lower) || 
-            f.make.toLowerCase().includes(lower) || 
-            f.model.toLowerCase().includes(lower)
+            String(f.serialNumber || '').toLowerCase().includes(lower) || 
+            String(f.make || '').toLowerCase().includes(lower) || 
+            String(f.model || '').toLowerCase().includes(lower)
         );
     }, [forklifts, forkliftSearch]);
 
