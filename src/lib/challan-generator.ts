@@ -53,7 +53,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const topPadding = margin + 5;
 
     // --- Header Section ---
-    doc.setFontSize(22); // Reduced from 28
+    doc.setFontSize(22);
     doc.setFont('times', 'bold');
     doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.text(`${data.enterprise === 'RV' ? 'R.V.' : 'Vithal'} Enterprises`, pageWidth / 2, topPadding + 10, { align: 'center' });
@@ -69,7 +69,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     const offAddr = "Off. : A/404, Astraea, Rustomjee Urbania, Near Lodha Paradise, Majiwada, Thane (W) - 400601.";
-    const workAddr = "Work : Sr No. 14/6A, Khot Bunglow, Near Transformer, Bhandarli, Pimpri, Thane - 400 612.";
+    const workAddr = "Work : Sr No. 14/6A, Khot Banglow, Near Transformer, Bhandarli, Pimpri, Thane - 400 612.";
     doc.text(offAddr, pageWidth / 2, topPadding + 25, { align: 'center' });
     doc.text(workAddr, pageWidth / 2, topPadding + 30, { align: 'center' });
 
@@ -93,7 +93,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         styles: { 
             fontSize: 9, 
             cellPadding: 3, 
-            halign: 'left', // Changed to left
+            halign: 'left',
             font: 'helvetica', 
             lineColor: [0, 0, 0], 
             lineWidth: 0.1,
@@ -134,18 +134,13 @@ export const generateChallanPdf = async (data: ChallanData) => {
         item.amount > 0 ? item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'
     ]);
 
-    // Fill minimum rows for structure
-    while (tableBody.length < 5) {
-        tableBody.push(['', '', '']);
-    }
-
     autoTable(doc, {
         startY: currentY,
         head: [['Sr.', 'Particulars', 'Amount (INR)']],
         body: tableBody,
         theme: 'grid',
         headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1, lineColor: [0, 0, 0] },
-        styles: { fontSize: 10, cellPadding: 4, font: 'helvetica', lineColor: [0, 0, 0], lineWidth: 0.1, minCellHeight: 10 },
+        styles: { fontSize: 10, cellPadding: 4, font: 'helvetica', lineColor: [0, 0, 0], lineWidth: 0.1, minCellHeight: 10, valign: 'top' },
         columnStyles: { 0: { cellWidth: 15, halign: 'center' }, 1: { cellWidth: contentWidth - 45 }, 2: { cellWidth: 30, halign: 'right' } },
         margin: { left: margin, right: margin },
         tableWidth: contentWidth
@@ -177,6 +172,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
         doc.addImage(stampImg, 'PNG', pageWidth - margin - 50, currentY + 5, 35, 35);
     } catch (e) {}
 
-    const fileName = `Challan_${data.challanNo}_${data.enterprise}.pdf`;
+    const fileName = `Challan_${data.challanNo.replace(/[/\\?%*:|"<>]/g, '-')}_${data.enterprise}.pdf`;
     doc.save(fileName);
 };
