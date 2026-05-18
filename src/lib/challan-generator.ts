@@ -77,7 +77,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
     
     doc.setFontSize(22);
     doc.setFont('times', 'bold');
-    // Vertical center calculation for header text
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, headerBlockY + (headerBlockHeight / 2) + 3, { align: 'center' });
 
     // Header Block Bottom Separator
@@ -161,33 +160,31 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- 5. Particulars Header (SYNCED WIDTHS) ---
-    autoTable(doc, {
-        startY: currentY,
-        head: [['SR.', 'PARTICULARS', 'AMOUNT']],
-        theme: 'grid',
-        tableWidth: contentWidth,
-        styles: { 
-            fontSize: 9, 
-            cellPadding: 3, 
-            lineColor: 0, 
-            lineWidth: thinBorder, 
-            font: 'helvetica',
-            textColor: 0,
-            halign: 'center'
-        },
-        headStyles: { fillColor: 245, textColor: 0, fontStyle: 'bold' },
-        columnStyles: {
-            0: { cellWidth: srWidth },
-            1: { cellWidth: particularsWidth, halign: 'center' },
-            2: { cellWidth: amountWidth }
-        },
-        margin: { left: margin, right: margin },
-    });
-
-    const bodyStartY = (doc as any).lastAutoTable.finalY;
+    // --- 5. Manual Header Row (Ensures Perfect Alignment with Vertical Dividers) ---
+    const headerRowHeight = 8;
+    const headerStartY = currentY;
     
-    // --- 6. Independent Manual Title: "(NOT FOR SALE)" ---
+    // Header Background
+    doc.setFillColor(245, 245, 245);
+    doc.rect(margin, headerStartY, contentWidth, headerRowHeight, 'F');
+    
+    // Header Frame Lines
+    doc.setLineWidth(thinBorder);
+    doc.setDrawColor(0);
+    doc.line(margin, headerStartY, margin + contentWidth, headerStartY); // Top border
+    doc.line(margin, headerStartY + headerRowHeight, margin + contentWidth, headerStartY + headerRowHeight); // Bottom border
+    
+    // Header Text
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text("SR.", margin + (srWidth / 2), headerStartY + 5.5, { align: 'center' });
+    doc.text("PARTICULARS", margin + srWidth + (particularsWidth / 2), headerStartY + 5.5, { align: 'center' });
+    doc.text("AMOUNT", margin + contentWidth - (amountWidth / 2), headerStartY + 5.5, { align: 'center' });
+
+    currentY = headerStartY + headerRowHeight;
+    const bodyStartY = currentY;
+    
+    // --- 6. Independent Title: "(NOT FOR SALE)" ---
     doc.setFontSize(data.titleFontSize || 10);
     doc.setFont('helvetica', 'bold');
     const titleText = "(NOT FOR SALE)";
@@ -200,7 +197,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setLineWidth(0.2);
     doc.line(titleX - (tw / 2), titleY + 1, titleX + (tw / 2), titleY + 1);
 
-    // --- 7. Manual Listing (No Row Dividers) ---
+    // --- 7. Manual Item Listing (No Horizontal Lines) ---
     let itemY = titleY + 10;
     doc.setFontSize(data.particularsFontSize || 9);
     doc.setFont('helvetica', 'normal');
@@ -209,11 +206,11 @@ export const generateChallanPdf = async (data: ChallanData) => {
         // SR No
         doc.text((index + 1).toString(), margin + (srWidth / 2), itemY, { align: 'center' });
         
-        // Particulars Listing
+        // Particulars Text
         const lines = doc.splitTextToSize(item.particulars.toUpperCase(), particularsWidth - 4);
         doc.text(lines, margin + srWidth + 2, itemY);
         
-        // Amount Listing
+        // Amount Text
         if (item.amount) {
             doc.text(`${item.amount.toFixed(2)}/-`, margin + contentWidth - 2, itemY, { align: 'right' });
         }
@@ -221,13 +218,13 @@ export const generateChallanPdf = async (data: ChallanData) => {
         itemY += (lines.length * 4.5) + 3;
     });
 
-    // --- 8. Persistent Vertical Dividers ---
+    // --- 8. Persistent Vertical Dividers (Starting from Header) ---
     doc.setLineWidth(thinBorder);
     doc.setDrawColor(0);
-    doc.line(margin + srWidth, bodyStartY, margin + srWidth, footerStartY);
-    doc.line(margin + srWidth + particularsWidth, bodyStartY, margin + srWidth + particularsWidth, footerStartY);
+    doc.line(margin + srWidth, headerStartY, margin + srWidth, footerStartY);
+    doc.line(margin + contentWidth - amountWidth, headerStartY, margin + contentWidth - amountWidth, footerStartY);
 
-    // --- 9. Fixed Signature Footer ---
+    // --- 9. Fixed Signature Footer (Integrated at absolute bottom) ---
     autoTable(doc, {
         startY: footerStartY,
         body: [[
