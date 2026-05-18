@@ -84,16 +84,16 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     let currentY = topPadding + 40;
 
-    // --- Challan Info Row ---
+    // --- Challan Info Row (Titles 8.5pt, Values 11pt Bold) ---
     const drawInfoCell = (title: string, value: string, x: number, width: number) => {
         doc.setFontSize(8.5); 
         doc.setFont('helvetica', 'normal');
-        doc.text(title, x + 2, currentY + 5);
+        doc.text(title, x + 2, currentY + 5.2);
         
         const titleWidth = doc.getTextWidth(title);
         doc.setFontSize(11); 
         doc.setFont('helvetica', 'bold');
-        doc.text(value, x + 2 + titleWidth + 2, currentY + 5.2);
+        doc.text(value, x + 2 + titleWidth + 2, currentY + 5.5);
         
         doc.setLineWidth(thinBorder);
         doc.rect(x, currentY, width, 8);
@@ -134,7 +134,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Address Content Section (50/50 Split) ---
+    // --- Address Content Section (50/50 Split - Uppercase) ---
     autoTable(doc, {
         startY: currentY,
         body: [[
@@ -162,10 +162,10 @@ export const generateChallanPdf = async (data: ChallanData) => {
     currentY = (doc as any).lastAutoTable.finalY;
 
     // --- FOOTER LOCK LOGIC ---
-    const footerHeight = 20; // 2cm
+    const footerHeight = 20; // Exactly 2cm
     const footerStartY = pageHeight - margin - footerHeight;
 
-    // (Particulars table removed as requested for temp)
+    // Note: Particulars table temporarily removed per request to fix alignment
 
     // --- Single Integrated Signature Row (2cm Height, 70/30 Split) ---
     autoTable(doc, {
@@ -192,7 +192,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         margin: { left: margin, right: margin },
         tableWidth: contentWidth,
         didDrawCell: (hook) => {
-            // Draw "Signature" label only in the right cell, at the bottom-right corner
+            // Place single chhota Signature label at bottom right of the right-side cell
             if (hook.section === 'body' && hook.column.index === 1) {
                 const cell = hook.cell;
                 doc.setFontSize(7);
@@ -202,7 +202,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         }
     });
 
-    // Optional Stamp
+    // Optional Stamp (Automatically placed near signature)
     if (data.includeStamp) {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
