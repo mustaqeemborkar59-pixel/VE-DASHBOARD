@@ -121,7 +121,8 @@ export const generateChallanPdf = async (data: ChallanData) => {
             cellPadding: { top: 2, bottom: 2, left: 4, right: 4 },
             lineColor: [0, 0, 0],
             lineWidth: thinBorder,
-            textColor: [0, 0, 0]
+            textColor: [0, 0, 0],
+            minCellHeight: 6 // Compact header
         },
         columnStyles: { 
             0: { cellWidth: contentWidth / 2 }, 
@@ -163,7 +164,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    const footerAreaHeight = 25; 
+    const footerAreaHeight = 35; // Increased to accommodate 2cm row
     const footerStartY = pageHeight - margin - footerAreaHeight;
     const tableAreaBottomY = footerStartY - 5;
 
@@ -210,6 +211,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     const tableFinalY = (doc as any).lastAutoTable.finalY;
 
+    // Draw vertical lines to the signature area if table is short
     if (tableFinalY < tableAreaBottomY) {
         doc.setDrawColor(0);
         doc.setLineWidth(thinBorder);
@@ -224,28 +226,50 @@ export const generateChallanPdf = async (data: ChallanData) => {
         doc.line(margin, tableFinalY, pageWidth - margin, tableFinalY);
     }
 
-    const footerY = footerStartY;
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0);
-    doc.text("RECEIVED BY", margin + 10, footerY);
-    
+    // --- 2cm Signature Row ---
     const enterpriseName = data.enterprise === 'RV' ? 'R.V.' : 'VITHAL';
-    doc.text(`FOR ${enterpriseName} ENTERPRISES`, pageWidth - margin - 10, footerY, { align: 'right' });
+    autoTable(doc, {
+        startY: tableAreaBottomY,
+        body: [[
+            'RECEIVED BY',
+            `FOR ${enterpriseName} ENTERPRISES`
+        ]],
+        theme: 'grid',
+        styles: {
+            fontSize: 10,
+            fontStyle: 'bold',
+            minCellHeight: 20, // 2cm row height
+            valign: 'top',
+            lineColor: [0, 0, 0],
+            lineWidth: thinBorder,
+            textColor: [0, 0, 0],
+            cellPadding: { top: 4, left: 4, right: 4, bottom: 4 }
+        },
+        columnStyles: {
+            0: { cellWidth: contentWidth / 2, halign: 'left' },
+            1: { cellWidth: contentWidth / 2, halign: 'right' }
+        },
+        margin: { left: margin, right: margin },
+        tableWidth: contentWidth
+    });
 
+    const sigFinalY = (doc as any).lastAutoTable.finalY;
+
+    // Stamp logic inside the signature area
     if (data.includeStamp) {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
             const stampImg = await loadImage(stampFile);
-            doc.addImage(stampImg, 'PNG', pageWidth - margin - 52, footerY - 26, 38, 38);
+            // Position stamp above signatory text but within the 2cm row area
+            doc.addImage(stampImg, 'PNG', pageWidth - margin - 50, sigFinalY - 26, 35, 35);
         } catch (e) {
             console.error("Stamp failed to load", e);
         }
     }
 
     doc.setFontSize(9.5);
-    doc.text("AUTHORISED SIGNATORY", pageWidth - margin - 10, footerY + 12, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.text("AUTHORISED SIGNATORY", pageWidth - margin - 4, sigFinalY - 4, { align: 'right' });
 
     const fileName = `Challan_${data.challanNo.replace(/[/\\?%*:|"<>]/g, '-')}_${data.enterprise}.pdf`;
     doc.save(fileName);
