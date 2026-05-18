@@ -63,7 +63,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setTextColor(0, 0, 0);
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, topPadding + 10, { align: 'center' });
 
-    // Solid Line below Firm Name (Blueprint: Separator Line)
+    // Solid Line below Firm Name
     doc.setDrawColor(0); 
     doc.setLineWidth(0.3);
     doc.line(margin + 5, topPadding + 13, pageWidth - margin - 5, topPadding + 13);
@@ -84,14 +84,14 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     let currentY = topPadding + 40;
 
-    // --- Challan Info Row (Contrast Font Sizes) ---
+    // --- Challan Info Row ---
     const drawInfoCell = (title: string, value: string, x: number, width: number) => {
-        doc.setFontSize(8.5); // Blueprint: Smaller Title
+        doc.setFontSize(8.5); 
         doc.setFont('helvetica', 'normal');
         doc.text(title, x + 2, currentY + 5);
         
         const titleWidth = doc.getTextWidth(title);
-        doc.setFontSize(11); // Blueprint: Larger Bold Value
+        doc.setFontSize(11); 
         doc.setFont('helvetica', 'bold');
         doc.text(value, x + 2 + titleWidth + 2, currentY + 5.2);
         
@@ -106,7 +106,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY += 8;
 
-    // --- Addresses Labels Row (Lock 50/50 ratio) ---
+    // --- Addresses Labels Row ---
     autoTable(doc, {
         startY: currentY,
         body: [
@@ -134,7 +134,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Address Content section (Independent Fonts & Uppercase) ---
+    // --- Address Content section (Uppercase) ---
     autoTable(doc, {
         startY: currentY,
         body: [[
@@ -161,10 +161,9 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // Mathematics for 1-Page Layout Lock
-    const footerHeight = 20; // 2cm Signature Row
+    // MATHEMATICS FOR 1-PAGE LAYOUT LOCK
+    const footerHeight = 20; // 2cm height
     const footerStartY = pageHeight - margin - footerHeight;
-    const tableAreaBottomY = footerStartY;
 
     // --- Items Table ---
     const tableBody = data.items.map((item, index) => [
@@ -204,35 +203,25 @@ export const generateChallanPdf = async (data: ChallanData) => {
             2: { cellWidth: 30, halign: 'right' } 
         },
         margin: { left: margin, right: margin },
-        tableWidth: contentWidth,
-        didParseCell: (hook) => {
-            if (hook.section === 'body' && hook.column.index === 1) {
-                const text = hook.cell.text[0] || '';
-                if (text.includes('•')) hook.cell.styles.fontStyle = 'normal';
-            }
-        }
+        tableWidth: contentWidth
     });
 
     const tableFinalY = (doc as any).lastAutoTable.finalY;
 
-    // Blueprint: Stretch table lines to footer
-    if (tableFinalY < tableAreaBottomY) {
+    // Stretch table lines to meet the footer
+    if (tableFinalY < footerStartY) {
         doc.setDrawColor(0);
         doc.setLineWidth(thinBorder);
-        doc.line(margin, tableFinalY, margin, tableAreaBottomY);
-        doc.line(margin + 15, tableFinalY, margin + 15, tableAreaBottomY);
-        doc.line(pageWidth - margin - 30, tableFinalY, pageWidth - margin - 30, tableAreaBottomY);
-        doc.line(pageWidth - margin, tableFinalY, pageWidth - margin, tableAreaBottomY);
-        doc.line(margin, tableAreaBottomY, pageWidth - margin, tableAreaBottomY);
-    } else {
-        doc.setDrawColor(0);
-        doc.setLineWidth(thinBorder);
-        doc.line(margin, tableFinalY, pageWidth - margin, tableFinalY);
+        doc.line(margin, tableFinalY, margin, footerStartY);
+        doc.line(margin + 15, tableFinalY, margin + 15, footerStartY);
+        doc.line(pageWidth - margin - 30, tableFinalY, pageWidth - margin - 30, footerStartY);
+        doc.line(pageWidth - margin, tableFinalY, pageWidth - margin, footerStartY);
+        doc.line(margin, footerStartY, pageWidth - margin, footerStartY);
     }
 
-    // --- Blueprint: Integrated 2cm Signature Row (70/30 Area Split) ---
+    // --- Fixed 2cm Signature Row (70/30 Area Split) ---
     autoTable(doc, {
-        startY: tableAreaBottomY,
+        startY: footerStartY,
         body: [[
             'RECEIVED BY',
             `FOR ${data.enterprise === 'RV' ? 'R.V.' : 'VITHAL'} ENTERPRISES`
@@ -241,7 +230,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         styles: {
             fontSize: 10,
             fontStyle: 'bold',
-            minCellHeight: 20, 
+            minCellHeight: footerHeight, // 20mm height
             valign: 'top',
             lineColor: [0, 0, 0],
             lineWidth: thinBorder,
@@ -255,7 +244,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         margin: { left: margin, right: margin },
         tableWidth: contentWidth,
         didDrawCell: (hook) => {
-            // Blueprint: Small "Signature" label at bottom-right corner of right cell
+            // Draw small "Signature" label at bottom-right corner of right cell
             if (hook.section === 'body' && hook.column.index === 1) {
                 const cell = hook.cell;
                 doc.setFontSize(7);
@@ -265,14 +254,13 @@ export const generateChallanPdf = async (data: ChallanData) => {
         }
     });
 
-    const sigFinalY = (doc as any).lastAutoTable.finalY;
-
     // Optional Stamp
     if (data.includeStamp) {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
             const stampImg = await loadImage(stampFile);
-            doc.addImage(stampImg, 'PNG', pageWidth - margin - 35, sigFinalY - 26, 30, 30);
+            const stampSize = 30;
+            doc.addImage(stampImg, 'PNG', pageWidth - margin - 35, pageHeight - margin - footerHeight - 5, stampSize, stampSize);
         } catch (e) { }
     }
 

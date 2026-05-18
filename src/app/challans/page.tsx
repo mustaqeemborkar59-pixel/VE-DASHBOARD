@@ -446,12 +446,6 @@ export default function ChallansPage() {
                                     />
                                 </div>
                             </div>
-                            <div className="bg-amber-50 dark:bg-amber-900/10 p-3 rounded-xl border border-amber-100 dark:border-amber-900/30 flex gap-3">
-                                <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                                <p className="text-[10px] text-amber-800 dark:text-amber-400 font-medium leading-relaxed">
-                                    PDF results will use <b>UPPERCASE</b> addresses. Headers automatically sync company names next to labels.
-                                </p>
-                            </div>
                         </CardContent>
                     </Card>
                 </div>
