@@ -45,7 +45,8 @@ export default function ChallansPage() {
 
     // "Delivery To" Selection
     const [deliveryToId, setDeliveryToId] = useState('');
-    const [manualDeliveryTo, setManualDeliveryTo] = useState({ name: '', address: '' });
+    const [manualDeliveryToName, setManualDeliveryToName] = useState('');
+    const [deliveryToAddress, setDeliveryToAddress] = useState('');
     
     const [items, setItems] = useState<ChallanItem[]>([{ particulars: '', amount: 0 }]);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -74,14 +75,14 @@ export default function ChallansPage() {
     );
     const { data: settings } = useDoc<CompanySettings>(settingsRef);
 
-    const selectedDeliveryCompany = useMemo(() => 
-        companies?.find(c => c.id === deliveryToId), 
-        [companies, deliveryToId]
-    );
-
     const selectedFromCompany = useMemo(() => 
         companies?.find(c => c.id === fromId), 
         [companies, fromId]
+    );
+
+    const selectedDeliveryCompany = useMemo(() => 
+        companies?.find(c => c.id === deliveryToId), 
+        [companies, deliveryToId]
     );
 
     // Sync From Address when selection changes
@@ -92,6 +93,15 @@ export default function ChallansPage() {
             setFromAddress(selectedFromCompany.address);
         }
     }, [fromId, selectedFromCompany]);
+
+    // Sync Delivery Address when selection changes
+    useEffect(() => {
+        if (deliveryToId === 'enterprise') {
+            setDeliveryToAddress(DEFAULT_ADDRESS);
+        } else if (deliveryToId !== 'manual' && selectedDeliveryCompany) {
+            setDeliveryToAddress(selectedDeliveryCompany.address);
+        }
+    }, [deliveryToId, selectedDeliveryCompany]);
 
     const filteredForklifts = useMemo(() => {
         if (!forklifts) return [];
@@ -155,8 +165,9 @@ export default function ChallansPage() {
             ? (enterprise === 'Vithal' ? 'Vithal Enterprises' : 'R.V. Enterprises')
             : fromId === 'manual' ? manualFromName : (selectedFromCompany?.name || '');
 
-        const deliveryToName = deliveryToId === 'manual' ? manualDeliveryTo.name : (selectedDeliveryCompany?.name || '');
-        const deliveryToAddress = deliveryToId === 'manual' ? manualDeliveryTo.address : (selectedDeliveryCompany?.address || '');
+        const deliveryToName = deliveryToId === 'enterprise'
+            ? (enterprise === 'Vithal' ? 'Vithal Enterprises' : 'R.V. Enterprises')
+            : deliveryToId === 'manual' ? manualDeliveryToName : (selectedDeliveryCompany?.name || '');
 
         setIsGenerating(true);
         try {
@@ -282,29 +293,24 @@ export default function ChallansPage() {
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Delivery To Selection</Label>
                                     <Select value={deliveryToId} onValueChange={setDeliveryToId}>
                                         <SelectTrigger className="h-10 text-xs font-bold">
-                                            <SelectValue placeholder="Select Client Company" />
+                                            <SelectValue placeholder="Select Destination" />
                                         </SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="enterprise">Default Enterprise</SelectItem>
                                             <SelectItem value="manual">-- Manual Entry --</SelectItem>
+                                            <Separator className="my-1" />
                                             {companies?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
 
-                                    {deliveryToId === 'manual' ? (
-                                        <div className="space-y-2">
-                                            <Input placeholder="Client Name" value={manualDeliveryTo.name} onChange={e => setManualDeliveryTo({...manualDeliveryTo, name: e.target.value})} className="h-8 text-xs font-bold" />
-                                            <Textarea placeholder="Client Address" value={manualDeliveryTo.address} onChange={e => setManualDeliveryTo({...manualDeliveryTo, address: e.target.value})} className="min-h-[60px] text-xs p-2" />
-                                        </div>
-                                    ) : selectedDeliveryCompany ? (
-                                        <div className="p-3 rounded-xl bg-muted/30 border border-dashed text-[10px] leading-relaxed">
-                                            <p className="font-black text-foreground">{selectedDeliveryCompany.name}</p>
-                                            <p className="text-muted-foreground line-clamp-3">{selectedDeliveryCompany.address}</p>
-                                        </div>
-                                    ) : (
-                                        <div className="h-[100px] flex items-center justify-center border-2 border-dashed rounded-xl bg-muted/10">
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-40">Select Client Company</p>
-                                        </div>
+                                    {deliveryToId === 'manual' && (
+                                        <Input placeholder="Client Name" value={manualDeliveryToName} onChange={e => setManualDeliveryToName(e.target.value)} className="h-8 text-xs font-bold" />
                                     )}
+
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[9px] font-bold text-muted-foreground/60 uppercase">Delivery Address</Label>
+                                        <Textarea value={deliveryToAddress} onChange={e => setDeliveryToAddress(e.target.value)} className="min-h-[80px] text-xs leading-relaxed" />
+                                    </div>
                                 </div>
                             </div>
 
@@ -409,7 +415,9 @@ export default function ChallansPage() {
                                     </div>
                                     <div className="flex justify-between text-xs">
                                         <span className="text-muted-foreground">To:</span>
-                                        <span className="font-bold text-right truncate max-w-[150px]">{deliveryToId === 'manual' ? manualDeliveryTo.name : (selectedDeliveryCompany?.name || '-')}</span>
+                                        <span className="font-bold text-right truncate max-w-[150px]">
+                                            {deliveryToId === 'enterprise' ? `${enterprise} Ent.` : (deliveryToId === 'manual' ? manualDeliveryToName : (selectedDeliveryCompany?.name || '-'))}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between text-xs">
                                         <span className="text-muted-foreground">Date:</span>
