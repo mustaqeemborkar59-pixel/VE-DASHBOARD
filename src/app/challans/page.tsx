@@ -142,8 +142,11 @@ export default function ChallansPage() {
     const handleSelectForklift = (forklift: Forklift) => {
         if (activeItemIndex === null) return;
 
+        // Determine machine label based on equipmentType
+        const machineType = forklift.equipmentType || 'FORKLIFT';
+        
         const details = [
-            `BATTERY OPERATED ELECTRIC FORKLIFT`,
+            machineType.toUpperCase(),
             `   • S.No: ${forklift.serialNumber}`,
             `   • Capacity: ${forklift.capacity || 'N/A'}`,
             `   • Make: ${forklift.make} | Model: ${forklift.model}`,
