@@ -63,7 +63,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
     
     doc.setFontSize(22);
     doc.setFont('times', 'bold');
-    // Vertical/Horizontal centering in 20mm box
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, headerY + 13, { align: 'center' });
 
     // Full-width Bottom Border for Header Block
@@ -146,29 +145,15 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- 5. Items Table Section (Strict Alignment with "NOT FOR SALE" Title Row) ---
+    // --- 5. Items Table Header ---
     const srWidth = 15;
     const amountWidth = 30;
     const particularsWidth = contentWidth - srWidth - amountWidth;
 
-    const validItems = data.items.filter(item => item.particulars.trim() !== '');
-
-    // Construct body with "(NOT FOR SALE)" as the first row
-    const bodyData = [
-        ['', '(NOT FOR SALE)', ''],
-        ...validItems.map((item, index) => [
-            (index + 1).toString(),
-            item.particulars.toUpperCase(),
-            item.amount ? `${item.amount.toFixed(2)}/-` : ''
-        ])
-    ];
-
     autoTable(doc, {
         startY: currentY,
         head: [['SR.', 'PARTICULARS', 'AMOUNT']],
-        body: bodyData,
         theme: 'grid',
-        tableWidth: contentWidth,
         styles: { 
             fontSize: 9, 
             cellPadding: 3, 
@@ -176,64 +161,63 @@ export const generateChallanPdf = async (data: ChallanData) => {
             lineWidth: thinBorder, 
             font: 'helvetica',
             textColor: 0,
-            overflow: 'linebreak',
-            minCellHeight: 8
+            halign: 'center'
         },
-        headStyles: { fillColor: 245, textColor: 0, fontStyle: 'bold', halign: 'center' },
+        headStyles: { fillColor: 245, textColor: 0, fontStyle: 'bold' },
         columnStyles: {
-            0: { cellWidth: srWidth, halign: 'center' },
+            0: { cellWidth: srWidth },
             1: { cellWidth: particularsWidth, halign: 'left' },
             2: { cellWidth: amountWidth, halign: 'right' }
         },
         margin: { left: margin, right: margin },
-        didParseCell: (hookData) => {
-            // Apply special styling to "(NOT FOR SALE)" row
-            if (hookData.section === 'body' && hookData.row.index === 0) {
-                if (hookData.column.index === 1) {
-                    hookData.cell.styles.halign = 'center';
-                    hookData.cell.styles.fontStyle = 'bold';
-                }
-            }
-        },
-        didDrawCell: (hookData) => {
-            // Manually draw the underline for "(NOT FOR SALE)"
-            if (hookData.section === 'body' && hookData.row.index === 0 && hookData.column.index === 1) {
-                const cell = hookData.cell;
-                const text = '(NOT FOR SALE)';
-                const textWidth = doc.getTextWidth(text);
-                
-                // Get dimensions to find baseline
-                const textDim = doc.getTextDimensions(text);
-                const x = cell.x + (cell.width - textWidth) / 2;
-                // Position underline slightly below text baseline
-                const y = cell.y + (cell.height / 2) + (textDim.h / 2) - 0.5;
-                
-                doc.setLineWidth(0.2);
-                doc.setDrawColor(0);
-                doc.line(x, y, x + textWidth, y);
-            }
-        }
     });
 
-    const tableFinalY = (doc as any).lastAutoTable.finalY;
+    const tableHeaderFinalY = (doc as any).lastAutoTable.finalY;
     
-    // Draw manual frame lines from table end to footer start
+    // --- 6. Title: "(NOT FOR SALE)" (Independent centered title, NO ROW LINE) ---
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    const titleText = "(NOT FOR SALE)";
+    const titleX = margin + srWidth + (particularsWidth / 2);
+    const titleY = tableHeaderFinalY + 8;
+    doc.text(titleText, titleX, titleY, { align: 'center' });
+    
+    // Manual Underline
+    const tw = doc.getTextWidth(titleText);
+    doc.setLineWidth(0.2);
+    doc.line(titleX - (tw / 2), titleY + 1, titleX + (tw / 2), titleY + 1);
+
+    // --- 7. List Items below title (NO ROW DIVIDERS) ---
+    let itemY = titleY + 10;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+
+    data.items.filter(i => i.particulars.trim()).forEach((item, index) => {
+        // SR No
+        doc.text((index + 1).toString(), margin + (srWidth / 2), itemY, { align: 'center' });
+        
+        // Particulars (supports multi-line)
+        const lines = doc.splitTextToSize(item.particulars.toUpperCase(), particularsWidth - 4);
+        doc.text(lines, margin + srWidth + 2, itemY);
+        
+        // Amount
+        if (item.amount) {
+            doc.text(`${item.amount.toFixed(2)}/-`, margin + srWidth + particularsWidth + amountWidth - 2, itemY, { align: 'right' });
+        }
+        
+        // Move Y based on lines
+        itemY += (lines.length * 4.5) + 3;
+    });
+
+    // --- 8. Vertical Dividers (Top to Footer) ---
     doc.setLineWidth(thinBorder);
     doc.setDrawColor(0);
-    
-    // Left border
-    doc.line(margin, tableFinalY, margin, footerStartY);
-    // SR Divider
-    doc.line(margin + srWidth, tableFinalY, margin + srWidth, footerStartY);
-    // AMOUNT Divider
-    doc.line(margin + srWidth + particularsWidth, tableFinalY, margin + srWidth + particularsWidth, footerStartY);
-    // Right border
-    doc.line(pageWidth - margin, tableFinalY, pageWidth - margin, footerStartY);
-    
-    // Bottom border before signature
-    doc.line(margin, footerStartY, pageWidth - margin, footerStartY);
+    // Vertical Line 1: SR Divider
+    doc.line(margin + srWidth, tableHeaderFinalY - 8.5, margin + srWidth, footerStartY);
+    // Vertical Line 2: Amount Divider
+    doc.line(margin + srWidth + particularsWidth, tableHeaderFinalY - 8.5, margin + srWidth + particularsWidth, footerStartY);
 
-    // --- 6. Integrated Signature Row (Fixed 2cm at absolute bottom) ---
+    // --- 9. Integrated Signature Row (Fixed 2cm at absolute bottom) ---
     autoTable(doc, {
         startY: footerStartY,
         body: [[
