@@ -63,28 +63,28 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setTextColor(0, 0, 0);
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, topPadding + 10, { align: 'center' });
 
-    // Line below Firm Name (Separator)
+    // Solid Line below Firm Name (Requested Separator)
     doc.setDrawColor(0); 
     doc.setLineWidth(0.3);
-    doc.line(margin + 5, topPadding + 14, pageWidth - margin - 5, topPadding + 14);
+    doc.line(margin + 5, topPadding + 13, pageWidth - margin - 5, topPadding + 13);
 
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text("Supplier of Material Handling Equipments & Labour", pageWidth / 2, topPadding + 20, { align: 'center' });
+    doc.text("Supplier of Material Handling Equipments & Labour", pageWidth / 2, topPadding + 19, { align: 'center' });
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     const offAddr = "Off. : A/404, Astraea, Rustomjee Urbania, Near Lodha Paradise, Majiwada, Thane (W) - 400601.";
     const workAddr = "Work : Sr No. 14/6A, Khot Banglow, Near Transformer, Bhandarli, Pimpri, Thane - 400 612.";
-    doc.text(offAddr, pageWidth / 2, topPadding + 25, { align: 'center' });
-    doc.text(workAddr, pageWidth / 2, topPadding + 30, { align: 'center' });
+    doc.text(offAddr, pageWidth / 2, topPadding + 24, { align: 'center' });
+    doc.text(workAddr, pageWidth / 2, topPadding + 29, { align: 'center' });
 
     doc.setFont('helvetica', 'bold');
-    doc.text(`PAN: ${data.pan} | GSTIN: ${data.gstin}`, pageWidth / 2, topPadding + 36, { align: 'center' });
+    doc.text(`PAN: ${data.pan} | GSTIN: ${data.gstin}`, pageWidth / 2, topPadding + 35, { align: 'center' });
 
-    let currentY = topPadding + 42;
+    let currentY = topPadding + 40;
 
-    // --- Challan Info Line (Variable Font Sizes) ---
+    // --- Challan Info Row (Contrast Font Sizes) ---
     const drawInfoCell = (title: string, value: string, x: number, width: number) => {
         doc.setFontSize(8.5);
         doc.setFont('helvetica', 'normal');
@@ -106,7 +106,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY += 8;
 
-    // --- Addresses Labels Row (Lock 50/50 alignment) ---
+    // --- Addresses Labels Row (Lock 50/50 ratio) ---
     autoTable(doc, {
         startY: currentY,
         body: [
@@ -119,7 +119,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         styles: {
             fontSize: 9,
             fontStyle: 'bold',
-            cellPadding: { top: 3.5, bottom: 3.5, left: 4, right: 4 },
+            cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
             lineColor: [0, 0, 0],
             lineWidth: thinBorder,
             textColor: [0, 0, 0],
@@ -134,7 +134,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Address Content Section (UPPERCASE & Independent Fonts) ---
+    // --- Address Content section (Independent Fonts & Uppercase) ---
     autoTable(doc, {
         startY: currentY,
         body: [[
@@ -142,9 +142,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
             data.deliveryToAddress.toUpperCase()
         ]],
         theme: 'grid',
-        bodyStyles: {
-            minCellHeight: 30 
-        },
         styles: { 
             cellPadding: 4, 
             font: 'helvetica', 
@@ -152,6 +149,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
             lineColor: [0, 0, 0], 
             lineWidth: thinBorder, 
             valign: 'top',
+            minCellHeight: 25
         },
         columnStyles: { 
             0: { cellWidth: contentWidth / 2, fontSize: data.fromAddressFontSize || 10 }, 
@@ -163,18 +161,17 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    const footerAreaHeight = 20; 
-    const footerStartY = pageHeight - margin - footerAreaHeight;
+    // Mathematics for 1-Page Layout
+    const footerHeight = 20; // 2cm Signature Row
+    const footerStartY = pageHeight - margin - footerHeight;
     const tableAreaBottomY = footerStartY;
 
     // --- Items Table ---
-    const tableBody = data.items.map((item, index) => {
-        return [
-            index + 1,
-            item.particulars.toUpperCase(),
-            item.amount > 0 ? item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'
-        ];
-    });
+    const tableBody = data.items.map((item, index) => [
+        index + 1,
+        item.particulars.toUpperCase(),
+        item.amount > 0 ? item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'
+    ]);
 
     autoTable(doc, {
         startY: currentY,
@@ -218,7 +215,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     const tableFinalY = (doc as any).lastAutoTable.finalY;
 
-    // Draw vertical lines to the signature area if table is short
+    // Draw vertical divider lines to footer if table is short (industry look)
     if (tableFinalY < tableAreaBottomY) {
         doc.setDrawColor(0);
         doc.setLineWidth(thinBorder);
@@ -233,13 +230,12 @@ export const generateChallanPdf = async (data: ChallanData) => {
         doc.line(margin, tableFinalY, pageWidth - margin, tableFinalY);
     }
 
-    // --- 2cm Integrated Signature Row (70/30 Split) ---
-    const enterpriseShortName = data.enterprise === 'RV' ? 'R.V.' : 'VITHAL';
+    // --- Integrated 2cm Signature Row (70/30 Area Split) ---
     autoTable(doc, {
         startY: tableAreaBottomY,
         body: [[
             'RECEIVED BY',
-            `FOR ${enterpriseShortName} ENTERPRISES`
+            `FOR ${data.enterprise === 'RV' ? 'R.V.' : 'VITHAL'} ENTERPRISES`
         ]],
         theme: 'grid',
         styles: {
@@ -259,7 +255,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         margin: { left: margin, right: margin },
         tableWidth: contentWidth,
         didDrawCell: (hook) => {
-            // Draw "Signature" label at the bottom right of the right cell only
+            // Draw "Signature" only in the right cell bottom corner
             if (hook.section === 'body' && hook.column.index === 1) {
                 const cell = hook.cell;
                 doc.setFontSize(7);
@@ -271,14 +267,13 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     const sigFinalY = (doc as any).lastAutoTable.finalY;
 
+    // Optional Stamp
     if (data.includeStamp) {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
             const stampImg = await loadImage(stampFile);
             doc.addImage(stampImg, 'PNG', pageWidth - margin - 35, sigFinalY - 26, 30, 30);
-        } catch (e) {
-            console.error("Stamp failed to load", e);
-        }
+        } catch (e) { }
     }
 
     const fileName = `Challan_${data.challanNo.replace(/[/\\?%*:|"<>]/g, '-')}_${data.enterprise}.pdf`;
