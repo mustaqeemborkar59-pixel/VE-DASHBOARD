@@ -56,7 +56,8 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setFontSize(22);
     doc.setFont('times', 'bold');
     doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
-    doc.text(`${data.enterprise === 'RV' ? 'R.V.' : 'Vithal'} Enterprises`, pageWidth / 2, topPadding + 10, { align: 'center' });
+    const firmName = data.enterprise === 'RV' ? 'R.V. ENTERPRISES' : 'VITHAL ENTERPRISES';
+    doc.text(firmName, pageWidth / 2, topPadding + 10, { align: 'center' });
 
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
@@ -133,7 +134,11 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Items Table (No horizontal internal borders) ---
+    // Fixed Table Bottom Y to ensure columns go all the way down
+    const footerStartY = pageHeight - margin - 45;
+    const tableAreaBottomY = footerStartY - 10;
+
+    // --- Items Table ---
     const tableBody = data.items.map((item, index) => [
         index + 1,
         item.particulars,
@@ -156,41 +161,62 @@ export const generateChallanPdf = async (data: ChallanData) => {
             valign: 'top' 
         },
         bodyStyles: {
-            // Remove horizontal borders inside the body but keep vertical lines
             lineWidth: { left: 0.1, right: 0.1, top: 0, bottom: 0 }
         },
         columnStyles: { 0: { cellWidth: 15, halign: 'center' }, 1: { cellWidth: contentWidth - 45 }, 2: { cellWidth: 30, halign: 'right' } },
         margin: { left: margin, right: margin },
         tableWidth: contentWidth,
-        // Add a line at the very bottom of the table body to close it
-        didDrawPage: (data) => {
-            const finalY = (doc as any).lastAutoTable.finalY;
-            doc.setDrawColor(0);
-            doc.setLineWidth(0.1);
-            doc.line(margin, finalY, pageWidth - margin, finalY);
+        didDrawCell: (data) => {
+            // No specific logic needed here as we will draw vertical lines manually
         }
     });
 
+    const tableFinalY = (doc as any).lastAutoTable.finalY;
+
+    // Draw Vertical Lines down to the bottom of the table area
+    if (tableFinalY < tableAreaBottomY) {
+        doc.setDrawColor(0);
+        doc.setLineWidth(0.1);
+        
+        // Left Edge
+        doc.line(margin, tableFinalY, margin, tableAreaBottomY);
+        // Column 1 border
+        doc.line(margin + 15, tableFinalY, margin + 15, tableAreaBottomY);
+        // Column 2 border
+        doc.line(pageWidth - margin - 30, tableFinalY, pageWidth - margin - 30, tableAreaBottomY);
+        // Right Edge
+        doc.line(pageWidth - margin, tableFinalY, pageWidth - margin, tableAreaBottomY);
+        
+        // Bottom closing line
+        doc.line(margin, tableAreaBottomY, pageWidth - margin, tableAreaBottomY);
+    } else {
+        // If table naturally ends below the area, just close it
+        doc.setDrawColor(0);
+        doc.setLineWidth(0.1);
+        doc.line(margin, tableFinalY, pageWidth - margin, tableFinalY);
+    }
+
     // --- Footer / Signatures ---
-    // Increase space for footer to avoid cutting off
-    const footerY = pageHeight - margin - 45;
+    const footerY = footerStartY;
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0);
     doc.text("Received By", margin + 10, footerY);
     
-    const enterpriseName = data.enterprise === 'RV' ? 'R.V.' : 'Vithal';
-    doc.text(`For ${enterpriseName} Enterprises`, pageWidth - margin - 10, footerY, { align: 'right' });
+    const enterpriseName = data.enterprise === 'RV' ? 'R.V.' : 'VITHAL';
+    doc.text(`For ${enterpriseName} ENTERPRISES`, pageWidth - margin - 10, footerY, { align: 'right' });
 
     doc.setFontSize(9.5);
     doc.text("Authorised Signatory", pageWidth - margin - 10, footerY + 28, { align: 'right' });
 
-    // Stamp placement with safe padding
+    // --- Stamp Positioning ---
+    // User wants stamp in right corner ABOVE the row
     const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
     try {
         const stampImg = await loadImage(stampFile);
-        doc.addImage(stampImg, 'PNG', pageWidth - margin - 55, footerY - 5, 40, 40);
+        // Position stamp above the "For..." line in the right section
+        doc.addImage(stampImg, 'PNG', pageWidth - margin - 55, footerY - 45, 45, 45);
     } catch (e) {}
 
     const fileName = `Challan_${data.challanNo.replace(/[/\\?%*:|"<>]/g, '-')}_${data.enterprise}.pdf`;
