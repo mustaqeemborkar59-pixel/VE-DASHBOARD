@@ -136,7 +136,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     autoTable(doc, {
         startY: currentY,
-        head: [['Sr.', 'Particulars', 'Amount (INR)']],
+        head: [['Sr.', 'Particulars', 'Amount']],
         body: tableBody,
         theme: 'grid',
         headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1, lineColor: [0, 0, 0] },
