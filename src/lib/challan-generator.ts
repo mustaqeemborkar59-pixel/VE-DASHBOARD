@@ -57,26 +57,23 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.rect(margin, margin, contentWidth, pageHeight - (margin * 2));
 
     // --- 1. Firm Name Header (Exactly 2cm Height, Centered) ---
-    const headerHeight = 20; // 2cm
+    const headerHeight = 20; 
     const headerY = margin;
-    
     const enterpriseTitle = data.enterprise === 'RV' ? 'R.V. ENTERPRISES' : 'VITHAL ENTERPRISES';
     
-    // Background Frame for header (optional, keeping it clean)
-    doc.setLineWidth(thinBorder);
-    
-    // Centering Text vertically and horizontally in the 2cm block
     doc.setFontSize(22);
     doc.setFont('times', 'bold');
-    doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, headerY + (headerHeight / 2) + 3, { align: 'center' });
+    // Vertical centering in 20mm box: midpoint is 10mm. +3 for font baseline adjustment.
+    doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, headerY + 13, { align: 'center' });
 
-    // Full-width Bottom Border for Header (Sata huwa from left to right)
+    // Full-width Bottom Border for Header Block
+    doc.setLineWidth(thinBorder);
     doc.line(margin, headerY + headerHeight, pageWidth - margin, headerY + headerHeight);
 
     let currentY = headerY + headerHeight + 5;
 
     // --- 2. Subtitles & Tax Info ---
-    doc.setFontSize(10.5);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text("Supplier of Material Handling Equipments & Labour", pageWidth / 2, currentY, { align: 'center' });
     currentY += 5;
@@ -90,6 +87,11 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     doc.setFont('helvetica', 'bold');
     doc.text(`PAN: ${data.pan} | GSTIN: ${data.gstin}`, pageWidth / 2, currentY, { align: 'center' });
+    currentY += 5.5;
+
+    // NOT FOR SALE Mention
+    doc.setFontSize(11);
+    doc.text("(NOT FOR SALE)", pageWidth / 2, currentY, { align: 'center' });
     currentY += 5;
 
     // Line after header block
@@ -97,12 +99,12 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     // --- 3. Info Row (CHALLAN / VEHICLE / DATE) ---
     const drawInfoCell = (title: string, value: string, x: number, width: number, y: number) => {
-        doc.setFontSize(8.5); 
+        doc.setFontSize(8); 
         doc.setFont('helvetica', 'normal');
         doc.text(title, x + 2, y + 5.2);
         
         const titleWidth = doc.getTextWidth(title);
-        doc.setFontSize(10); 
+        doc.setFontSize(10.5); 
         doc.setFont('helvetica', 'bold');
         doc.text(value, x + 2 + titleWidth + 2, y + 5.5);
         
@@ -125,7 +127,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
             `DELIVERY TO :  ${data.deliveryToName.toUpperCase()}`
         ]],
         theme: 'grid',
-        styles: { fontSize: 9, fontStyle: 'bold', cellPadding: 3, lineColor: 0, lineWidth: thinBorder, textColor: 0 },
+        styles: { fontSize: 9, fontStyle: 'bold', cellPadding: 2.5, lineColor: 0, lineWidth: thinBorder, textColor: 0 },
         columnStyles: { 0: { cellWidth: contentWidth / 2 }, 1: { cellWidth: contentWidth / 2 } },
         margin: { left: margin, right: margin },
     });
@@ -139,22 +141,21 @@ export const generateChallanPdf = async (data: ChallanData) => {
             data.deliveryToAddress.toUpperCase()
         ]],
         theme: 'grid',
-        styles: { cellPadding: 4, font: 'helvetica', overflow: 'linebreak', lineColor: 0, lineWidth: thinBorder, valign: 'top', minCellHeight: 20 },
+        styles: { cellPadding: 3.5, font: 'helvetica', overflow: 'linebreak', lineColor: 0, lineWidth: thinBorder, valign: 'top', minCellHeight: 18 },
         columnStyles: { 
-            0: { cellWidth: contentWidth / 2, fontSize: data.fromAddressFontSize || 10 }, 
-            1: { cellWidth: contentWidth / 2, fontSize: data.deliveryToAddressFontSize || 10 } 
+            0: { cellWidth: contentWidth / 2, fontSize: data.fromAddressFontSize || 9.5 }, 
+            1: { cellWidth: contentWidth / 2, fontSize: data.deliveryToAddressFontSize || 9.5 } 
         },
         margin: { left: margin, right: margin },
     });
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- 5. Particulars Area (Fixed Width Alignment) ---
+    // --- 5. Items Table Section (Strict Alignment) ---
     const srWidth = 15;
     const amountWidth = 30;
     const particularsWidth = contentWidth - srWidth - amountWidth;
 
-    // Filter items to ensure we only render what user has entered
     const validItems = data.items.filter(item => item.particulars.trim() !== '');
 
     autoTable(doc, {
@@ -174,12 +175,13 @@ export const generateChallanPdf = async (data: ChallanData) => {
             lineWidth: thinBorder, 
             font: 'helvetica',
             textColor: 0,
-            overflow: 'linebreak'
+            overflow: 'linebreak',
+            minCellHeight: 8
         },
-        headStyles: { fillColor: 240, textColor: 0, fontStyle: 'bold', halign: 'center' },
+        headStyles: { fillColor: 245, textColor: 0, fontStyle: 'bold', halign: 'center' },
         columnStyles: {
             0: { cellWidth: srWidth, halign: 'center' },
-            1: { cellWidth: particularsWidth },
+            1: { cellWidth: particularsWidth, halign: 'left' },
             2: { cellWidth: amountWidth, halign: 'right' }
         },
         margin: { left: margin, right: margin }
@@ -187,20 +189,20 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     const tableFinalY = (doc as any).lastAutoTable.finalY;
     
-    // Draw manual vertical lines to match header exactly and stretch to footer
+    // Draw manual lines from table end to footer start for clean framed look
     doc.setLineWidth(thinBorder);
     doc.setDrawColor(0);
     
-    // Left boundary
+    // Left border
     doc.line(margin, tableFinalY, margin, footerStartY);
     // SR Divider
     doc.line(margin + srWidth, tableFinalY, margin + srWidth, footerStartY);
     // AMOUNT Divider
     doc.line(margin + srWidth + particularsWidth, tableFinalY, margin + srWidth + particularsWidth, footerStartY);
-    // Right boundary
+    // Right border
     doc.line(pageWidth - margin, tableFinalY, pageWidth - margin, footerStartY);
     
-    // Bottom boundary line before signature
+    // Bottom border before signature
     doc.line(margin, footerStartY, pageWidth - margin, footerStartY);
 
     // --- 6. Integrated Signature Row (Fixed 2cm at absolute bottom) ---
@@ -213,7 +215,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         theme: 'grid',
         tableWidth: contentWidth,
         styles: {
-            fontSize: 10,
+            fontSize: 9.5,
             fontStyle: 'bold',
             minCellHeight: footerHeight,
             valign: 'top',
