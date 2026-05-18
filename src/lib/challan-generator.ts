@@ -44,7 +44,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const pageHeight = doc.internal.pageSize.getHeight();
     
     const enterpriseTitle = data.enterprise === 'RV' ? 'R.V. ENTERPRISES' : 'VITHAL ENTERPRISES';
-    const themeColor: [number, number, number] = [0, 0, 0]; // Standard black borders/lines
     const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
     const thinBorder = 0.1;
@@ -168,7 +167,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     // --- Items Table ---
     const tableBody = data.items.map((item, index) => {
-        const lines = item.particulars.split('\n');
         return [
             index + 1,
             item.particulars.toUpperCase(),
@@ -209,7 +207,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
         margin: { left: margin, right: margin },
         tableWidth: contentWidth,
         didParseCell: (data) => {
-            // Apply underline to 'NOT FOR SALE' if it's the first line of particulars
             if (data.section === 'body' && data.column.index === 1) {
                 const text = data.cell.text[0] || '';
                 if (text.includes('NOT FOR SALE')) {
@@ -218,7 +215,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
             }
         },
         didDrawCell: (data) => {
-            // Custom underline for 'NOT FOR SALE'
             if (data.section === 'body' && data.column.index === 1) {
                 const text = data.cell.text[0] || '';
                 if (text.includes('NOT FOR SALE')) {
@@ -286,9 +282,9 @@ export const generateChallanPdf = async (data: ChallanData) => {
         }
     }
 
-    doc.setFontSize(9.5);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text("AUTHORISED SIGNATORY", pageWidth - margin - 4, sigFinalY - 4, { align: 'right' });
+    doc.text("Signature", pageWidth - margin - 4, sigFinalY - 4, { align: 'right' });
 
     const fileName = `Challan_${data.challanNo.replace(/[/\\?%*:|"<>]/g, '-')}_${data.enterprise}.pdf`;
     doc.save(fileName);
