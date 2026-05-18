@@ -88,20 +88,20 @@ export default function ChallansPage() {
     // Sync From Address when selection changes
     useEffect(() => {
         if (fromId === 'enterprise') {
-            setFromAddress(DEFAULT_ADDRESS);
+            setFromAddress(settings?.address || DEFAULT_ADDRESS);
         } else if (fromId !== 'manual' && selectedFromCompany) {
             setFromAddress(selectedFromCompany.address);
         }
-    }, [fromId, selectedFromCompany]);
+    }, [fromId, selectedFromCompany, settings]);
 
     // Sync Delivery Address when selection changes
     useEffect(() => {
         if (deliveryToId === 'enterprise') {
-            setDeliveryToAddress(DEFAULT_ADDRESS);
+            setDeliveryToAddress(settings?.address || DEFAULT_ADDRESS);
         } else if (deliveryToId !== 'manual' && selectedDeliveryCompany) {
             setDeliveryToAddress(selectedDeliveryCompany.address);
         }
-    }, [deliveryToId, selectedDeliveryCompany]);
+    }, [deliveryToId, selectedDeliveryCompany, settings]);
 
     const filteredForklifts = useMemo(() => {
         if (!forklifts) return [];

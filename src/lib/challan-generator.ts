@@ -63,7 +63,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setTextColor(0, 0, 0);
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, topPadding + 10, { align: 'center' });
 
-    // Solid Line below Firm Name (Requested Separator)
+    // Solid Line below Firm Name (Blueprint: Separator Line)
     doc.setDrawColor(0); 
     doc.setLineWidth(0.3);
     doc.line(margin + 5, topPadding + 13, pageWidth - margin - 5, topPadding + 13);
@@ -86,12 +86,12 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     // --- Challan Info Row (Contrast Font Sizes) ---
     const drawInfoCell = (title: string, value: string, x: number, width: number) => {
-        doc.setFontSize(8.5);
+        doc.setFontSize(8.5); // Blueprint: Smaller Title
         doc.setFont('helvetica', 'normal');
         doc.text(title, x + 2, currentY + 5);
         
         const titleWidth = doc.getTextWidth(title);
-        doc.setFontSize(11);
+        doc.setFontSize(11); // Blueprint: Larger Bold Value
         doc.setFont('helvetica', 'bold');
         doc.text(value, x + 2 + titleWidth + 2, currentY + 5.2);
         
@@ -161,7 +161,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // Mathematics for 1-Page Layout
+    // Mathematics for 1-Page Layout Lock
     const footerHeight = 20; // 2cm Signature Row
     const footerStartY = pageHeight - margin - footerHeight;
     const tableAreaBottomY = footerStartY;
@@ -215,7 +215,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     const tableFinalY = (doc as any).lastAutoTable.finalY;
 
-    // Draw vertical divider lines to footer if table is short (industry look)
+    // Blueprint: Stretch table lines to footer
     if (tableFinalY < tableAreaBottomY) {
         doc.setDrawColor(0);
         doc.setLineWidth(thinBorder);
@@ -230,7 +230,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         doc.line(margin, tableFinalY, pageWidth - margin, tableFinalY);
     }
 
-    // --- Integrated 2cm Signature Row (70/30 Area Split) ---
+    // --- Blueprint: Integrated 2cm Signature Row (70/30 Area Split) ---
     autoTable(doc, {
         startY: tableAreaBottomY,
         body: [[
@@ -255,7 +255,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         margin: { left: margin, right: margin },
         tableWidth: contentWidth,
         didDrawCell: (hook) => {
-            // Draw "Signature" only in the right cell bottom corner
+            // Blueprint: Small "Signature" label at bottom-right corner of right cell
             if (hook.section === 'body' && hook.column.index === 1) {
                 const cell = hook.cell;
                 doc.setFontSize(7);
