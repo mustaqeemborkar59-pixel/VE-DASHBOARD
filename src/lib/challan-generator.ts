@@ -47,9 +47,12 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
 
+    // Standard border thickness for standard workshop documents
+    const thinBorder = 0.1;
+
     // --- Main Document Border ---
     doc.setDrawColor(0);
-    doc.setLineWidth(0.5);
+    doc.setLineWidth(thinBorder);
     doc.rect(margin, margin, contentWidth, pageHeight - (margin * 2));
 
     const topPadding = margin + 5;
@@ -60,8 +63,8 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, topPadding + 10, { align: 'center' });
 
-    doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
-    doc.setLineWidth(0.5);
+    doc.setDrawColor(0); // Use black for standard lines
+    doc.setLineWidth(thinBorder);
     doc.line(margin + 5, topPadding + 14, pageWidth - margin - 5, topPadding + 14);
 
     doc.setFontSize(11);
@@ -78,7 +81,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setFont('helvetica', 'bold');
     doc.text(`PAN: ${data.pan} | GSTIN: ${data.gstin}`, pageWidth / 2, topPadding + 36, { align: 'center' });
 
-    doc.setLineWidth(0.5);
+    doc.setLineWidth(thinBorder);
     doc.line(margin + 5, topPadding + 40, pageWidth - margin - 5, topPadding + 40);
 
     let currentY = topPadding + 45;
@@ -94,11 +97,11 @@ export const generateChallanPdf = async (data: ChallanData) => {
         theme: 'grid',
         styles: { 
             fontSize: 8.5, 
-            cellPadding: 2, 
+            cellPadding: { top: 3.5, bottom: 3.5, left: 2, right: 2 }, // Increased padding as requested
             halign: 'left',
             font: 'helvetica', 
             lineColor: [0, 0, 0], 
-            lineWidth: 0.1,
+            lineWidth: thinBorder,
             fontStyle: 'bold',
             textColor: [0, 0, 0]
         },
@@ -122,14 +125,14 @@ export const generateChallanPdf = async (data: ChallanData) => {
             textColor: [0, 0, 0],
             fontStyle: 'bold',
             fontSize: 9,
-            lineWidth: 0.1,
+            lineWidth: thinBorder,
             lineColor: [0, 0, 0],
-            minCellHeight: 6, // Reduced height for labels
+            minCellHeight: 6,
             valign: 'middle',
-            cellPadding: { top: 1, bottom: 1, left: 4, right: 4 } // Reduced top/bottom padding
+            cellPadding: { top: 1, bottom: 1, left: 4, right: 4 }
         },
         bodyStyles: {
-            minCellHeight: 30 // 3cm Minimum height for address body
+            minCellHeight: 30 // Minimum 3cm height
         },
         styles: { 
             fontSize: 9, 
@@ -137,7 +140,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
             font: 'helvetica', 
             overflow: 'linebreak', 
             lineColor: [0, 0, 0], 
-            lineWidth: 0.1, 
+            lineWidth: thinBorder, 
             valign: 'top',
         },
         columnStyles: { 
@@ -150,7 +153,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // Standard footer calculation
+    // Fixed footer height calculation to keep it at the bottom
     const footerAreaHeight = 25; 
     const footerStartY = pageHeight - margin - footerAreaHeight;
     const tableAreaBottomY = footerStartY - 5;
@@ -172,7 +175,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
             textColor: [0, 0, 0], 
             fontStyle: 'bold', 
             halign: 'center', 
-            lineWidth: 0.1, 
+            lineWidth: thinBorder, 
             lineColor: [0, 0, 0] 
         },
         styles: { 
@@ -180,12 +183,12 @@ export const generateChallanPdf = async (data: ChallanData) => {
             cellPadding: 4, 
             font: 'helvetica', 
             lineColor: [0, 0, 0], 
-            lineWidth: 0.1, 
+            lineWidth: thinBorder, 
             minCellHeight: 10, 
             valign: 'top' 
         },
         bodyStyles: {
-            lineWidth: { left: 0.1, right: 0.1, top: 0, bottom: 0 }
+            lineWidth: { left: thinBorder, right: thinBorder, top: 0, bottom: 0 }
         },
         columnStyles: { 
             0: { cellWidth: 15, halign: 'center' }, 
@@ -198,10 +201,10 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     const tableFinalY = (doc as any).lastAutoTable.finalY;
 
-    // Draw Vertical Lines down to the bottom of the table area
+    // Extend vertical columns down to footer
     if (tableFinalY < tableAreaBottomY) {
         doc.setDrawColor(0);
-        doc.setLineWidth(0.1);
+        doc.setLineWidth(thinBorder);
         doc.line(margin, tableFinalY, margin, tableAreaBottomY);
         doc.line(margin + 15, tableFinalY, margin + 15, tableAreaBottomY);
         doc.line(pageWidth - margin - 30, tableFinalY, pageWidth - margin - 30, tableAreaBottomY);
@@ -209,7 +212,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         doc.line(margin, tableAreaBottomY, pageWidth - margin, tableAreaBottomY);
     } else {
         doc.setDrawColor(0);
-        doc.setLineWidth(0.1);
+        doc.setLineWidth(thinBorder);
         doc.line(margin, tableFinalY, pageWidth - margin, tableFinalY);
     }
 
@@ -224,14 +227,14 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const enterpriseName = data.enterprise === 'RV' ? 'R.V.' : 'VITHAL';
     doc.text(`For ${enterpriseName} ENTERPRISES`, pageWidth - margin - 10, footerY, { align: 'right' });
 
-    // --- Stamp Positioning (Optional) ---
+    // Optional Stamp placement
     if (data.includeStamp) {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
             const stampImg = await loadImage(stampFile);
             doc.addImage(stampImg, 'PNG', pageWidth - margin - 52, footerY - 26, 38, 38);
         } catch (e) {
-            console.error("Stamp loading failed", e);
+            console.error("Stamp failed to load", e);
         }
     }
 

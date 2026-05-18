@@ -30,7 +30,7 @@ export default function ChallansPage() {
     const [challanNo, setChallanNo] = useState('');
     const [vehicleNo, setVehicleNo] = useState('');
     const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-    const [includeStamp, setIncludeStamp] = useState(true);
+    const [includeStamp, setIncludeStamp] = useState(false); // Default to false
     
     const [fromAddress, setFromAddress] = useState("S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612");
     const [deliveryToId, setDeliveryToId] = useState('');
@@ -107,12 +107,13 @@ export default function ChallansPage() {
     const handleSelectForklift = (forklift: Forklift) => {
         if (activeItemIndex === null) return;
 
+        // Structured formatting with bullet points and sub-item appearance
         const details = [
-            `Battery Operated Electric Forklift`,
-            `• S.No: ${forklift.serialNumber}`,
-            `• Capacity: ${forklift.capacity || 'N/A'}`,
-            `• Make: ${forklift.make} | Model: ${forklift.model}`,
-            `• Volt: ${forklift.voltage || 'N/A'} | Mfg Year: ${forklift.year}`
+            `BATTERY OPERATED ELECTRIC FORKLIFT`,
+            `   • S.No: ${forklift.serialNumber}`,
+            `   • Capacity: ${forklift.capacity || 'N/A'}`,
+            `   • Make: ${forklift.make} | Model: ${forklift.model}`,
+            `   • Volt: ${forklift.voltage || 'N/A'} | Mfg Year: ${forklift.year}`
         ].join('\n');
 
         handleItemChange(activeItemIndex, 'particulars', details);
