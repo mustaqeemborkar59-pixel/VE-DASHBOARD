@@ -39,9 +39,18 @@ const loadImage = (url: string): Promise<HTMLImageElement> => {
 export const generateChallanPdf = async (data: ChallanData) => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     
     const themeColor: [number, number, number] = data.enterprise === 'RV' ? [0, 51, 102] : [200, 0, 0];
-    const topPadding = 10;
+    const margin = 10;
+
+    // --- Main Document Border ---
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.5);
+    doc.rect(margin, margin, pageWidth - (margin * 2), pageHeight - (margin * 2));
+
+    const contentWidth = pageWidth - (margin * 2);
+    const topPadding = margin + 5;
 
     // --- Header Section ---
     doc.setFontSize(28);
@@ -51,7 +60,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
-    doc.line(15, topPadding + 14, pageWidth - 15, topPadding + 14);
+    doc.line(margin + 5, topPadding + 14, pageWidth - margin - 5, topPadding + 14);
 
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
@@ -68,9 +77,9 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.text(`PAN: ${data.pan} | GSTIN: ${data.gstin}`, pageWidth / 2, topPadding + 36, { align: 'center' });
 
     doc.setLineWidth(0.5);
-    doc.line(15, topPadding + 40, pageWidth - 15, topPadding + 40);
+    doc.line(margin + 5, topPadding + 40, pageWidth - margin - 5, topPadding + 40);
 
-    let currentY = topPadding + 50;
+    let currentY = topPadding + 48;
 
     // --- Challan Info Grid ---
     autoTable(doc, {
@@ -79,13 +88,13 @@ export const generateChallanPdf = async (data: ChallanData) => {
         body: [[data.challanNo.toUpperCase(), data.vehicleNo.toUpperCase(), format(parseISO(data.date), 'dd-MMM-yyyy').toUpperCase()]],
         theme: 'grid',
         headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
-        styles: { fontSize: 10, cellPadding: 3, halign: 'center', font: 'helvetica' },
-        margin: { left: 15, right: 15 }
+        styles: { fontSize: 10, cellPadding: 3, halign: 'center', font: 'helvetica', lineColor: [0, 0, 0], lineWidth: 0.1 },
+        margin: { left: margin + 5, right: margin + 5 }
     });
 
     currentY = (doc as any).lastAutoTable.finalY + 5;
 
-    // --- Addresses Section ---
+    // --- Addresses Section (Same Column Sizes) ---
     autoTable(doc, {
         startY: currentY,
         head: [['From Address', 'Delivery To Address']],
@@ -95,9 +104,12 @@ export const generateChallanPdf = async (data: ChallanData) => {
         ]],
         theme: 'grid',
         headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold' },
-        styles: { fontSize: 9, cellPadding: 4, font: 'helvetica', overflow: 'linebreak' },
-        columnStyles: { 0: { width: 90 }, 1: { width: 90 } },
-        margin: { left: 15, right: 15 }
+        styles: { fontSize: 9, cellPadding: 4, font: 'helvetica', overflow: 'linebreak', lineColor: [0, 0, 0], lineWidth: 0.1 },
+        columnStyles: { 
+            0: { width: (contentWidth - 10) / 2 }, 
+            1: { width: (contentWidth - 10) / 2 } 
+        },
+        margin: { left: margin + 5, right: margin + 5 }
     });
 
     currentY = (doc as any).lastAutoTable.finalY + 5;
@@ -115,25 +127,35 @@ export const generateChallanPdf = async (data: ChallanData) => {
         body: tableBody,
         theme: 'grid',
         headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
-        styles: { fontSize: 10, cellPadding: 4, font: 'helvetica' },
-        columnStyles: { 0: { width: 15, halign: 'center' }, 1: { width: 135 }, 2: { width: 30, halign: 'right' } },
-        margin: { left: 15, right: 15 }
+        styles: { fontSize: 10, cellPadding: 4, font: 'helvetica', lineColor: [0, 0, 0], lineWidth: 0.1 },
+        columnStyles: { 0: { width: 15, halign: 'center' }, 1: { width: contentWidth - 55 }, 2: { width: 30, halign: 'right' } },
+        margin: { left: margin + 5, right: margin + 5 }
     });
 
     currentY = (doc as any).lastAutoTable.finalY + 30;
 
+    // Prevent footer overflow
+    if (currentY > pageHeight - 50) {
+        doc.addPage();
+        doc.setDrawColor(0);
+        doc.setLineWidth(0.5);
+        doc.rect(margin, margin, pageWidth - (margin * 2), pageHeight - (margin * 2));
+        currentY = margin + 20;
+    }
+
     // --- Footer / Signatures ---
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text("RECEIVED BY", 15, currentY);
+    doc.setTextColor(0);
+    doc.text("RECEIVED BY", margin + 10, currentY);
     
-    doc.text(`FOR ${data.enterprise === 'RV' ? 'R.V.' : 'VITHAL'} ENTERPRISES`, pageWidth - 15, currentY, { align: 'right' });
+    doc.text(`FOR ${data.enterprise === 'RV' ? 'R.V.' : 'VITHAL'} ENTERPRISES`, pageWidth - margin - 10, currentY, { align: 'right' });
 
-    // Stamp
+    // Stamp placement
     const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
     try {
         const stampImg = await loadImage(stampFile);
-        doc.addImage(stampImg, 'PNG', pageWidth - 55, currentY + 5, 35, 35);
+        doc.addImage(stampImg, 'PNG', pageWidth - margin - 50, currentY + 5, 35, 35);
     } catch (e) {}
 
     const fileName = `Challan_${data.challanNo}_${data.enterprise}.pdf`;
