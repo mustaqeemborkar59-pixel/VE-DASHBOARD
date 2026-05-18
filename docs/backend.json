@@ -773,6 +773,48 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["employeeId", "month", "baseSalary", "netSalary", "status", "enterprise"]
+    },
+    "Challan": {
+      "title": "Challan",
+      "type": "object",
+      "description": "Represents a saved delivery or service challan record.",
+      "properties": {
+        "enterprise": { "type": "string", "enum": ["Vithal", "RV"] },
+        "challanNo": { "type": "string" },
+        "vehicleNo": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "fromName": { "type": "string" },
+        "fromAddress": { "type": "string" },
+        "deliveryToName": { "type": "string" },
+        "deliveryToAddress": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "particulars": { "type": "string" },
+              "amount": { "type": "number" }
+            }
+          }
+        },
+        "layoutSettings": {
+          "type": "object",
+          "properties": {
+            "fromAddressFontSize": { "type": "number" },
+            "deliveryToAddressFontSize": { "type": "number" },
+            "headerHeight": { "type": "number" },
+            "footerHeight": { "type": "number" },
+            "srWidth": { "type": "number" },
+            "amountWidth": { "type": "number" },
+            "particularsFontSize": { "type": "number" },
+            "titleFontSize": { "type": "number" },
+            "headerDetailsFontSize": { "type": "number" },
+            "includeStamp": { "type": "boolean" }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["enterprise", "challanNo", "date"]
     }
   },
   "auth": {
@@ -864,6 +906,12 @@
         "$ref": "#/entities/Salary"
       },
       "description": "Stores monthly salary records for employees."
+    },
+    "/challans/{challanId}": {
+      "schema": {
+        "$ref": "#/entities/Challan"
+      },
+      "description": "Stores saved challan records."
     }
   }
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -8,9 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc } from 'firebase/firestore';
-import { Company, CompanySettings, Forklift } from '@/lib/data';
-import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, TypeOutline, Ruler, LayoutTemplate, Settings2 } from 'lucide-react';
+import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
+import { Company, CompanySettings, Forklift, Challan } from '@/lib/data';
+import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, Ruler, LayoutTemplate, Settings2, Save, History, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { generateChallanPdf, type ChallanItem } from '@/lib/challan-generator';
@@ -21,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ForkliftIcon } from '@/components/icons/forklift-icon';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const DEFAULT_ADDRESS = "S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
 
@@ -57,8 +59,11 @@ export default function ChallansPage() {
     
     const [items, setItems] = useState<ChallanItem[]>([{ particulars: '', amount: 0 }]);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     
-    // Forklift Selector State
+    // History & Forklift State
+    const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+    const [historySearch, setHistorySearch] = useState('');
     const [isForkliftDialogOpen, setIsForkliftDialogOpen] = useState(false);
     const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
     const [forkliftSearch, setForkliftSearch] = useState('');
@@ -75,6 +80,12 @@ export default function ChallansPage() {
         [firestore, user]
     );
     const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
+
+    const challansQuery = useMemoFirebase(() => 
+        firestore && user ? query(collection(firestore, 'challans'), orderBy('createdAt', 'desc')) : null, 
+        [firestore, user]
+    );
+    const { data: savedChallans, isLoading: isLoadingHistory } = useCollection<Challan>(challansQuery);
 
     const settingsRef = useMemoFirebase(() => 
         firestore && user ? doc(firestore, 'companySettings', enterprise.toLowerCase()) : null,
@@ -121,6 +132,17 @@ export default function ChallansPage() {
         );
     }, [forklifts, forkliftSearch]);
 
+    const filteredHistory = useMemo(() => {
+        if (!savedChallans) return [];
+        if (!historySearch) return savedChallans;
+        const lower = historySearch.toLowerCase();
+        return savedChallans.filter(c => 
+            c.challanNo.toLowerCase().includes(lower) || 
+            c.deliveryToName.toLowerCase().includes(lower) ||
+            c.vehicleNo.toLowerCase().includes(lower)
+        );
+    }, [savedChallans, historySearch]);
+
     const handleAddItem = () => {
         setItems([...items, { particulars: '', amount: 0 }]);
     };
@@ -162,6 +184,101 @@ export default function ChallansPage() {
         setActiveItemIndex(null);
     };
 
+    const handleSaveRecord = async () => {
+        if (!challanNo || !date) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Challan No. and Date are required to save.' });
+            return;
+        }
+
+        const fromName = fromId === 'enterprise' 
+            ? (enterprise === 'Vithal' ? 'Vithal Enterprises' : 'R.V. Enterprises')
+            : fromId === 'manual' ? manualFromName : (selectedFromCompany?.name || '');
+
+        const deliveryToName = deliveryToId === 'enterprise'
+            ? (enterprise === 'Vithal' ? 'Vithal Enterprises' : 'R.V. Enterprises')
+            : deliveryToId === 'manual' ? manualDeliveryToName : (selectedDeliveryCompany?.name || '');
+
+        setIsSaving(true);
+        try {
+            const challanData: Omit<Challan, 'id'> = {
+                enterprise,
+                challanNo,
+                vehicleNo,
+                date,
+                fromName,
+                fromAddress,
+                deliveryToName,
+                deliveryToAddress,
+                items,
+                layoutSettings: {
+                    fromAddressFontSize,
+                    deliveryToAddressFontSize,
+                    headerHeight,
+                    footerHeight,
+                    srWidth,
+                    amountWidth,
+                    particularsFontSize,
+                    titleFontSize,
+                    headerDetailsFontSize,
+                    includeStamp
+                },
+                createdAt: new Date().toISOString()
+            };
+            
+            await addDocumentNonBlocking(collection(firestore!, 'challans'), challanData);
+            toast({ title: 'Record Saved', description: `Challan ${challanNo} added to history.` });
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not store record.' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const loadHistoryRecord = (record: Challan) => {
+        setEnterprise(record.enterprise);
+        setChallanNo(record.challanNo);
+        setVehicleNo(record.vehicleNo || '');
+        setDate(record.date);
+        
+        // Match from/to logic
+        setFromId('manual');
+        setManualFromName(record.fromName);
+        setFromAddress(record.fromAddress);
+        
+        setDeliveryToId('manual');
+        setManualDeliveryToName(record.deliveryToName);
+        setDeliveryToAddress(record.deliveryToAddress);
+        
+        setItems(record.items);
+
+        // Restore layout
+        if (record.layoutSettings) {
+            setFromAddressFontSize(record.layoutSettings.fromAddressFontSize);
+            setDeliveryToAddressFontSize(record.layoutSettings.deliveryToAddressFontSize);
+            setHeaderHeight(record.layoutSettings.headerHeight);
+            setFooterHeight(record.layoutSettings.footerHeight);
+            setSrWidth(record.layoutSettings.srWidth);
+            setAmountWidth(record.layoutSettings.amountWidth);
+            setParticularsFontSize(record.layoutSettings.particularsFontSize);
+            setTitleFontSize(record.layoutSettings.titleFontSize);
+            setHeaderDetailsFontSize(record.layoutSettings.headerDetailsFontSize);
+            setIncludeStamp(record.layoutSettings.includeStamp);
+        }
+
+        setIsHistoryDialogOpen(false);
+        toast({ title: 'Record Loaded', description: `History entry ${record.challanNo} is now active.` });
+    };
+
+    const handleDeleteRecord = async (id: string) => {
+        if (!firestore) return;
+        try {
+            await deleteDoc(doc(firestore, 'challans', id));
+            toast({ title: 'Record Deleted' });
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Delete Failed' });
+        }
+    }
+
     const handleGenerate = async () => {
         if (!challanNo || !date) {
             toast({ variant: 'destructive', title: 'Error', description: 'Challan No. and Date are required.' });
@@ -191,7 +308,6 @@ export default function ChallansPage() {
                 pan: settings?.pan || 'N/A',
                 gstin: settings?.gstin || 'N/A',
                 includeStamp,
-                // Pass layout parameters
                 fromAddressFontSize,
                 deliveryToAddressFontSize,
                 headerHeight,
@@ -224,13 +340,30 @@ export default function ChallansPage() {
                             Create Delivery & Service Challans
                         </p>
                     </div>
-                    <Button 
-                        onClick={handleGenerate} 
-                        disabled={isGenerating}
-                        className="h-12 px-8 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/20"
-                    >
-                        {isGenerating ? "Generating..." : <><Printer className="mr-2 h-5 w-5" /> Generate PDF</>}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button 
+                            variant="outline"
+                            onClick={() => setIsHistoryDialogOpen(true)}
+                            className="h-12 px-4 rounded-xl font-bold uppercase tracking-widest border-primary/20 hover:bg-primary/5"
+                        >
+                            <History className="h-5 w-5" />
+                        </Button>
+                        <Button 
+                            variant="secondary"
+                            onClick={handleSaveRecord} 
+                            disabled={isSaving || !challanNo}
+                            className="h-12 px-6 rounded-xl font-bold uppercase tracking-widest shadow-sm"
+                        >
+                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Save className="mr-2 h-5 w-5" /> Save</>}
+                        </Button>
+                        <Button 
+                            onClick={handleGenerate} 
+                            disabled={isGenerating}
+                            className="h-12 px-8 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/20"
+                        >
+                            {isGenerating ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Printer className="mr-2 h-5 w-5" /> Generate PDF</>}
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -385,7 +518,6 @@ export default function ChallansPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 space-y-6">
-                            {/* Block Heights Section */}
                             <div className="space-y-4">
                                 <h4 className="text-[9px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
                                     <Ruler className="h-3 w-3" /> Section Heights (mm)
@@ -404,7 +536,6 @@ export default function ChallansPage() {
 
                             <Separator />
 
-                            {/* Column Widths Section */}
                             <div className="space-y-4">
                                 <h4 className="text-[9px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
                                     <LayoutTemplate className="h-3 w-3" /> Columns (mm)
@@ -423,7 +554,6 @@ export default function ChallansPage() {
 
                             <Separator />
 
-                            {/* Font Sizes Section */}
                             <div className="space-y-4">
                                 <h4 className="text-[9px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
                                     <Type className="h-3 w-3" /> Typography (PT)
@@ -446,7 +576,7 @@ export default function ChallansPage() {
                                         <Input type="number" value={titleFontSize} onChange={e => setTitleFontSize(parseInt(e.target.value) || 10)} className="h-8 text-xs font-bold" />
                                     </div>
                                     <div className="space-y-1.5 col-span-2">
-                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Header Details (Supplier/Addrs/Tax)</Label>
+                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Header Details</Label>
                                         <Input type="number" step="0.5" value={headerDetailsFontSize} onChange={e => setHeaderDetailsFontSize(parseFloat(e.target.value) || 8.5)} className="h-8 text-xs font-bold" />
                                     </div>
                                 </div>
@@ -454,7 +584,6 @@ export default function ChallansPage() {
 
                             <Separator />
 
-                            {/* Options Section */}
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between p-3 bg-muted/20 rounded-xl border border-primary/10">
                                     <div className="space-y-0.5">
@@ -473,7 +602,73 @@ export default function ChallansPage() {
                 </div>
             </div>
 
-            {/* Forklift Selection Dialog */}
+            {/* History Dialog */}
+            <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
+                <DialogContent className="max-w-[95vw] sm:max-w-3xl p-0 rounded-3xl overflow-hidden">
+                    <DialogHeader className="p-6 bg-primary/5 border-b border-primary/10">
+                        <DialogTitle className="flex items-center gap-2 text-primary font-black">
+                            <History className="h-5 w-5" />
+                            Challan History
+                        </DialogTitle>
+                        <DialogDescription>Browse and load previously generated challans.</DialogDescription>
+                    </DialogHeader>
+                    <div className="p-4 space-y-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                                placeholder="Search by Challan No, Vehicle, or Client..." 
+                                value={historySearch}
+                                onChange={(e) => setHistorySearch(e.target.value)}
+                                className="pl-9 h-11"
+                            />
+                        </div>
+                        <ScrollArea className="h-[450px]">
+                            {isLoadingHistory ? (
+                                <div className="flex items-center justify-center py-20">
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                </div>
+                            ) : filteredHistory.length > 0 ? (
+                                <div className="grid gap-3 pr-4">
+                                    {filteredHistory.map(challan => (
+                                        <div key={challan.id} className="group relative bg-card border rounded-2xl p-4 hover:border-primary/50 hover:shadow-md transition-all">
+                                            <div className="flex flex-col sm:flex-row justify-between gap-4">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-black text-sm">{challan.challanNo}</p>
+                                                        <Badge variant="outline" className="text-[8px] font-bold px-1.5 uppercase h-4">
+                                                            {challan.enterprise}
+                                                        </Badge>
+                                                    </div>
+                                                    <p className="text-[10px] font-black text-muted-foreground uppercase">{challan.deliveryToName}</p>
+                                                    <div className="flex items-center gap-3 text-[9px] text-muted-foreground font-medium uppercase tracking-tight">
+                                                        <span className="flex items-center gap-1"><Car className="h-2.5 w-2.5" /> {challan.vehicleNo || 'N/A'}</span>
+                                                        <span className="flex items-center gap-1"><Clock className="h-2.5 w-2.5" /> {format(parseISO(challan.date), 'dd MMM yyyy')}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 self-end sm:self-center">
+                                                    <Button variant="outline" size="sm" onClick={() => loadHistoryRecord(challan)} className="h-9 px-4 rounded-xl text-xs font-bold">
+                                                        Load Record
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteRecord(challan.id)} className="h-9 w-9 text-destructive rounded-xl hover:bg-destructive/5">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-20 text-muted-foreground">
+                                    <History className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                                    <p className="text-sm font-bold uppercase tracking-widest">No matching records</p>
+                                </div>
+                            )}
+                        </ScrollArea>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Forklift Picker Dialog */}
             <Dialog open={isForkliftDialogOpen} onOpenChange={setIsForkliftDialogOpen}>
                 <DialogContent className="max-w-[95vw] sm:max-w-md p-0 rounded-3xl overflow-hidden">
                     <DialogHeader className="p-6 bg-primary/5 border-b border-primary/10">

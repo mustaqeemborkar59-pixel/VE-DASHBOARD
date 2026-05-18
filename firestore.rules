@@ -53,6 +53,9 @@ service cloud.firestore {
     match /salaries/{salaryId} {
       allow read, write: if isSignedIn();
     }
+    match /challans/{challanId} {
+      allow read, write: if isSignedIn();
+    }
 
     // Allow users to access their bank accounts sub-collection
     match /companySettings/{docId}/bankAccounts/{accountId} {

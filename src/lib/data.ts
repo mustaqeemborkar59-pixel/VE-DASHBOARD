@@ -264,3 +264,29 @@ export type Salary = {
   notes?: string;
   createdAt: string;
 };
+
+export type Challan = {
+    id: string;
+    enterprise: 'Vithal' | 'RV';
+    challanNo: string;
+    vehicleNo: string;
+    date: string;
+    fromName: string;
+    fromAddress: string;
+    deliveryToName: string;
+    deliveryToAddress: string;
+    items: { particulars: string; amount: number }[];
+    layoutSettings: {
+        fromAddressFontSize: number;
+        deliveryToAddressFontSize: number;
+        headerHeight: number;
+        footerHeight: number;
+        srWidth: number;
+        amountWidth: number;
+        particularsFontSize: number;
+        titleFontSize: number;
+        headerDetailsFontSize: number;
+        includeStamp: boolean;
+    };
+    createdAt: string;
+}
