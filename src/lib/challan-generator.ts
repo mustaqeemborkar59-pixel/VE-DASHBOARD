@@ -81,14 +81,25 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     let currentY = topPadding + 45;
 
-    // --- Challan Info Grid (Part of the unified structure) ---
+    // --- Challan Info Compact Row (Labels and Values together) ---
     autoTable(doc, {
         startY: currentY,
-        head: [['Challan No.', 'Vehicle No.', 'Date']],
-        body: [[data.challanNo.toUpperCase(), data.vehicleNo.toUpperCase(), format(parseISO(data.date), 'dd-MMM-yyyy').toUpperCase()]],
+        body: [[
+            `CHALLAN NO: ${data.challanNo.toUpperCase()}`,
+            `VEHICLE NO: ${data.vehicleNo.toUpperCase()}`,
+            `DATE: ${format(parseISO(data.date), 'dd-MMM-yyyy').toUpperCase()}`
+        ]],
         theme: 'grid',
-        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1, lineColor: [0, 0, 0] },
-        styles: { fontSize: 10, cellPadding: 3, halign: 'center', font: 'helvetica', lineColor: [0, 0, 0], lineWidth: 0.1 },
+        styles: { 
+            fontSize: 9, 
+            cellPadding: 3, 
+            halign: 'center', 
+            font: 'helvetica', 
+            lineColor: [0, 0, 0], 
+            lineWidth: 0.1,
+            fontStyle: 'bold',
+            textColor: [0, 0, 0]
+        },
         margin: { left: margin, right: margin },
         tableWidth: contentWidth
     });
@@ -123,7 +134,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         item.amount > 0 ? item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'
     ]);
 
-    // Calculate dynamic rows for items to fill some space if list is short
+    // Fill minimum rows for structure
     while (tableBody.length < 5) {
         tableBody.push(['', '', '']);
     }
