@@ -56,55 +56,67 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setLineWidth(thinBorder);
     doc.rect(margin, margin, contentWidth, pageHeight - (margin * 2));
 
-    let currentY = margin + 5;
-
-    // --- Header Section ---
+    // --- 1. Firm Name Header (Exactly 2cm Height, Centered) ---
+    const headerHeight = 20; // 2cm
+    const headerY = margin;
+    
     const enterpriseTitle = data.enterprise === 'RV' ? 'R.V. ENTERPRISES' : 'VITHAL ENTERPRISES';
     doc.setFontSize(22);
     doc.setFont('times', 'bold');
-    doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, currentY + 10, { align: 'center' });
+    
+    // Vertical and Horizontal Centering in the 20mm box
+    // Text is drawn relative to its baseline, so we adjust slightly for optical center
+    doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, headerY + (headerHeight / 2) + 3, { align: 'center' });
 
-    // Professional separator line under firm name
-    doc.setLineWidth(0.3);
-    doc.line(margin + 5, currentY + 13, pageWidth - margin - 5, currentY + 13);
+    // Header bottom line (sata hua left right borders se)
+    doc.setLineWidth(thinBorder);
+    doc.line(margin, headerY + headerHeight, pageWidth - margin, headerY + headerHeight);
 
+    let currentY = headerY + headerHeight + 5;
+
+    // --- 2. Subtitles & Tax Info ---
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text("Supplier of Material Handling Equipments & Labour", pageWidth / 2, currentY + 19, { align: 'center' });
+    doc.text("Supplier of Material Handling Equipments & Labour", pageWidth / 2, currentY, { align: 'center' });
+    currentY += 5;
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text("Off. : A/404, Astraea, Rustomjee Urbania, Near Lodha Paradise, Majiwada, Thane (W) - 400601.", pageWidth / 2, currentY + 24, { align: 'center' });
-    doc.text("Work : Sr No. 14/6A, Khot Banglow, Near Transformer, Bhandarli, Pimpri, Thane - 400 612.", pageWidth / 2, currentY + 29, { align: 'center' });
+    doc.text("Off. : A/404, Astraea, Rustomjee Urbania, Near Lodha Paradise, Majiwada, Thane (W) - 400601.", pageWidth / 2, currentY, { align: 'center' });
+    currentY += 5;
+    doc.text("Work : Sr No. 14/6A, Khot Banglow, Near Transformer, Bhandarli, Pimpri, Thane - 400 612.", pageWidth / 2, currentY, { align: 'center' });
+    currentY += 6;
 
     doc.setFont('helvetica', 'bold');
-    doc.text(`PAN: ${data.pan} | GSTIN: ${data.gstin}`, pageWidth / 2, currentY + 35, { align: 'center' });
+    doc.text(`PAN: ${data.pan} | GSTIN: ${data.gstin}`, pageWidth / 2, currentY, { align: 'center' });
+    currentY += 5;
 
-    currentY += 40;
+    // Line after header block
+    doc.line(margin, currentY, pageWidth - margin, currentY);
 
-    // --- Info Row (3 Columns) ---
-    const drawInfoCell = (title: string, value: string, x: number, width: number) => {
+    // --- 3. Info Row (CHALLAN / VEHICLE / DATE) ---
+    const drawInfoCell = (title: string, value: string, x: number, width: number, y: number) => {
         doc.setFontSize(8.5); 
         doc.setFont('helvetica', 'normal');
-        doc.text(title, x + 2, currentY + 5.2);
+        doc.text(title, x + 2, y + 5.2);
         
         const titleWidth = doc.getTextWidth(title);
         doc.setFontSize(11); 
         doc.setFont('helvetica', 'bold');
-        doc.text(value, x + 2 + titleWidth + 2, currentY + 5.5);
+        doc.text(value, x + 2 + titleWidth + 2, y + 5.5);
         
         doc.setLineWidth(thinBorder);
-        doc.rect(x, currentY, width, 8);
+        doc.rect(x, y, width, 8);
     };
 
     const colW = contentWidth / 3;
-    drawInfoCell("CHALLAN NO:", data.challanNo.toUpperCase(), margin, colW);
-    drawInfoCell("VEHICLE NO:", data.vehicleNo.toUpperCase(), margin + colW, colW);
-    drawInfoCell("DATE:", format(parseISO(data.date), 'dd-MMM-yyyy').toUpperCase(), margin + (colW * 2), colW);
+    drawInfoCell("CHALLAN NO:", data.challanNo.toUpperCase(), margin, colW, currentY);
+    drawInfoCell("VEHICLE NO:", data.vehicleNo.toUpperCase(), margin + colW, colW, currentY);
+    drawInfoCell("DATE:", format(parseISO(data.date), 'dd-MMM-yyyy').toUpperCase(), margin + (colW * 2), colW, currentY);
 
     currentY += 8;
 
-    // --- Address Headers (50/50 Split) ---
+    // --- 4. Address Section ---
     autoTable(doc, {
         startY: currentY,
         body: [[
@@ -119,7 +131,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Address Content (UPPERCASE) ---
     autoTable(doc, {
         startY: currentY,
         body: [[
@@ -137,16 +148,15 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Blank Framed Particulars Area ---
-    // Drawing a blank frame that fills the space between Address Section and Signature Row
+    // --- 5. Blank Particulars Frame (Stretches to footer) ---
     doc.setLineWidth(thinBorder);
     doc.setDrawColor(0);
     
-    // Draw horizontal table headers
+    // Table Headers
     autoTable(doc, {
         startY: currentY,
         head: [['SR.', 'PARTICULARS', 'AMOUNT']],
-        body: [], // BLANK AREA AS REQUESTED
+        body: [], // No data rows
         theme: 'grid',
         styles: { fontSize: 9, cellPadding: 3, lineColor: 0, lineWidth: thinBorder, font: 'helvetica' },
         headStyles: { fillColor: 240, textColor: 0, fontStyle: 'bold', halign: 'center' },
@@ -160,14 +170,14 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     const tableHeaderY = (doc as any).lastAutoTable.finalY;
     
-    // Manually draw vertical lines from table header to absolute footer start
-    doc.line(margin, tableHeaderY, margin, footerStartY); // Left Border
-    doc.line(margin + 15, tableHeaderY, margin + 15, footerStartY); // SR Column Divider
-    doc.line(pageWidth - margin - 30, tableHeaderY, pageWidth - margin - 30, footerStartY); // Amount Column Divider
-    doc.line(pageWidth - margin, tableHeaderY, pageWidth - margin, footerStartY); // Right Border
-    doc.line(margin, footerStartY, pageWidth - margin, footerStartY); // Closing line for particulars section
+    // Vertical frame lines that stretch to the 2cm footer start
+    doc.line(margin, tableHeaderY, margin, footerStartY); // Left
+    doc.line(margin + 15, tableHeaderY, margin + 15, footerStartY); // Sr divider
+    doc.line(pageWidth - margin - 30, tableHeaderY, pageWidth - margin - 30, footerStartY); // Amount divider
+    doc.line(pageWidth - margin, tableHeaderY, pageWidth - margin, footerStartY); // Right
+    doc.line(margin, footerStartY, pageWidth - margin, footerStartY); // Section Bottom boundary
 
-    // --- Integrated Signature Row (Fixed to absolute bottom of page 1) ---
+    // --- 6. Integrated Signature Row (Fixed 2cm at absolute bottom) ---
     autoTable(doc, {
         startY: footerStartY,
         body: [[
@@ -189,14 +199,13 @@ export const generateChallanPdf = async (data: ChallanData) => {
             0: { cellWidth: contentWidth * 0.7, halign: 'left' },
             1: { cellWidth: contentWidth * 0.3, halign: 'right' }
         },
-        margin: { left: margin, right: margin, bottom: margin }, // CRITICAL: explicit margins to prevent page break
+        margin: { left: margin, right: margin, bottom: margin },
         didDrawCell: (hook) => {
-            // Place small "Signature" label inside the right cell
+            // "Signature" label inside the right cell, bottom-right
             if (hook.section === 'body' && hook.column.index === 1) {
                 const cell = hook.cell;
                 doc.setFontSize(7);
                 doc.setFont('helvetica', 'normal');
-                // Absolute positioning within the cell at the bottom-right
                 doc.text("Signature", cell.x + cell.width - 4, cell.y + cell.height - 3, { align: 'right' });
             }
         }
@@ -207,7 +216,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
             const stampImg = await loadImage(stampFile);
-            // Place stamp floating over signature area
             doc.addImage(stampImg, 'PNG', pageWidth - margin - 35, footerStartY - 5, 30, 30);
         } catch (e) { }
     }
