@@ -45,46 +45,44 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
-    const enterpriseTitle = data.enterprise === 'RV' ? 'R.V. ENTERPRISES' : 'VITHAL ENTERPRISES';
     const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
     const thinBorder = 0.1;
+    const footerHeight = 20; // 2cm
+    const footerStartY = pageHeight - margin - footerHeight;
 
-    // --- Main Document Border ---
+    // --- Main External Frame ---
     doc.setDrawColor(0);
     doc.setLineWidth(thinBorder);
     doc.rect(margin, margin, contentWidth, pageHeight - (margin * 2));
 
-    const topPadding = margin + 5;
+    let currentY = margin + 5;
 
     // --- Header Section ---
+    const enterpriseTitle = data.enterprise === 'RV' ? 'R.V. ENTERPRISES' : 'VITHAL ENTERPRISES';
     doc.setFontSize(22);
     doc.setFont('times', 'bold');
-    doc.setTextColor(0, 0, 0);
-    doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, topPadding + 10, { align: 'center' });
+    doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, currentY + 10, { align: 'center' });
 
-    // Solid Line below Firm Name
-    doc.setDrawColor(0); 
+    // Professional separator line under firm name
     doc.setLineWidth(0.3);
-    doc.line(margin + 5, topPadding + 13, pageWidth - margin - 5, topPadding + 13);
+    doc.line(margin + 5, currentY + 13, pageWidth - margin - 5, currentY + 13);
 
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text("Supplier of Material Handling Equipments & Labour", pageWidth / 2, topPadding + 19, { align: 'center' });
+    doc.text("Supplier of Material Handling Equipments & Labour", pageWidth / 2, currentY + 19, { align: 'center' });
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    const offAddr = "Off. : A/404, Astraea, Rustomjee Urbania, Near Lodha Paradise, Majiwada, Thane (W) - 400601.";
-    const workAddr = "Work : Sr No. 14/6A, Khot Banglow, Near Transformer, Bhandarli, Pimpri, Thane - 400 612.";
-    doc.text(offAddr, pageWidth / 2, topPadding + 24, { align: 'center' });
-    doc.text(workAddr, pageWidth / 2, topPadding + 29, { align: 'center' });
+    doc.text("Off. : A/404, Astraea, Rustomjee Urbania, Near Lodha Paradise, Majiwada, Thane (W) - 400601.", pageWidth / 2, currentY + 24, { align: 'center' });
+    doc.text("Work : Sr No. 14/6A, Khot Banglow, Near Transformer, Bhandarli, Pimpri, Thane - 400 612.", pageWidth / 2, currentY + 29, { align: 'center' });
 
     doc.setFont('helvetica', 'bold');
-    doc.text(`PAN: ${data.pan} | GSTIN: ${data.gstin}`, pageWidth / 2, topPadding + 35, { align: 'center' });
+    doc.text(`PAN: ${data.pan} | GSTIN: ${data.gstin}`, pageWidth / 2, currentY + 35, { align: 'center' });
 
-    let currentY = topPadding + 40;
+    currentY += 40;
 
-    // --- Challan Info Row (Titles 8.5pt, Values 11pt Bold) ---
+    // --- Info Row (3 Columns) ---
     const drawInfoCell = (title: string, value: string, x: number, width: number) => {
         doc.setFontSize(8.5); 
         doc.setFont('helvetica', 'normal');
@@ -106,35 +104,23 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY += 8;
 
-    // --- Addresses Labels Row (50/50 Split) ---
+    // --- Address Headers (50/50) ---
     autoTable(doc, {
         startY: currentY,
-        body: [
-            [
-                { content: `FROM :  ${data.fromName.toUpperCase()}`, styles: { halign: 'left' } },
-                { content: `DELIVERY TO :  ${data.deliveryToName.toUpperCase()}`, styles: { halign: 'left' } }
-            ]
-        ],
+        body: [[
+            `FROM :  ${data.fromName.toUpperCase()}`,
+            `DELIVERY TO :  ${data.deliveryToName.toUpperCase()}`
+        ]],
         theme: 'grid',
-        styles: {
-            fontSize: 9,
-            fontStyle: 'bold',
-            cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
-            lineColor: [0, 0, 0],
-            lineWidth: thinBorder,
-            textColor: [0, 0, 0],
-        },
-        columnStyles: { 
-            0: { cellWidth: contentWidth / 2 }, 
-            1: { cellWidth: contentWidth / 2 } 
-        },
-        margin: { left: margin, right: margin },
-        tableWidth: contentWidth
+        styles: { fontSize: 9, fontStyle: 'bold', cellPadding: 3, lineColor: 0, lineWidth: thinBorder, textColor: 0 },
+        columnStyles: { 0: { cellWidth: contentWidth / 2 }, 1: { cellWidth: contentWidth / 2 } },
+        margin: { left: margin },
+        pageBreak: 'avoid'
     });
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Address Content Section (50/50 Split - Uppercase) ---
+    // --- Address Content (UPPERCASE) ---
     autoTable(doc, {
         startY: currentY,
         body: [[
@@ -142,32 +128,57 @@ export const generateChallanPdf = async (data: ChallanData) => {
             data.deliveryToAddress.toUpperCase()
         ]],
         theme: 'grid',
-        styles: { 
-            cellPadding: 4, 
-            font: 'helvetica', 
-            overflow: 'linebreak', 
-            lineColor: [0, 0, 0], 
-            lineWidth: thinBorder, 
-            valign: 'top',
-            minCellHeight: 25
-        },
+        styles: { cellPadding: 4, font: 'helvetica', overflow: 'linebreak', lineColor: 0, lineWidth: thinBorder, valign: 'top', minCellHeight: 25 },
         columnStyles: { 
             0: { cellWidth: contentWidth / 2, fontSize: data.fromAddressFontSize || 10 }, 
             1: { cellWidth: contentWidth / 2, fontSize: data.deliveryToAddressFontSize || 10 } 
         },
-        margin: { left: margin, right: margin },
-        tableWidth: contentWidth
+        margin: { left: margin },
+        pageBreak: 'avoid'
     });
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- FOOTER LOCK LOGIC ---
-    const footerHeight = 20; // Exactly 2cm
-    const footerStartY = pageHeight - margin - footerHeight;
+    // --- Stretched Particulars Table ---
+    // This table will stretch its lines down to the signature row
+    const itemsTableHeight = footerStartY - currentY;
+    
+    autoTable(doc, {
+        startY: currentY,
+        head: [['SR.', 'PARTICULARS', 'AMOUNT']],
+        body: data.items.map((item, i) => [
+            (i + 1).toString(),
+            item.particulars.toUpperCase(),
+            item.amount > 0 ? `${item.amount.toLocaleString('en-IN')}/-` : ''
+        ]),
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 3, lineColor: 0, lineWidth: thinBorder, font: 'helvetica', overflow: 'linebreak' },
+        headStyles: { fillColor: 240, textColor: 0, fontStyle: 'bold', halign: 'center' },
+        columnStyles: {
+            0: { cellWidth: 15, halign: 'center' },
+            1: { cellWidth: contentWidth - 45 },
+            2: { cellWidth: 30, halign: 'right' }
+        },
+        margin: { left: margin, bottom: footerHeight + margin },
+        pageBreak: 'avoid',
+        didDrawPage: (hook) => {
+            // Draw vertical lines to fill the gap down to footer if needed
+            const tableEndY = hook.cursor?.y || currentY;
+            if (tableEndY < footerStartY) {
+                doc.setLineWidth(thinBorder);
+                // Draw left border
+                doc.line(margin, tableEndY, margin, footerStartY);
+                // Draw SR divider
+                doc.line(margin + 15, tableEndY, margin + 15, footerStartY);
+                // Draw Amount divider
+                doc.line(pageWidth - margin - 30, tableEndY, pageWidth - margin - 30, footerStartY);
+                // Draw right border
+                doc.line(pageWidth - margin, tableEndY, pageWidth - margin, footerStartY);
+            }
+        }
+    });
 
-    // Note: Particulars table temporarily removed per request to fix alignment
-
-    // --- Single Integrated Signature Row (2cm Height, 70/30 Split) ---
+    // --- Fixed Bottom Signature Section (70/30) ---
     autoTable(doc, {
         startY: footerStartY,
         body: [[
@@ -180,19 +191,19 @@ export const generateChallanPdf = async (data: ChallanData) => {
             fontStyle: 'bold',
             minCellHeight: footerHeight,
             valign: 'top',
-            lineColor: [0, 0, 0],
+            lineColor: 0,
             lineWidth: thinBorder,
-            textColor: [0, 0, 0],
+            textColor: 0,
             cellPadding: 4
         },
         columnStyles: {
             0: { cellWidth: contentWidth * 0.7, halign: 'left' },
             1: { cellWidth: contentWidth * 0.3, halign: 'right' }
         },
-        margin: { left: margin, right: margin },
-        tableWidth: contentWidth,
+        margin: { left: margin },
+        pageBreak: 'avoid',
         didDrawCell: (hook) => {
-            // Place single chhota Signature label at bottom right of the right-side cell
+            // Single Signature label at bottom right
             if (hook.section === 'body' && hook.column.index === 1) {
                 const cell = hook.cell;
                 doc.setFontSize(7);
@@ -202,16 +213,14 @@ export const generateChallanPdf = async (data: ChallanData) => {
         }
     });
 
-    // Optional Stamp (Automatically placed near signature)
+    // Optional Stamp
     if (data.includeStamp) {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
             const stampImg = await loadImage(stampFile);
-            const stampSize = 30;
-            doc.addImage(stampImg, 'PNG', pageWidth - margin - 35, footerStartY - 5, stampSize, stampSize);
+            doc.addImage(stampImg, 'PNG', pageWidth - margin - 35, footerStartY - 5, 30, 30);
         } catch (e) { }
     }
 
-    const fileName = `Challan_${data.challanNo.replace(/[/\\?%*:|"<>]/g, '-')}_${data.enterprise}.pdf`;
-    doc.save(fileName);
+    doc.save(`Challan_${data.challanNo.replace(/\//g, '-')}.pdf`);
 };
