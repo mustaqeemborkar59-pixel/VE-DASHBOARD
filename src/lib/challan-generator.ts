@@ -68,7 +68,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     // Text is drawn relative to its baseline, so we adjust slightly for optical center
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, headerY + (headerHeight / 2) + 3, { align: 'center' });
 
-    // Header bottom line (sata hua left right borders se)
+    // Header bottom line (Full width, touching left and right borders)
     doc.setLineWidth(thinBorder);
     doc.line(margin, headerY + headerHeight, pageWidth - margin, headerY + headerHeight);
 
@@ -152,18 +152,23 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setLineWidth(thinBorder);
     doc.setDrawColor(0);
     
+    // Column definitions for perfect alignment
+    const srWidth = 15;
+    const amountWidth = 30;
+    const particularsWidth = contentWidth - srWidth - amountWidth;
+
     // Table Headers
     autoTable(doc, {
         startY: currentY,
         head: [['SR.', 'PARTICULARS', 'AMOUNT']],
-        body: [], // No data rows
+        body: [], // NO ROWS AS REQUESTED
         theme: 'grid',
         styles: { fontSize: 9, cellPadding: 3, lineColor: 0, lineWidth: thinBorder, font: 'helvetica' },
         headStyles: { fillColor: 240, textColor: 0, fontStyle: 'bold', halign: 'center' },
         columnStyles: {
-            0: { cellWidth: 15 },
-            1: { cellWidth: contentWidth - 45 },
-            2: { cellWidth: 30 }
+            0: { cellWidth: srWidth },
+            1: { cellWidth: particularsWidth },
+            2: { cellWidth: amountWidth }
         },
         margin: { left: margin, right: margin }
     });
@@ -171,11 +176,12 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const tableHeaderY = (doc as any).lastAutoTable.finalY;
     
     // Vertical frame lines that stretch to the 2cm footer start
-    doc.line(margin, tableHeaderY, margin, footerStartY); // Left
-    doc.line(margin + 15, tableHeaderY, margin + 15, footerStartY); // Sr divider
-    doc.line(pageWidth - margin - 30, tableHeaderY, pageWidth - margin - 30, footerStartY); // Amount divider
-    doc.line(pageWidth - margin, tableHeaderY, pageWidth - margin, footerStartY); // Right
-    doc.line(margin, footerStartY, pageWidth - margin, footerStartY); // Section Bottom boundary
+    // Using the exact coordinates from the table widths
+    doc.line(margin, tableHeaderY, margin, footerStartY); // Left Border
+    doc.line(margin + srWidth, tableHeaderY, margin + srWidth, footerStartY); // Sr divider
+    doc.line(pageWidth - margin - amountWidth, tableHeaderY, pageWidth - margin - amountWidth, footerStartY); // Amount divider
+    doc.line(pageWidth - margin, tableHeaderY, pageWidth - margin, footerStartY); // Right Border
+    doc.line(margin, footerStartY, pageWidth - margin, footerStartY); // Section Bottom boundary (before footer)
 
     // --- 6. Integrated Signature Row (Fixed 2cm at absolute bottom) ---
     autoTable(doc, {
@@ -200,6 +206,8 @@ export const generateChallanPdf = async (data: ChallanData) => {
             1: { cellWidth: contentWidth * 0.3, halign: 'right' }
         },
         margin: { left: margin, right: margin, bottom: margin },
+        // Explicitly set table width to match the frame
+        tableWidth: contentWidth,
         didDrawCell: (hook) => {
             // "Signature" label inside the right cell, bottom-right
             if (hook.section === 'body' && hook.column.index === 1) {
