@@ -48,7 +48,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
     const thinBorder = 0.1;
-    const footerHeight = 20; // 2cm
+    const footerHeight = 20; // 2cm footer
     const footerStartY = pageHeight - margin - footerHeight;
 
     // --- Main External Frame ---
@@ -63,7 +63,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     
     doc.setFontSize(22);
     doc.setFont('times', 'bold');
-    // Vertical centering in 20mm box: midpoint is 10mm. +3 for font baseline adjustment.
+    // Vertical/Horizontal centering in 20mm box
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, headerY + 13, { align: 'center' });
 
     // Full-width Bottom Border for Header Block
@@ -87,14 +87,9 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     doc.setFont('helvetica', 'bold');
     doc.text(`PAN: ${data.pan} | GSTIN: ${data.gstin}`, pageWidth / 2, currentY, { align: 'center' });
-    currentY += 5.5;
+    currentY += 6;
 
-    // NOT FOR SALE Mention
-    doc.setFontSize(11);
-    doc.text("(NOT FOR SALE)", pageWidth / 2, currentY, { align: 'center' });
-    currentY += 5;
-
-    // Line after header block
+    // Border line after tax info
     doc.line(margin, currentY, pageWidth - margin, currentY);
 
     // --- 3. Info Row (CHALLAN / VEHICLE / DATE) ---
@@ -151,21 +146,27 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- 5. Items Table Section (Strict Alignment) ---
+    // --- 5. Items Table Section (Strict Alignment with "NOT FOR SALE" Title Row) ---
     const srWidth = 15;
     const amountWidth = 30;
     const particularsWidth = contentWidth - srWidth - amountWidth;
 
     const validItems = data.items.filter(item => item.particulars.trim() !== '');
 
-    autoTable(doc, {
-        startY: currentY,
-        head: [['SR.', 'PARTICULARS', 'AMOUNT']],
-        body: validItems.map((item, index) => [
+    // Construct body with "(NOT FOR SALE)" as the first row
+    const bodyData = [
+        ['', '(NOT FOR SALE)', ''],
+        ...validItems.map((item, index) => [
             (index + 1).toString(),
             item.particulars.toUpperCase(),
             item.amount ? `${item.amount.toFixed(2)}/-` : ''
-        ]),
+        ])
+    ];
+
+    autoTable(doc, {
+        startY: currentY,
+        head: [['SR.', 'PARTICULARS', 'AMOUNT']],
+        body: bodyData,
         theme: 'grid',
         tableWidth: contentWidth,
         styles: { 
@@ -184,12 +185,39 @@ export const generateChallanPdf = async (data: ChallanData) => {
             1: { cellWidth: particularsWidth, halign: 'left' },
             2: { cellWidth: amountWidth, halign: 'right' }
         },
-        margin: { left: margin, right: margin }
+        margin: { left: margin, right: margin },
+        didParseCell: (hookData) => {
+            // Apply special styling to "(NOT FOR SALE)" row
+            if (hookData.section === 'body' && hookData.row.index === 0) {
+                if (hookData.column.index === 1) {
+                    hookData.cell.styles.halign = 'center';
+                    hookData.cell.styles.fontStyle = 'bold';
+                }
+            }
+        },
+        didDrawCell: (hookData) => {
+            // Manually draw the underline for "(NOT FOR SALE)"
+            if (hookData.section === 'body' && hookData.row.index === 0 && hookData.column.index === 1) {
+                const cell = hookData.cell;
+                const text = '(NOT FOR SALE)';
+                const textWidth = doc.getTextWidth(text);
+                
+                // Get dimensions to find baseline
+                const textDim = doc.getTextDimensions(text);
+                const x = cell.x + (cell.width - textWidth) / 2;
+                // Position underline slightly below text baseline
+                const y = cell.y + (cell.height / 2) + (textDim.h / 2) - 0.5;
+                
+                doc.setLineWidth(0.2);
+                doc.setDrawColor(0);
+                doc.line(x, y, x + textWidth, y);
+            }
+        }
     });
 
     const tableFinalY = (doc as any).lastAutoTable.finalY;
     
-    // Draw manual lines from table end to footer start for clean framed look
+    // Draw manual frame lines from table end to footer start
     doc.setLineWidth(thinBorder);
     doc.setDrawColor(0);
     
@@ -214,6 +242,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         ]],
         theme: 'grid',
         tableWidth: contentWidth,
+        margin: { left: margin, right: margin, bottom: margin },
         styles: {
             fontSize: 9.5,
             fontStyle: 'bold',
@@ -228,7 +257,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
             0: { cellWidth: contentWidth * 0.7, halign: 'left' },
             1: { cellWidth: contentWidth * 0.3, halign: 'right' }
         },
-        margin: { left: margin, right: margin, bottom: margin },
         didDrawCell: (hook) => {
             if (hook.section === 'body' && hook.column.index === 1) {
                 const cell = hook.cell;
