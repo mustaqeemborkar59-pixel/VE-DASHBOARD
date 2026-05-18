@@ -43,13 +43,13 @@ export const generateChallanPdf = async (data: ChallanData) => {
     
     const themeColor: [number, number, number] = data.enterprise === 'RV' ? [0, 51, 102] : [200, 0, 0];
     const margin = 10;
+    const contentWidth = pageWidth - (margin * 2);
 
     // --- Main Document Border ---
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
-    doc.rect(margin, margin, pageWidth - (margin * 2), pageHeight - (margin * 2));
+    doc.rect(margin, margin, contentWidth, pageHeight - (margin * 2));
 
-    const contentWidth = pageWidth - (margin * 2);
     const topPadding = margin + 5;
 
     // --- Header Section ---
@@ -79,22 +79,23 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setLineWidth(0.5);
     doc.line(margin + 5, topPadding + 40, pageWidth - margin - 5, topPadding + 40);
 
-    let currentY = topPadding + 48;
+    let currentY = topPadding + 45;
 
-    // --- Challan Info Grid ---
+    // --- Challan Info Grid (Part of the unified structure) ---
     autoTable(doc, {
         startY: currentY,
         head: [['Challan No.', 'Vehicle No.', 'Date']],
         body: [[data.challanNo.toUpperCase(), data.vehicleNo.toUpperCase(), format(parseISO(data.date), 'dd-MMM-yyyy').toUpperCase()]],
         theme: 'grid',
-        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
+        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1, lineColor: [0, 0, 0] },
         styles: { fontSize: 10, cellPadding: 3, halign: 'center', font: 'helvetica', lineColor: [0, 0, 0], lineWidth: 0.1 },
-        margin: { left: margin + 5, right: margin + 5 }
+        margin: { left: margin, right: margin },
+        tableWidth: contentWidth
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 5;
+    currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Addresses Section (Same Column Sizes) ---
+    // --- Addresses Section (Joined with above table) ---
     autoTable(doc, {
         startY: currentY,
         head: [['From Address', 'Delivery To Address']],
@@ -103,44 +104,51 @@ export const generateChallanPdf = async (data: ChallanData) => {
             `${data.deliveryToName.toUpperCase()}\n${data.deliveryToAddress.toUpperCase()}`
         ]],
         theme: 'grid',
-        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold' },
+        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1, lineColor: [0, 0, 0] },
         styles: { fontSize: 9, cellPadding: 4, font: 'helvetica', overflow: 'linebreak', lineColor: [0, 0, 0], lineWidth: 0.1 },
         columnStyles: { 
-            0: { width: (contentWidth - 10) / 2 }, 
-            1: { width: (contentWidth - 10) / 2 } 
+            0: { cellWidth: contentWidth / 2 }, 
+            1: { cellWidth: contentWidth / 2 } 
         },
-        margin: { left: margin + 5, right: margin + 5 }
+        margin: { left: margin, right: margin },
+        tableWidth: contentWidth
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 5;
+    currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Items Table ---
+    // --- Items Table (Joined with above) ---
     const tableBody = data.items.map((item, index) => [
         index + 1,
         item.particulars.toUpperCase(),
         item.amount > 0 ? item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'
     ]);
 
+    // Calculate dynamic rows for items to fill some space if list is short
+    while (tableBody.length < 5) {
+        tableBody.push(['', '', '']);
+    }
+
     autoTable(doc, {
         startY: currentY,
         head: [['Sr.', 'Particulars', 'Amount (INR)']],
         body: tableBody,
         theme: 'grid',
-        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
-        styles: { fontSize: 10, cellPadding: 4, font: 'helvetica', lineColor: [0, 0, 0], lineWidth: 0.1 },
-        columnStyles: { 0: { width: 15, halign: 'center' }, 1: { width: contentWidth - 55 }, 2: { width: 30, halign: 'right' } },
-        margin: { left: margin + 5, right: margin + 5 }
+        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1, lineColor: [0, 0, 0] },
+        styles: { fontSize: 10, cellPadding: 4, font: 'helvetica', lineColor: [0, 0, 0], lineWidth: 0.1, minCellHeight: 10 },
+        columnStyles: { 0: { cellWidth: 15, halign: 'center' }, 1: { cellWidth: contentWidth - 45 }, 2: { cellWidth: 30, halign: 'right' } },
+        margin: { left: margin, right: margin },
+        tableWidth: contentWidth
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 30;
+    currentY = (doc as any).lastAutoTable.finalY + 25;
 
     // Prevent footer overflow
-    if (currentY > pageHeight - 50) {
+    if (currentY > pageHeight - 60) {
         doc.addPage();
         doc.setDrawColor(0);
         doc.setLineWidth(0.5);
-        doc.rect(margin, margin, pageWidth - (margin * 2), pageHeight - (margin * 2));
-        currentY = margin + 20;
+        doc.rect(margin, margin, contentWidth, pageHeight - (margin * 2));
+        currentY = margin + 25;
     }
 
     // --- Footer / Signatures ---
