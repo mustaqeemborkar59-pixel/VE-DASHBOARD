@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import AppLayout from "@/components/app-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,8 @@ import { ForkliftIcon } from '@/components/icons/forklift-icon';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 
+const DEFAULT_ADDRESS = "S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
+
 export default function ChallansPage() {
     const { firestore, user } = useFirebase();
     const { toast } = useToast();
@@ -32,11 +34,16 @@ export default function ChallansPage() {
     const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [includeStamp, setIncludeStamp] = useState(false);
     
-    // Independent Font Sizes
+    // Font Sizes
     const [fromAddressFontSize, setFromAddressFontSize] = useState(10);
     const [deliveryToAddressFontSize, setDeliveryToAddressFontSize] = useState(10);
     
-    const [fromAddress, setFromAddress] = useState("S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612");
+    // "From" Selection
+    const [fromId, setFromId] = useState('enterprise');
+    const [manualFromName, setManualFromName] = useState('');
+    const [fromAddress, setFromAddress] = useState(DEFAULT_ADDRESS);
+
+    // "Delivery To" Selection
     const [deliveryToId, setDeliveryToId] = useState('');
     const [manualDeliveryTo, setManualDeliveryTo] = useState({ name: '', address: '' });
     
@@ -67,10 +74,24 @@ export default function ChallansPage() {
     );
     const { data: settings } = useDoc<CompanySettings>(settingsRef);
 
-    const selectedCompany = useMemo(() => 
+    const selectedDeliveryCompany = useMemo(() => 
         companies?.find(c => c.id === deliveryToId), 
         [companies, deliveryToId]
     );
+
+    const selectedFromCompany = useMemo(() => 
+        companies?.find(c => c.id === fromId), 
+        [companies, fromId]
+    );
+
+    // Sync From Address when selection changes
+    useEffect(() => {
+        if (fromId === 'enterprise') {
+            setFromAddress(DEFAULT_ADDRESS);
+        } else if (fromId !== 'manual' && selectedFromCompany) {
+            setFromAddress(selectedFromCompany.address);
+        }
+    }, [fromId, selectedFromCompany]);
 
     const filteredForklifts = useMemo(() => {
         if (!forklifts) return [];
@@ -130,6 +151,13 @@ export default function ChallansPage() {
             return;
         }
 
+        const fromName = fromId === 'enterprise' 
+            ? (enterprise === 'Vithal' ? 'Vithal Enterprises' : 'R.V. Enterprises')
+            : fromId === 'manual' ? manualFromName : (selectedFromCompany?.name || '');
+
+        const deliveryToName = deliveryToId === 'manual' ? manualDeliveryTo.name : (selectedDeliveryCompany?.name || '');
+        const deliveryToAddress = deliveryToId === 'manual' ? manualDeliveryTo.address : (selectedDeliveryCompany?.address || '');
+
         setIsGenerating(true);
         try {
             await generateChallanPdf({
@@ -137,9 +165,10 @@ export default function ChallansPage() {
                 challanNo,
                 vehicleNo,
                 date,
+                fromName,
                 fromAddress,
-                deliveryToName: selectedCompany?.name || manualDeliveryTo.name,
-                deliveryToAddress: selectedCompany?.address || manualDeliveryTo.address,
+                deliveryToName,
+                deliveryToAddress,
                 items,
                 pan: settings?.pan || 'N/A',
                 gstin: settings?.gstin || 'N/A',
@@ -223,12 +252,34 @@ export default function ChallansPage() {
                             <Separator />
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">From Address</Label>
-                                    <Textarea value={fromAddress} onChange={e => setFromAddress(e.target.value)} className="min-h-[80px] text-xs leading-relaxed" />
+                                {/* FROM Section */}
+                                <div className="space-y-3">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">From Selection</Label>
+                                    <Select value={fromId} onValueChange={setFromId}>
+                                        <SelectTrigger className="h-10 text-xs font-bold">
+                                            <SelectValue placeholder="Select Source" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="enterprise">Default Enterprise</SelectItem>
+                                            <SelectItem value="manual">-- Manual Entry --</SelectItem>
+                                            <Separator className="my-1" />
+                                            {companies?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    
+                                    {fromId === 'manual' && (
+                                        <Input placeholder="From Name" value={manualFromName} onChange={e => setManualFromName(e.target.value)} className="h-8 text-xs font-bold" />
+                                    )}
+                                    
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[9px] font-bold text-muted-foreground/60 uppercase">From Address</Label>
+                                        <Textarea value={fromAddress} onChange={e => setFromAddress(e.target.value)} className="min-h-[80px] text-xs leading-relaxed" />
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Delivery To</Label>
+
+                                {/* DELIVERY TO Section */}
+                                <div className="space-y-3">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Delivery To Selection</Label>
                                     <Select value={deliveryToId} onValueChange={setDeliveryToId}>
                                         <SelectTrigger className="h-10 text-xs font-bold">
                                             <SelectValue placeholder="Select Client Company" />
@@ -238,17 +289,22 @@ export default function ChallansPage() {
                                             {companies?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
+
                                     {deliveryToId === 'manual' ? (
-                                        <div className="space-y-2 mt-2">
-                                            <Input placeholder="Client Name" value={manualDeliveryTo.name} onChange={e => setManualDeliveryTo({...manualDeliveryTo, name: e.target.value})} className="h-8 text-xs" />
+                                        <div className="space-y-2">
+                                            <Input placeholder="Client Name" value={manualDeliveryTo.name} onChange={e => setManualDeliveryTo({...manualDeliveryTo, name: e.target.value})} className="h-8 text-xs font-bold" />
                                             <Textarea placeholder="Client Address" value={manualDeliveryTo.address} onChange={e => setManualDeliveryTo({...manualDeliveryTo, address: e.target.value})} className="min-h-[60px] text-xs p-2" />
                                         </div>
-                                    ) : selectedCompany ? (
+                                    ) : selectedDeliveryCompany ? (
                                         <div className="p-3 rounded-xl bg-muted/30 border border-dashed text-[10px] leading-relaxed">
-                                            <p className="font-black text-foreground">{selectedCompany.name}</p>
-                                            <p className="text-muted-foreground">{selectedCompany.address}</p>
+                                            <p className="font-black text-foreground">{selectedDeliveryCompany.name}</p>
+                                            <p className="text-muted-foreground line-clamp-3">{selectedDeliveryCompany.address}</p>
                                         </div>
-                                    ) : null}
+                                    ) : (
+                                        <div className="h-[100px] flex items-center justify-center border-2 border-dashed rounded-xl bg-muted/10">
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-40">Select Client Company</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -309,7 +365,7 @@ export default function ChallansPage() {
                                 <div className="space-y-3">
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                                            <TypeOutline className="h-3 w-3 text-primary" /> Source Font Size
+                                            <TypeOutline className="h-3 w-3 text-primary" /> From Font Size
                                         </Label>
                                         <div className="flex items-center gap-3">
                                             <Input 
@@ -326,7 +382,7 @@ export default function ChallansPage() {
 
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                                            <Type className="h-3 w-3 text-primary" /> Target Font Size
+                                            <Type className="h-3 w-3 text-primary" /> Delivery Font Size
                                         </Label>
                                         <div className="flex items-center gap-3">
                                             <Input 
@@ -346,16 +402,18 @@ export default function ChallansPage() {
 
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-xs">
-                                        <span className="text-muted-foreground">Firm:</span>
-                                        <span className="font-black text-primary uppercase">{enterprise} Enterprises</span>
+                                        <span className="text-muted-foreground">From:</span>
+                                        <span className="font-black text-primary uppercase text-right truncate max-w-[150px]">
+                                            {fromId === 'enterprise' ? `${enterprise} Ent.` : (fromId === 'manual' ? manualFromName : (selectedFromCompany?.name || '-'))}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-muted-foreground">To:</span>
+                                        <span className="font-bold text-right truncate max-w-[150px]">{deliveryToId === 'manual' ? manualDeliveryTo.name : (selectedDeliveryCompany?.name || '-')}</span>
                                     </div>
                                     <div className="flex justify-between text-xs">
                                         <span className="text-muted-foreground">Date:</span>
                                         <span className="font-bold">{date ? format(parseISO(date), 'PP') : '-'}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-muted-foreground">To:</span>
-                                        <span className="font-bold text-right truncate max-w-[150px]">{selectedCompany?.name || manualDeliveryTo.name || '-'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -383,7 +441,7 @@ export default function ChallansPage() {
                             <div className="bg-amber-50 dark:bg-amber-900/10 p-3 rounded-xl border border-amber-100 dark:border-amber-900/30 flex gap-3">
                                 <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                                 <p className="text-[10px] text-amber-800 dark:text-amber-400 font-medium leading-relaxed">
-                                    PDF results will use <b>UPPERCASE</b> addresses for technical compliance. Column dividers are perfectly aligned at 50%.
+                                    PDF results will use <b>UPPERCASE</b> addresses. Headers automatically sync company names next to labels.
                                 </p>
                             </div>
                         </CardContent>
@@ -395,8 +453,8 @@ export default function ChallansPage() {
             <Dialog open={isForkliftDialogOpen} onOpenChange={setIsForkliftDialogOpen}>
                 <DialogContent className="max-w-[95vw] sm:max-w-md p-0 rounded-3xl overflow-hidden">
                     <DialogHeader className="p-6 bg-primary/5 border-b border-primary/10">
-                        <DialogTitle className="flex items-center gap-2">
-                            <ForkliftIcon className="h-5 w-5 text-primary" />
+                        <DialogTitle className="flex items-center gap-2 text-primary font-black">
+                            <ForkliftIcon className="h-5 w-5" />
                             Select Forklift
                         </DialogTitle>
                         <DialogDescription>Choose a forklift to insert its technical specs.</DialogDescription>

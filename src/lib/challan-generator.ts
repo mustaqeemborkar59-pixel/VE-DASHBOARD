@@ -14,6 +14,7 @@ export type ChallanData = {
     challanNo: string;
     vehicleNo: string;
     date: string;
+    fromName: string;
     fromAddress: string;
     deliveryToName: string;
     deliveryToAddress: string;
@@ -62,7 +63,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setTextColor(0, 0, 0);
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, topPadding + 10, { align: 'center' });
 
-    // Line below Firm Name
+    // Line below Firm Name (Separator)
     doc.setDrawColor(0); 
     doc.setLineWidth(0.3);
     doc.line(margin + 5, topPadding + 14, pageWidth - margin - 5, topPadding + 14);
@@ -110,7 +111,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         startY: currentY,
         body: [
             [
-                { content: `FROM :  ${enterpriseTitle.toUpperCase()}`, styles: { halign: 'left' } },
+                { content: `FROM :  ${data.fromName.toUpperCase()}`, styles: { halign: 'left' } },
                 { content: `DELIVERY TO :  ${data.deliveryToName.toUpperCase()}`, styles: { halign: 'left' } }
             ]
         ],
@@ -162,7 +163,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    const footerAreaHeight = 20; // Exactly 2cm
+    const footerAreaHeight = 20; 
     const footerStartY = pageHeight - margin - footerAreaHeight;
     const tableAreaBottomY = footerStartY;
 
@@ -244,7 +245,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         styles: {
             fontSize: 10,
             fontStyle: 'bold',
-            minCellHeight: 20, // 2cm row height
+            minCellHeight: 20, 
             valign: 'top',
             lineColor: [0, 0, 0],
             lineWidth: thinBorder,
@@ -274,7 +275,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
             const stampImg = await loadImage(stampFile);
-            // Place stamp in the 30% firm section
             doc.addImage(stampImg, 'PNG', pageWidth - margin - 35, sigFinalY - 26, 30, 30);
         } catch (e) {
             console.error("Stamp failed to load", e);
