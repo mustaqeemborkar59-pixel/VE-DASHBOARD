@@ -61,28 +61,30 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const headerY = margin;
     
     const enterpriseTitle = data.enterprise === 'RV' ? 'R.V. ENTERPRISES' : 'VITHAL ENTERPRISES';
+    
+    // Background Frame for header (optional, keeping it clean)
+    doc.setLineWidth(thinBorder);
+    
+    // Centering Text vertically and horizontally in the 2cm block
     doc.setFontSize(22);
     doc.setFont('times', 'bold');
-    
-    // Vertical and Horizontal Centering
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, headerY + (headerHeight / 2) + 3, { align: 'center' });
 
-    // Full-width Bottom Border for Header
-    doc.setLineWidth(thinBorder);
+    // Full-width Bottom Border for Header (Sata huwa from left to right)
     doc.line(margin, headerY + headerHeight, pageWidth - margin, headerY + headerHeight);
 
     let currentY = headerY + headerHeight + 5;
 
     // --- 2. Subtitles & Tax Info ---
-    doc.setFontSize(11);
+    doc.setFontSize(10.5);
     doc.setFont('helvetica', 'bold');
     doc.text("Supplier of Material Handling Equipments & Labour", pageWidth / 2, currentY, { align: 'center' });
     currentY += 5;
 
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.text("Off. : A/404, Astraea, Rustomjee Urbania, Near Lodha Paradise, Majiwada, Thane (W) - 400601.", pageWidth / 2, currentY, { align: 'center' });
-    currentY += 5;
+    currentY += 4.5;
     doc.text("Work : Sr No. 14/6A, Khot Banglow, Near Transformer, Bhandarli, Pimpri, Thane - 400 612.", pageWidth / 2, currentY, { align: 'center' });
     currentY += 6;
 
@@ -100,7 +102,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         doc.text(title, x + 2, y + 5.2);
         
         const titleWidth = doc.getTextWidth(title);
-        doc.setFontSize(11); 
+        doc.setFontSize(10); 
         doc.setFont('helvetica', 'bold');
         doc.text(value, x + 2 + titleWidth + 2, y + 5.5);
         
@@ -115,7 +117,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY += 8;
 
-    // --- 4. Address Section ---
+    // --- 4. Address Section (50/50 Split) ---
     autoTable(doc, {
         startY: currentY,
         body: [[
@@ -147,43 +149,58 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- 5. Particulars Area (Perfect Alignment Match) ---
+    // --- 5. Particulars Area (Fixed Width Alignment) ---
     const srWidth = 15;
     const amountWidth = 30;
     const particularsWidth = contentWidth - srWidth - amountWidth;
 
+    // Filter items to ensure we only render what user has entered
+    const validItems = data.items.filter(item => item.particulars.trim() !== '');
+
     autoTable(doc, {
         startY: currentY,
         head: [['SR.', 'PARTICULARS', 'AMOUNT']],
-        body: [], // No rows, pure frame
+        body: validItems.map((item, index) => [
+            (index + 1).toString(),
+            item.particulars.toUpperCase(),
+            item.amount ? `${item.amount.toFixed(2)}/-` : ''
+        ]),
         theme: 'grid',
         tableWidth: contentWidth,
-        styles: { fontSize: 9, cellPadding: 3, lineColor: 0, lineWidth: thinBorder, font: 'helvetica' },
+        styles: { 
+            fontSize: 9, 
+            cellPadding: 3, 
+            lineColor: 0, 
+            lineWidth: thinBorder, 
+            font: 'helvetica',
+            textColor: 0,
+            overflow: 'linebreak'
+        },
         headStyles: { fillColor: 240, textColor: 0, fontStyle: 'bold', halign: 'center' },
         columnStyles: {
-            0: { cellWidth: srWidth },
+            0: { cellWidth: srWidth, halign: 'center' },
             1: { cellWidth: particularsWidth },
-            2: { cellWidth: amountWidth }
+            2: { cellWidth: amountWidth, halign: 'right' }
         },
         margin: { left: margin, right: margin }
     });
 
-    const tableHeaderY = (doc as any).lastAutoTable.finalY;
+    const tableFinalY = (doc as any).lastAutoTable.finalY;
     
-    // Draw manual vertical lines to match header exactly
+    // Draw manual vertical lines to match header exactly and stretch to footer
     doc.setLineWidth(thinBorder);
     doc.setDrawColor(0);
     
-    // Left border
-    doc.line(margin, tableHeaderY, margin, footerStartY);
+    // Left boundary
+    doc.line(margin, tableFinalY, margin, footerStartY);
     // SR Divider
-    doc.line(margin + srWidth, tableHeaderY, margin + srWidth, footerStartY);
+    doc.line(margin + srWidth, tableFinalY, margin + srWidth, footerStartY);
     // AMOUNT Divider
-    doc.line(margin + srWidth + particularsWidth, tableHeaderY, margin + srWidth + particularsWidth, footerStartY);
-    // Right border
-    doc.line(pageWidth - margin, tableHeaderY, pageWidth - margin, footerStartY);
+    doc.line(margin + srWidth + particularsWidth, tableFinalY, margin + srWidth + particularsWidth, footerStartY);
+    // Right boundary
+    doc.line(pageWidth - margin, tableFinalY, pageWidth - margin, footerStartY);
     
-    // Bottom boundary line for particulars area
+    // Bottom boundary line before signature
     doc.line(margin, footerStartY, pageWidth - margin, footerStartY);
 
     // --- 6. Integrated Signature Row (Fixed 2cm at absolute bottom) ---
@@ -211,7 +228,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
         },
         margin: { left: margin, right: margin, bottom: margin },
         didDrawCell: (hook) => {
-            // Place small Signature label only in the right cell
             if (hook.section === 'body' && hook.column.index === 1) {
                 const cell = hook.cell;
                 doc.setFontSize(7);
