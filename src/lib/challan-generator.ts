@@ -106,7 +106,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY += 8;
 
-    // --- Addresses Labels Row ---
+    // --- Addresses Labels Row (50/50 Split) ---
     autoTable(doc, {
         startY: currentY,
         body: [
@@ -134,7 +134,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Address Content section (Uppercase) ---
+    // --- Address Content Section (50/50 Split) ---
     autoTable(doc, {
         startY: currentY,
         body: [[
@@ -161,65 +161,13 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // MATHEMATICS FOR 1-PAGE LAYOUT LOCK
-    const footerHeight = 20; // 2cm height
+    // --- FOOTER LOCK LOGIC ---
+    const footerHeight = 20; // 2cm
     const footerStartY = pageHeight - margin - footerHeight;
 
-    // --- Items Table ---
-    const tableBody = data.items.map((item, index) => [
-        index + 1,
-        item.particulars.toUpperCase(),
-        item.amount > 0 ? item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'
-    ]);
+    // (Particulars table removed as requested for temp)
 
-    autoTable(doc, {
-        startY: currentY,
-        head: [['SR.', 'PARTICULARS', 'AMOUNT']],
-        body: tableBody,
-        theme: 'grid',
-        headStyles: { 
-            fillColor: [245, 245, 245], 
-            textColor: [0, 0, 0], 
-            fontStyle: 'bold', 
-            halign: 'center', 
-            lineWidth: thinBorder, 
-            lineColor: [0, 0, 0] 
-        },
-        styles: { 
-            fontSize: 10, 
-            cellPadding: 4, 
-            font: 'helvetica', 
-            lineColor: [0, 0, 0], 
-            lineWidth: thinBorder, 
-            minCellHeight: 10, 
-            valign: 'top' 
-        },
-        bodyStyles: {
-            lineWidth: { left: thinBorder, right: thinBorder, top: 0, bottom: 0 }
-        },
-        columnStyles: { 
-            0: { cellWidth: 15, halign: 'center' }, 
-            1: { cellWidth: contentWidth - 45 }, 
-            2: { cellWidth: 30, halign: 'right' } 
-        },
-        margin: { left: margin, right: margin },
-        tableWidth: contentWidth
-    });
-
-    const tableFinalY = (doc as any).lastAutoTable.finalY;
-
-    // Stretch table lines to meet the footer
-    if (tableFinalY < footerStartY) {
-        doc.setDrawColor(0);
-        doc.setLineWidth(thinBorder);
-        doc.line(margin, tableFinalY, margin, footerStartY);
-        doc.line(margin + 15, tableFinalY, margin + 15, footerStartY);
-        doc.line(pageWidth - margin - 30, tableFinalY, pageWidth - margin - 30, footerStartY);
-        doc.line(pageWidth - margin, tableFinalY, pageWidth - margin, footerStartY);
-        doc.line(margin, footerStartY, pageWidth - margin, footerStartY);
-    }
-
-    // --- Fixed 2cm Signature Row (70/30 Area Split) ---
+    // --- Single Integrated Signature Row (2cm Height, 70/30 Split) ---
     autoTable(doc, {
         startY: footerStartY,
         body: [[
@@ -230,7 +178,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         styles: {
             fontSize: 10,
             fontStyle: 'bold',
-            minCellHeight: footerHeight, // 20mm height
+            minCellHeight: footerHeight,
             valign: 'top',
             lineColor: [0, 0, 0],
             lineWidth: thinBorder,
@@ -244,7 +192,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         margin: { left: margin, right: margin },
         tableWidth: contentWidth,
         didDrawCell: (hook) => {
-            // Draw small "Signature" label at bottom-right corner of right cell
+            // Draw "Signature" label only in the right cell, at the bottom-right corner
             if (hook.section === 'body' && hook.column.index === 1) {
                 const cell = hook.cell;
                 doc.setFontSize(7);
@@ -260,7 +208,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         try {
             const stampImg = await loadImage(stampFile);
             const stampSize = 30;
-            doc.addImage(stampImg, 'PNG', pageWidth - margin - 35, pageHeight - margin - footerHeight - 5, stampSize, stampSize);
+            doc.addImage(stampImg, 'PNG', pageWidth - margin - 35, footerStartY - 5, stampSize, stampSize);
         } catch (e) { }
     }
 
