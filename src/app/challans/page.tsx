@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { Company, CompanySettings, Forklift, Challan } from '@/lib/data';
-import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, Ruler, LayoutTemplate, Settings2, Save, History, Clock, ListFilter, ArrowLeft, PlusCircle } from 'lucide-react';
+import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, Ruler, LayoutTemplate, Settings2, Save, History, Clock, ListFilter, ArrowLeft, PlusCircle, Eye, Filter } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { generateChallanPdf, type ChallanItem } from '@/lib/challan-generator';
@@ -24,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const DEFAULT_ADDRESS = "S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
 
@@ -33,6 +34,8 @@ export default function ChallansPage() {
 
     // View State
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isViewOpen, setIsViewOpen] = useState(false);
+    const [selectedChallanForView, setSelectedChallanForView] = useState<Challan | null>(null);
 
     // Form State
     const [enterprise, setEnterprise] = useState<'Vithal' | 'RV'>('Vithal');
@@ -68,6 +71,7 @@ export default function ChallansPage() {
     
     // Search & Picker State
     const [historySearch, setHistorySearch] = useState('');
+    const [firmFilter, setFirmFilter] = useState<'All' | 'Vithal' | 'RV'>('All');
     const [isForkliftDialogOpen, setIsForkliftDialogOpen] = useState(false);
     const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
     const [forkliftSearch, setForkliftSearch] = useState('');
@@ -138,16 +142,28 @@ export default function ChallansPage() {
 
     const filteredHistory = useMemo(() => {
         if (!savedChallans) return [];
-        if (!historySearch) return savedChallans;
-        const lower = historySearch.toLowerCase();
-        return savedChallans.filter(c => 
-            c.challanNo.toLowerCase().includes(lower) || 
-            c.deliveryToName.toLowerCase().includes(lower) ||
-            (c.vehicleNo || '').toLowerCase().includes(lower) ||
-            c.fromName.toLowerCase().includes(lower) ||
-            c.items.some(item => item.particulars.toLowerCase().includes(lower))
-        );
-    }, [savedChallans, historySearch]);
+        
+        let list = savedChallans;
+
+        // Apply Firm Filter
+        if (firmFilter !== 'All') {
+            list = list.filter(c => c.enterprise === firmFilter);
+        }
+
+        // Apply Search Filter
+        if (historySearch) {
+            const lower = historySearch.toLowerCase();
+            list = list.filter(c => 
+                c.challanNo.toLowerCase().includes(lower) || 
+                c.deliveryToName.toLowerCase().includes(lower) ||
+                (c.vehicleNo || '').toLowerCase().includes(lower) ||
+                c.fromName.toLowerCase().includes(lower) ||
+                c.items.some(item => item.particulars.toLowerCase().includes(lower))
+            );
+        }
+
+        return list;
+    }, [savedChallans, historySearch, firmFilter]);
 
     const handleAddItem = () => {
         setItems([...items, { particulars: '', amount: 0 }]);
@@ -233,7 +249,7 @@ export default function ChallansPage() {
             
             await addDocumentNonBlocking(collection(firestore!, 'challans'), challanData);
             toast({ title: 'Record Saved', description: `Challan ${challanNo} added to Dashboard.` });
-            setIsFormOpen(false); // Go back to dashboard after save
+            setIsFormOpen(false); 
         } catch (e) {
             toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not store record.' });
         } finally {
@@ -242,7 +258,7 @@ export default function ChallansPage() {
     };
 
     const loadHistoryRecord = (record: Challan) => {
-        setEnterprise(record.enterprise);
+        setEnterprise(record.enterprise as 'Vithal' | 'RV');
         setChallanNo(record.challanNo);
         setVehicleNo(record.vehicleNo || '');
         setDate(record.date);
@@ -273,6 +289,11 @@ export default function ChallansPage() {
         setIsFormOpen(true);
         toast({ title: 'Record Loaded', description: `Challan ${record.challanNo} details restored.` });
     };
+
+    const handleOpenView = (record: Challan) => {
+        setSelectedChallanForView(record);
+        setIsViewOpen(true);
+    }
 
     const handleDeleteRecord = async (id: string) => {
         if (!firestore) return;
@@ -385,7 +406,7 @@ export default function ChallansPage() {
                     /* --- DASHBOARD VIEW --- */
                     <div className="space-y-6">
                         <Card className="border-none shadow-sm bg-muted/20 rounded-3xl p-6">
-                            <div className="flex flex-col sm:flex-row gap-4 items-center">
+                            <div className="flex flex-col md:flex-row gap-4 items-center">
                                 <div className="relative flex-1 w-full group">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input 
@@ -400,10 +421,23 @@ export default function ChallansPage() {
                                         </button>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-4 shrink-0 bg-background/50 px-4 py-2 rounded-2xl border border-dashed text-xs font-black uppercase text-muted-foreground">
-                                    <div className="flex items-center gap-1.5"><ListFilter className="h-3.5 w-3.5" /> Filter Active</div>
-                                    <Separator orientation="vertical" className="h-4" />
-                                    <div className="text-primary">{savedChallans?.length || 0} Total Records</div>
+                                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                                    <Select value={firmFilter} onValueChange={(v: any) => setFirmFilter(v)}>
+                                        <SelectTrigger className="h-12 w-full md:w-40 rounded-2xl font-bold bg-background border-muted-foreground/10">
+                                            <div className="flex items-center gap-2">
+                                                <Filter className="h-4 w-4 text-muted-foreground" />
+                                                <SelectValue placeholder="All Firms" />
+                                            </div>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="All">All Firms</SelectItem>
+                                            <SelectItem value="Vithal">Vithal Ent.</SelectItem>
+                                            <SelectItem value="RV">R.V. Ent.</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <div className="hidden md:flex items-center gap-4 shrink-0 bg-background/50 px-4 py-2 rounded-2xl border border-dashed text-xs font-black uppercase text-muted-foreground h-12">
+                                        <div className="text-primary">{filteredHistory.length} Results</div>
+                                    </div>
                                 </div>
                             </div>
                         </Card>
@@ -433,6 +467,9 @@ export default function ChallansPage() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1.5">
+                                                <Button variant="outline" size="icon" onClick={() => handleOpenView(challan)} className="h-9 w-9 rounded-xl border-muted-foreground/10 hover:bg-muted transition-all">
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
                                                 <Button variant="outline" size="icon" onClick={() => loadHistoryRecord(challan)} className="h-9 w-9 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary transition-all">
                                                     <History className="h-4 w-4" />
                                                 </Button>
@@ -703,6 +740,106 @@ export default function ChallansPage() {
                 )}
             </div>
 
+            {/* View Details Dialog */}
+            <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+                <DialogContent className="max-w-[95vw] sm:max-w-2xl p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
+                    {selectedChallanForView && (
+                        <>
+                            <DialogHeader className="p-6 bg-muted/30 border-b">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <Badge className={cn(
+                                            "mb-2 text-[9px] font-black uppercase tracking-widest",
+                                            selectedChallanForView.enterprise === 'Vithal' ? "bg-emerald-500 text-white" : "bg-blue-600 text-white"
+                                        )}>
+                                            {selectedChallanForView.enterprise} Enterprises
+                                        </Badge>
+                                        <DialogTitle className="text-2xl font-black">{selectedChallanForView.challanNo}</DialogTitle>
+                                        <DialogDescription className="text-xs uppercase font-bold flex items-center gap-1.5 mt-1">
+                                            <CalendarDays className="h-3 w-3" /> {format(parseISO(selectedChallanForView.date), 'dd MMMM yyyy')}
+                                        </DialogDescription>
+                                    </div>
+                                    <Button variant="outline" size="sm" onClick={() => loadHistoryRecord(selectedChallanForView)} className="rounded-xl font-bold">
+                                        <Pencil className="h-4 w-4 mr-2" /> Edit Record
+                                    </Button>
+                                </div>
+                            </DialogHeader>
+                            <ScrollArea className="max-h-[60vh]">
+                                <div className="p-6 space-y-6">
+                                    <div className="grid grid-cols-2 gap-8">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary">From</Label>
+                                            <p className="text-sm font-black uppercase">{selectedChallanForView.fromName}</p>
+                                            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{selectedChallanForView.fromAddress}</p>
+                                        </div>
+                                        <div className="space-y-2 text-right">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Delivery To</Label>
+                                            <p className="text-sm font-black uppercase">{selectedChallanForView.deliveryToName}</p>
+                                            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{selectedChallanForView.deliveryToAddress}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Particulars Listing</Label>
+                                        <div className="border rounded-2xl overflow-hidden">
+                                            <Table>
+                                                <TableHeader className="bg-muted/50">
+                                                    <TableRow>
+                                                        <TableHead className="w-12 text-center text-[10px] font-black uppercase">SR.</TableHead>
+                                                        <TableHead className="text-[10px] font-black uppercase">Item Details</TableHead>
+                                                        <TableHead className="w-32 text-right text-[10px] font-black uppercase">Amount</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {selectedChallanForView.items.map((item, i) => (
+                                                        <TableRow key={i}>
+                                                            <TableCell className="text-center font-bold text-xs">{i + 1}</TableCell>
+                                                            <TableCell className="text-xs leading-relaxed whitespace-pre-wrap font-medium">{item.particulars}</TableCell>
+                                                            <TableCell className="text-right font-mono font-bold text-xs text-primary">
+                                                                {item.amount ? `₹${item.amount.toLocaleString('en-IN')}` : '-'}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    </div>
+
+                                    {selectedChallanForView.vehicleNo && (
+                                        <div className="p-4 bg-muted/20 rounded-2xl border border-dashed flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-xl bg-background flex items-center justify-center border shadow-sm">
+                                                    <Car className="h-5 w-5 text-muted-foreground" />
+                                                </div>
+                                                <div className="space-y-0.5">
+                                                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Transport Vehicle</p>
+                                                    <p className="text-sm font-black uppercase tracking-widest">{selectedChallanForView.vehicleNo}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </ScrollArea>
+                            <DialogFooter className="p-6 bg-muted/30 border-t flex flex-row gap-3">
+                                <Button variant="ghost" onClick={() => setIsViewOpen(false)} className="flex-1 h-12 rounded-xl font-bold uppercase tracking-widest">Close</Button>
+                                <Button onClick={() => { 
+                                    setIsViewOpen(false); 
+                                    generateChallanPdf({
+                                        ...selectedChallanForView,
+                                        enterprise: selectedChallanForView.enterprise as 'Vithal' | 'RV',
+                                        pan: settings?.pan || 'N/A',
+                                        gstin: settings?.gstin || 'N/A',
+                                        ...selectedChallanForView.layoutSettings
+                                    });
+                                }} className="flex-1 h-12 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/20">
+                                    <Printer className="mr-2 h-5 w-5" /> Generate PDF
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
+
             {/* Forklift Picker Dialog */}
             <Dialog open={isForkliftDialogOpen} onOpenChange={setIsForkliftDialogOpen}>
                 <DialogContent className="max-w-[95vw] sm:max-w-md p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
@@ -769,4 +906,3 @@ export default function ChallansPage() {
         </AppLayout>
     );
 }
-
