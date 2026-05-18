@@ -19,6 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ForkliftIcon } from '@/components/icons/forklift-icon';
+import { Badge } from '@/components/ui/badge';
 
 export default function ChallansPage() {
     const { firestore, user } = useFirebase();
@@ -355,7 +356,7 @@ export default function ChallansPage() {
                                 <div className="grid gap-2 pr-4">
                                     {filteredForklifts.map(f => (
                                         <button 
-                                            key={f.id}
+                                            key={f.id} 
                                             onClick={() => handleSelectForklift(f)}
                                             className="w-full text-left p-3 rounded-xl border hover:border-primary hover:bg-primary/5 transition-all group"
                                         >
