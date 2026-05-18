@@ -44,7 +44,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const pageHeight = doc.internal.pageSize.getHeight();
     
     const enterpriseTitle = data.enterprise === 'RV' ? 'R.V. ENTERPRISES' : 'VITHAL ENTERPRISES';
-    const themeColor: [number, number, number] = data.enterprise === 'RV' ? [0, 51, 102] : [200, 0, 0];
+    const themeColor: [number, number, number] = [0, 0, 0]; // Standard black borders/lines
     const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
     const thinBorder = 0.1;
@@ -59,7 +59,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     // --- Header Section ---
     doc.setFontSize(22);
     doc.setFont('times', 'bold');
-    doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
+    doc.setTextColor(0, 0, 0);
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, topPadding + 10, { align: 'center' });
 
     doc.setDrawColor(0); 
@@ -80,10 +80,9 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setFont('helvetica', 'bold');
     doc.text(`PAN: ${data.pan} | GSTIN: ${data.gstin}`, pageWidth / 2, topPadding + 36, { align: 'center' });
 
-    doc.setLineWidth(thinBorder);
-    doc.line(margin + 5, topPadding + 40, pageWidth - margin - 5, topPadding + 40);
+    // The line below the address block has been removed as per user request.
 
-    let currentY = topPadding + 45;
+    let currentY = topPadding + 42;
 
     // --- Challan Info Line ---
     autoTable(doc, {
@@ -110,7 +109,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Addresses Labels Row (Force 50/50 alignment) ---
+    // --- Addresses Labels Row (Lock 50/50 alignment) ---
     autoTable(doc, {
         startY: currentY,
         body: [['FROM :', 'DELIVERY TO :']],
@@ -118,11 +117,10 @@ export const generateChallanPdf = async (data: ChallanData) => {
         styles: {
             fontSize: 9,
             fontStyle: 'bold',
-            cellPadding: { top: 2, bottom: 2, left: 4, right: 4 },
+            cellPadding: { top: 3.5, bottom: 3.5, left: 4, right: 4 },
             lineColor: [0, 0, 0],
             lineWidth: thinBorder,
             textColor: [0, 0, 0],
-            minCellHeight: 6 // Compact header
         },
         columnStyles: { 
             0: { cellWidth: contentWidth / 2 }, 
@@ -134,7 +132,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Address Content Section (Force 50/50 alignment & Capital Text) ---
+    // --- Address Content Section (Lock 50/50 alignment & Capital Text) ---
     autoTable(doc, {
         startY: currentY,
         body: [[
@@ -164,16 +162,19 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    const footerAreaHeight = 35; // Increased to accommodate 2cm row
+    const footerAreaHeight = 35;
     const footerStartY = pageHeight - margin - footerAreaHeight;
     const tableAreaBottomY = footerStartY - 5;
 
     // --- Items Table ---
-    const tableBody = data.items.map((item, index) => [
-        index + 1,
-        item.particulars.toUpperCase(),
-        item.amount > 0 ? item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'
-    ]);
+    const tableBody = data.items.map((item, index) => {
+        const lines = item.particulars.split('\n');
+        return [
+            index + 1,
+            item.particulars.toUpperCase(),
+            item.amount > 0 ? item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'
+        ];
+    });
 
     autoTable(doc, {
         startY: currentY,
@@ -207,6 +208,26 @@ export const generateChallanPdf = async (data: ChallanData) => {
         },
         margin: { left: margin, right: margin },
         tableWidth: contentWidth,
+        didParseCell: (data) => {
+            // Apply underline to 'NOT FOR SALE' if it's the first line of particulars
+            if (data.section === 'body' && data.column.index === 1) {
+                const text = data.cell.text[0] || '';
+                if (text.includes('NOT FOR SALE')) {
+                    data.cell.styles.fontStyle = 'bold';
+                }
+            }
+        },
+        didDrawCell: (data) => {
+            // Custom underline for 'NOT FOR SALE'
+            if (data.section === 'body' && data.column.index === 1) {
+                const text = data.cell.text[0] || '';
+                if (text.includes('NOT FOR SALE')) {
+                    const textWidth = doc.getTextWidth('NOT FOR SALE');
+                    doc.setLineWidth(0.2);
+                    doc.line(data.cell.x + 4, data.cell.y + 8, data.cell.x + 4 + textWidth, data.cell.y + 8);
+                }
+            }
+        }
     });
 
     const tableFinalY = (doc as any).lastAutoTable.finalY;
@@ -255,12 +276,10 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     const sigFinalY = (doc as any).lastAutoTable.finalY;
 
-    // Stamp logic inside the signature area
     if (data.includeStamp) {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
             const stampImg = await loadImage(stampFile);
-            // Position stamp above signatory text but within the 2cm row area
             doc.addImage(stampImg, 'PNG', pageWidth - margin - 50, sigFinalY - 26, 35, 35);
         } catch (e) {
             console.error("Stamp failed to load", e);
