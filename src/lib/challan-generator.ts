@@ -53,10 +53,10 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const topPadding = margin + 5;
 
     // --- Header Section ---
-    doc.setFontSize(28);
+    doc.setFontSize(22); // Reduced from 28
     doc.setFont('times', 'bold');
     doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
-    doc.text(`${data.enterprise === 'RV' ? 'R.V.' : 'VITHAL'} ENTERPRISES`, pageWidth / 2, topPadding + 10, { align: 'center' });
+    doc.text(`${data.enterprise === 'RV' ? 'R.V.' : 'Vithal'} Enterprises`, pageWidth / 2, topPadding + 10, { align: 'center' });
 
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
@@ -81,19 +81,19 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     let currentY = topPadding + 45;
 
-    // --- Challan Info Compact Row (Labels and Values together) ---
+    // --- Challan Info Line (Left Aligned) ---
     autoTable(doc, {
         startY: currentY,
         body: [[
-            `CHALLAN NO: ${data.challanNo.toUpperCase()}`,
-            `VEHICLE NO: ${data.vehicleNo.toUpperCase()}`,
-            `DATE: ${format(parseISO(data.date), 'dd-MMM-yyyy').toUpperCase()}`
+            `Challan No: ${data.challanNo}`,
+            `Vehicle No: ${data.vehicleNo}`,
+            `Date: ${format(parseISO(data.date), 'dd-MMM-yyyy')}`
         ]],
         theme: 'grid',
         styles: { 
             fontSize: 9, 
             cellPadding: 3, 
-            halign: 'center', 
+            halign: 'left', // Changed to left
             font: 'helvetica', 
             lineColor: [0, 0, 0], 
             lineWidth: 0.1,
@@ -106,13 +106,13 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Addresses Section (Joined with above table) ---
+    // --- Addresses Section ---
     autoTable(doc, {
         startY: currentY,
-        head: [['From Address', 'Delivery To Address']],
+        head: [['From :', 'Delivery To :']],
         body: [[
-            data.fromAddress.toUpperCase(),
-            `${data.deliveryToName.toUpperCase()}\n${data.deliveryToAddress.toUpperCase()}`
+            data.fromAddress,
+            `${data.deliveryToName}\n${data.deliveryToAddress}`
         ]],
         theme: 'grid',
         headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1, lineColor: [0, 0, 0] },
@@ -127,10 +127,10 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Items Table (Joined with above) ---
+    // --- Items Table ---
     const tableBody = data.items.map((item, index) => [
         index + 1,
-        item.particulars.toUpperCase(),
+        item.particulars,
         item.amount > 0 ? item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'
     ]);
 
@@ -166,9 +166,9 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0);
-    doc.text("RECEIVED BY", margin + 10, currentY);
+    doc.text("Received By", margin + 10, currentY);
     
-    doc.text(`FOR ${data.enterprise === 'RV' ? 'R.V.' : 'VITHAL'} ENTERPRISES`, pageWidth - margin - 10, currentY, { align: 'right' });
+    doc.text(`For ${data.enterprise === 'RV' ? 'R.V.' : 'Vithal'} Enterprises`, pageWidth - margin - 10, currentY, { align: 'right' });
 
     // Stamp placement
     const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
