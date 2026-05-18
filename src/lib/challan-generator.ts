@@ -1,4 +1,3 @@
-
 'use client';
 
 import jsPDF from 'jspdf';
@@ -43,6 +42,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
+    const enterpriseTitle = data.enterprise === 'RV' ? 'R.V. ENTERPRISES' : 'VITHAL ENTERPRISES';
     const themeColor: [number, number, number] = data.enterprise === 'RV' ? [0, 51, 102] : [200, 0, 0];
     const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
@@ -58,8 +58,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setFontSize(22);
     doc.setFont('times', 'bold');
     doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
-    const firmName = (data.enterprise === 'RV' ? 'R.V. ENTERPRISES' : 'VITHAL ENTERPRISES').toUpperCase();
-    doc.text(firmName, pageWidth / 2, topPadding + 10, { align: 'center' });
+    doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, topPadding + 10, { align: 'center' });
 
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.setLineWidth(0.5);
@@ -110,22 +109,32 @@ export const generateChallanPdf = async (data: ChallanData) => {
     currentY = (doc as any).lastAutoTable.finalY;
 
     // --- Addresses Section ---
+    // Using head for labels and body for values creates a line between them
     autoTable(doc, {
         startY: currentY,
+        head: [['From :', 'Delivery To :']],
         body: [[
-            `From :\n${data.fromAddress}`,
-            `Delivery To :\n${data.deliveryToName}\n${data.deliveryToAddress}`
+            data.fromAddress,
+            `${data.deliveryToName}\n${data.deliveryToAddress}`
         ]],
         theme: 'grid',
+        headStyles: {
+            fillColor: [255, 255, 255],
+            textColor: [0, 0, 0],
+            fontStyle: 'bold',
+            fontSize: 9,
+            lineWidth: 0.1,
+            lineColor: [0, 0, 0]
+        },
         styles: { 
             fontSize: 9, 
             cellPadding: 4, 
             font: 'helvetica', 
             overflow: 'linebreak', 
             lineColor: [0, 0, 0], 
-            lineWidth: 0.1,
+            lineWidth: 0.1, 
             valign: 'top',
-            minCellHeight: 35 // Minimum height set to 3.5cm
+            minCellHeight: 35 // Minimum height set to 3.5cm as requested
         },
         columnStyles: { 
             0: { cellWidth: contentWidth / 2 }, 
@@ -137,8 +146,8 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // Reduced footer section height area
-    const footerAreaHeight = 25; // Total space for Received By / Signatures
+    // Standard footer calculation
+    const footerAreaHeight = 22; 
     const footerStartY = pageHeight - margin - footerAreaHeight;
     const tableAreaBottomY = footerStartY - 5;
 
@@ -154,7 +163,14 @@ export const generateChallanPdf = async (data: ChallanData) => {
         head: [['Sr.', 'Particulars', 'Amount']],
         body: tableBody,
         theme: 'grid',
-        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1, lineColor: [0, 0, 0] },
+        headStyles: { 
+            fillColor: [245, 245, 245], 
+            textColor: [0, 0, 0], 
+            fontStyle: 'bold', 
+            halign: 'center', 
+            lineWidth: 0.1, 
+            lineColor: [0, 0, 0] 
+        },
         styles: { 
             fontSize: 10, 
             cellPadding: 4, 
@@ -167,7 +183,11 @@ export const generateChallanPdf = async (data: ChallanData) => {
         bodyStyles: {
             lineWidth: { left: 0.1, right: 0.1, top: 0, bottom: 0 }
         },
-        columnStyles: { 0: { cellWidth: 15, halign: 'center' }, 1: { cellWidth: contentWidth - 45 }, 2: { cellWidth: 30, halign: 'right' } },
+        columnStyles: { 
+            0: { cellWidth: 15, halign: 'center' }, 
+            1: { cellWidth: contentWidth - 45 }, 
+            2: { cellWidth: 30, halign: 'right' } 
+        },
         margin: { left: margin, right: margin },
         tableWidth: contentWidth,
     });
@@ -178,17 +198,10 @@ export const generateChallanPdf = async (data: ChallanData) => {
     if (tableFinalY < tableAreaBottomY) {
         doc.setDrawColor(0);
         doc.setLineWidth(0.1);
-        
-        // Left Edge
         doc.line(margin, tableFinalY, margin, tableAreaBottomY);
-        // Column 1 border
         doc.line(margin + 15, tableFinalY, margin + 15, tableAreaBottomY);
-        // Column 2 border
         doc.line(pageWidth - margin - 30, tableFinalY, pageWidth - margin - 30, tableAreaBottomY);
-        // Right Edge
         doc.line(pageWidth - margin, tableFinalY, pageWidth - margin, tableAreaBottomY);
-        
-        // Bottom closing line
         doc.line(margin, tableAreaBottomY, pageWidth - margin, tableAreaBottomY);
     } else {
         doc.setDrawColor(0);
@@ -207,21 +220,19 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const enterpriseName = data.enterprise === 'RV' ? 'R.V.' : 'VITHAL';
     doc.text(`For ${enterpriseName} ENTERPRISES`, pageWidth - margin - 10, footerY, { align: 'right' });
 
-    doc.setFontSize(9.5);
-    // Reduced vertical gap for signature
-    doc.text("Authorised Signatory", pageWidth - margin - 10, footerY + 18, { align: 'right' });
-
     // --- Stamp Positioning (Optional) ---
     if (data.includeStamp) {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
             const stampImg = await loadImage(stampFile);
-            // Position stamp above signature row
-            doc.addImage(stampImg, 'PNG', pageWidth - margin - 55, footerY - 35, 42, 42);
+            doc.addImage(stampImg, 'PNG', pageWidth - margin - 52, footerY - 28, 38, 38);
         } catch (e) {
             console.error("Stamp loading failed", e);
         }
     }
+
+    doc.setFontSize(9.5);
+    doc.text("Authorised Signatory", pageWidth - margin - 10, footerY + 15, { align: 'right' });
 
     const fileName = `Challan_${data.challanNo.replace(/[/\\?%*:|"<>]/g, '-')}_${data.enterprise}.pdf`;
     doc.save(fileName);
