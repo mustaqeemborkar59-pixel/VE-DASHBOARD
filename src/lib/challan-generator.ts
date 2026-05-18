@@ -114,8 +114,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         theme: 'grid',
         styles: { fontSize: 9, fontStyle: 'bold', cellPadding: 3, lineColor: 0, lineWidth: thinBorder, textColor: 0 },
         columnStyles: { 0: { cellWidth: contentWidth / 2 }, 1: { cellWidth: contentWidth / 2 } },
-        margin: { left: margin },
-        pageBreak: 'avoid'
+        margin: { left: margin, right: margin },
     });
 
     currentY = (doc as any).lastAutoTable.finalY;
@@ -128,13 +127,12 @@ export const generateChallanPdf = async (data: ChallanData) => {
             data.deliveryToAddress.toUpperCase()
         ]],
         theme: 'grid',
-        styles: { cellPadding: 4, font: 'helvetica', overflow: 'linebreak', lineColor: 0, lineWidth: thinBorder, valign: 'top', minCellHeight: 25 },
+        styles: { cellPadding: 4, font: 'helvetica', overflow: 'linebreak', lineColor: 0, lineWidth: thinBorder, valign: 'top', minCellHeight: 20 },
         columnStyles: { 
             0: { cellWidth: contentWidth / 2, fontSize: data.fromAddressFontSize || 10 }, 
             1: { cellWidth: contentWidth / 2, fontSize: data.deliveryToAddressFontSize || 10 } 
         },
-        margin: { left: margin },
-        pageBreak: 'avoid'
+        margin: { left: margin, right: margin },
     });
 
     currentY = (doc as any).lastAutoTable.finalY;
@@ -148,7 +146,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     autoTable(doc, {
         startY: currentY,
         head: [['SR.', 'PARTICULARS', 'AMOUNT']],
-        body: [], // NO ROWS AS REQUESTED
+        body: [], // BLANK AREA AS REQUESTED
         theme: 'grid',
         styles: { fontSize: 9, cellPadding: 3, lineColor: 0, lineWidth: thinBorder, font: 'helvetica' },
         headStyles: { fillColor: 240, textColor: 0, fontStyle: 'bold', halign: 'center' },
@@ -157,19 +155,19 @@ export const generateChallanPdf = async (data: ChallanData) => {
             1: { cellWidth: contentWidth - 45 },
             2: { cellWidth: 30 }
         },
-        margin: { left: margin }
+        margin: { left: margin, right: margin }
     });
 
     const tableHeaderY = (doc as any).lastAutoTable.finalY;
     
-    // Manually draw vertical lines to footer
-    doc.line(margin, tableHeaderY, margin, footerStartY); // Left
-    doc.line(margin + 15, tableHeaderY, margin + 15, footerStartY); // SR Divider
-    doc.line(pageWidth - margin - 30, tableHeaderY, pageWidth - margin - 30, footerStartY); // Amount Divider
-    doc.line(pageWidth - margin, tableHeaderY, pageWidth - margin, footerStartY); // Right
-    doc.line(margin, footerStartY, pageWidth - margin, footerStartY); // Closing line for particulars
+    // Manually draw vertical lines from table header to absolute footer start
+    doc.line(margin, tableHeaderY, margin, footerStartY); // Left Border
+    doc.line(margin + 15, tableHeaderY, margin + 15, footerStartY); // SR Column Divider
+    doc.line(pageWidth - margin - 30, tableHeaderY, pageWidth - margin - 30, footerStartY); // Amount Column Divider
+    doc.line(pageWidth - margin, tableHeaderY, pageWidth - margin, footerStartY); // Right Border
+    doc.line(margin, footerStartY, pageWidth - margin, footerStartY); // Closing line for particulars section
 
-    // --- Integrated Signature Row (2cm height, 70/30 Split) ---
+    // --- Integrated Signature Row (Fixed to absolute bottom of page 1) ---
     autoTable(doc, {
         startY: footerStartY,
         body: [[
@@ -191,15 +189,15 @@ export const generateChallanPdf = async (data: ChallanData) => {
             0: { cellWidth: contentWidth * 0.7, halign: 'left' },
             1: { cellWidth: contentWidth * 0.3, halign: 'right' }
         },
-        margin: { left: margin },
-        pageBreak: 'avoid',
+        margin: { left: margin, right: margin, bottom: margin }, // CRITICAL: explicit margins to prevent page break
         didDrawCell: (hook) => {
-            // Draw "Signature" label once at bottom-right
+            // Place small "Signature" label inside the right cell
             if (hook.section === 'body' && hook.column.index === 1) {
                 const cell = hook.cell;
                 doc.setFontSize(7);
                 doc.setFont('helvetica', 'normal');
-                doc.text("Signature", cell.x + cell.width - 4, cell.y + cell.height - 4, { align: 'right' });
+                // Absolute positioning within the cell at the bottom-right
+                doc.text("Signature", cell.x + cell.width - 4, cell.y + cell.height - 3, { align: 'right' });
             }
         }
     });
@@ -209,6 +207,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
             const stampImg = await loadImage(stampFile);
+            // Place stamp floating over signature area
             doc.addImage(stampImg, 'PNG', pageWidth - margin - 35, footerStartY - 5, 30, 30);
         } catch (e) { }
     }
