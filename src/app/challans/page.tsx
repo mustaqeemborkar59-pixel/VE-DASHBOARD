@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Company, CompanySettings, Forklift } from '@/lib/data';
-import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle } from 'lucide-react';
+import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { generateChallanPdf, type ChallanItem } from '@/lib/challan-generator';
@@ -30,7 +30,8 @@ export default function ChallansPage() {
     const [challanNo, setChallanNo] = useState('');
     const [vehicleNo, setVehicleNo] = useState('');
     const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-    const [includeStamp, setIncludeStamp] = useState(false); // Default to false
+    const [includeStamp, setIncludeStamp] = useState(false);
+    const [addressFontSize, setAddressFontSize] = useState(10);
     
     const [fromAddress, setFromAddress] = useState("S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612");
     const [deliveryToId, setDeliveryToId] = useState('');
@@ -107,7 +108,6 @@ export default function ChallansPage() {
     const handleSelectForklift = (forklift: Forklift) => {
         if (activeItemIndex === null) return;
 
-        // Structured formatting with bullet points and sub-item appearance
         const details = [
             `BATTERY OPERATED ELECTRIC FORKLIFT`,
             `   • S.No: ${forklift.serialNumber}`,
@@ -140,7 +140,8 @@ export default function ChallansPage() {
                 items,
                 pan: settings?.pan || 'N/A',
                 gstin: settings?.gstin || 'N/A',
-                includeStamp
+                includeStamp,
+                addressFontSize
             });
             toast({ title: 'Success', description: 'Challan PDF generated successfully.' });
         } catch (e) {
@@ -297,24 +298,47 @@ export default function ChallansPage() {
                     {/* Quick Preview Side */}
                     <Card className="lg:col-span-4 border-none shadow-lg bg-primary/5 rounded-3xl overflow-hidden self-start sticky top-24">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm uppercase tracking-widest">Live Summary</CardTitle>
+                            <CardTitle className="text-sm uppercase tracking-widest">Settings & Preview</CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 space-y-4">
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-muted-foreground">Firm:</span>
-                                    <span className="font-black text-primary uppercase">{enterprise} Enterprises</span>
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                                        <Type className="h-3 w-3 text-primary" /> Address Font Size
+                                    </Label>
+                                    <div className="flex items-center gap-3">
+                                        <Input 
+                                            type="number" 
+                                            value={addressFontSize} 
+                                            onChange={e => setAddressFontSize(parseInt(e.target.value) || 10)} 
+                                            className="h-9 w-20 text-center font-bold" 
+                                            min={6} 
+                                            max={20} 
+                                        />
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase">PT</span>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-muted-foreground">Date:</span>
-                                    <span className="font-bold">{date ? format(parseISO(date), 'PP') : '-'}</span>
-                                </div>
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-muted-foreground">To:</span>
-                                    <span className="font-bold text-right truncate max-w-[150px]">{selectedCompany?.name || manualDeliveryTo.name || '-'}</span>
+
+                                <Separator />
+
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-muted-foreground">Firm:</span>
+                                        <span className="font-black text-primary uppercase">{enterprise} Enterprises</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-muted-foreground">Date:</span>
+                                        <span className="font-bold">{date ? format(parseISO(date), 'PP') : '-'}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-muted-foreground">To:</span>
+                                        <span className="font-bold text-right truncate max-w-[150px]">{selectedCompany?.name || manualDeliveryTo.name || '-'}</span>
+                                    </div>
                                 </div>
                             </div>
+
                             <Separator />
+
                             <div className="space-y-3">
                                 <div className="flex justify-between text-sm font-black">
                                     <span>Total Amount</span>
@@ -336,7 +360,7 @@ export default function ChallansPage() {
                             <div className="bg-amber-50 dark:bg-amber-900/10 p-3 rounded-xl border border-amber-100 dark:border-amber-900/30 flex gap-3">
                                 <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                                 <p className="text-[10px] text-amber-800 dark:text-amber-400 font-medium leading-relaxed">
-                                    PDF will include official header, addresses, and signature blocks. {includeStamp ? "The enterprise stamp is currently enabled." : "The stamp has been disabled for this document."}
+                                    PDF results will use <b>UPPERCASE</b> addresses for technical compliance. Column dividers are perfectly aligned at 50%.
                                 </p>
                             </div>
                         </CardContent>

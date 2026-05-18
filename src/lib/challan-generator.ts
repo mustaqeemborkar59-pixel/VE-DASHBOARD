@@ -21,6 +21,7 @@ export type ChallanData = {
     pan: string;
     gstin: string;
     includeStamp?: boolean;
+    addressFontSize?: number;
 };
 
 const loadImage = (url: string): Promise<HTMLImageElement> => {
@@ -46,8 +47,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const themeColor: [number, number, number] = data.enterprise === 'RV' ? [0, 51, 102] : [200, 0, 0];
     const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
-
-    // Standard border thickness for standard workshop documents
     const thinBorder = 0.1;
 
     // --- Main Document Border ---
@@ -63,7 +62,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, topPadding + 10, { align: 'center' });
 
-    doc.setDrawColor(0); // Use black for standard lines
+    doc.setDrawColor(0); 
     doc.setLineWidth(thinBorder);
     doc.line(margin + 5, topPadding + 14, pageWidth - margin - 5, topPadding + 14);
 
@@ -90,14 +89,14 @@ export const generateChallanPdf = async (data: ChallanData) => {
     autoTable(doc, {
         startY: currentY,
         body: [[
-            `Challan No: ${data.challanNo}`,
-            `Vehicle No: ${data.vehicleNo}`,
-            `Date: ${format(parseISO(data.date), 'dd-MMM-yyyy')}`
+            `CHALLAN NO: ${data.challanNo.toUpperCase()}`,
+            `VEHICLE NO: ${data.vehicleNo.toUpperCase()}`,
+            `DATE: ${format(parseISO(data.date), 'dd-MMM-yyyy').toUpperCase()}`
         ]],
         theme: 'grid',
         styles: { 
             fontSize: 8.5, 
-            cellPadding: { top: 3.5, bottom: 3.5, left: 2, right: 2 }, // Increased padding as requested
+            cellPadding: { top: 3.5, bottom: 3.5, left: 2, right: 2 },
             halign: 'left',
             font: 'helvetica', 
             lineColor: [0, 0, 0], 
@@ -111,31 +110,42 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Addresses Section ---
+    // --- Addresses Labels Row (Force 50/50 alignment) ---
     autoTable(doc, {
         startY: currentY,
-        head: [['From :', 'Delivery To :']],
+        body: [['FROM :', 'DELIVERY TO :']],
+        theme: 'grid',
+        styles: {
+            fontSize: 9,
+            fontStyle: 'bold',
+            cellPadding: { top: 2, bottom: 2, left: 4, right: 4 },
+            lineColor: [0, 0, 0],
+            lineWidth: thinBorder,
+            textColor: [0, 0, 0]
+        },
+        columnStyles: { 
+            0: { cellWidth: contentWidth / 2 }, 
+            1: { cellWidth: contentWidth / 2 } 
+        },
+        margin: { left: margin, right: margin },
+        tableWidth: contentWidth
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY;
+
+    // --- Address Content Section (Force 50/50 alignment & Capital Text) ---
+    autoTable(doc, {
+        startY: currentY,
         body: [[
-            data.fromAddress,
-            `${data.deliveryToName}\n${data.deliveryToAddress}`
+            data.fromAddress.toUpperCase(),
+            `${data.deliveryToName.toUpperCase()}\n${data.deliveryToAddress.toUpperCase()}`
         ]],
         theme: 'grid',
-        headStyles: {
-            fillColor: [255, 255, 255],
-            textColor: [0, 0, 0],
-            fontStyle: 'bold',
-            fontSize: 9,
-            lineWidth: thinBorder,
-            lineColor: [0, 0, 0],
-            minCellHeight: 6,
-            valign: 'middle',
-            cellPadding: { top: 1, bottom: 1, left: 4, right: 4 }
-        },
         bodyStyles: {
-            minCellHeight: 30 // Minimum 3cm height
+            minCellHeight: 30 
         },
         styles: { 
-            fontSize: 9, 
+            fontSize: data.addressFontSize || 10, 
             cellPadding: 4, 
             font: 'helvetica', 
             overflow: 'linebreak', 
@@ -153,7 +163,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // Fixed footer height calculation to keep it at the bottom
     const footerAreaHeight = 25; 
     const footerStartY = pageHeight - margin - footerAreaHeight;
     const tableAreaBottomY = footerStartY - 5;
@@ -161,13 +170,13 @@ export const generateChallanPdf = async (data: ChallanData) => {
     // --- Items Table ---
     const tableBody = data.items.map((item, index) => [
         index + 1,
-        item.particulars,
+        item.particulars.toUpperCase(),
         item.amount > 0 ? item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'
     ]);
 
     autoTable(doc, {
         startY: currentY,
-        head: [['Sr.', 'Particulars', 'Amount']],
+        head: [['SR.', 'PARTICULARS', 'AMOUNT']],
         body: tableBody,
         theme: 'grid',
         headStyles: { 
@@ -201,7 +210,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     const tableFinalY = (doc as any).lastAutoTable.finalY;
 
-    // Extend vertical columns down to footer
     if (tableFinalY < tableAreaBottomY) {
         doc.setDrawColor(0);
         doc.setLineWidth(thinBorder);
@@ -216,18 +224,16 @@ export const generateChallanPdf = async (data: ChallanData) => {
         doc.line(margin, tableFinalY, pageWidth - margin, tableFinalY);
     }
 
-    // --- Footer / Signatures ---
     const footerY = footerStartY;
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0);
-    doc.text("Received By", margin + 10, footerY);
+    doc.text("RECEIVED BY", margin + 10, footerY);
     
     const enterpriseName = data.enterprise === 'RV' ? 'R.V.' : 'VITHAL';
-    doc.text(`For ${enterpriseName} ENTERPRISES`, pageWidth - margin - 10, footerY, { align: 'right' });
+    doc.text(`FOR ${enterpriseName} ENTERPRISES`, pageWidth - margin - 10, footerY, { align: 'right' });
 
-    // Optional Stamp placement
     if (data.includeStamp) {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
@@ -239,7 +245,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     }
 
     doc.setFontSize(9.5);
-    doc.text("Authorised Signatory", pageWidth - margin - 10, footerY + 12, { align: 'right' });
+    doc.text("AUTHORISED SIGNATORY", pageWidth - margin - 10, footerY + 12, { align: 'right' });
 
     const fileName = `Challan_${data.challanNo.replace(/[/\\?%*:|"<>]/g, '-')}_${data.enterprise}.pdf`;
     doc.save(fileName);
