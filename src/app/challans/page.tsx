@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { Company, CompanySettings, Forklift, Challan } from '@/lib/data';
-import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, Ruler, LayoutTemplate, Settings2, Save, History, Clock } from 'lucide-react';
+import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, Ruler, LayoutTemplate, Settings2, Save, History, Clock, ListFilter } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { generateChallanPdf, type ChallanItem } from '@/lib/challan-generator';
@@ -132,6 +132,7 @@ export default function ChallansPage() {
         );
     }, [forklifts, forkliftSearch]);
 
+    // Proper Dashboard Filter logic - including particulars content
     const filteredHistory = useMemo(() => {
         if (!savedChallans) return [];
         if (!historySearch) return savedChallans;
@@ -139,7 +140,9 @@ export default function ChallansPage() {
         return savedChallans.filter(c => 
             c.challanNo.toLowerCase().includes(lower) || 
             c.deliveryToName.toLowerCase().includes(lower) ||
-            c.vehicleNo.toLowerCase().includes(lower)
+            (c.vehicleNo || '').toLowerCase().includes(lower) ||
+            c.fromName.toLowerCase().includes(lower) ||
+            c.items.some(item => item.particulars.toLowerCase().includes(lower))
         );
     }, [savedChallans, historySearch]);
 
@@ -226,7 +229,7 @@ export default function ChallansPage() {
             };
             
             await addDocumentNonBlocking(collection(firestore!, 'challans'), challanData);
-            toast({ title: 'Record Saved', description: `Challan ${challanNo} added to history.` });
+            toast({ title: 'Record Saved', description: `Challan ${challanNo} added to Dashboard.` });
         } catch (e) {
             toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not store record.' });
         } finally {
@@ -266,7 +269,7 @@ export default function ChallansPage() {
         }
 
         setIsHistoryDialogOpen(false);
-        toast({ title: 'Record Loaded', description: `History entry ${record.challanNo} is now active.` });
+        toast({ title: 'Record Loaded', description: `Challan ${record.challanNo} details restored.` });
     };
 
     const handleDeleteRecord = async (id: string) => {
@@ -344,9 +347,11 @@ export default function ChallansPage() {
                         <Button 
                             variant="outline"
                             onClick={() => setIsHistoryDialogOpen(true)}
-                            className="h-12 px-4 rounded-xl font-bold uppercase tracking-widest border-primary/20 hover:bg-primary/5"
+                            className="h-12 px-4 rounded-xl font-bold uppercase tracking-widest border-primary/20 hover:bg-primary/5 shadow-sm"
+                            title="Challan Management Dashboard"
                         >
-                            <History className="h-5 w-5" />
+                            <History className="mr-2 h-5 w-5 text-primary" />
+                            Dashboard
                         </Button>
                         <Button 
                             variant="secondary"
@@ -354,7 +359,7 @@ export default function ChallansPage() {
                             disabled={isSaving || !challanNo}
                             className="h-12 px-6 rounded-xl font-bold uppercase tracking-widest shadow-sm"
                         >
-                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Save className="mr-2 h-5 w-5" /> Save</>}
+                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Save className="mr-2 h-5 w-5" /> Save Record</>}
                         </Button>
                         <Button 
                             onClick={handleGenerate} 
@@ -602,65 +607,123 @@ export default function ChallansPage() {
                 </div>
             </div>
 
-            {/* History Dialog */}
+            {/* Management Dashboard / History Dialog */}
             <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
-                <DialogContent className="max-w-[95vw] sm:max-w-3xl p-0 rounded-3xl overflow-hidden">
+                <DialogContent className="max-w-[95vw] sm:max-w-4xl p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
                     <DialogHeader className="p-6 bg-primary/5 border-b border-primary/10">
-                        <DialogTitle className="flex items-center gap-2 text-primary font-black">
-                            <History className="h-5 w-5" />
-                            Challan History
-                        </DialogTitle>
-                        <DialogDescription>Browse and load previously generated challans.</DialogDescription>
-                    </DialogHeader>
-                    <div className="p-4 space-y-4">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                                placeholder="Search by Challan No, Vehicle, or Client..." 
-                                value={historySearch}
-                                onChange={(e) => setHistorySearch(e.target.value)}
-                                className="pl-9 h-11"
-                            />
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <DialogTitle className="flex items-center gap-2 text-primary font-black text-xl">
+                                    <History className="h-6 w-6" />
+                                    Challan Management Dashboard
+                                </DialogTitle>
+                                <DialogDescription className="text-xs font-bold uppercase tracking-widest opacity-60">Search and track all machine deployments</DialogDescription>
+                            </div>
+                            <Badge variant="secondary" className="bg-primary/10 text-primary border-none py-1 px-3">
+                                {savedChallans?.length || 0} Records Total
+                            </Badge>
                         </div>
-                        <ScrollArea className="h-[450px]">
+                    </DialogHeader>
+                    <div className="p-6 space-y-6">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="relative flex-1 group">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                <Input 
+                                    placeholder="Search by Bill No, Client, Vehicle, or serial Number in Particulars..." 
+                                    value={historySearch}
+                                    onChange={(e) => setHistorySearch(e.target.value)}
+                                    className="pl-9 h-12 rounded-2xl border-muted bg-muted/20 focus-visible:ring-primary/20"
+                                />
+                                {historySearch && (
+                                    <button 
+                                        onClick={() => setHistorySearch('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    >
+                                        <XCircle className="h-4 w-4" />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2 px-3 py-1 bg-muted/20 rounded-2xl border border-dashed text-[10px] font-black uppercase text-muted-foreground">
+                                <ListFilter className="h-3 w-3" />
+                                Instant Dashboard Filters Active
+                            </div>
+                        </div>
+
+                        <ScrollArea className="h-[500px]">
                             {isLoadingHistory ? (
-                                <div className="flex items-center justify-center py-20">
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                <div className="flex flex-col items-center justify-center py-32 gap-3">
+                                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                                    <p className="text-xs font-black uppercase tracking-widest text-muted-foreground animate-pulse">Syncing Database...</p>
                                 </div>
                             ) : filteredHistory.length > 0 ? (
-                                <div className="grid gap-3 pr-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-4 pb-4">
                                     {filteredHistory.map(challan => (
-                                        <div key={challan.id} className="group relative bg-card border rounded-2xl p-4 hover:border-primary/50 hover:shadow-md transition-all">
-                                            <div className="flex flex-col sm:flex-row justify-between gap-4">
-                                                <div className="space-y-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="font-black text-sm">{challan.challanNo}</p>
-                                                        <Badge variant="outline" className="text-[8px] font-bold px-1.5 uppercase h-4">
-                                                            {challan.enterprise}
-                                                        </Badge>
+                                        <div key={challan.id} className="group relative bg-card border-2 border-muted/50 rounded-[28px] p-5 hover:border-primary/40 hover:shadow-xl transition-all duration-300">
+                                            <div className="flex flex-col h-full gap-4">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="font-black text-lg tracking-tighter text-foreground">{challan.challanNo}</p>
+                                                            <Badge className={cn(
+                                                                "text-[8px] font-black px-1.5 uppercase h-4 border-none",
+                                                                challan.enterprise === 'Vithal' ? "bg-emerald-500/10 text-emerald-600" : "bg-blue-600/10 text-blue-700"
+                                                            )}>
+                                                                {challan.enterprise} Ent.
+                                                            </Badge>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground font-black uppercase tracking-widest">
+                                                            <Clock className="h-2.5 w-2.5" />
+                                                            {format(parseISO(challan.date), 'dd MMM yyyy')}
+                                                        </div>
                                                     </div>
-                                                    <p className="text-[10px] font-black text-muted-foreground uppercase">{challan.deliveryToName}</p>
-                                                    <div className="flex items-center gap-3 text-[9px] text-muted-foreground font-medium uppercase tracking-tight">
-                                                        <span className="flex items-center gap-1"><Car className="h-2.5 w-2.5" /> {challan.vehicleNo || 'N/A'}</span>
-                                                        <span className="flex items-center gap-1"><Clock className="h-2.5 w-2.5" /> {format(parseISO(challan.date), 'dd MMM yyyy')}</span>
+                                                    <div className="flex items-center gap-1">
+                                                        <Button variant="outline" size="icon" onClick={() => loadHistoryRecord(challan)} className="h-9 w-9 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary shadow-sm" title="Reload into Editor">
+                                                            <History className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteRecord(challan.id)} className="h-9 w-9 text-destructive rounded-xl hover:bg-destructive/5" title="Permanent Delete">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2 self-end sm:self-center">
-                                                    <Button variant="outline" size="sm" onClick={() => loadHistoryRecord(challan)} className="h-9 px-4 rounded-xl text-xs font-bold">
-                                                        Load Record
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteRecord(challan.id)} className="h-9 w-9 text-destructive rounded-xl hover:bg-destructive/5">
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-6 w-6 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                                                            <Building2 className="h-3 w-3 text-muted-foreground" />
+                                                        </div>
+                                                        <p className="text-[11px] font-black text-foreground truncate uppercase">{challan.deliveryToName}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-6 w-6 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                                                            <Car className="h-3 w-3 text-muted-foreground" />
+                                                        </div>
+                                                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{challan.vehicleNo || 'Self Pick-up'}</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-auto pt-4 border-t border-dashed">
+                                                    <p className="text-[8px] font-black uppercase text-primary/60 tracking-widest mb-2 flex items-center gap-1.5">
+                                                        <Info className="h-2.5 w-2.5" /> Items Details
+                                                    </p>
+                                                    <div className="bg-muted/30 rounded-xl p-3 border border-muted/50">
+                                                        <p className="text-[10px] font-medium leading-relaxed italic text-foreground line-clamp-2">
+                                                            {challan.items.map(i => i.particulars.split('\n')[0]).join(' | ')}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-20 text-muted-foreground">
-                                    <History className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                                    <p className="text-sm font-bold uppercase tracking-widest">No matching records</p>
+                                <div className="text-center py-32 text-muted-foreground flex flex-col items-center gap-4">
+                                    <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center">
+                                        <History className="h-10 w-10 opacity-20" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-black uppercase tracking-widest">No matching records found</p>
+                                        <p className="text-xs font-medium opacity-60">Try searching with a different term or clear the search</p>
+                                    </div>
                                 </div>
                             )}
                         </ScrollArea>
@@ -670,54 +733,59 @@ export default function ChallansPage() {
 
             {/* Forklift Picker Dialog */}
             <Dialog open={isForkliftDialogOpen} onOpenChange={setIsForkliftDialogOpen}>
-                <DialogContent className="max-w-[95vw] sm:max-w-md p-0 rounded-3xl overflow-hidden">
+                <DialogContent className="max-w-[95vw] sm:max-w-md p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
                     <DialogHeader className="p-6 bg-primary/5 border-b border-primary/10">
                         <DialogTitle className="flex items-center gap-2 text-primary font-black">
                             <ForkliftIcon className="h-5 w-5" />
-                            Select Forklift
+                            Select Technical Unit
                         </DialogTitle>
-                        <DialogDescription>Choose a technical data unit.</DialogDescription>
+                        <DialogDescription className="text-xs uppercase font-bold tracking-widest opacity-60">Pull official specs from fleet database</DialogDescription>
                     </DialogHeader>
                     <div className="p-4 space-y-4">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <div className="relative group">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                             <Input 
-                                placeholder="Search..." 
+                                placeholder="Search by Serial No, Make, or Model..." 
                                 value={forkliftSearch}
                                 onChange={(e) => setForkliftSearch(e.target.value)}
-                                className="pl-9"
+                                className="pl-9 h-11 border-muted bg-muted/10 rounded-2xl"
                             />
                         </div>
-                        <ScrollArea className="h-[300px]">
+                        <ScrollArea className="h-[350px]">
                             {isLoadingForklifts ? (
-                                <div className="flex items-center justify-center py-10">
-                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                <div className="flex flex-col items-center justify-center py-20 gap-2">
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">Syncing Fleet...</p>
                                 </div>
                             ) : filteredForklifts.length > 0 ? (
-                                <div className="grid gap-2 pr-4">
+                                <div className="grid gap-3 pr-4">
                                     {filteredForklifts.map(f => (
                                         <button 
                                             key={f.id} 
                                             onClick={() => handleSelectForklift(f)}
-                                            className="w-full text-left p-3 rounded-xl border hover:border-primary hover:bg-primary/5 transition-all"
+                                            className="w-full text-left p-4 rounded-2xl border-2 border-muted/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 group"
                                         >
                                             <div className="flex justify-between items-start">
-                                                <div>
-                                                    <p className="font-black text-sm">{f.serialNumber}</p>
-                                                    <p className="text-[10px] text-muted-foreground uppercase">{f.make} {f.model}</p>
+                                                <div className="space-y-1">
+                                                    <p className="font-black text-sm text-foreground group-hover:text-primary transition-colors">{f.serialNumber}</p>
+                                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{f.make} {f.model}</p>
+                                                    <div className="flex items-center gap-2 pt-1">
+                                                        <Badge variant="outline" className="text-[8px] font-black px-1.5 uppercase h-4 bg-muted/20">{f.equipmentType || 'MHE'}</Badge>
+                                                        <span className="text-[8px] font-black text-muted-foreground/60 uppercase">Year: {f.year}</span>
+                                                    </div>
                                                 </div>
-                                                <Badge variant="secondary" className="text-[8px] uppercase">{f.capacity || 'N/A'}</Badge>
+                                                <Badge variant="secondary" className="text-[9px] font-black uppercase px-2 py-0.5 bg-primary/10 text-primary border-none">{f.capacity || 'N/A'}</Badge>
                                             </div>
                                         </button>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-10 text-muted-foreground italic text-sm">No forklifts found.</div>
+                                <div className="text-center py-20 text-muted-foreground italic text-sm">No units found matching search.</div>
                             )}
                         </ScrollArea>
                     </div>
                     <DialogFooter className="p-4 bg-muted/20 border-t">
-                        <Button variant="ghost" onClick={() => setIsForkliftDialogOpen(false)} className="w-full">Cancel</Button>
+                        <Button variant="ghost" onClick={() => setIsForkliftDialogOpen(false)} className="w-full h-11 font-black uppercase tracking-widest rounded-xl">Cancel Selection</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

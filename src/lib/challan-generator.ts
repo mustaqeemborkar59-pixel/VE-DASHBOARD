@@ -1,3 +1,4 @@
+
 'use client';
 
 import jsPDF from 'jspdf';
@@ -56,7 +57,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     // Configurable Layout Constants
     const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
-    const standardBorder = 0.3; // Increased from 0.1 for bolder look
+    const standardBorder = 0.3; // Increased for a bolder, professional look
     
     const headerBlockHeight = data.headerHeight || 20;
     const footerHeight = data.footerHeight || 20;
@@ -104,29 +105,32 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.text(`PAN: ${data.pan} | GSTIN: ${data.gstin}`, pageWidth / 2, currentY, { align: 'center' });
     currentY += 6;
 
-    // Bolder line after header details
+    // Line after header details
     doc.setLineWidth(standardBorder);
     doc.line(margin, currentY, pageWidth - margin, currentY);
 
     // --- 3. Info Row (CHALLAN / VEHICLE / DATE) ---
-    const drawInfoCell = (title: string, value: string, x: number, width: number, y: number) => {
+    // Manual Rectangles for Info Row
+    const colW = contentWidth / 3;
+    const infoY = currentY;
+    
+    const drawInfoCell = (title: string, value: string, x: number, width: number) => {
         doc.setFontSize(8); 
         doc.setFont('helvetica', 'normal');
-        doc.text(title, x + 2, y + 5.2);
+        doc.text(title, x + 2, infoY + 5.2);
         
         const titleWidth = doc.getTextWidth(title);
         doc.setFontSize(10.5); 
         doc.setFont('helvetica', 'bold');
-        doc.text(value, x + 2 + titleWidth + 2, y + 5.5);
+        doc.text(value, x + 2 + titleWidth + 2, infoY + 5.5);
         
         doc.setLineWidth(standardBorder);
-        doc.rect(x, y, width, 8);
+        doc.rect(x, infoY, width, 8);
     };
 
-    const colW = contentWidth / 3;
-    drawInfoCell("CHALLAN NO:", data.challanNo.toUpperCase(), margin, colW, currentY);
-    drawInfoCell("VEHICLE NO:", data.vehicleNo.toUpperCase(), margin + colW, colW, currentY);
-    drawInfoCell("DATE:", format(parseISO(data.date), 'dd-MMM-yyyy').toUpperCase(), margin + (colW * 2), colW, currentY);
+    drawInfoCell("CHALLAN NO:", data.challanNo.toUpperCase(), margin, colW);
+    drawInfoCell("VEHICLE NO:", data.vehicleNo.toUpperCase(), margin + colW, colW);
+    drawInfoCell("DATE:", format(parseISO(data.date), 'dd-MMM-yyyy').toUpperCase(), margin + (colW * 2), colW);
 
     currentY += 8;
 
@@ -162,7 +166,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- 5. Manual Header Row (Bolder Alignment) ---
+    // --- 5. Manual Header Row (PERFECT ALIGNMENT) ---
     const headerRowHeight = 8;
     const headerStartY = currentY;
     
@@ -198,7 +202,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const titleY = bodyStartY + 8;
     doc.text(titleText, titleX, titleY, { align: 'center' });
     
-    // Manual Underline
+    // Manual Underline for Title
     const tw = doc.getTextWidth(titleText);
     doc.setLineWidth(0.3);
     doc.line(titleX - (tw / 2), titleY + 1, titleX + (tw / 2), titleY + 1);
@@ -209,19 +213,23 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setFont('helvetica', 'normal');
 
     data.items.filter(i => i.particulars.trim()).forEach((item, index) => {
+        // SR Number
         doc.text((index + 1).toString(), margin + (srWidth / 2), itemY, { align: 'center' });
         
+        // Particulars Multi-line Text
         const lines = doc.splitTextToSize(item.particulars.toUpperCase(), particularsWidth - 4);
         doc.text(lines, margin + srWidth + 2, itemY);
         
+        // Amount (if present)
         if (item.amount) {
             doc.text(`${item.amount.toFixed(2)}/-`, margin + contentWidth - 2, itemY, { align: 'right' });
         }
         
+        // Calculate Y increment based on number of lines
         itemY += (lines.length * 4.5) + 3;
     });
 
-    // --- 8. Persistent Bolder Vertical Dividers ---
+    // --- 8. Persistent Vertical Dividers (Stretch to Footer) ---
     doc.setLineWidth(standardBorder);
     doc.setDrawColor(0);
     doc.line(margin + srWidth, headerStartY, margin + srWidth, footerStartY);
@@ -261,11 +269,12 @@ export const generateChallanPdf = async (data: ChallanData) => {
         }
     });
 
-    // Optional Stamp
+    // Optional Stamp Placement
     if (data.includeStamp) {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
             const stampImg = await loadImage(stampFile);
+            // Positioned near the signature line
             doc.addImage(stampImg, 'PNG', pageWidth - margin - 35, footerStartY - 5, 30, 30);
         } catch (e) { }
     }
