@@ -1,0 +1,141 @@
+'use client';
+
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { format, parseISO } from 'date-fns';
+
+export type ChallanItem = {
+    particulars: string;
+    amount: number;
+};
+
+export type ChallanData = {
+    enterprise: 'Vithal' | 'RV';
+    challanNo: string;
+    vehicleNo: string;
+    date: string;
+    fromAddress: string;
+    deliveryToName: string;
+    deliveryToAddress: string;
+    items: ChallanItem[];
+    pan: string;
+    gstin: string;
+};
+
+const loadImage = (url: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+        if (typeof window === 'undefined') {
+            reject('Server environment');
+            return;
+        }
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = (err) => reject(err);
+        img.src = url;
+    });
+};
+
+export const generateChallanPdf = async (data: ChallanData) => {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    const themeColor: [number, number, number] = data.enterprise === 'RV' ? [0, 51, 102] : [200, 0, 0];
+    const topPadding = 10;
+
+    // --- Header Section ---
+    doc.setFontSize(28);
+    doc.setFont('times', 'bold');
+    doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
+    doc.text(`${data.enterprise === 'RV' ? 'R.V.' : 'VITHAL'} ENTERPRISES`, pageWidth / 2, topPadding + 10, { align: 'center' });
+
+    doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
+    doc.setLineWidth(0.5);
+    doc.line(15, topPadding + 14, pageWidth - 15, topPadding + 14);
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text("Supplier of Material Handling Equipments & Labour", pageWidth / 2, topPadding + 20, { align: 'center' });
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const offAddr = "Off. : A/404, Astraea, Rustomjee Urbania, Near Lodha Paradise, Majiwada, Thane (W) - 400601.";
+    const workAddr = "Work : Sr No. 14/6A, Khot Bunglow, Near Transformer, Bhandarli, Pimpri, Thane - 400 612.";
+    doc.text(offAddr, pageWidth / 2, topPadding + 25, { align: 'center' });
+    doc.text(workAddr, pageWidth / 2, topPadding + 30, { align: 'center' });
+
+    doc.setFont('helvetica', 'bold');
+    doc.text(`PAN: ${data.pan} | GSTIN: ${data.gstin}`, pageWidth / 2, topPadding + 36, { align: 'center' });
+
+    doc.setLineWidth(0.5);
+    doc.line(15, topPadding + 40, pageWidth - 15, topPadding + 40);
+
+    let currentY = topPadding + 50;
+
+    // --- Challan Info Grid ---
+    autoTable(doc, {
+        startY: currentY,
+        head: [['Challan No.', 'Vehicle No.', 'Date']],
+        body: [[data.challanNo.toUpperCase(), data.vehicleNo.toUpperCase(), format(parseISO(data.date), 'dd-MMM-yyyy').toUpperCase()]],
+        theme: 'grid',
+        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
+        styles: { fontSize: 10, cellPadding: 3, halign: 'center', font: 'helvetica' },
+        margin: { left: 15, right: 15 }
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 5;
+
+    // --- Addresses Section ---
+    autoTable(doc, {
+        startY: currentY,
+        head: [['From Address', 'Delivery To Address']],
+        body: [[
+            data.fromAddress.toUpperCase(),
+            `${data.deliveryToName.toUpperCase()}\n${data.deliveryToAddress.toUpperCase()}`
+        ]],
+        theme: 'grid',
+        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold' },
+        styles: { fontSize: 9, cellPadding: 4, font: 'helvetica', overflow: 'linebreak' },
+        columnStyles: { 0: { width: 90 }, 1: { width: 90 } },
+        margin: { left: 15, right: 15 }
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 5;
+
+    // --- Items Table ---
+    const tableBody = data.items.map((item, index) => [
+        index + 1,
+        item.particulars.toUpperCase(),
+        item.amount > 0 ? item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'
+    ]);
+
+    autoTable(doc, {
+        startY: currentY,
+        head: [['Sr.', 'Particulars', 'Amount (INR)']],
+        body: tableBody,
+        theme: 'grid',
+        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
+        styles: { fontSize: 10, cellPadding: 4, font: 'helvetica' },
+        columnStyles: { 0: { width: 15, halign: 'center' }, 1: { width: 135 }, 2: { width: 30, halign: 'right' } },
+        margin: { left: 15, right: 15 }
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 30;
+
+    // --- Footer / Signatures ---
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text("RECEIVED BY", 15, currentY);
+    
+    doc.text(`FOR ${data.enterprise === 'RV' ? 'R.V.' : 'VITHAL'} ENTERPRISES`, pageWidth - 15, currentY, { align: 'right' });
+
+    // Stamp
+    const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
+    try {
+        const stampImg = await loadImage(stampFile);
+        doc.addImage(stampImg, 'PNG', pageWidth - 55, currentY + 5, 35, 35);
+    } catch (e) {}
+
+    const fileName = `Challan_${data.challanNo}_${data.enterprise}.pdf`;
+    doc.save(fileName);
+};
