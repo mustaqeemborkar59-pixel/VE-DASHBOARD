@@ -48,7 +48,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
     const thinBorder = 0.1;
-    const footerHeight = 20; // Exactly 2cm
+    const footerHeight = 20; // 2cm
     const footerStartY = pageHeight - margin - footerHeight;
 
     // --- Main External Frame ---
@@ -64,10 +64,10 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setFontSize(22);
     doc.setFont('times', 'bold');
     
-    // Vertical and Horizontal Centering in the 20mm box
+    // Vertical and Horizontal Centering
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, headerY + (headerHeight / 2) + 3, { align: 'center' });
 
-    // Header bottom line (Full width, touching left and right borders)
+    // Full-width Bottom Border for Header
     doc.setLineWidth(thinBorder);
     doc.line(margin, headerY + headerHeight, pageWidth - margin, headerY + headerHeight);
 
@@ -147,22 +147,17 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- 5. Blank Particulars Frame (Stretches to footer) ---
-    doc.setLineWidth(thinBorder);
-    doc.setDrawColor(0);
-    
-    // Column definitions for perfect alignment
+    // --- 5. Particulars Area (Perfect Alignment Match) ---
     const srWidth = 15;
     const amountWidth = 30;
     const particularsWidth = contentWidth - srWidth - amountWidth;
 
-    // Table Headers
     autoTable(doc, {
         startY: currentY,
         head: [['SR.', 'PARTICULARS', 'AMOUNT']],
-        body: [], // NO ROWS AS REQUESTED
+        body: [], // No rows, pure frame
         theme: 'grid',
-        tableWidth: contentWidth, // Force table width to match content width
+        tableWidth: contentWidth,
         styles: { fontSize: 9, cellPadding: 3, lineColor: 0, lineWidth: thinBorder, font: 'helvetica' },
         headStyles: { fillColor: 240, textColor: 0, fontStyle: 'bold', halign: 'center' },
         columnStyles: {
@@ -175,12 +170,21 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     const tableHeaderY = (doc as any).lastAutoTable.finalY;
     
-    // Vertical frame lines that stretch to the 2cm footer start
-    doc.line(margin, tableHeaderY, margin, footerStartY); // Left Border
-    doc.line(margin + srWidth, tableHeaderY, margin + srWidth, footerStartY); // Sr divider
-    doc.line(pageWidth - margin - amountWidth, tableHeaderY, pageWidth - margin - amountWidth, footerStartY); // Amount divider
-    doc.line(pageWidth - margin, tableHeaderY, pageWidth - margin, footerStartY); // Right Border
-    doc.line(margin, footerStartY, pageWidth - margin, footerStartY); // Section Bottom boundary (before footer)
+    // Draw manual vertical lines to match header exactly
+    doc.setLineWidth(thinBorder);
+    doc.setDrawColor(0);
+    
+    // Left border
+    doc.line(margin, tableHeaderY, margin, footerStartY);
+    // SR Divider
+    doc.line(margin + srWidth, tableHeaderY, margin + srWidth, footerStartY);
+    // AMOUNT Divider
+    doc.line(margin + srWidth + particularsWidth, tableHeaderY, margin + srWidth + particularsWidth, footerStartY);
+    // Right border
+    doc.line(pageWidth - margin, tableHeaderY, pageWidth - margin, footerStartY);
+    
+    // Bottom boundary line for particulars area
+    doc.line(margin, footerStartY, pageWidth - margin, footerStartY);
 
     // --- 6. Integrated Signature Row (Fixed 2cm at absolute bottom) ---
     autoTable(doc, {
@@ -207,6 +211,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         },
         margin: { left: margin, right: margin, bottom: margin },
         didDrawCell: (hook) => {
+            // Place small Signature label only in the right cell
             if (hook.section === 'body' && hook.column.index === 1) {
                 const cell = hook.cell;
                 doc.setFontSize(7);
