@@ -109,7 +109,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
     currentY = (doc as any).lastAutoTable.finalY;
 
     // --- Addresses Section ---
-    // Using head for labels and body for values creates a line between them
     autoTable(doc, {
         startY: currentY,
         head: [['From :', 'Delivery To :']],
@@ -124,7 +123,11 @@ export const generateChallanPdf = async (data: ChallanData) => {
             fontStyle: 'bold',
             fontSize: 9,
             lineWidth: 0.1,
-            lineColor: [0, 0, 0]
+            lineColor: [0, 0, 0],
+            minCellHeight: 0 // Labels use only as much height as needed
+        },
+        bodyStyles: {
+            minCellHeight: 35 // Address content maintains minimum 3.5cm height
         },
         styles: { 
             fontSize: 9, 
@@ -134,7 +137,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
             lineColor: [0, 0, 0], 
             lineWidth: 0.1, 
             valign: 'top',
-            minCellHeight: 35 // Minimum height set to 3.5cm as requested
         },
         columnStyles: { 
             0: { cellWidth: contentWidth / 2 }, 
@@ -147,7 +149,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     currentY = (doc as any).lastAutoTable.finalY;
 
     // Standard footer calculation
-    const footerAreaHeight = 22; 
+    const footerAreaHeight = 20; 
     const footerStartY = pageHeight - margin - footerAreaHeight;
     const tableAreaBottomY = footerStartY - 5;
 
@@ -232,7 +234,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     }
 
     doc.setFontSize(9.5);
-    doc.text("Authorised Signatory", pageWidth - margin - 10, footerY + 15, { align: 'right' });
+    doc.text("Authorised Signatory", pageWidth - margin - 10, footerY + 12, { align: 'right' });
 
     const fileName = `Challan_${data.challanNo.replace(/[/\\?%*:|"<>]/g, '-')}_${data.enterprise}.pdf`;
     doc.save(fileName);
