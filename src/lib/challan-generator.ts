@@ -93,8 +93,8 @@ export const generateChallanPdf = async (data: ChallanData) => {
         ]],
         theme: 'grid',
         styles: { 
-            fontSize: 9, 
-            cellPadding: 3, 
+            fontSize: 8.5, 
+            cellPadding: 2, 
             halign: 'left',
             font: 'helvetica', 
             lineColor: [0, 0, 0], 
@@ -124,8 +124,9 @@ export const generateChallanPdf = async (data: ChallanData) => {
             fontSize: 9,
             lineWidth: 0.1,
             lineColor: [0, 0, 0],
-            minCellHeight: 10, // 1cm Height for labels
-            valign: 'middle'
+            minCellHeight: 6, // Reduced height for labels
+            valign: 'middle',
+            cellPadding: { top: 1, bottom: 1, left: 4, right: 4 } // Reduced top/bottom padding
         },
         bodyStyles: {
             minCellHeight: 30 // 3cm Minimum height for address body
