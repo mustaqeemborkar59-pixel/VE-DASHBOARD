@@ -85,7 +85,7 @@ export default function ChallansPage() {
         [companies, deliveryToId]
     );
 
-    // Sync From Address when selection changes
+    // Sync From Address
     useEffect(() => {
         if (fromId === 'enterprise') {
             setFromAddress(settings?.address || DEFAULT_ADDRESS);
@@ -94,7 +94,7 @@ export default function ChallansPage() {
         }
     }, [fromId, selectedFromCompany, settings]);
 
-    // Sync Delivery Address when selection changes
+    // Sync Delivery Address
     useEffect(() => {
         if (deliveryToId === 'enterprise') {
             setDeliveryToAddress(settings?.address || DEFAULT_ADDRESS);
@@ -187,7 +187,7 @@ export default function ChallansPage() {
                 fromAddressFontSize,
                 deliveryToAddressFontSize
             });
-            toast({ title: 'Success', description: 'Challan PDF generated successfully.' });
+            toast({ title: 'Success', description: 'Challan PDF generated.' });
         } catch (e) {
             console.error(e);
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to generate PDF.' });
@@ -225,7 +225,7 @@ export default function ChallansPage() {
                             <div className="flex flex-col sm:flex-row justify-between gap-4">
                                 <div>
                                     <CardTitle>Challan Details</CardTitle>
-                                    <CardDescription>Enter the data for the document.</CardDescription>
+                                    <CardDescription>Enter document information.</CardDescription>
                                 </div>
                                 <Select value={enterprise} onValueChange={(v: any) => setEnterprise(v)}>
                                     <SelectTrigger className="w-full sm:w-40 h-10 font-bold bg-background">
@@ -244,13 +244,13 @@ export default function ChallansPage() {
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                                         <Hash className="h-3 w-3" /> Challan No.
                                     </Label>
-                                    <Input value={challanNo} onChange={e => setChallanNo(e.target.value)} placeholder="e.g. 001/24-25" className="h-10 font-bold" />
+                                    <Input value={challanNo} onChange={e => setChallanNo(e.target.value)} placeholder="001/24-25" className="h-10 font-bold" />
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                                         <Car className="h-3 w-3" /> Vehicle No.
                                     </Label>
-                                    <Input value={vehicleNo} onChange={e => setVehicleNo(e.target.value)} placeholder="e.g. MH-04-XX-1234" className="h-10 font-bold" />
+                                    <Input value={vehicleNo} onChange={e => setVehicleNo(e.target.value)} placeholder="MH-04-XX-1234" className="h-10 font-bold" />
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
@@ -341,7 +341,7 @@ export default function ChallansPage() {
                                             <Textarea 
                                                 value={item.particulars} 
                                                 onChange={e => handleItemChange(index, 'particulars', e.target.value)} 
-                                                placeholder="Service details or item description"
+                                                placeholder="Details"
                                                 className="flex-1 min-h-[40px] h-20 py-2 text-xs font-bold leading-snug resize-none"
                                             />
                                             <Input 
@@ -364,7 +364,7 @@ export default function ChallansPage() {
                     {/* Quick Preview Side */}
                     <Card className="lg:col-span-4 border-none shadow-lg bg-primary/5 rounded-3xl overflow-hidden self-start sticky top-24">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm uppercase tracking-widest">Settings & Preview</CardTitle>
+                            <CardTitle className="text-sm uppercase tracking-widest">Settings</CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 space-y-4">
                             <div className="space-y-4">
@@ -406,44 +406,18 @@ export default function ChallansPage() {
 
                                 <Separator />
 
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-muted-foreground">From:</span>
-                                        <span className="font-black text-primary uppercase text-right truncate max-w-[150px]">
-                                            {fromId === 'enterprise' ? `${enterprise} Ent.` : (fromId === 'manual' ? manualFromName : (selectedFromCompany?.name || '-'))}
-                                        </span>
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between p-3 bg-background/50 rounded-xl border border-primary/10">
+                                        <div className="space-y-0.5">
+                                            <Label htmlFor="stamp-toggle" className="text-[10px] font-black uppercase tracking-wider cursor-pointer">Include Stamp</Label>
+                                            <p className="text-[8px] text-muted-foreground">Auto-placed above signature</p>
+                                        </div>
+                                        <Switch 
+                                            id="stamp-toggle" 
+                                            checked={includeStamp} 
+                                            onCheckedChange={setIncludeStamp} 
+                                        />
                                     </div>
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-muted-foreground">To:</span>
-                                        <span className="font-bold text-right truncate max-w-[150px]">
-                                            {deliveryToId === 'enterprise' ? `${enterprise} Ent.` : (deliveryToId === 'manual' ? manualDeliveryToName : (selectedDeliveryCompany?.name || '-'))}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-muted-foreground">Date:</span>
-                                        <span className="font-bold">{date ? format(parseISO(date), 'PP') : '-'}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-3">
-                                <div className="flex justify-between text-sm font-black">
-                                    <span>Total Amount</span>
-                                    <span>₹{items.reduce((sum, i) => sum + i.amount, 0).toLocaleString('en-IN')}</span>
-                                </div>
-                                
-                                <div className="flex items-center justify-between p-3 bg-background/50 rounded-xl border border-primary/10">
-                                    <div className="space-y-0.5">
-                                        <Label htmlFor="stamp-toggle" className="text-[10px] font-black uppercase tracking-wider cursor-pointer">Include Official Stamp</Label>
-                                        <p className="text-[8px] text-muted-foreground leading-none">Auto-placed above signature</p>
-                                    </div>
-                                    <Switch 
-                                        id="stamp-toggle" 
-                                        checked={includeStamp} 
-                                        onCheckedChange={setIncludeStamp} 
-                                    />
                                 </div>
                             </div>
                         </CardContent>
@@ -459,13 +433,13 @@ export default function ChallansPage() {
                             <ForkliftIcon className="h-5 w-5" />
                             Select Forklift
                         </DialogTitle>
-                        <DialogDescription>Choose a forklift to insert its technical specs.</DialogDescription>
+                        <DialogDescription>Choose a technical data unit.</DialogDescription>
                     </DialogHeader>
                     <div className="p-4 space-y-4">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input 
-                                placeholder="Search serial, make, model..." 
+                                placeholder="Search..." 
                                 value={forkliftSearch}
                                 onChange={(e) => setForkliftSearch(e.target.value)}
                                 className="pl-9"
@@ -482,7 +456,7 @@ export default function ChallansPage() {
                                         <button 
                                             key={f.id} 
                                             onClick={() => handleSelectForklift(f)}
-                                            className="w-full text-left p-3 rounded-xl border hover:border-primary hover:bg-primary/5 transition-all group"
+                                            className="w-full text-left p-3 rounded-xl border hover:border-primary hover:bg-primary/5 transition-all"
                                         >
                                             <div className="flex justify-between items-start">
                                                 <div>

@@ -48,7 +48,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
     const thinBorder = 0.1;
-    const footerHeight = 20; // 2cm
+    const footerHeight = 20; // Exactly 2cm
     const footerStartY = pageHeight - margin - footerHeight;
 
     // --- Main External Frame ---
@@ -104,7 +104,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY += 8;
 
-    // --- Address Headers (50/50) ---
+    // --- Address Headers (50/50 Split) ---
     autoTable(doc, {
         startY: currentY,
         body: [[
@@ -139,46 +139,37 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Stretched Particulars Table ---
-    // This table will stretch its lines down to the signature row
-    const itemsTableHeight = footerStartY - currentY;
+    // --- Blank Framed Particulars Area ---
+    // Drawing a blank frame that fills the space between Address Section and Signature Row
+    doc.setLineWidth(thinBorder);
+    doc.setDrawColor(0);
     
+    // Draw horizontal table headers
     autoTable(doc, {
         startY: currentY,
         head: [['SR.', 'PARTICULARS', 'AMOUNT']],
-        body: data.items.map((item, i) => [
-            (i + 1).toString(),
-            item.particulars.toUpperCase(),
-            item.amount > 0 ? `${item.amount.toLocaleString('en-IN')}/-` : ''
-        ]),
+        body: [], // NO ROWS AS REQUESTED
         theme: 'grid',
-        styles: { fontSize: 9, cellPadding: 3, lineColor: 0, lineWidth: thinBorder, font: 'helvetica', overflow: 'linebreak' },
+        styles: { fontSize: 9, cellPadding: 3, lineColor: 0, lineWidth: thinBorder, font: 'helvetica' },
         headStyles: { fillColor: 240, textColor: 0, fontStyle: 'bold', halign: 'center' },
         columnStyles: {
-            0: { cellWidth: 15, halign: 'center' },
+            0: { cellWidth: 15 },
             1: { cellWidth: contentWidth - 45 },
-            2: { cellWidth: 30, halign: 'right' }
+            2: { cellWidth: 30 }
         },
-        margin: { left: margin, bottom: footerHeight + margin },
-        pageBreak: 'avoid',
-        didDrawPage: (hook) => {
-            // Draw vertical lines to fill the gap down to footer if needed
-            const tableEndY = hook.cursor?.y || currentY;
-            if (tableEndY < footerStartY) {
-                doc.setLineWidth(thinBorder);
-                // Draw left border
-                doc.line(margin, tableEndY, margin, footerStartY);
-                // Draw SR divider
-                doc.line(margin + 15, tableEndY, margin + 15, footerStartY);
-                // Draw Amount divider
-                doc.line(pageWidth - margin - 30, tableEndY, pageWidth - margin - 30, footerStartY);
-                // Draw right border
-                doc.line(pageWidth - margin, tableEndY, pageWidth - margin, footerStartY);
-            }
-        }
+        margin: { left: margin }
     });
 
-    // --- Fixed Bottom Signature Section (70/30) ---
+    const tableHeaderY = (doc as any).lastAutoTable.finalY;
+    
+    // Manually draw vertical lines to footer
+    doc.line(margin, tableHeaderY, margin, footerStartY); // Left
+    doc.line(margin + 15, tableHeaderY, margin + 15, footerStartY); // SR Divider
+    doc.line(pageWidth - margin - 30, tableHeaderY, pageWidth - margin - 30, footerStartY); // Amount Divider
+    doc.line(pageWidth - margin, tableHeaderY, pageWidth - margin, footerStartY); // Right
+    doc.line(margin, footerStartY, pageWidth - margin, footerStartY); // Closing line for particulars
+
+    // --- Integrated Signature Row (2cm height, 70/30 Split) ---
     autoTable(doc, {
         startY: footerStartY,
         body: [[
@@ -203,7 +194,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         margin: { left: margin },
         pageBreak: 'avoid',
         didDrawCell: (hook) => {
-            // Single Signature label at bottom right
+            // Draw "Signature" label once at bottom-right
             if (hook.section === 'body' && hook.column.index === 1) {
                 const cell = hook.cell;
                 doc.setFontSize(7);
