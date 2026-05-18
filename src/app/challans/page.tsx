@@ -20,6 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ForkliftIcon } from '@/components/icons/forklift-icon';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 
 export default function ChallansPage() {
     const { firestore, user } = useFirebase();
@@ -29,6 +30,7 @@ export default function ChallansPage() {
     const [challanNo, setChallanNo] = useState('');
     const [vehicleNo, setVehicleNo] = useState('');
     const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [includeStamp, setIncludeStamp] = useState(true);
     
     const [fromAddress, setFromAddress] = useState("S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612");
     const [deliveryToId, setDeliveryToId] = useState('');
@@ -136,7 +138,8 @@ export default function ChallansPage() {
                 deliveryToAddress: selectedCompany?.address || manualDeliveryTo.address,
                 items,
                 pan: settings?.pan || 'N/A',
-                gstin: settings?.gstin || 'N/A'
+                gstin: settings?.gstin || 'N/A',
+                includeStamp
             });
             toast({ title: 'Success', description: 'Challan PDF generated successfully.' });
         } catch (e) {
@@ -311,16 +314,28 @@ export default function ChallansPage() {
                                 </div>
                             </div>
                             <Separator />
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 <div className="flex justify-between text-sm font-black">
                                     <span>Total Amount</span>
                                     <span>₹{items.reduce((sum, i) => sum + i.amount, 0).toLocaleString('en-IN')}</span>
+                                </div>
+                                
+                                <div className="flex items-center justify-between p-3 bg-background/50 rounded-xl border border-primary/10">
+                                    <div className="space-y-0.5">
+                                        <Label htmlFor="stamp-toggle" className="text-[10px] font-black uppercase tracking-wider cursor-pointer">Include Official Stamp</Label>
+                                        <p className="text-[8px] text-muted-foreground leading-none">Auto-placed above signature</p>
+                                    </div>
+                                    <Switch 
+                                        id="stamp-toggle" 
+                                        checked={includeStamp} 
+                                        onCheckedChange={setIncludeStamp} 
+                                    />
                                 </div>
                             </div>
                             <div className="bg-amber-50 dark:bg-amber-900/10 p-3 rounded-xl border border-amber-100 dark:border-amber-900/30 flex gap-3">
                                 <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                                 <p className="text-[10px] text-amber-800 dark:text-amber-400 font-medium leading-relaxed">
-                                    PDF will include official header, addresses, and stamp for the selected enterprise. No blank rows will be added.
+                                    PDF will include official header, addresses, and signature blocks. {includeStamp ? "The enterprise stamp is currently enabled." : "The stamp has been disabled for this document."}
                                 </p>
                             </div>
                         </CardContent>

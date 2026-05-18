@@ -20,6 +20,7 @@ export type ChallanData = {
     items: ChallanItem[];
     pan: string;
     gstin: string;
+    includeStamp?: boolean;
 };
 
 const loadImage = (url: string): Promise<HTMLImageElement> => {
@@ -166,9 +167,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
         columnStyles: { 0: { cellWidth: 15, halign: 'center' }, 1: { cellWidth: contentWidth - 45 }, 2: { cellWidth: 30, halign: 'right' } },
         margin: { left: margin, right: margin },
         tableWidth: contentWidth,
-        didDrawCell: (data) => {
-            // No specific logic needed here as we will draw vertical lines manually
-        }
     });
 
     const tableFinalY = (doc as any).lastAutoTable.finalY;
@@ -210,14 +208,17 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setFontSize(9.5);
     doc.text("Authorised Signatory", pageWidth - margin - 10, footerY + 28, { align: 'right' });
 
-    // --- Stamp Positioning ---
-    // User wants stamp in right corner ABOVE the row
-    const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
-    try {
-        const stampImg = await loadImage(stampFile);
-        // Position stamp above the "For..." line in the right section
-        doc.addImage(stampImg, 'PNG', pageWidth - margin - 55, footerY - 45, 45, 45);
-    } catch (e) {}
+    // --- Stamp Positioning (Optional) ---
+    if (data.includeStamp) {
+        const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
+        try {
+            const stampImg = await loadImage(stampFile);
+            // Position stamp above the "For..." line in the right section
+            doc.addImage(stampImg, 'PNG', pageWidth - margin - 55, footerY - 45, 45, 45);
+        } catch (e) {
+            console.error("Stamp loading failed", e);
+        }
+    }
 
     const fileName = `Challan_${data.challanNo.replace(/[/\\?%*:|"<>]/g, '-')}_${data.enterprise}.pdf`;
     doc.save(fileName);
