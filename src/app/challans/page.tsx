@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { Company, CompanySettings, Forklift, Challan } from '@/lib/data';
-import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, Ruler, LayoutTemplate, Settings2, Save, History, Clock, ListFilter } from 'lucide-react';
+import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, Ruler, LayoutTemplate, Settings2, Save, History, Clock, ListFilter, ArrowLeft, PlusCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { generateChallanPdf, type ChallanItem } from '@/lib/challan-generator';
@@ -31,6 +31,10 @@ export default function ChallansPage() {
     const { firestore, user } = useFirebase();
     const { toast } = useToast();
 
+    // View State
+    const [isFormOpen, setIsFormOpen] = useState(false);
+
+    // Form State
     const [enterprise, setEnterprise] = useState<'Vithal' | 'RV'>('Vithal');
     const [challanNo, setChallanNo] = useState('');
     const [vehicleNo, setVehicleNo] = useState('');
@@ -62,8 +66,7 @@ export default function ChallansPage() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     
-    // History & Forklift State
-    const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+    // Search & Picker State
     const [historySearch, setHistorySearch] = useState('');
     const [isForkliftDialogOpen, setIsForkliftDialogOpen] = useState(false);
     const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
@@ -80,7 +83,7 @@ export default function ChallansPage() {
         firestore && user ? query(collection(firestore, 'forklifts'), orderBy('serialNumber', 'asc')) : null, 
         [firestore, user]
     );
-    const { data: forklifts, isLoading: isLoadingForklifts } = useCollection<Forklift>(forkliftsQuery);
+    const { data: forklifts } = useCollection<Forklift>(forkliftsQuery);
 
     const challansQuery = useMemoFirebase(() => 
         firestore && user ? query(collection(firestore, 'challans'), orderBy('createdAt', 'desc')) : null, 
@@ -133,7 +136,6 @@ export default function ChallansPage() {
         );
     }, [forklifts, forkliftSearch]);
 
-    // Proper Dashboard Filter logic - including particulars content
     const filteredHistory = useMemo(() => {
         if (!savedChallans) return [];
         if (!historySearch) return savedChallans;
@@ -231,6 +233,7 @@ export default function ChallansPage() {
             
             await addDocumentNonBlocking(collection(firestore!, 'challans'), challanData);
             toast({ title: 'Record Saved', description: `Challan ${challanNo} added to Dashboard.` });
+            setIsFormOpen(false); // Go back to dashboard after save
         } catch (e) {
             toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not store record.' });
         } finally {
@@ -244,7 +247,6 @@ export default function ChallansPage() {
         setVehicleNo(record.vehicleNo || '');
         setDate(record.date);
         
-        // Match from/to logic
         setFromId('manual');
         setManualFromName(record.fromName);
         setFromAddress(record.fromAddress);
@@ -255,7 +257,6 @@ export default function ChallansPage() {
         
         setItems(record.items);
 
-        // Restore layout
         if (record.layoutSettings) {
             setFromAddressFontSize(record.layoutSettings.fromAddressFontSize);
             setDeliveryToAddressFontSize(record.layoutSettings.deliveryToAddressFontSize);
@@ -269,7 +270,7 @@ export default function ChallansPage() {
             setIncludeStamp(record.layoutSettings.includeStamp);
         }
 
-        setIsHistoryDialogOpen(false);
+        setIsFormOpen(true);
         toast({ title: 'Record Loaded', description: `Challan ${record.challanNo} details restored.` });
     };
 
@@ -331,406 +332,376 @@ export default function ChallansPage() {
         }
     };
 
+    const handleCreateNew = () => {
+        // Reset form
+        setChallanNo('');
+        setVehicleNo('');
+        setDate(format(new Date(), 'yyyy-MM-dd'));
+        setItems([{ particulars: '', amount: 0 }]);
+        setFromId('enterprise');
+        setDeliveryToId('');
+        setManualDeliveryToName('');
+        setManualFromName('');
+        setIsFormOpen(true);
+    };
+
     return (
         <AppLayout>
             <div className="flex flex-col gap-6 max-w-6xl mx-auto animate-in fade-in duration-500 pb-20">
+                
+                {/* Header Section */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                         <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">
                             <FileDown className="h-7 w-7 text-primary" />
-                            Challan Generator
+                            {isFormOpen ? "Create Challan" : "Challan Dashboard"}
                         </h1>
                         <p className="text-sm text-muted-foreground uppercase font-bold tracking-widest opacity-70">
-                            Create Delivery & Service Challans
+                            {isFormOpen ? "Generator Editor" : "Delivery & Service History"}
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button 
-                            variant="outline"
-                            onClick={() => setIsHistoryDialogOpen(true)}
-                            className="h-12 px-4 rounded-xl font-bold uppercase tracking-widest border-primary/20 hover:bg-primary/5 shadow-sm"
-                            title="Challan Management Dashboard"
-                        >
-                            <History className="mr-2 h-5 w-5 text-primary" />
-                            Dashboard
-                        </Button>
-                        <Button 
-                            variant="secondary"
-                            onClick={handleSaveRecord} 
-                            disabled={isSaving || !challanNo}
-                            className="h-12 px-6 rounded-xl font-bold uppercase tracking-widest shadow-sm"
-                        >
-                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Save className="mr-2 h-5 w-5" /> Save Record</>}
-                        </Button>
-                        <Button 
-                            onClick={handleGenerate} 
-                            disabled={isGenerating}
-                            className="h-12 px-8 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/20"
-                        >
-                            {isGenerating ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Printer className="mr-2 h-5 w-5" /> Generate PDF</>}
-                        </Button>
+                        {isFormOpen ? (
+                            <>
+                                <Button variant="ghost" onClick={() => setIsFormOpen(false)} className="h-10 rounded-xl font-bold">
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+                                </Button>
+                                <Button variant="secondary" onClick={handleSaveRecord} disabled={isSaving || !challanNo} className="h-10 rounded-xl font-bold uppercase tracking-widest">
+                                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="mr-2 h-4 w-4" /> Save</>}
+                                </Button>
+                                <Button onClick={handleGenerate} disabled={isGenerating} className="h-10 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/20">
+                                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Printer className="mr-2 h-4 w-4" /> PDF</>}
+                                </Button>
+                            </>
+                        ) : (
+                            <Button onClick={handleCreateNew} className="h-12 px-6 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/20">
+                                <PlusCircle className="mr-2 h-5 w-5" /> Add New Challan
+                            </Button>
+                        )}
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    {/* Main Form */}
-                    <Card className="lg:col-span-8 border-none shadow-xl rounded-3xl overflow-hidden">
-                        <CardHeader className="bg-muted/30 border-b">
-                            <div className="flex flex-col sm:flex-row justify-between gap-4">
-                                <div>
-                                    <CardTitle>Challan Details</CardTitle>
-                                    <CardDescription>Enter document information.</CardDescription>
-                                </div>
-                                <Select value={enterprise} onValueChange={(v: any) => setEnterprise(v)}>
-                                    <SelectTrigger className="w-full sm:w-40 h-10 font-bold bg-background">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Vithal">Vithal Ent.</SelectItem>
-                                        <SelectItem value="RV">R.V. Ent.</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-6 space-y-6">
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                                        <Hash className="h-3 w-3" /> Challan No.
-                                    </Label>
-                                    <Input value={challanNo} onChange={e => setChallanNo(e.target.value)} placeholder="001/24-25" className="h-10 font-bold" />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                                        <Car className="h-3 w-3" /> Vehicle No.
-                                    </Label>
-                                    <Input value={vehicleNo} onChange={e => setVehicleNo(e.target.value)} placeholder="MH-04-XX-1234" className="h-10 font-bold" />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                                        <CalendarDays className="h-3 w-3" /> Date
-                                    </Label>
-                                    <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-10 font-bold" />
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                {/* FROM Section */}
-                                <div className="space-y-3">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">From Selection</Label>
-                                    <Select value={fromId} onValueChange={setFromId}>
-                                        <SelectTrigger className="h-10 text-xs font-bold">
-                                            <SelectValue placeholder="Select Source" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="enterprise">Default Enterprise</SelectItem>
-                                            <SelectItem value="manual">-- Manual Entry --</SelectItem>
-                                            <Separator className="my-1" />
-                                            {companies?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                    
-                                    {fromId === 'manual' && (
-                                        <Input placeholder="From Name" value={manualFromName} onChange={e => setManualFromName(e.target.value)} className="h-8 text-xs font-bold" />
+                {!isFormOpen ? (
+                    /* --- DASHBOARD VIEW --- */
+                    <div className="space-y-6">
+                        <Card className="border-none shadow-sm bg-muted/20 rounded-3xl p-6">
+                            <div className="flex flex-col sm:flex-row gap-4 items-center">
+                                <div className="relative flex-1 w-full group">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Input 
+                                        placeholder="Search by Bill No, Client, Vehicle, or Serial Number..." 
+                                        value={historySearch}
+                                        onChange={(e) => setHistorySearch(e.target.value)}
+                                        className="pl-10 h-12 rounded-2xl border-muted-foreground/10 bg-background focus-visible:ring-primary/20 text-sm font-medium"
+                                    />
+                                    {historySearch && (
+                                        <button onClick={() => setHistorySearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                                            <XCircle className="h-5 w-5" />
+                                        </button>
                                     )}
-                                    
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[9px] font-bold text-muted-foreground/60 uppercase">From Address</Label>
-                                        <Textarea value={fromAddress} onChange={e => setFromAddress(e.target.value)} className="min-h-[80px] text-xs leading-relaxed" />
-                                    </div>
                                 </div>
-
-                                {/* DELIVERY TO Section */}
-                                <div className="space-y-3">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Delivery To Selection</Label>
-                                    <Select value={deliveryToId} onValueChange={setDeliveryToId}>
-                                        <SelectTrigger className="h-10 text-xs font-bold">
-                                            <SelectValue placeholder="Select Destination" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="enterprise">Default Enterprise</SelectItem>
-                                            <SelectItem value="manual">-- Manual Entry --</SelectItem>
-                                            <Separator className="my-1" />
-                                            {companies?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-
-                                    {deliveryToId === 'manual' && (
-                                        <Input placeholder="Client Name" value={manualDeliveryToName} onChange={e => setManualDeliveryToName(e.target.value)} className="h-8 text-xs font-bold" />
-                                    )}
-
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[9px] font-bold text-muted-foreground/60 uppercase">Delivery Address</Label>
-                                        <Textarea value={deliveryToAddress} onChange={e => setDeliveryToAddress(e.target.value)} className="min-h-[80px] text-xs leading-relaxed" />
-                                    </div>
+                                <div className="flex items-center gap-4 shrink-0 bg-background/50 px-4 py-2 rounded-2xl border border-dashed text-xs font-black uppercase text-muted-foreground">
+                                    <div className="flex items-center gap-1.5"><ListFilter className="h-3.5 w-3.5" /> Filter Active</div>
+                                    <Separator orientation="vertical" className="h-4" />
+                                    <div className="text-primary">{savedChallans?.length || 0} Total Records</div>
                                 </div>
                             </div>
+                        </Card>
 
-                            <Separator />
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {isLoadingHistory ? (
+                                Array.from({ length: 6 }).map((_, i) => (
+                                    <Card key={i} className="h-60 rounded-[32px] animate-pulse bg-muted/30 border-none" />
+                                ))
+                            ) : filteredHistory.length > 0 ? (
+                                filteredHistory.map(challan => (
+                                    <Card key={challan.id} className="group relative bg-card border border-muted-foreground/10 rounded-[32px] p-6 hover:border-primary/40 hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col h-full">
+                                        {/* Corner Label */}
+                                        <div className={cn(
+                                            "absolute top-0 right-0 px-4 py-1.5 rounded-bl-2xl text-[8px] font-black uppercase tracking-widest",
+                                            challan.enterprise === 'Vithal' ? "bg-emerald-500/10 text-emerald-600" : "bg-blue-600/10 text-blue-700"
+                                        )}>
+                                            {challan.enterprise} Ent.
+                                        </div>
 
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Particulars & Amount</Label>
-                                    <Button variant="outline" size="sm" onClick={handleAddItem} className="h-8 rounded-lg text-[10px] font-black uppercase border-primary/20">
-                                        <Plus className="mr-1 h-3 w-3" /> Add Item
-                                    </Button>
-                                </div>
-                                <div className="space-y-3">
-                                    {items.map((item, index) => (
-                                        <div key={index} className="flex gap-2 items-start group">
-                                            <div className="h-10 w-8 flex flex-col items-center justify-center gap-1 shrink-0">
-                                                <div className="h-5 w-full flex items-center justify-center text-[10px] font-black text-muted-foreground/50 border rounded-t-lg bg-muted/20">{index + 1}</div>
-                                                <Button 
-                                                    variant="outline" 
-                                                    size="icon" 
-                                                    onClick={() => openForkliftPicker(index)}
-                                                    className="h-5 w-full rounded-none rounded-b-lg border-primary/20 bg-primary/5 hover:bg-primary/10"
-                                                    title="Load Forklift Details"
-                                                >
-                                                    <ForkliftIcon className="h-2.5 w-2.5 text-primary" />
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div className="space-y-1">
+                                                <p className="font-black text-2xl tracking-tighter text-foreground leading-none">{challan.challanNo}</p>
+                                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                                                    <Clock className="h-3 w-3" />
+                                                    {format(parseISO(challan.date), 'dd MMM yyyy')}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <Button variant="outline" size="icon" onClick={() => loadHistoryRecord(challan)} className="h-9 w-9 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary transition-all">
+                                                    <History className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" onClick={() => handleDeleteRecord(challan.id)} className="h-9 w-9 text-destructive rounded-xl hover:bg-destructive/5">
+                                                    <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </div>
-                                            <Textarea 
-                                                value={item.particulars} 
-                                                onChange={e => handleItemChange(index, 'particulars', e.target.value)} 
-                                                placeholder="Details"
-                                                className="flex-1 min-h-[40px] h-20 py-2 text-xs font-bold leading-snug resize-none"
-                                            />
-                                            <Input 
-                                                type="number" 
-                                                value={item.amount || ''} 
-                                                onChange={e => handleItemChange(index, 'amount', e.target.value)} 
-                                                placeholder="Amount"
-                                                className="w-24 h-10 text-right font-mono font-black"
-                                            />
-                                            <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} className="h-10 w-10 text-destructive hover:bg-destructive/5">
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
 
-                    {/* Advanced Customization Sidebar */}
-                    <Card className="lg:col-span-4 border-none shadow-lg bg-card rounded-3xl overflow-hidden self-start sticky top-24">
-                        <CardHeader className="bg-muted/30 border-b pb-4">
-                            <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                                <Settings2 className="h-4 w-4 text-primary" />
-                                Layout Settings
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4 space-y-6">
-                            <div className="space-y-4">
-                                <h4 className="text-[9px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
-                                    <Ruler className="h-3 w-3" /> Section Heights (mm)
-                                </h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Header</Label>
-                                        <Input type="number" value={headerHeight} onChange={e => setHeaderHeight(parseInt(e.target.value) || 20)} className="h-8 text-xs font-bold" />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Footer</Label>
-                                        <Input type="number" value={footerHeight} onChange={e => setFooterHeight(parseInt(e.target.value) || 20)} className="h-8 text-xs font-bold" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-4">
-                                <h4 className="text-[9px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
-                                    <LayoutTemplate className="h-3 w-3" /> Columns (mm)
-                                </h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">SR. Column</Label>
-                                        <Input type="number" value={srWidth} onChange={e => setSrWidth(parseInt(e.target.value) || 15)} className="h-8 text-xs font-bold" />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Amount Column</Label>
-                                        <Input type="number" value={amountWidth} onChange={e => setAmountWidth(parseInt(e.target.value) || 30)} className="h-8 text-xs font-bold" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-4">
-                                <h4 className="text-[9px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
-                                    <Type className="h-3 w-3" /> Typography (PT)
-                                </h4>
-                                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Sender Addr.</Label>
-                                        <Input type="number" value={fromAddressFontSize} onChange={e => setFromAddressFontSize(parseInt(e.target.value) || 10)} className="h-8 text-xs font-bold" />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Client Addr.</Label>
-                                        <Input type="number" value={deliveryToAddressFontSize} onChange={e => setDeliveryToAddressFontSize(parseInt(e.target.value) || 10)} className="h-8 text-xs font-bold" />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Body Font</Label>
-                                        <Input type="number" value={particularsFontSize} onChange={e => setParticularsFontSize(parseInt(e.target.value) || 9)} className="h-8 text-xs font-bold" />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Title Font</Label>
-                                        <Input type="number" value={titleFontSize} onChange={e => setTitleFontSize(parseInt(e.target.value) || 10)} className="h-8 text-xs font-bold" />
-                                    </div>
-                                    <div className="space-y-1.5 col-span-2">
-                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Header Details</Label>
-                                        <Input type="number" step="0.5" value={headerDetailsFontSize} onChange={e => setHeaderDetailsFontSize(parseFloat(e.target.value) || 8.5)} className="h-8 text-xs font-bold" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between p-3 bg-muted/20 rounded-xl border border-primary/10">
-                                    <div className="space-y-0.5">
-                                        <Label htmlFor="stamp-toggle" className="text-[10px] font-black uppercase tracking-wider cursor-pointer">Include Stamp</Label>
-                                        <p className="text-[8px] text-muted-foreground">Placed in footer</p>
-                                    </div>
-                                    <Switch 
-                                        id="stamp-toggle" 
-                                        checked={includeStamp} 
-                                        onCheckedChange={setIncludeStamp} 
-                                    />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-
-            {/* Management Dashboard / History Dialog */}
-            <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
-                <DialogContent className="max-w-[95vw] sm:max-w-4xl p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
-                    <DialogHeader className="p-6 bg-primary/5 border-b border-primary/10">
-                        <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                                <DialogTitle className="flex items-center gap-2 text-primary font-black text-xl">
-                                    <History className="h-6 w-6" />
-                                    Challan Management Dashboard
-                                </DialogTitle>
-                                <DialogDescription className="text-xs font-bold uppercase tracking-widest opacity-60">Search and track all machine deployments</DialogDescription>
-                            </div>
-                            <Badge variant="secondary" className="bg-primary/10 text-primary border-none py-1 px-3">
-                                {savedChallans?.length || 0} Records Total
-                            </Badge>
-                        </div>
-                    </DialogHeader>
-                    <div className="p-6 space-y-6">
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <div className="relative flex-1 group">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                <Input 
-                                    placeholder="Search by Bill No, Client, Vehicle, or serial Number in Particulars..." 
-                                    value={historySearch}
-                                    onChange={(e) => setHistorySearch(e.target.value)}
-                                    className="pl-9 h-12 rounded-2xl border-muted bg-muted/20 focus-visible:ring-primary/20"
-                                />
-                                {historySearch && (
-                                    <button 
-                                        onClick={() => setHistorySearch('')}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                    >
-                                        <XCircle className="h-4 w-4" />
-                                    </button>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-2 px-3 py-1 bg-muted/20 rounded-2xl border border-dashed text-[10px] font-black uppercase text-muted-foreground">
-                                <ListFilter className="h-3 w-3" />
-                                Instant Dashboard Filters Active
-                            </div>
-                        </div>
-
-                        <ScrollArea className="h-[500px]">
-                            {isLoadingHistory ? (
-                                <div className="flex flex-col items-center justify-center py-32 gap-3">
-                                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                                    <p className="text-xs font-black uppercase tracking-widest text-muted-foreground animate-pulse">Syncing Database...</p>
-                                </div>
-                            ) : filteredHistory.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-4 pb-4">
-                                    {filteredHistory.map(challan => (
-                                        <div key={challan.id} className="group relative bg-card border-2 border-muted/50 rounded-[28px] p-5 hover:border-primary/40 hover:shadow-xl transition-all duration-300">
-                                            <div className="flex flex-col h-full gap-4">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="space-y-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <p className="font-black text-lg tracking-tighter text-foreground">{challan.challanNo}</p>
-                                                            <Badge className={cn(
-                                                                "text-[8px] font-black px-1.5 uppercase h-4 border-none",
-                                                                challan.enterprise === 'Vithal' ? "bg-emerald-500/10 text-emerald-600" : "bg-blue-600/10 text-blue-700"
-                                                            )}>
-                                                                {challan.enterprise} Ent.
-                                                            </Badge>
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground font-black uppercase tracking-widest">
-                                                            <Clock className="h-2.5 w-2.5" />
-                                                            {format(parseISO(challan.date), 'dd MMM yyyy')}
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <Button variant="outline" size="icon" onClick={() => loadHistoryRecord(challan)} className="h-9 w-9 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary shadow-sm" title="Reload into Editor">
-                                                            <History className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteRecord(challan.id)} className="h-9 w-9 text-destructive rounded-xl hover:bg-destructive/5" title="Permanent Delete">
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
+                                        <div className="space-y-3 flex-1">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-7 w-7 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
+                                                    <Building2 className="h-4 w-4 text-muted-foreground" />
                                                 </div>
-
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="h-6 w-6 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                                                            <Building2 className="h-3 w-3 text-muted-foreground" />
-                                                        </div>
-                                                        <p className="text-[11px] font-black text-foreground truncate uppercase">{challan.deliveryToName}</p>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="h-6 w-6 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                                                            <Car className="h-3 w-3 text-muted-foreground" />
-                                                        </div>
-                                                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{challan.vehicleNo || 'Self Pick-up'}</p>
-                                                    </div>
+                                                <p className="text-xs font-black text-foreground truncate uppercase">{challan.deliveryToName}</p>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-7 w-7 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
+                                                    <Car className="h-4 w-4 text-muted-foreground" />
                                                 </div>
-
-                                                <div className="mt-auto pt-4 border-t border-dashed">
-                                                    <p className="text-[8px] font-black uppercase text-primary/60 tracking-widest mb-2 flex items-center gap-1.5">
-                                                        <Info className="h-2.5 w-2.5" /> Items Details
-                                                    </p>
-                                                    <div className="bg-muted/30 rounded-xl p-3 border border-muted/50">
-                                                        <p className="text-[10px] font-medium leading-relaxed italic text-foreground line-clamp-2">
-                                                            {challan.items.map(i => i.particulars.split('\n')[0]).join(' | ')}
-                                                        </p>
-                                                    </div>
-                                                </div>
+                                                <p className="text-[10px] font-bold text-muted-foreground uppercase">{challan.vehicleNo || 'Self Pick-up'}</p>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
+
+                                        <div className="mt-5 pt-4 border-t border-dashed border-muted-foreground/20">
+                                            <p className="text-[9px] font-black uppercase text-primary/60 tracking-widest mb-2 flex items-center gap-1.5">
+                                                <Info className="h-3 w-3" /> Items Details
+                                            </p>
+                                            <div className="bg-muted/30 rounded-2xl p-3 border border-muted-foreground/5">
+                                                <p className="text-[10px] font-medium leading-relaxed italic text-foreground/80 line-clamp-2">
+                                                    {challan.items.map(i => i.particulars.split('\n')[0]).join(' | ')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                ))
                             ) : (
-                                <div className="text-center py-32 text-muted-foreground flex flex-col items-center gap-4">
-                                    <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center">
-                                        <History className="h-10 w-10 opacity-20" />
+                                <div className="col-span-full py-32 text-center flex flex-col items-center gap-4">
+                                    <div className="h-24 w-24 rounded-full bg-muted/50 flex items-center justify-center opacity-30">
+                                        <History className="h-12 w-12" />
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-sm font-black uppercase tracking-widest">No matching records found</p>
-                                        <p className="text-xs font-medium opacity-60">Try searching with a different term or clear the search</p>
+                                        <p className="text-lg font-black uppercase tracking-widest text-muted-foreground">No matching records</p>
+                                        <p className="text-sm font-medium text-muted-foreground/60">Try searching for a different machine or client</p>
                                     </div>
                                 </div>
                             )}
-                        </ScrollArea>
+                        </div>
                     </div>
-                </DialogContent>
-            </Dialog>
+                ) : (
+                    /* --- EDITOR VIEW --- */
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in slide-in-from-right-4 duration-500">
+                        {/* Editor Form */}
+                        <Card className="lg:col-span-8 border-none shadow-2xl rounded-[32px] overflow-hidden">
+                            <CardHeader className="bg-muted/30 border-b p-6 sm:p-8">
+                                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <CardTitle>Challan Editor</CardTitle>
+                                        <CardDescription>Enter details and item specifications.</CardDescription>
+                                    </div>
+                                    <Select value={enterprise} onValueChange={(v: any) => setEnterprise(v)}>
+                                        <SelectTrigger className="w-full sm:w-40 h-10 font-bold bg-background rounded-xl border-primary/20">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Vithal">Vithal Ent.</SelectItem>
+                                            <SelectItem value="RV">R.V. Ent.</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-6 sm:p-8 space-y-8">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5"><Hash className="h-3 w-3" /> Challan No.</Label>
+                                        <Input value={challanNo} onChange={e => setChallanNo(e.target.value)} placeholder="001/24-25" className="h-11 font-bold rounded-xl" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5"><Car className="h-3 w-3" /> Vehicle No.</Label>
+                                        <Input value={vehicleNo} onChange={e => setVehicleNo(e.target.value)} placeholder="MH-04-XX-1234" className="h-11 font-bold rounded-xl" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Date</Label>
+                                        <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-11 font-bold rounded-xl" />
+                                    </div>
+                                </div>
+
+                                <Separator />
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                                    {/* FROM Section */}
+                                    <div className="space-y-4">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary">From Selection</Label>
+                                        <Select value={fromId} onValueChange={setFromId}>
+                                            <SelectTrigger className="h-11 text-xs font-bold rounded-xl">
+                                                <SelectValue placeholder="Select Source" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="enterprise">Default Enterprise</SelectItem>
+                                                <SelectItem value="manual">-- Manual Entry --</SelectItem>
+                                                <Separator className="my-1" />
+                                                {companies?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        {fromId === 'manual' && (
+                                            <Input placeholder="From Name" value={manualFromName} onChange={e => setManualFromName(e.target.value)} className="h-10 text-xs font-bold rounded-xl" />
+                                        )}
+                                        <div className="space-y-2">
+                                            <Label className="text-[9px] font-bold text-muted-foreground/60 uppercase">Sender Address</Label>
+                                            <Textarea value={fromAddress} onChange={e => setFromAddress(e.target.value)} className="min-h-[100px] text-xs leading-relaxed rounded-xl" />
+                                        </div>
+                                    </div>
+
+                                    {/* DELIVERY TO Section */}
+                                    <div className="space-y-4">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Delivery To Selection</Label>
+                                        <Select value={deliveryToId} onValueChange={setDeliveryToId}>
+                                            <SelectTrigger className="h-11 text-xs font-bold rounded-xl">
+                                                <SelectValue placeholder="Select Destination" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="enterprise">Default Enterprise</SelectItem>
+                                                <SelectItem value="manual">-- Manual Entry --</SelectItem>
+                                                <Separator className="my-1" />
+                                                {companies?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        {deliveryToId === 'manual' && (
+                                            <Input placeholder="Client Name" value={manualDeliveryToName} onChange={e => setManualDeliveryToName(e.target.value)} className="h-10 text-xs font-bold rounded-xl" />
+                                        )}
+                                        <div className="space-y-2">
+                                            <Label className="text-[9px] font-bold text-muted-foreground/60 uppercase">Delivery Address</Label>
+                                            <Textarea value={deliveryToAddress} onChange={e => setDeliveryToAddress(e.target.value)} className="min-h-[100px] text-xs leading-relaxed rounded-xl" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Separator />
+
+                                <div className="space-y-6">
+                                    <div className="flex justify-between items-center">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Particulars & Amount</Label>
+                                        <Button variant="outline" size="sm" onClick={handleAddItem} className="h-9 rounded-xl text-[10px] font-black uppercase border-primary/20 bg-primary/5 text-primary hover:bg-primary/10">
+                                            <Plus className="mr-1.5 h-4 w-4" /> Add Line Item
+                                        </Button>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {items.map((item, index) => (
+                                            <div key={index} className="flex gap-3 items-start group animate-in slide-in-from-left-2 duration-300">
+                                                <div className="flex flex-col gap-1 shrink-0 w-10">
+                                                    <div className="h-6 w-full flex items-center justify-center text-[10px] font-black text-muted-foreground/50 border rounded-t-xl bg-muted/20">{index + 1}</div>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="icon" 
+                                                        onClick={() => openForkliftPicker(index)}
+                                                        className="h-10 w-full rounded-none rounded-b-xl border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary"
+                                                        title="Load Fleet Specs"
+                                                    >
+                                                        <ForkliftIcon className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                                <Textarea 
+                                                    value={item.particulars} 
+                                                    onChange={e => handleItemChange(index, 'particulars', e.target.value)} 
+                                                    placeholder="Detailed technical description..."
+                                                    className="flex-1 min-h-[44px] h-24 py-3 text-xs font-bold leading-snug rounded-xl resize-none"
+                                                />
+                                                <div className="space-y-1">
+                                                    <Input 
+                                                        type="number" 
+                                                        value={item.amount || ''} 
+                                                        onChange={e => handleItemChange(index, 'amount', e.target.value)} 
+                                                        placeholder="Amt"
+                                                        className="w-28 h-11 text-right font-mono font-black rounded-xl"
+                                                    />
+                                                    <Button variant="ghost" size="sm" onClick={() => handleRemoveItem(index)} className="w-full h-8 text-destructive hover:bg-destructive/5 rounded-lg text-[9px] font-black uppercase">
+                                                        <Trash2 className="mr-1 h-3 w-3" /> Remove
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Customization Sidebar */}
+                        <div className="lg:col-span-4 space-y-6">
+                            <Card className="border-none shadow-xl bg-card rounded-[32px] overflow-hidden sticky top-24">
+                                <CardHeader className="bg-muted/30 border-b pb-4 p-6">
+                                    <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                                        <Settings2 className="h-4 w-4 text-primary" />
+                                        Layout Settings
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-6 space-y-8">
+                                    <div className="space-y-4">
+                                        <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
+                                            <Ruler className="h-3 w-3" /> Section Heights (mm)
+                                        </h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-[9px] font-bold text-muted-foreground uppercase">Firm Header</Label>
+                                                <Input type="number" value={headerHeight} onChange={e => setHeaderHeight(parseInt(e.target.value) || 20)} className="h-9 text-xs font-bold rounded-xl" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-[9px] font-bold text-muted-foreground uppercase">Sign Footer</Label>
+                                                <Input type="number" value={footerHeight} onChange={e => setFooterHeight(parseInt(e.target.value) || 20)} className="h-9 text-xs font-bold rounded-xl" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <Separator className="bg-border/30" />
+
+                                    <div className="space-y-4">
+                                        <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
+                                            <LayoutTemplate className="h-3 w-3" /> Column Widths (mm)
+                                        </h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-[9px] font-bold text-muted-foreground uppercase">SR. Col</Label>
+                                                <Input type="number" value={srWidth} onChange={e => setSrWidth(parseInt(e.target.value) || 15)} className="h-9 text-xs font-bold rounded-xl" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-[9px] font-bold text-muted-foreground uppercase">Amount Col</Label>
+                                                <Input type="number" value={amountWidth} onChange={e => setAmountWidth(parseInt(e.target.value) || 30)} className="h-9 text-xs font-bold rounded-xl" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <Separator className="bg-border/30" />
+
+                                    <div className="space-y-4">
+                                        <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
+                                            <Type className="h-3 w-3" /> Typography (PT)
+                                        </h4>
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+                                            <div className="space-y-1">
+                                                <Label className="text-[8px] font-black text-muted-foreground uppercase">Sender Addr</Label>
+                                                <Input type="number" value={fromAddressFontSize} onChange={e => setFromAddressFontSize(parseInt(e.target.value) || 10)} className="h-8 text-xs font-bold rounded-lg" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-[8px] font-black text-muted-foreground uppercase">Client Addr</Label>
+                                                <Input type="number" value={deliveryToAddressFontSize} onChange={e => setDeliveryToAddressFontSize(parseInt(e.target.value) || 10)} className="h-8 text-xs font-bold rounded-lg" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-[8px] font-black text-muted-foreground uppercase">Listing Font</Label>
+                                                <Input type="number" value={particularsFontSize} onChange={e => setParticularsFontSize(parseInt(e.target.value) || 9)} className="h-8 text-xs font-bold rounded-lg" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-[8px] font-black text-muted-foreground uppercase">Title Font</Label>
+                                                <Input type="number" value={titleFontSize} onChange={e => setTitleFontSize(parseInt(e.target.value) || 10)} className="h-8 text-xs font-bold rounded-lg" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-primary/10 transition-colors hover:bg-primary/10">
+                                        <div className="space-y-0.5">
+                                            <Label htmlFor="stamp-side" className="text-[10px] font-black uppercase tracking-wider cursor-pointer">Include Firm Stamp</Label>
+                                            <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-tight">Bottom Right Placement</p>
+                                        </div>
+                                        <Switch id="stamp-side" checked={includeStamp} onCheckedChange={setIncludeStamp} />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Forklift Picker Dialog */}
             <Dialog open={isForkliftDialogOpen} onOpenChange={setIsForkliftDialogOpen}>
@@ -753,12 +724,7 @@ export default function ChallansPage() {
                             />
                         </div>
                         <ScrollArea className="h-[350px]">
-                            {isLoadingForklifts ? (
-                                <div className="flex flex-col items-center justify-center py-20 gap-2">
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">Syncing Fleet...</p>
-                                </div>
-                            ) : filteredForklifts.length > 0 ? (
+                            {filteredForklifts.length > 0 ? (
                                 <div className="grid gap-3 pr-4">
                                     {filteredForklifts.map(f => (
                                         <button 
@@ -790,6 +756,17 @@ export default function ChallansPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Print-Only Style Container (Hidden in browser) */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                @media print {
+                    @page { size: A4; margin: 0; }
+                    body { background: white !important; margin: 0; padding: 0; }
+                    .print\\:hidden { display: none !important; }
+                    main { padding: 0 !important; overflow: visible !important; }
+                }
+            `}} />
         </AppLayout>
     );
 }
+
