@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Company, CompanySettings, Forklift } from '@/lib/data';
-import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2 } from 'lucide-react';
+import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { generateChallanPdf, type ChallanItem } from '@/lib/challan-generator';
@@ -107,9 +107,10 @@ export default function ChallansPage() {
 
         const details = [
             `Battery Operated Electric Forklift`,
-            `S.No: ${forklift.serialNumber} | Capacity: ${forklift.capacity || 'N/A'}`,
-            `Make: ${forklift.make} | Model: ${forklift.model}`,
-            `Volt: ${forklift.voltage || 'N/A'} | Mfg Year: ${forklift.year}`
+            `• S.No: ${forklift.serialNumber}`,
+            `• Capacity: ${forklift.capacity || 'N/A'}`,
+            `• Make: ${forklift.make} | Model: ${forklift.model}`,
+            `• Volt: ${forklift.voltage || 'N/A'} | Mfg Year: ${forklift.year}`
         ].join('\n');
 
         handleItemChange(activeItemIndex, 'particulars', details);

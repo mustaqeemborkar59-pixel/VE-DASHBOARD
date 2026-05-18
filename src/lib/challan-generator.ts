@@ -81,7 +81,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     let currentY = topPadding + 45;
 
-    // --- Challan Info Line (Unified Grid Style) ---
+    // --- Challan Info Line ---
     autoTable(doc, {
         startY: currentY,
         body: [[
@@ -133,7 +133,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- Items Table ---
+    // --- Items Table (No horizontal internal borders) ---
     const tableBody = data.items.map((item, index) => [
         index + 1,
         item.particulars,
@@ -146,31 +146,51 @@ export const generateChallanPdf = async (data: ChallanData) => {
         body: tableBody,
         theme: 'grid',
         headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1, lineColor: [0, 0, 0] },
-        styles: { fontSize: 10, cellPadding: 4, font: 'helvetica', lineColor: [0, 0, 0], lineWidth: 0.1, minCellHeight: 10, valign: 'top' },
+        styles: { 
+            fontSize: 10, 
+            cellPadding: 4, 
+            font: 'helvetica', 
+            lineColor: [0, 0, 0], 
+            lineWidth: 0.1, 
+            minCellHeight: 10, 
+            valign: 'top' 
+        },
+        bodyStyles: {
+            // Remove horizontal borders inside the body but keep vertical lines
+            lineWidth: { left: 0.1, right: 0.1, top: 0, bottom: 0 }
+        },
         columnStyles: { 0: { cellWidth: 15, halign: 'center' }, 1: { cellWidth: contentWidth - 45 }, 2: { cellWidth: 30, halign: 'right' } },
         margin: { left: margin, right: margin },
-        tableWidth: contentWidth
+        tableWidth: contentWidth,
+        // Add a line at the very bottom of the table body to close it
+        didDrawPage: (data) => {
+            const finalY = (doc as any).lastAutoTable.finalY;
+            doc.setDrawColor(0);
+            doc.setLineWidth(0.1);
+            doc.line(margin, finalY, pageWidth - margin, finalY);
+        }
     });
 
-    // --- Footer / Signatures FIXED AT BOTTOM ---
-    const footerY = pageHeight - margin - 35;
+    // --- Footer / Signatures ---
+    // Increase space for footer to avoid cutting off
+    const footerY = pageHeight - margin - 45;
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0);
     doc.text("Received By", margin + 10, footerY);
     
-    doc.text(`For ${data.enterprise === 'RV' ? 'R.V.' : 'Vithal'} Enterprises`, pageWidth - margin - 10, footerY, { align: 'right' });
+    const enterpriseName = data.enterprise === 'RV' ? 'R.V.' : 'Vithal';
+    doc.text(`For ${enterpriseName} Enterprises`, pageWidth - margin - 10, footerY, { align: 'right' });
 
-    // Enterprise Name sub-text below the main footer label
-    doc.setFontSize(9);
-    doc.text("Authorised Signatory", pageWidth - margin - 10, footerY + 20, { align: 'right' });
+    doc.setFontSize(9.5);
+    doc.text("Authorised Signatory", pageWidth - margin - 10, footerY + 28, { align: 'right' });
 
-    // Stamp placement
+    // Stamp placement with safe padding
     const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
     try {
         const stampImg = await loadImage(stampFile);
-        doc.addImage(stampImg, 'PNG', pageWidth - margin - 50, footerY - 5, 35, 35);
+        doc.addImage(stampImg, 'PNG', pageWidth - margin - 55, footerY - 5, 40, 40);
     } catch (e) {}
 
     const fileName = `Challan_${data.challanNo.replace(/[/\\?%*:|"<>]/g, '-')}_${data.enterprise}.pdf`;
