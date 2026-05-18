@@ -124,10 +124,11 @@ export const generateChallanPdf = async (data: ChallanData) => {
             fontSize: 9,
             lineWidth: 0.1,
             lineColor: [0, 0, 0],
-            minCellHeight: 0 // Labels use only as much height as needed
+            minCellHeight: 10, // 1cm Height for labels
+            valign: 'middle'
         },
         bodyStyles: {
-            minCellHeight: 35 // Address content maintains minimum 3.5cm height
+            minCellHeight: 30 // 3cm Minimum height for address body
         },
         styles: { 
             fontSize: 9, 
@@ -149,7 +150,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     currentY = (doc as any).lastAutoTable.finalY;
 
     // Standard footer calculation
-    const footerAreaHeight = 20; 
+    const footerAreaHeight = 25; 
     const footerStartY = pageHeight - margin - footerAreaHeight;
     const tableAreaBottomY = footerStartY - 5;
 
@@ -227,7 +228,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
             const stampImg = await loadImage(stampFile);
-            doc.addImage(stampImg, 'PNG', pageWidth - margin - 52, footerY - 28, 38, 38);
+            doc.addImage(stampImg, 'PNG', pageWidth - margin - 52, footerY - 26, 38, 38);
         } catch (e) {
             console.error("Stamp loading failed", e);
         }
