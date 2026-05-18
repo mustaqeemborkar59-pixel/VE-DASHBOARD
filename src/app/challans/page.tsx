@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Company, CompanySettings, Forklift } from '@/lib/data';
-import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type } from 'lucide-react';
+import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, TypeOutline } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { generateChallanPdf, type ChallanItem } from '@/lib/challan-generator';
@@ -31,7 +31,10 @@ export default function ChallansPage() {
     const [vehicleNo, setVehicleNo] = useState('');
     const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [includeStamp, setIncludeStamp] = useState(false);
-    const [addressFontSize, setAddressFontSize] = useState(10);
+    
+    // Independent Font Sizes
+    const [fromAddressFontSize, setFromAddressFontSize] = useState(10);
+    const [deliveryToAddressFontSize, setDeliveryToAddressFontSize] = useState(10);
     
     const [fromAddress, setFromAddress] = useState("S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612");
     const [deliveryToId, setDeliveryToId] = useState('');
@@ -141,7 +144,8 @@ export default function ChallansPage() {
                 pan: settings?.pan || 'N/A',
                 gstin: settings?.gstin || 'N/A',
                 includeStamp,
-                addressFontSize
+                fromAddressFontSize,
+                deliveryToAddressFontSize
             });
             toast({ title: 'Success', description: 'Challan PDF generated successfully.' });
         } catch (e) {
@@ -302,20 +306,39 @@ export default function ChallansPage() {
                         </CardHeader>
                         <CardContent className="p-4 space-y-4">
                             <div className="space-y-4">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                                        <Type className="h-3 w-3 text-primary" /> Address Font Size
-                                    </Label>
-                                    <div className="flex items-center gap-3">
-                                        <Input 
-                                            type="number" 
-                                            value={addressFontSize} 
-                                            onChange={e => setAddressFontSize(parseInt(e.target.value) || 10)} 
-                                            className="h-9 w-20 text-center font-bold" 
-                                            min={6} 
-                                            max={20} 
-                                        />
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase">PT</span>
+                                <div className="space-y-3">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                                            <TypeOutline className="h-3 w-3 text-primary" /> Source Font Size
+                                        </Label>
+                                        <div className="flex items-center gap-3">
+                                            <Input 
+                                                type="number" 
+                                                value={fromAddressFontSize} 
+                                                onChange={e => setFromAddressFontSize(parseInt(e.target.value) || 10)} 
+                                                className="h-9 w-20 text-center font-bold" 
+                                                min={6} 
+                                                max={20} 
+                                            />
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase">PT</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                                            <Type className="h-3 w-3 text-primary" /> Target Font Size
+                                        </Label>
+                                        <div className="flex items-center gap-3">
+                                            <Input 
+                                                type="number" 
+                                                value={deliveryToAddressFontSize} 
+                                                onChange={e => setDeliveryToAddressFontSize(parseInt(e.target.value) || 10)} 
+                                                className="h-9 w-20 text-center font-bold" 
+                                                min={6} 
+                                                max={20} 
+                                            />
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase">PT</span>
+                                        </div>
                                     </div>
                                 </div>
 
