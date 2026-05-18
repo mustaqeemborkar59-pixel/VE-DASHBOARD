@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Company, CompanySettings, Forklift } from '@/lib/data';
-import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, TypeOutline } from 'lucide-react';
+import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, TypeOutline, Ruler, LayoutTemplate, Settings2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { generateChallanPdf, type ChallanItem } from '@/lib/challan-generator';
@@ -34,9 +34,16 @@ export default function ChallansPage() {
     const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [includeStamp, setIncludeStamp] = useState(false);
     
-    // Font Sizes
+    // Layout Customization State
     const [fromAddressFontSize, setFromAddressFontSize] = useState(10);
     const [deliveryToAddressFontSize, setDeliveryToAddressFontSize] = useState(10);
+    const [headerHeight, setHeaderHeight] = useState(20);
+    const [footerHeight, setFooterHeight] = useState(20);
+    const [srWidth, setSrWidth] = useState(15);
+    const [amountWidth, setAmountWidth] = useState(30);
+    const [particularsFontSize, setParticularsFontSize] = useState(9);
+    const [titleFontSize, setTitleFontSize] = useState(10);
+    const [headerDetailsFontSize, setHeaderDetailsFontSize] = useState(8.5);
     
     // "From" Selection
     const [fromId, setFromId] = useState('enterprise');
@@ -141,10 +148,7 @@ export default function ChallansPage() {
 
     const handleSelectForklift = (forklift: Forklift) => {
         if (activeItemIndex === null) return;
-
-        // Determine machine label based on equipmentType
         const machineType = forklift.equipmentType || 'FORKLIFT';
-        
         const details = [
             machineType.toUpperCase(),
             `   • S.No: ${forklift.serialNumber}`,
@@ -187,8 +191,16 @@ export default function ChallansPage() {
                 pan: settings?.pan || 'N/A',
                 gstin: settings?.gstin || 'N/A',
                 includeStamp,
+                // Pass layout parameters
                 fromAddressFontSize,
-                deliveryToAddressFontSize
+                deliveryToAddressFontSize,
+                headerHeight,
+                footerHeight,
+                srWidth,
+                amountWidth,
+                titleFontSize,
+                particularsFontSize,
+                headerDetailsFontSize
             });
             toast({ title: 'Success', description: 'Challan PDF generated.' });
         } catch (e) {
@@ -201,7 +213,7 @@ export default function ChallansPage() {
 
     return (
         <AppLayout>
-            <div className="flex flex-col gap-6 max-w-5xl mx-auto animate-in fade-in duration-500">
+            <div className="flex flex-col gap-6 max-w-6xl mx-auto animate-in fade-in duration-500 pb-20">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                         <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">
@@ -364,63 +376,96 @@ export default function ChallansPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Quick Preview Side */}
-                    <Card className="lg:col-span-4 border-none shadow-lg bg-primary/5 rounded-3xl overflow-hidden self-start sticky top-24">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm uppercase tracking-widest">Settings</CardTitle>
+                    {/* Advanced Customization Sidebar */}
+                    <Card className="lg:col-span-4 border-none shadow-lg bg-card rounded-3xl overflow-hidden self-start sticky top-24">
+                        <CardHeader className="bg-muted/30 border-b pb-4">
+                            <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                                <Settings2 className="h-4 w-4 text-primary" />
+                                Layout Settings
+                            </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-4 space-y-4">
+                        <CardContent className="p-4 space-y-6">
+                            {/* Block Heights Section */}
                             <div className="space-y-4">
-                                <div className="space-y-3">
+                                <h4 className="text-[9px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
+                                    <Ruler className="h-3 w-3" /> Section Heights (mm)
+                                </h4>
+                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
-                                        <Label className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                                            <TypeOutline className="h-3 w-3 text-primary" /> From Font Size
-                                        </Label>
-                                        <div className="flex items-center gap-3">
-                                            <Input 
-                                                type="number" 
-                                                value={fromAddressFontSize} 
-                                                onChange={e => setFromAddressFontSize(parseInt(e.target.value) || 10)} 
-                                                className="h-9 w-20 text-center font-bold" 
-                                                min={6} 
-                                                max={20} 
-                                            />
-                                            <span className="text-[10px] font-bold text-muted-foreground uppercase">PT</span>
-                                        </div>
+                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Header</Label>
+                                        <Input type="number" value={headerHeight} onChange={e => setHeaderHeight(parseInt(e.target.value) || 20)} className="h-8 text-xs font-bold" />
                                     </div>
-
                                     <div className="space-y-1.5">
-                                        <Label className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                                            <Type className="h-3 w-3 text-primary" /> Delivery Font Size
-                                        </Label>
-                                        <div className="flex items-center gap-3">
-                                            <Input 
-                                                type="number" 
-                                                value={deliveryToAddressFontSize} 
-                                                onChange={e => setDeliveryToAddressFontSize(parseInt(e.target.value) || 10)} 
-                                                className="h-9 w-20 text-center font-bold" 
-                                                min={6} 
-                                                max={20} 
-                                            />
-                                            <span className="text-[10px] font-bold text-muted-foreground uppercase">PT</span>
-                                        </div>
+                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Footer</Label>
+                                        <Input type="number" value={footerHeight} onChange={e => setFooterHeight(parseInt(e.target.value) || 20)} className="h-8 text-xs font-bold" />
                                     </div>
                                 </div>
+                            </div>
 
-                                <Separator />
+                            <Separator />
 
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between p-3 bg-background/50 rounded-xl border border-primary/10">
-                                        <div className="space-y-0.5">
-                                            <Label htmlFor="stamp-toggle" className="text-[10px] font-black uppercase tracking-wider cursor-pointer">Include Stamp</Label>
-                                            <p className="text-[8px] text-muted-foreground">Auto-placed above signature</p>
-                                        </div>
-                                        <Switch 
-                                            id="stamp-toggle" 
-                                            checked={includeStamp} 
-                                            onCheckedChange={setIncludeStamp} 
-                                        />
+                            {/* Column Widths Section */}
+                            <div className="space-y-4">
+                                <h4 className="text-[9px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
+                                    <LayoutTemplate className="h-3 w-3" /> Columns (mm)
+                                </h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">SR. Column</Label>
+                                        <Input type="number" value={srWidth} onChange={e => setSrWidth(parseInt(e.target.value) || 15)} className="h-8 text-xs font-bold" />
                                     </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Amount Column</Label>
+                                        <Input type="number" value={amountWidth} onChange={e => setAmountWidth(parseInt(e.target.value) || 30)} className="h-8 text-xs font-bold" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Font Sizes Section */}
+                            <div className="space-y-4">
+                                <h4 className="text-[9px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
+                                    <Type className="h-3 w-3" /> Typography (PT)
+                                </h4>
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Sender Addr.</Label>
+                                        <Input type="number" value={fromAddressFontSize} onChange={e => setFromAddressFontSize(parseInt(e.target.value) || 10)} className="h-8 text-xs font-bold" />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Client Addr.</Label>
+                                        <Input type="number" value={deliveryToAddressFontSize} onChange={e => setDeliveryToAddressFontSize(parseInt(e.target.value) || 10)} className="h-8 text-xs font-bold" />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Body Font</Label>
+                                        <Input type="number" value={particularsFontSize} onChange={e => setParticularsFontSize(parseInt(e.target.value) || 9)} className="h-8 text-xs font-bold" />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Title Font</Label>
+                                        <Input type="number" value={titleFontSize} onChange={e => setTitleFontSize(parseInt(e.target.value) || 10)} className="h-8 text-xs font-bold" />
+                                    </div>
+                                    <div className="space-y-1.5 col-span-2">
+                                        <Label className="text-[9px] font-bold text-muted-foreground uppercase">Header Details (Supplier/Addrs/Tax)</Label>
+                                        <Input type="number" step="0.5" value={headerDetailsFontSize} onChange={e => setHeaderDetailsFontSize(parseFloat(e.target.value) || 8.5)} className="h-8 text-xs font-bold" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Options Section */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between p-3 bg-muted/20 rounded-xl border border-primary/10">
+                                    <div className="space-y-0.5">
+                                        <Label htmlFor="stamp-toggle" className="text-[10px] font-black uppercase tracking-wider cursor-pointer">Include Stamp</Label>
+                                        <p className="text-[8px] text-muted-foreground">Placed in footer</p>
+                                    </div>
+                                    <Switch 
+                                        id="stamp-toggle" 
+                                        checked={includeStamp} 
+                                        onCheckedChange={setIncludeStamp} 
+                                    />
                                 </div>
                             </div>
                         </CardContent>

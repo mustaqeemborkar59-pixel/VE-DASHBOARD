@@ -22,8 +22,16 @@ export type ChallanData = {
     pan: string;
     gstin: string;
     includeStamp?: boolean;
+    // Customization Options
     fromAddressFontSize?: number;
     deliveryToAddressFontSize?: number;
+    headerHeight?: number;
+    footerHeight?: number;
+    srWidth?: number;
+    amountWidth?: number;
+    titleFontSize?: number;
+    particularsFontSize?: number;
+    headerDetailsFontSize?: number;
 };
 
 const loadImage = (url: string): Promise<HTMLImageElement> => {
@@ -45,10 +53,17 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
+    // Configurable Layout Constants
     const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
     const thinBorder = 0.1;
-    const footerHeight = 20; 
+    
+    const headerBlockHeight = data.headerHeight || 20;
+    const footerHeight = data.footerHeight || 20;
+    const srWidth = data.srWidth || 15;
+    const amountWidth = data.amountWidth || 30;
+    const particularsWidth = contentWidth - srWidth - amountWidth;
+    
     const footerStartY = pageHeight - margin - footerHeight;
 
     // --- Main External Frame ---
@@ -56,28 +71,29 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setLineWidth(thinBorder);
     doc.rect(margin, margin, contentWidth, pageHeight - (margin * 2));
 
-    // --- 1. Header: Firm Name (Exactly 2cm Height, Centered) ---
-    const headerBlockHeight = 20; 
+    // --- 1. Header: Firm Name (Centered in Block) ---
     const headerBlockY = margin;
     const enterpriseTitle = data.enterprise === 'RV' ? 'R.V. ENTERPRISES' : 'VITHAL ENTERPRISES';
     
     doc.setFontSize(22);
     doc.setFont('times', 'bold');
-    doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, headerBlockY + 13, { align: 'center' });
+    // Vertical center calculation for header text
+    doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, headerBlockY + (headerBlockHeight / 2) + 3, { align: 'center' });
 
-    // Header Separator Line
+    // Header Block Bottom Separator
     doc.setLineWidth(thinBorder);
     doc.line(margin, headerBlockY + headerBlockHeight, pageWidth - margin, headerBlockY + headerBlockHeight);
 
     let currentY = headerBlockY + headerBlockHeight + 5;
 
     // --- 2. Subtitles & Tax Info ---
-    doc.setFontSize(10);
+    const detailFS = data.headerDetailsFontSize || 8.5;
+    doc.setFontSize(detailFS + 1.5);
     doc.setFont('helvetica', 'bold');
     doc.text("Supplier of Material Handling Equipments & Labour", pageWidth / 2, currentY, { align: 'center' });
     currentY += 5;
 
-    doc.setFontSize(8.5);
+    doc.setFontSize(detailFS);
     doc.setFont('helvetica', 'normal');
     doc.text("Off. : A/404, Astraea, Rustomjee Urbania, Near Lodha Paradise, Majiwada, Thane (W) - 400601.", pageWidth / 2, currentY, { align: 'center' });
     currentY += 4.5;
@@ -145,12 +161,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- 5. Particulars Table (FIXED COLUMN WIDTHS) ---
-    const srWidth = 15;
-    const amountWidth = 30;
-    const particularsWidth = contentWidth - srWidth - amountWidth;
-
-    // Drawing Header with EXACT widths to prevent misalignment
+    // --- 5. Particulars Header (SYNCED WIDTHS) ---
     autoTable(doc, {
         startY: currentY,
         head: [['SR.', 'PARTICULARS', 'AMOUNT']],
@@ -176,50 +187,47 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     const bodyStartY = (doc as any).lastAutoTable.finalY;
     
-    // --- 6. Manual Independent Title: "(NOT FOR SALE)" ---
-    doc.setFontSize(10);
+    // --- 6. Independent Manual Title: "(NOT FOR SALE)" ---
+    doc.setFontSize(data.titleFontSize || 10);
     doc.setFont('helvetica', 'bold');
     const titleText = "(NOT FOR SALE)";
     const titleX = margin + srWidth + (particularsWidth / 2);
     const titleY = bodyStartY + 8;
     doc.text(titleText, titleX, titleY, { align: 'center' });
     
-    // Manual Underline
+    // Manual Underline for title
     const tw = doc.getTextWidth(titleText);
     doc.setLineWidth(0.2);
     doc.line(titleX - (tw / 2), titleY + 1, titleX + (tw / 2), titleY + 1);
 
-    // --- 7. Render Items Manually (No horizontal lines) ---
+    // --- 7. Manual Listing (No Row Dividers) ---
     let itemY = titleY + 10;
-    doc.setFontSize(9);
+    doc.setFontSize(data.particularsFontSize || 9);
     doc.setFont('helvetica', 'normal');
 
     data.items.filter(i => i.particulars.trim()).forEach((item, index) => {
         // SR No
         doc.text((index + 1).toString(), margin + (srWidth / 2), itemY, { align: 'center' });
         
-        // Particulars (supports multi-line)
+        // Particulars Listing
         const lines = doc.splitTextToSize(item.particulars.toUpperCase(), particularsWidth - 4);
         doc.text(lines, margin + srWidth + 2, itemY);
         
-        // Amount
+        // Amount Listing
         if (item.amount) {
-            doc.text(`${item.amount.toFixed(2)}/-`, margin + srWidth + particularsWidth + amountWidth - 2, itemY, { align: 'right' });
+            doc.text(`${item.amount.toFixed(2)}/-`, margin + contentWidth - 2, itemY, { align: 'right' });
         }
         
-        // Calculate next Y based on line length
         itemY += (lines.length * 4.5) + 3;
     });
 
-    // --- 8. Vertical Dividers (Header Bottom to Footer Start) ---
+    // --- 8. Persistent Vertical Dividers ---
     doc.setLineWidth(thinBorder);
     doc.setDrawColor(0);
-    // Vertical Line 1: SR Divider (at x = margin + srWidth)
     doc.line(margin + srWidth, bodyStartY, margin + srWidth, footerStartY);
-    // Vertical Line 2: Amount Divider (at x = margin + srWidth + particularsWidth)
     doc.line(margin + srWidth + particularsWidth, bodyStartY, margin + srWidth + particularsWidth, footerStartY);
 
-    // --- 9. Fixed 2cm Signature Row ---
+    // --- 9. Fixed Signature Footer ---
     autoTable(doc, {
         startY: footerStartY,
         body: [[
