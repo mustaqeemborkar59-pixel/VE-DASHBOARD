@@ -1,3 +1,4 @@
+
 'use client';
 
 import jsPDF from 'jspdf';
@@ -57,7 +58,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setFontSize(22);
     doc.setFont('times', 'bold');
     doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
-    const firmName = data.enterprise === 'RV' ? 'R.V. ENTERPRISES' : 'VITHAL ENTERPRISES';
+    const firmName = (data.enterprise === 'RV' ? 'R.V. ENTERPRISES' : 'VITHAL ENTERPRISES').toUpperCase();
     doc.text(firmName, pageWidth / 2, topPadding + 10, { align: 'center' });
 
     doc.setDrawColor(themeColor[0], themeColor[1], themeColor[2]);
@@ -123,7 +124,8 @@ export const generateChallanPdf = async (data: ChallanData) => {
             overflow: 'linebreak', 
             lineColor: [0, 0, 0], 
             lineWidth: 0.1,
-            valign: 'top'
+            valign: 'top',
+            minCellHeight: 35 // Minimum height set to 3.5cm
         },
         columnStyles: { 
             0: { cellWidth: contentWidth / 2 }, 
@@ -135,9 +137,10 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // Fixed Table Bottom Y to ensure columns go all the way down
-    const footerStartY = pageHeight - margin - 45;
-    const tableAreaBottomY = footerStartY - 10;
+    // Reduced footer section height area
+    const footerAreaHeight = 25; // Total space for Received By / Signatures
+    const footerStartY = pageHeight - margin - footerAreaHeight;
+    const tableAreaBottomY = footerStartY - 5;
 
     // --- Items Table ---
     const tableBody = data.items.map((item, index) => [
@@ -188,7 +191,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
         // Bottom closing line
         doc.line(margin, tableAreaBottomY, pageWidth - margin, tableAreaBottomY);
     } else {
-        // If table naturally ends below the area, just close it
         doc.setDrawColor(0);
         doc.setLineWidth(0.1);
         doc.line(margin, tableFinalY, pageWidth - margin, tableFinalY);
@@ -206,15 +208,16 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.text(`For ${enterpriseName} ENTERPRISES`, pageWidth - margin - 10, footerY, { align: 'right' });
 
     doc.setFontSize(9.5);
-    doc.text("Authorised Signatory", pageWidth - margin - 10, footerY + 28, { align: 'right' });
+    // Reduced vertical gap for signature
+    doc.text("Authorised Signatory", pageWidth - margin - 10, footerY + 18, { align: 'right' });
 
     // --- Stamp Positioning (Optional) ---
     if (data.includeStamp) {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
             const stampImg = await loadImage(stampFile);
-            // Position stamp above the "For..." line in the right section
-            doc.addImage(stampImg, 'PNG', pageWidth - margin - 55, footerY - 45, 45, 45);
+            // Position stamp above signature row
+            doc.addImage(stampImg, 'PNG', pageWidth - margin - 55, footerY - 35, 42, 42);
         } catch (e) {
             console.error("Stamp loading failed", e);
         }
