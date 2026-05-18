@@ -81,7 +81,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     let currentY = topPadding + 45;
 
-    // --- Challan Info Line (Left Aligned) ---
+    // --- Challan Info Line (Unified Grid Style) ---
     autoTable(doc, {
         startY: currentY,
         body: [[
@@ -109,14 +109,20 @@ export const generateChallanPdf = async (data: ChallanData) => {
     // --- Addresses Section ---
     autoTable(doc, {
         startY: currentY,
-        head: [['From :', 'Delivery To :']],
         body: [[
-            data.fromAddress,
-            `${data.deliveryToName}\n${data.deliveryToAddress}`
+            `From :\n${data.fromAddress}`,
+            `Delivery To :\n${data.deliveryToName}\n${data.deliveryToAddress}`
         ]],
         theme: 'grid',
-        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1, lineColor: [0, 0, 0] },
-        styles: { fontSize: 9, cellPadding: 4, font: 'helvetica', overflow: 'linebreak', lineColor: [0, 0, 0], lineWidth: 0.1 },
+        styles: { 
+            fontSize: 9, 
+            cellPadding: 4, 
+            font: 'helvetica', 
+            overflow: 'linebreak', 
+            lineColor: [0, 0, 0], 
+            lineWidth: 0.1,
+            valign: 'top'
+        },
         columnStyles: { 
             0: { cellWidth: contentWidth / 2 }, 
             1: { cellWidth: contentWidth / 2 } 
@@ -146,30 +152,25 @@ export const generateChallanPdf = async (data: ChallanData) => {
         tableWidth: contentWidth
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 25;
-
-    // Prevent footer overflow
-    if (currentY > pageHeight - 60) {
-        doc.addPage();
-        doc.setDrawColor(0);
-        doc.setLineWidth(0.5);
-        doc.rect(margin, margin, contentWidth, pageHeight - (margin * 2));
-        currentY = margin + 25;
-    }
-
-    // --- Footer / Signatures ---
+    // --- Footer / Signatures FIXED AT BOTTOM ---
+    const footerY = pageHeight - margin - 35;
+    
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0);
-    doc.text("Received By", margin + 10, currentY);
+    doc.text("Received By", margin + 10, footerY);
     
-    doc.text(`For ${data.enterprise === 'RV' ? 'R.V.' : 'Vithal'} Enterprises`, pageWidth - margin - 10, currentY, { align: 'right' });
+    doc.text(`For ${data.enterprise === 'RV' ? 'R.V.' : 'Vithal'} Enterprises`, pageWidth - margin - 10, footerY, { align: 'right' });
+
+    // Enterprise Name sub-text below the main footer label
+    doc.setFontSize(9);
+    doc.text("Authorised Signatory", pageWidth - margin - 10, footerY + 20, { align: 'right' });
 
     // Stamp placement
     const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
     try {
         const stampImg = await loadImage(stampFile);
-        doc.addImage(stampImg, 'PNG', pageWidth - margin - 50, currentY + 5, 35, 35);
+        doc.addImage(stampImg, 'PNG', pageWidth - margin - 50, footerY - 5, 35, 35);
     } catch (e) {}
 
     const fileName = `Challan_${data.challanNo.replace(/[/\\?%*:|"<>]/g, '-')}_${data.enterprise}.pdf`;
