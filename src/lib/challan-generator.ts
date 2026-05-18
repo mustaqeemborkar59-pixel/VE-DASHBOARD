@@ -65,7 +65,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setFont('times', 'bold');
     
     // Vertical and Horizontal Centering in the 20mm box
-    // Text is drawn relative to its baseline, so we adjust slightly for optical center
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, headerY + (headerHeight / 2) + 3, { align: 'center' });
 
     // Header bottom line (Full width, touching left and right borders)
@@ -163,6 +162,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
         head: [['SR.', 'PARTICULARS', 'AMOUNT']],
         body: [], // NO ROWS AS REQUESTED
         theme: 'grid',
+        tableWidth: contentWidth, // Force table width to match content width
         styles: { fontSize: 9, cellPadding: 3, lineColor: 0, lineWidth: thinBorder, font: 'helvetica' },
         headStyles: { fillColor: 240, textColor: 0, fontStyle: 'bold', halign: 'center' },
         columnStyles: {
@@ -176,7 +176,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
     const tableHeaderY = (doc as any).lastAutoTable.finalY;
     
     // Vertical frame lines that stretch to the 2cm footer start
-    // Using the exact coordinates from the table widths
     doc.line(margin, tableHeaderY, margin, footerStartY); // Left Border
     doc.line(margin + srWidth, tableHeaderY, margin + srWidth, footerStartY); // Sr divider
     doc.line(pageWidth - margin - amountWidth, tableHeaderY, pageWidth - margin - amountWidth, footerStartY); // Amount divider
@@ -191,6 +190,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
             `FOR ${data.enterprise === 'RV' ? 'R.V.' : 'VITHAL'} ENTERPRISES`
         ]],
         theme: 'grid',
+        tableWidth: contentWidth,
         styles: {
             fontSize: 10,
             fontStyle: 'bold',
@@ -206,10 +206,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
             1: { cellWidth: contentWidth * 0.3, halign: 'right' }
         },
         margin: { left: margin, right: margin, bottom: margin },
-        // Explicitly set table width to match the frame
-        tableWidth: contentWidth,
         didDrawCell: (hook) => {
-            // "Signature" label inside the right cell, bottom-right
             if (hook.section === 'body' && hook.column.index === 1) {
                 const cell = hook.cell;
                 doc.setFontSize(7);
