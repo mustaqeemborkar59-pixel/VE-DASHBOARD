@@ -1,3 +1,4 @@
+
 'use client';
 
 import jsPDF from 'jspdf';
@@ -75,9 +76,14 @@ const renderSingleSlip = (
         currentY += 3.5;
     });
 
-    const contactDetails = `${company.contactNumber ? `Contact: ${company.contactNumber}` : ''} ${company.gstin ? ` | GST: ${company.gstin}` : ''}`;
-    doc.text(contactDetails, 105, currentY, { align: 'center' });
-    currentY += 5;
+    // GSTIN is now optional and Contact No is removed from header section
+    if (company.gstin) {
+        doc.setFont('helvetica', 'bold');
+        doc.text(`GSTIN: ${company.gstin}`, 105, currentY, { align: 'center' });
+        currentY += 5;
+    } else {
+        currentY += 2;
+    }
 
     doc.setLineWidth(0.2);
     doc.line(14, currentY, 196, currentY); 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Packer, Document, Paragraph, TextRun, AlignmentType, BorderStyle, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType, VerticalAlign, PageOrientation, PageSize } from 'docx';
@@ -54,11 +55,15 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                     children: [new TextRun({ text: company.address, size: 16, font: "Calibri" })],
                     alignment: AlignmentType.CENTER,
                 }),
-                new Paragraph({
-                    children: [new TextRun({ text: `${company.contactNumber ? `Contact: ${company.contactNumber}` : ''} ${company.gstin ? ` | GSTIN: ${company.gstin}` : ''}`, size: 16, font: "Calibri" })],
-                    alignment: AlignmentType.CENTER,
-                    spacing: { after: 100 },
-                }),
+                ...(company.gstin ? [
+                    new Paragraph({
+                        children: [new TextRun({ text: `GSTIN: ${company.gstin}`, bold: true, size: 16, font: "Calibri" })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 100 },
+                    })
+                ] : [
+                    new Paragraph({ text: "", spacing: { after: 100 } })
+                ]),
                 
                 // Line Separator
                 new DocxTable({
@@ -72,7 +77,7 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                     spacing: { before: 200, after: 300 },
                 }),
 
-                // Employee Information Section (No visible table borders to match PDF)
+                // Employee Information Section
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
                     borders: {
@@ -153,7 +158,7 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
 
                 new Paragraph({ text: "", spacing: { before: 300 } }),
 
-                // Earnings & Deductions Tables (Bordered as per PDF)
+                // Earnings & Deductions Tables
                 new DocxTable({
                     width: { size: 100, type: WidthType.PERCENTAGE },
                     rows: [
