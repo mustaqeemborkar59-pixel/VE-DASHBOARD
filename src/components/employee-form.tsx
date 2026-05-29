@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Employee } from "@/lib/data";
 import { Separator } from "./ui/separator";
-import { Send, MessageSquare, Briefcase, Calendar, CreditCard, ShieldCheck } from "lucide-react";
+import { Send, MessageSquare, Briefcase, Calendar, CreditCard, ShieldCheck, Phone } from "lucide-react";
 
 export type EmployeeFormData = {
   fullName: string;
