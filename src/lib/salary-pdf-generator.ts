@@ -76,8 +76,8 @@ const renderSingleSlip = (
         currentY += 3.5;
     });
 
-    // GSTIN is now optional and Contact No is removed from header section
-    if (company.gstin) {
+    // GSTIN is now truly optional based on salary preference
+    if (company.gstin && salary.showGstin !== false) {
         doc.setFont('helvetica', 'bold');
         doc.text(`GSTIN: ${company.gstin}`, 105, currentY, { align: 'center' });
         currentY += 5;

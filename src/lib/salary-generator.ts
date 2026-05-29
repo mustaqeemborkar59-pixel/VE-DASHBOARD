@@ -55,7 +55,7 @@ export const generateSalarySlip = async (salary: Salary, employee: Employee, com
                     children: [new TextRun({ text: company.address, size: 16, font: "Calibri" })],
                     alignment: AlignmentType.CENTER,
                 }),
-                ...(company.gstin ? [
+                ...(company.gstin && salary.showGstin !== false ? [
                     new Paragraph({
                         children: [new TextRun({ text: `GSTIN: ${company.gstin}`, bold: true, size: 16, font: "Calibri" })],
                         alignment: AlignmentType.CENTER,

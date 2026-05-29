@@ -26,6 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
 import { sendTelegramDocument } from '@/app/actions/telegram';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Switch } from '@/components/ui/switch';
 
 type Enterprise = 'Vithal' | 'RV';
 
@@ -72,6 +73,7 @@ export default function SalaryPage() {
   const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [status, setStatus] = useState<'Paid' | 'Pending'>('Paid');
   const [notes, setNotes] = useState('');
+  const [showGstin, setShowGstin] = useState(true);
 
   // Data fetching
   const employeesQuery = useMemoFirebase(() => firestore && user ? query(collection(firestore, 'employees'), orderBy('fullName')) : null, [firestore, user]);
@@ -179,6 +181,7 @@ export default function SalaryPage() {
     setPaymentDate(format(new Date(), 'yyyy-MM-dd'));
     setStatus('Paid');
     setNotes('');
+    setShowGstin(true);
     setEditingSalary(null);
   }, []);
 
@@ -206,6 +209,7 @@ export default function SalaryPage() {
       setPaymentDate(salary.paymentDate || '');
       setStatus(salary.status);
       setNotes(salary.notes || '');
+      setShowGstin(salary.showGstin ?? true);
     } else {
       resetForm();
     }
@@ -243,6 +247,7 @@ export default function SalaryPage() {
       paymentDate,
       status,
       notes,
+      showGstin,
       createdAt: editingSalary?.createdAt || new Date().toISOString(),
     };
 
@@ -846,20 +851,29 @@ export default function SalaryPage() {
                 <WalletCards className="h-10 w-10 text-primary opacity-20" />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment Status</Label>
-                  <Select value={status} onValueChange={(v: any) => setStatus(v)}>
-                    <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Paid">Paid</SelectItem>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment Status</Label>
+                    <Select value={status} onValueChange={(v: any) => setStatus(v)}>
+                      <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Paid">Paid</SelectItem>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Additional Notes</Label>
+                    <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ref no., mode etc." className="h-10" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Additional Notes</Label>
-                  <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ref no., mode etc." className="h-10" />
+                <div className="bg-muted/30 p-4 rounded-2xl border border-dashed flex items-center justify-between">
+                    <div className="space-y-1">
+                        <Label htmlFor="show-gstin" className="text-xs font-black uppercase tracking-tight cursor-pointer">Show GST on Slip</Label>
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Toggle enterprise GST visibility</p>
+                    </div>
+                    <Switch id="show-gstin" checked={showGstin} onCheckedChange={setShowGstin} />
                 </div>
               </div>
             </div>

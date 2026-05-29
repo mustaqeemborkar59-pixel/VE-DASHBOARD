@@ -262,6 +262,7 @@ export type Salary = {
   paymentDate: string; // YYYY-MM-DD
   status: 'Paid' | 'Pending';
   notes?: string;
+  showGstin?: boolean; // Choice to show GST on slip
   createdAt: string;
 };
 
