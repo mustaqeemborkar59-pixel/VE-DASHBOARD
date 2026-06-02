@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { Company } from '@/lib/data';
-import { Printer, Mail, Search, Building2, UserCircle2, Phone } from 'lucide-react';
+import { Printer, Mail, Search, Building2, UserCircle2, Phone, Type } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
@@ -20,7 +20,8 @@ export default function EnvelopesPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Courier / Kind Attn details
+  // Editable fields for print
+  const [editableCompanyName, setEditableCompanyName] = useState('');
   const [kindAttn, setKindAttn] = useState('');
   const [attnMobile, setAttnMobile] = useState('');
 
@@ -45,19 +46,23 @@ export default function EnvelopesPage() {
     [companies, selectedCompanyId]
   );
 
-  // Sync Kind Attn fields when company changes
+  // Sync details when company changes
   useEffect(() => {
     if (selectedCompany) {
+        setEditableCompanyName(selectedCompany.name);
         setKindAttn(selectedCompany.kindAttn || '');
         setAttnMobile(selectedCompany.contactNumber || '');
     } else {
+        setEditableCompanyName('');
         setKindAttn('');
         setAttnMobile('');
     }
   }, [selectedCompany]);
 
   const handlePrint = async () => {
-    // If details changed, offer to save to company profile or just update it
+    if (!firestore) return;
+    
+    // If details changed, update suggestions (except the company name which is print-only)
     if (selectedCompany && (kindAttn !== selectedCompany.kindAttn || attnMobile !== selectedCompany.contactNumber)) {
         try {
             const companyRef = doc(firestore, 'companies', selectedCompany.id);
@@ -91,7 +96,7 @@ export default function EnvelopesPage() {
           <Card className="lg:col-span-1 border-none shadow-lg">
             <CardHeader>
               <CardTitle className="text-lg">Print Options</CardTitle>
-              <CardDescription>Select a company and specify attention details.</CardDescription>
+              <CardDescription>Select a company and modify details for the print.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-3">
@@ -105,7 +110,7 @@ export default function EnvelopesPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <div className="max-h-[250px] overflow-y-auto border rounded-xl divide-y">
+                <div className="max-h-[200px] overflow-y-auto border rounded-xl divide-y">
                   {isLoadingCompanies ? (
                     <div className="p-4 text-center text-xs text-muted-foreground">Loading...</div>
                   ) : filteredCompanies.length > 0 ? (
@@ -133,6 +138,20 @@ export default function EnvelopesPage() {
               <div className="space-y-4">
                 <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-1.5">
+                        <Type className="h-3 w-3 text-primary" /> Temp Company Name
+                    </label>
+                    <Input 
+                        placeholder="Edit name for print only..." 
+                        value={editableCompanyName} 
+                        onChange={e => setEditableCompanyName(e.target.value)}
+                        className="h-10 text-sm font-bold border-amber-200 focus-visible:ring-amber-500"
+                        disabled={!selectedCompanyId}
+                    />
+                    <p className="text-[9px] text-amber-600 font-bold italic">This change won't be saved to the database.</p>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-1.5">
                         <UserCircle2 className="h-3 w-3 text-primary" /> Kind Attn
                     </label>
                     <Input 
@@ -155,7 +174,6 @@ export default function EnvelopesPage() {
                         disabled={!selectedCompanyId}
                     />
                 </div>
-                <p className="text-[9px] text-muted-foreground italic leading-tight">Note: These details will be saved for this company after printing.</p>
               </div>
 
               <Button 
@@ -179,13 +197,13 @@ export default function EnvelopesPage() {
               {selectedCompany ? (
                 <div 
                   className="bg-white border-2 border-dashed border-muted-foreground/30 shadow-2xl relative flex flex-col p-10 overflow-hidden font-sans text-black"
-                  style={{ width: '550px', height: '275px' }} // Scale-down aspect ratio of DL
+                  style={{ width: '550px', height: '275px' }}
                 >
                   {/* Recipient Section */}
                   <div className="w-[450px]">
                     <p className="font-black text-primary uppercase text-[9px] mb-2 tracking-[0.2em]">Recipient (To):</p>
                     <div className="border-l-4 border-primary pl-4 py-1">
-                      <p className="font-black text-xl text-gray-900 leading-none mb-2">{selectedCompany.name.toUpperCase()}</p>
+                      <p className="font-black text-xl text-gray-900 leading-none mb-2">{editableCompanyName.toUpperCase()}</p>
                       <p className="text-base text-gray-700 font-bold leading-relaxed whitespace-pre-wrap mb-4">{selectedCompany.address}</p>
                       
                       {(kindAttn || attnMobile) && (
@@ -237,11 +255,10 @@ export default function EnvelopesPage() {
         
         {selectedCompany && (
           <div className="w-[220mm] h-[110mm] relative p-[10mm] text-black font-sans box-border bg-white">
-            {/* Recipient Address (Top-Left area) */}
             <div className="absolute top-[15mm] left-[10mm] w-[180mm]">
               <p className="font-bold text-[9pt] uppercase tracking-widest mb-2 text-gray-500">To,</p>
               <div className="pl-[2mm]">
-                <p className="font-black text-[15pt] leading-tight mb-2">{selectedCompany.name.toUpperCase()}</p>
+                <p className="font-black text-[15pt] leading-tight mb-2">{editableCompanyName.toUpperCase()}</p>
                 <p className="text-[11pt] font-bold leading-snug uppercase mb-4">{selectedCompany.address}</p>
                 
                 {(kindAttn || attnMobile) && (
