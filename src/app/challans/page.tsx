@@ -69,9 +69,12 @@ export default function ChallansPage() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     
-    // Search & Picker State
+    // Search & Filter State
     const [historySearch, setHistorySearch] = useState('');
     const [firmFilter, setFirmFilter] = useState<'All' | 'Vithal' | 'RV'>('All');
+    const [clientFilter, setClientFilter] = useState('All');
+    
+    // Picker State
     const [isForkliftDialogOpen, setIsForkliftDialogOpen] = useState(false);
     const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
     const [forkliftSearch, setForkliftSearch] = useState('');
@@ -150,6 +153,11 @@ export default function ChallansPage() {
             list = list.filter(c => c.enterprise === firmFilter);
         }
 
+        // Apply Client Filter
+        if (clientFilter !== 'All') {
+            list = list.filter(c => c.deliveryToName === clientFilter);
+        }
+
         // Apply Search Filter
         if (historySearch) {
             const lower = historySearch.toLowerCase();
@@ -174,7 +182,7 @@ export default function ChallansPage() {
             month,
             items: items.sort((a, b) => b.date.localeCompare(a.date))
         }));
-    }, [savedChallans, historySearch, firmFilter]);
+    }, [savedChallans, historySearch, firmFilter, clientFilter]);
 
     const handleAddItem = () => {
         setItems([...items, { particulars: '', amount: 0 }]);
@@ -377,6 +385,12 @@ export default function ChallansPage() {
         setIsFormOpen(true);
     };
 
+    const resetFilters = () => {
+        setHistorySearch('');
+        setFirmFilter('All');
+        setClientFilter('All');
+    }
+
     return (
         <AppLayout>
             <div className="flex flex-col gap-6 max-w-6xl mx-auto animate-in fade-in duration-500 pb-20">
@@ -417,11 +431,11 @@ export default function ChallansPage() {
                     /* --- DASHBOARD VIEW (Grouped List) --- */
                     <div className="space-y-8">
                         <Card className="border-none shadow-sm bg-muted/20 rounded-3xl p-6">
-                            <div className="flex flex-col md:flex-row gap-4 items-center">
-                                <div className="relative flex-1 w-full group">
+                            <div className="flex flex-col gap-4">
+                                <div className="relative group w-full">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input 
-                                        placeholder="Find by Bill No, Client, Vehicle, or Spec..." 
+                                        placeholder="Search by Bill No, Client, Vehicle, or Spec..." 
                                         value={historySearch}
                                         onChange={(e) => setHistorySearch(e.target.value)}
                                         className="pl-10 h-12 rounded-2xl border-muted-foreground/10 bg-background focus-visible:ring-primary/20 text-sm font-medium"
@@ -432,11 +446,11 @@ export default function ChallansPage() {
                                         </button>
                                     )}
                                 </div>
-                                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                                <div className="flex flex-wrap items-center gap-3">
                                     <Select value={firmFilter} onValueChange={(v: any) => setFirmFilter(v)}>
-                                        <SelectTrigger className="h-12 w-full md:w-44 rounded-2xl font-bold bg-background border-muted-foreground/10">
+                                        <SelectTrigger className="h-10 w-full sm:w-44 rounded-xl font-bold bg-background border-muted-foreground/10">
                                             <div className="flex items-center gap-2">
-                                                <Filter className="h-4 w-4 text-muted-foreground" />
+                                                <Filter className="h-3 w-3 text-muted-foreground" />
                                                 <SelectValue placeholder="All Firms" />
                                             </div>
                                         </SelectTrigger>
@@ -446,6 +460,25 @@ export default function ChallansPage() {
                                             <SelectItem value="RV">R.V. Enterprises</SelectItem>
                                         </SelectContent>
                                     </Select>
+
+                                    <Select value={clientFilter} onValueChange={setClientFilter}>
+                                        <SelectTrigger className="h-10 w-full sm:w-64 rounded-xl font-bold bg-background border-muted-foreground/10">
+                                            <div className="flex items-center gap-2">
+                                                <Building2 className="h-3 w-3 text-muted-foreground" />
+                                                <SelectValue placeholder="Filter by Client" />
+                                            </div>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="All">All Clients</SelectItem>
+                                            {companies?.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+
+                                    {(firmFilter !== 'All' || clientFilter !== 'All' || historySearch !== '') && (
+                                        <Button variant="ghost" size="sm" onClick={resetFilters} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                                            Reset Filters
+                                        </Button>
+                                    )}
                                 </div>
                             </div>
                         </Card>
@@ -453,7 +486,7 @@ export default function ChallansPage() {
                         {isLoadingHistory ? (
                             <div className="space-y-4">
                                 {Array.from({ length: 3 }).map((_, i) => (
-                                    <div key={i} className="h-40 w-full rounded-[32px] bg-muted animate-pulse" />
+                                    <div key={i} className="h-24 w-full rounded-2xl bg-muted animate-pulse" />
                                 ))}
                             </div>
                         ) : groupedHistory.length > 0 ? (
@@ -461,61 +494,47 @@ export default function ChallansPage() {
                                 const [monthName, year] = group.month.split(' ');
                                 return (
                                 <div key={group.month} className="space-y-6">
-                                    <div className="flex items-center gap-4 px-2">
-                                        <div className="h-12 w-12 rounded-2xl bg-primary/5 flex items-center justify-center shrink-0">
-                                            <FolderOpen className="h-6 w-6 text-primary opacity-50" />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-lg font-black uppercase tracking-tight leading-none text-foreground block">
-                                                {monthName}
-                                            </span>
-                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1.5 opacity-60 block">
-                                                {year} • {group.items.length} Records
-                                            </span>
-                                        </div>
-                                        <div className="h-px bg-muted flex-1 ml-2" />
+                                    <div className="px-2">
+                                        <span className="text-lg font-black uppercase tracking-tight leading-none text-foreground block">
+                                            {monthName}
+                                        </span>
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1 opacity-60 block">
+                                            {year} • {group.items.length} Records
+                                        </span>
                                     </div>
                                     
-                                    <div className="space-y-3">
+                                    <div className="space-y-2">
                                         {group.items.map(challan => (
                                             <Card key={challan.id} className={cn(
-                                                "group relative bg-card border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-[28px] overflow-hidden border-l-4",
+                                                "group relative bg-card border-none shadow-sm hover:shadow-md transition-all duration-200 rounded-2xl overflow-hidden border-l-4",
                                                 challan.enterprise === 'Vithal' ? "border-l-emerald-500" : "border-l-blue-600"
                                             )}>
-                                                <div className="flex flex-col md:flex-row items-center justify-between p-4 sm:p-5 gap-4">
-                                                    <div className="flex items-center gap-4 flex-1 w-full min-w-0">
-                                                        <div className="space-y-1 min-w-0 flex-1">
+                                                <div className="flex flex-row items-center justify-between p-3 sm:p-4 gap-4">
+                                                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                                                        <div className="space-y-0.5 min-w-0 flex-1">
                                                             <div className="flex items-center gap-2">
-                                                                <p className="font-black text-lg tracking-tighter text-foreground truncate">{challan.challanNo}</p>
-                                                                <Badge variant="outline" className="text-[8px] font-black py-0 h-4 border-muted-foreground/10 uppercase shrink-0">{challan.enterprise}</Badge>
+                                                                <p className="font-black text-sm tracking-tight text-foreground truncate">{challan.challanNo}</p>
+                                                                <Badge variant="outline" className="text-[7px] font-black py-0 h-3.5 border-muted-foreground/10 uppercase shrink-0">{challan.enterprise}</Badge>
                                                             </div>
-                                                            <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase tracking-wider truncate">
-                                                                <span className="flex items-center gap-1.5 shrink-0"><Clock className="h-3 w-3" /> {format(parseISO(challan.date), 'dd MMM yyyy')}</span>
+                                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-bold uppercase tracking-wider truncate">
+                                                                <span className="flex items-center gap-1 shrink-0"><Clock className="h-2.5 w-2.5" /> {format(parseISO(challan.date), 'dd MMM')}</span>
                                                                 <span className="opacity-20 shrink-0">|</span>
-                                                                <span className="flex items-center gap-1.5 text-primary truncate"><Building2 className="h-3 w-3" /> {challan.deliveryToName}</span>
+                                                                <span className="flex items-center gap-1 text-primary truncate max-w-[150px]"><Building2 className="h-2.5 w-2.5" /> {challan.deliveryToName}</span>
                                                             </div>
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-4 w-full md:w-auto px-4 md:px-0">
-                                                        <div className="hidden sm:flex items-center gap-3 min-w-[120px]">
-                                                            <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
-                                                                <Car className="h-4 w-4 text-muted-foreground" />
-                                                            </div>
+                                                    <div className="flex items-center gap-4 shrink-0">
+                                                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-muted/30 rounded-lg border">
+                                                            <Car className="h-3 w-3 text-muted-foreground" />
                                                             <p className="text-[10px] font-black text-foreground uppercase truncate">{challan.vehicleNo || 'SELF'}</p>
                                                         </div>
-                                                        
-                                                        <div className="flex-1 min-w-[150px] hidden lg:block">
-                                                            <p className="text-[9px] font-medium text-muted-foreground italic truncate">
-                                                                {challan.items.map(i => i.particulars.split('\n')[0]).join(', ')}
-                                                            </p>
-                                                        </div>
 
-                                                        <div className="flex items-center shrink-0" onClick={e => e.stopPropagation()}>
+                                                        <div className="flex items-center" onClick={e => e.stopPropagation()}>
                                                             <DropdownMenu modal={false}>
                                                                 <DropdownMenuTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-muted transition-all">
-                                                                        <EllipsisVertical className="h-5 w-5" />
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted transition-all">
+                                                                        <EllipsisVertical className="h-4 w-4" />
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end" className="w-44 rounded-2xl p-1.5 shadow-xl border-none z-[100]">
