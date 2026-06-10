@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { Company, CompanySettings, Forklift, Challan } from '@/lib/data';
-import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, Ruler, LayoutTemplate, Settings2, Save, History, Clock, ListFilter, ArrowLeft, PlusCircle, Eye, Filter, Pencil, ChevronRight, FolderOpen } from 'lucide-react';
+import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, Ruler, LayoutTemplate, Settings2, Save, History, Clock, ListFilter, ArrowLeft, PlusCircle, Eye, Filter, Pencil, ChevronRight, FolderOpen, EllipsisVertical } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { generateChallanPdf, type ChallanItem } from '@/lib/challan-generator';
@@ -24,6 +24,7 @@ import { Switch } from '@/components/ui/switch';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 const DEFAULT_ADDRESS = "S. No. 14/6A, Khot Banglow, Nr Transformer, Bhandarli, Pimpri, Thane - 400 612";
 
@@ -465,12 +466,12 @@ export default function ChallansPage() {
                                             <FolderOpen className="h-6 w-6 text-primary opacity-50" />
                                         </div>
                                         <div className="flex flex-col">
-                                            <h2 className="text-lg font-black uppercase tracking-tight leading-none text-foreground">
+                                            <span className="text-lg font-black uppercase tracking-tight leading-none text-foreground block">
                                                 {monthName}
-                                            </h2>
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1.5 opacity-60">
+                                            </span>
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1.5 opacity-60 block">
                                                 {year} • {group.items.length} Records
-                                            </p>
+                                            </span>
                                         </div>
                                         <div className="h-px bg-muted flex-1 ml-2" />
                                     </div>
@@ -482,44 +483,57 @@ export default function ChallansPage() {
                                                 challan.enterprise === 'Vithal' ? "border-l-emerald-500" : "border-l-blue-600"
                                             )}>
                                                 <div className="flex flex-col md:flex-row items-center justify-between p-4 sm:p-5 gap-4">
-                                                    <div className="flex items-center gap-4 flex-1 w-full">
-                                                        <div className="space-y-1 min-w-0">
+                                                    <div className="flex items-center gap-4 flex-1 w-full min-w-0">
+                                                        <div className="space-y-1 min-w-0 flex-1">
                                                             <div className="flex items-center gap-2">
-                                                                <p className="font-black text-lg tracking-tighter text-foreground">{challan.challanNo}</p>
-                                                                <Badge variant="outline" className="text-[8px] font-black py-0 h-4 border-muted-foreground/10 uppercase">{challan.enterprise}</Badge>
+                                                                <p className="font-black text-lg tracking-tighter text-foreground truncate">{challan.challanNo}</p>
+                                                                <Badge variant="outline" className="text-[8px] font-black py-0 h-4 border-muted-foreground/10 uppercase shrink-0">{challan.enterprise}</Badge>
                                                             </div>
-                                                            <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
-                                                                <span className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> {format(parseISO(challan.date), 'dd MMM yyyy')}</span>
-                                                                <span className="opacity-20">|</span>
-                                                                <span className="flex items-center gap-1.5 text-primary"><Building2 className="h-3 w-3" /> {challan.deliveryToName}</span>
+                                                            <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase tracking-wider truncate">
+                                                                <span className="flex items-center gap-1.5 shrink-0"><Clock className="h-3 w-3" /> {format(parseISO(challan.date), 'dd MMM yyyy')}</span>
+                                                                <span className="opacity-20 shrink-0">|</span>
+                                                                <span className="flex items-center gap-1.5 text-primary truncate"><Building2 className="h-3 w-3" /> {challan.deliveryToName}</span>
                                                             </div>
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-6 w-full md:w-auto px-4 md:px-0">
-                                                        <div className="hidden sm:flex items-center gap-3 min-w-[140px]">
+                                                    <div className="flex items-center gap-4 w-full md:w-auto px-4 md:px-0">
+                                                        <div className="hidden sm:flex items-center gap-3 min-w-[120px]">
                                                             <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
                                                                 <Car className="h-4 w-4 text-muted-foreground" />
                                                             </div>
                                                             <p className="text-[10px] font-black text-foreground uppercase truncate">{challan.vehicleNo || 'SELF'}</p>
                                                         </div>
                                                         
-                                                        <div className="flex-1 min-w-[200px] hidden lg:block">
+                                                        <div className="flex-1 min-w-[150px] hidden lg:block">
                                                             <p className="text-[9px] font-medium text-muted-foreground italic truncate">
                                                                 {challan.items.map(i => i.particulars.split('\n')[0]).join(', ')}
                                                             </p>
                                                         </div>
 
-                                                        <div className="flex items-center gap-1 shrink-0">
-                                                            <Button variant="ghost" size="icon" onClick={() => handleOpenView(challan)} className="h-10 w-10 rounded-xl hover:bg-primary/5 hover:text-primary transition-all">
-                                                                <Eye className="h-5 w-5" />
-                                                            </Button>
-                                                            <Button variant="ghost" size="icon" onClick={() => loadHistoryRecord(challan)} className="h-10 w-10 rounded-xl hover:bg-amber-500/5 hover:text-amber-600 transition-all">
-                                                                <Pencil className="h-5 w-5" />
-                                                            </Button>
-                                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteRecord(challan.id)} className="h-10 w-10 text-destructive/40 hover:text-destructive hover:bg-destructive/5 rounded-xl transition-all">
-                                                                <Trash2 className="h-5 w-5" />
-                                                            </Button>
+                                                        <div className="flex items-center shrink-0">
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-muted transition-all">
+                                                                        <EllipsisVertical className="h-5 w-5" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end" className="w-44 rounded-2xl p-1.5 shadow-xl border-none">
+                                                                    <DropdownMenuItem onClick={() => handleOpenView(challan)} className="rounded-xl h-10 cursor-pointer">
+                                                                        <Eye className="mr-2 h-4 w-4 text-primary" /> 
+                                                                        <span className="font-bold text-xs uppercase tracking-tight">View Details</span>
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => loadHistoryRecord(challan)} className="rounded-xl h-10 cursor-pointer">
+                                                                        <Pencil className="mr-2 h-4 w-4 text-amber-500" />
+                                                                        <span className="font-bold text-xs uppercase tracking-tight">Edit Record</span>
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuSeparator className="my-1.5 opacity-50" />
+                                                                    <DropdownMenuItem onClick={() => handleDeleteRecord(challan.id)} className="rounded-xl h-10 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/5">
+                                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                                        <span className="font-bold text-xs uppercase tracking-tight">Delete Record</span>
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
                                                         </div>
                                                     </div>
                                                 </div>
