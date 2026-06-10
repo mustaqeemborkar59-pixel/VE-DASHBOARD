@@ -456,16 +456,23 @@ export default function ChallansPage() {
                                 ))}
                             </div>
                         ) : groupedHistory.length > 0 ? (
-                            groupedHistory.map(group => (
-                                <div key={group.month} className="space-y-4">
+                            groupedHistory.map(group => {
+                                const [monthName, year] = group.month.split(' ');
+                                return (
+                                <div key={group.month} className="space-y-6">
                                     <div className="flex items-center gap-4 px-2">
-                                        <div className="h-10 w-10 rounded-2xl bg-primary/5 flex items-center justify-center shrink-0">
-                                            <FolderOpen className="h-5 w-5 text-primary opacity-50" />
+                                        <div className="h-12 w-12 rounded-2xl bg-primary/5 flex items-center justify-center shrink-0">
+                                            <FolderOpen className="h-6 w-6 text-primary opacity-50" />
                                         </div>
-                                        <h2 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground/70">
-                                            {group.month}
-                                        </h2>
-                                        <div className="h-px bg-muted flex-1" />
+                                        <div className="flex flex-col">
+                                            <h2 className="text-lg font-black uppercase tracking-tight leading-none text-foreground">
+                                                {monthName}
+                                            </h2>
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1.5 opacity-60">
+                                                {year} • {group.items.length} Records
+                                            </p>
+                                        </div>
+                                        <div className="h-px bg-muted flex-1 ml-2" />
                                     </div>
                                     
                                     <div className="space-y-3">
@@ -520,7 +527,7 @@ export default function ChallansPage() {
                                         ))}
                                     </div>
                                 </div>
-                            ))
+                            )})
                         ) : (
                             <div className="py-32 text-center flex flex-col items-center gap-4">
                                 <div className="h-24 w-24 rounded-full bg-muted/50 flex items-center justify-center opacity-30">
