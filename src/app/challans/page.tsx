@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { Company, CompanySettings, Forklift, Challan } from '@/lib/data';
-import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, Ruler, LayoutTemplate, Settings2, Save, History, Clock, ListFilter, ArrowLeft, PlusCircle, Eye, Filter, Pencil } from 'lucide-react';
+import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, Ruler, LayoutTemplate, Settings2, Save, History, Clock, ListFilter, ArrowLeft, PlusCircle, Eye, Filter, Pencil, ChevronRight, FolderOpen } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { generateChallanPdf, type ChallanItem } from '@/lib/challan-generator';
@@ -89,7 +89,7 @@ export default function ChallansPage() {
     const { data: forklifts } = useCollection<Forklift>(forkliftsQuery);
 
     const challansQuery = useMemoFirebase(() => 
-        firestore && user ? query(collection(firestore, 'challans'), orderBy('createdAt', 'desc')) : null, 
+        firestore && user ? query(collection(firestore, 'challans'), orderBy('date', 'desc')) : null, 
         [firestore, user]
     );
     const { data: savedChallans, isLoading: isLoadingHistory } = useCollection<Challan>(challansQuery);
@@ -139,7 +139,7 @@ export default function ChallansPage() {
         );
     }, [forklifts, forkliftSearch]);
 
-    const filteredHistory = useMemo(() => {
+    const groupedHistory = useMemo(() => {
         if (!savedChallans) return [];
         
         let list = savedChallans;
@@ -161,7 +161,18 @@ export default function ChallansPage() {
             );
         }
 
-        return list;
+        // Group by Month/Year
+        const groups: Record<string, Challan[]> = {};
+        list.forEach(challan => {
+            const monthKey = format(parseISO(challan.date), 'MMMM yyyy');
+            if (!groups[monthKey]) groups[monthKey] = [];
+            groups[monthKey].push(challan);
+        });
+
+        return Object.entries(groups).map(([month, items]) => ({
+            month,
+            items: items.sort((a, b) => b.date.localeCompare(a.date))
+        }));
     }, [savedChallans, historySearch, firmFilter]);
 
     const handleAddItem = () => {
@@ -374,10 +385,10 @@ export default function ChallansPage() {
                     <div className="space-y-1">
                         <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">
                             <FileDown className="h-7 w-7 text-primary" />
-                            {isFormOpen ? "Create Challan" : "Challan Dashboard"}
+                            {isFormOpen ? "Create Challan" : "Challan Records"}
                         </h1>
                         <p className="text-sm text-muted-foreground uppercase font-bold tracking-widest opacity-70">
-                            {isFormOpen ? "Generator Editor" : "Delivery & Service History"}
+                            {isFormOpen ? "Document Editor" : "Delivery tracking & history"}
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -402,14 +413,14 @@ export default function ChallansPage() {
                 </div>
 
                 {!isFormOpen ? (
-                    /* --- DASHBOARD VIEW --- */
-                    <div className="space-y-6">
+                    /* --- DASHBOARD VIEW (Grouped List) --- */
+                    <div className="space-y-8">
                         <Card className="border-none shadow-sm bg-muted/20 rounded-3xl p-6">
                             <div className="flex flex-col md:flex-row gap-4 items-center">
                                 <div className="relative flex-1 w-full group">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input 
-                                        placeholder="Search by Bill No, Client, Vehicle, or Serial Number..." 
+                                        placeholder="Find by Bill No, Client, Vehicle, or Spec..." 
                                         value={historySearch}
                                         onChange={(e) => setHistorySearch(e.target.value)}
                                         className="pl-10 h-12 rounded-2xl border-muted-foreground/10 bg-background focus-visible:ring-primary/20 text-sm font-medium"
@@ -422,7 +433,7 @@ export default function ChallansPage() {
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                                     <Select value={firmFilter} onValueChange={(v: any) => setFirmFilter(v)}>
-                                        <SelectTrigger className="h-12 w-full md:w-40 rounded-2xl font-bold bg-background border-muted-foreground/10">
+                                        <SelectTrigger className="h-12 w-full md:w-44 rounded-2xl font-bold bg-background border-muted-foreground/10">
                                             <div className="flex items-center gap-2">
                                                 <Filter className="h-4 w-4 text-muted-foreground" />
                                                 <SelectValue placeholder="All Firms" />
@@ -430,93 +441,97 @@ export default function ChallansPage() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="All">All Firms</SelectItem>
-                                            <SelectItem value="Vithal">Vithal Ent.</SelectItem>
-                                            <SelectItem value="RV">R.V. Ent.</SelectItem>
+                                            <SelectItem value="Vithal">Vithal Enterprises</SelectItem>
+                                            <SelectItem value="RV">R.V. Enterprises</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                    <div className="hidden md:flex items-center gap-4 shrink-0 bg-background/50 px-4 py-2 rounded-2xl border border-dashed text-xs font-black uppercase text-muted-foreground h-12">
-                                        <div className="text-primary">{filteredHistory.length} Results</div>
-                                    </div>
                                 </div>
                             </div>
                         </Card>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {isLoadingHistory ? (
-                                Array.from({ length: 6 }).map((_, i) => (
-                                    <Card key={i} className="h-60 rounded-[32px] animate-pulse bg-muted/30 border-none" />
-                                ))
-                            ) : filteredHistory.length > 0 ? (
-                                filteredHistory.map(challan => (
-                                    <Card key={challan.id} className="group relative bg-card border border-muted-foreground/10 rounded-[32px] p-6 hover:border-primary/40 hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col h-full">
-                                        {/* Corner Label */}
-                                        <div className={cn(
-                                            "absolute top-0 right-0 px-4 py-1.5 rounded-bl-2xl text-[8px] font-black uppercase tracking-widest",
-                                            challan.enterprise === 'Vithal' ? "bg-emerald-500/10 text-emerald-600" : "bg-blue-600/10 text-blue-700"
-                                        )}>
-                                            {challan.enterprise} Ent.
+                        {isLoadingHistory ? (
+                            <div className="space-y-4">
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                    <div key={i} className="h-40 w-full rounded-[32px] bg-muted animate-pulse" />
+                                ))}
+                            </div>
+                        ) : groupedHistory.length > 0 ? (
+                            groupedHistory.map(group => (
+                                <div key={group.month} className="space-y-4">
+                                    <div className="flex items-center gap-4 px-2">
+                                        <div className="h-10 w-10 rounded-2xl bg-primary/5 flex items-center justify-center shrink-0">
+                                            <FolderOpen className="h-5 w-5 text-primary opacity-50" />
                                         </div>
-
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className="space-y-1">
-                                                <p className="font-black text-2xl tracking-tighter text-foreground leading-none">{challan.challanNo}</p>
-                                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
-                                                    <Clock className="h-3 w-3" />
-                                                    {format(parseISO(challan.date), 'dd MMM yyyy')}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <Button variant="outline" size="icon" onClick={() => handleOpenView(challan)} className="h-9 w-9 rounded-xl border-muted-foreground/10 hover:bg-muted transition-all">
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                <Button variant="outline" size="icon" onClick={() => loadHistoryRecord(challan)} className="h-9 w-9 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary transition-all">
-                                                    <History className="h-4 w-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" onClick={() => handleDeleteRecord(challan.id)} className="h-9 w-9 text-destructive rounded-xl hover:bg-destructive/5">
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-3 flex-1">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-7 w-7 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
-                                                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                                                </div>
-                                                <p className="text-xs font-black text-foreground truncate uppercase">{challan.deliveryToName}</p>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-7 w-7 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
-                                                    <Car className="h-4 w-4 text-muted-foreground" />
-                                                </div>
-                                                <p className="text-[10px] font-bold text-muted-foreground uppercase">{challan.vehicleNo || 'Self Pick-up'}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-5 pt-4 border-t border-dashed border-muted-foreground/20">
-                                            <p className="text-[9px] font-black uppercase text-primary/60 tracking-widest mb-2 flex items-center gap-1.5">
-                                                <Info className="h-3 w-3" /> Items Details
-                                            </p>
-                                            <div className="bg-muted/30 rounded-2xl p-3 border border-muted-foreground/5">
-                                                <p className="text-[10px] font-medium leading-relaxed italic text-foreground/80 line-clamp-2">
-                                                    {challan.items.map(i => i.particulars.split('\n')[0]).join(' | ')}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                ))
-                            ) : (
-                                <div className="col-span-full py-32 text-center flex flex-col items-center gap-4">
-                                    <div className="h-24 w-24 rounded-full bg-muted/50 flex items-center justify-center opacity-30">
-                                        <History className="h-12 w-12" />
+                                        <h2 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground/70">
+                                            {group.month}
+                                        </h2>
+                                        <div className="h-px bg-muted flex-1" />
                                     </div>
-                                    <div className="space-y-1">
-                                        <p className="text-lg font-black uppercase tracking-widest text-muted-foreground">No matching records</p>
-                                        <p className="text-sm font-medium text-muted-foreground/60">Try searching for a different machine or client</p>
+                                    
+                                    <div className="space-y-3">
+                                        {group.items.map(challan => (
+                                            <Card key={challan.id} className={cn(
+                                                "group relative bg-card border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-[28px] overflow-hidden border-l-4",
+                                                challan.enterprise === 'Vithal' ? "border-l-emerald-500" : "border-l-blue-600"
+                                            )}>
+                                                <div className="flex flex-col md:flex-row items-center justify-between p-4 sm:p-5 gap-4">
+                                                    <div className="flex items-center gap-4 flex-1 w-full">
+                                                        <div className="space-y-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="font-black text-lg tracking-tighter text-foreground">{challan.challanNo}</p>
+                                                                <Badge variant="outline" className="text-[8px] font-black py-0 h-4 border-muted-foreground/10 uppercase">{challan.enterprise}</Badge>
+                                                            </div>
+                                                            <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                                                                <span className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> {format(parseISO(challan.date), 'dd MMM yyyy')}</span>
+                                                                <span className="opacity-20">|</span>
+                                                                <span className="flex items-center gap-1.5 text-primary"><Building2 className="h-3 w-3" /> {challan.deliveryToName}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-6 w-full md:w-auto px-4 md:px-0">
+                                                        <div className="hidden sm:flex items-center gap-3 min-w-[140px]">
+                                                            <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
+                                                                <Car className="h-4 w-4 text-muted-foreground" />
+                                                            </div>
+                                                            <p className="text-[10px] font-black text-foreground uppercase truncate">{challan.vehicleNo || 'SELF'}</p>
+                                                        </div>
+                                                        
+                                                        <div className="flex-1 min-w-[200px] hidden lg:block">
+                                                            <p className="text-[9px] font-medium text-muted-foreground italic truncate">
+                                                                {challan.items.map(i => i.particulars.split('\n')[0]).join(', ')}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-1 shrink-0">
+                                                            <Button variant="ghost" size="icon" onClick={() => handleOpenView(challan)} className="h-10 w-10 rounded-xl hover:bg-primary/5 hover:text-primary transition-all">
+                                                                <Eye className="h-5 w-5" />
+                                                            </Button>
+                                                            <Button variant="ghost" size="icon" onClick={() => loadHistoryRecord(challan)} className="h-10 w-10 rounded-xl hover:bg-amber-500/5 hover:text-amber-600 transition-all">
+                                                                <Pencil className="h-5 w-5" />
+                                                            </Button>
+                                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteRecord(challan.id)} className="h-10 w-10 text-destructive/40 hover:text-destructive hover:bg-destructive/5 rounded-xl transition-all">
+                                                                <Trash2 className="h-5 w-5" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </Card>
+                                        ))}
                                     </div>
                                 </div>
-                            )}
-                        </div>
+                            ))
+                        ) : (
+                            <div className="py-32 text-center flex flex-col items-center gap-4">
+                                <div className="h-24 w-24 rounded-full bg-muted/50 flex items-center justify-center opacity-30">
+                                    <History className="h-12 w-12" />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-lg font-black uppercase tracking-widest text-muted-foreground">No records found</p>
+                                    <p className="text-sm font-medium text-muted-foreground/60">Start by creating a new delivery challan</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     /* --- EDITOR VIEW --- */
