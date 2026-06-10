@@ -511,14 +511,14 @@ export default function ChallansPage() {
                                                             </p>
                                                         </div>
 
-                                                        <div className="flex items-center shrink-0">
-                                                            <DropdownMenu>
+                                                        <div className="flex items-center shrink-0" onClick={e => e.stopPropagation()}>
+                                                            <DropdownMenu modal={false}>
                                                                 <DropdownMenuTrigger asChild>
                                                                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-muted transition-all">
                                                                         <EllipsisVertical className="h-5 w-5" />
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end" className="w-44 rounded-2xl p-1.5 shadow-xl border-none">
+                                                                <DropdownMenuContent align="end" className="w-44 rounded-2xl p-1.5 shadow-xl border-none z-[100]">
                                                                     <DropdownMenuItem onClick={() => handleOpenView(challan)} className="rounded-xl h-10 cursor-pointer">
                                                                         <Eye className="mr-2 h-4 w-4 text-primary" /> 
                                                                         <span className="font-bold text-xs uppercase tracking-tight">View Details</span>
