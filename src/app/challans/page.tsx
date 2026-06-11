@@ -149,17 +149,14 @@ export default function ChallansPage() {
         
         let list = savedChallans;
 
-        // Apply Firm Filter
         if (firmFilter !== 'All') {
             list = list.filter(c => c.enterprise === firmFilter);
         }
 
-        // Apply Client Filter
         if (clientFilter !== 'All') {
             list = list.filter(c => c.deliveryToName === clientFilter);
         }
 
-        // Apply Search Filter
         if (historySearch) {
             const lower = historySearch.toLowerCase();
             list = list.filter(c => 
@@ -171,7 +168,6 @@ export default function ChallansPage() {
             );
         }
 
-        // Group by Month/Year
         const groups: Record<string, Challan[]> = {};
         list.forEach(challan => {
             const monthKey = format(parseISO(challan.date), 'MMMM yyyy');
@@ -179,13 +175,12 @@ export default function ChallansPage() {
             groups[monthKey].push(challan);
         });
 
-        // Map and Sort groups by date descending, and items within groups numerically by challanNo
         return Object.entries(groups)
-            .sort((a, b) => b[0].localeCompare(a[0])) // Simple chronological month group sort
+            .sort((a, b) => b[0].localeCompare(a[0])) 
             .map(([month, items]) => ({
                 month,
                 items: items.sort((a, b) => 
-                    a.challanNo.localeCompare(b.challanNo, undefined, { numeric: true, sensitivity: 'base' })
+                    (a.challanNo || '').localeCompare(b.challanNo || '', undefined, { numeric: true, sensitivity: 'base' })
                 )
             }));
     }, [savedChallans, historySearch, firmFilter, clientFilter]);
@@ -221,7 +216,6 @@ export default function ChallansPage() {
         let cursorOffset = text.length;
 
         if (text === '[H]' || text === '[B]') {
-            // Check if selection exists
             if (start !== end) {
                 newVal = currentVal.substring(0, start) + text + currentVal.substring(start, end) + text.replace('[', '[/') + currentVal.substring(end);
             } else {
@@ -305,7 +299,7 @@ export default function ChallansPage() {
             
             if (editingChallanId) {
                 const docRef = doc(firestore!, 'challans', editingChallanId);
-                await updateDocumentNonBlocking(docRef, challanData);
+                updateDocumentNonBlocking(docRef, challanData);
                 toast({ title: 'Record Updated', description: `Challan ${challanNo} information saved.` });
             } else {
                 await addDocumentNonBlocking(collection(firestore!, 'challans'), challanData);
@@ -418,7 +412,6 @@ export default function ChallansPage() {
     };
 
     const handleCreateNew = () => {
-        // Reset form
         setEditingChallanId(null);
         setChallanNo('');
         setVehicleNo('');
@@ -441,7 +434,6 @@ export default function ChallansPage() {
         <AppLayout>
             <div className="flex flex-col gap-6 max-w-6xl mx-auto animate-in fade-in duration-500 pb-20">
                 
-                {/* Header Section */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                         <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">
@@ -474,7 +466,6 @@ export default function ChallansPage() {
                 </div>
 
                 {!isFormOpen ? (
-                    /* --- DASHBOARD VIEW (Grouped List) --- */
                     <div className="space-y-8">
                         <Card className="border-none shadow-sm bg-muted/20 rounded-3xl p-6">
                             <div className="flex flex-col gap-4">
@@ -620,9 +611,7 @@ export default function ChallansPage() {
                         )}
                     </div>
                 ) : (
-                    /* --- EDITOR VIEW --- */
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in slide-in-from-right-4 duration-500">
-                        {/* Editor Form */}
                         <Card className="lg:col-span-8 border-none shadow-2xl rounded-[32px] overflow-hidden">
                             <CardHeader className="bg-muted/30 border-b p-6 sm:p-8">
                                 <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -660,7 +649,6 @@ export default function ChallansPage() {
                                 <Separator />
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                                    {/* FROM Section */}
                                     <div className="space-y-4">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary">From Selection</Label>
                                         <Select value={fromId} onValueChange={setFromId}>
@@ -683,7 +671,6 @@ export default function ChallansPage() {
                                         </div>
                                     </div>
 
-                                    {/* DELIVERY TO Section */}
                                     <div className="space-y-4">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Delivery To Selection</Label>
                                         <Select value={deliveryToId} onValueChange={setDeliveryToId}>
@@ -777,7 +764,6 @@ export default function ChallansPage() {
                             </CardContent>
                         </Card>
 
-                        {/* Customization Sidebar */}
                         <div className="lg:col-span-4 space-y-6">
                             <Card className="border-none shadow-xl bg-card rounded-[32px] overflow-hidden sticky top-24">
                                 <CardHeader className="bg-muted/30 border-b pb-4 p-6">
@@ -803,7 +789,7 @@ export default function ChallansPage() {
                                         </div>
                                     </div>
 
-                                    <Separator className="bg-border/30" />
+                                    <Separator className="bg-border/30 my-1" />
 
                                     <div className="space-y-4">
                                         <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
@@ -821,7 +807,7 @@ export default function ChallansPage() {
                                         </div>
                                     </div>
 
-                                    <Separator className="bg-border/30" />
+                                    <Separator className="bg-border/30 my-1" />
 
                                     <div className="space-y-4">
                                         <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5">
@@ -861,7 +847,6 @@ export default function ChallansPage() {
                 )}
             </div>
 
-            {/* View Details Dialog */}
             <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
                 <DialogContent className="max-w-[95vw] sm:max-w-2xl p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
                     {selectedChallanForView && (
@@ -963,7 +948,6 @@ export default function ChallansPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Forklift Picker Dialog */}
             <Dialog open={isForkliftDialogOpen} onOpenChange={setIsForkliftDialogOpen}>
                 <DialogContent className="max-w-[95vw] sm:max-w-md p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
                     <DialogHeader className="p-6 bg-primary/5 border-b border-primary/10">
@@ -1017,7 +1001,6 @@ export default function ChallansPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Print-Only Style Container (Hidden in browser) */}
             <style dangerouslySetInnerHTML={{ __html: `
                 @media print {
                     @page { size: A4; margin: 0; }
@@ -1026,6 +1009,6 @@ export default function ChallansPage() {
                     main { padding: 0 !important; overflow: visible !important; }
                 }
             `}} />
-        </div>
+        </AppLayout>
     );
 }
