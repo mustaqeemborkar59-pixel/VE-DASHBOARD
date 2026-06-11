@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import AppLayout from "@/components/app-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { Company, CompanySettings, Forklift, Challan } from '@/lib/data';
-import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, Ruler, LayoutTemplate, Settings2, Save, History, Clock, ListFilter, ArrowLeft, PlusCircle, Eye, Filter, Pencil, ChevronRight, FolderOpen, EllipsisVertical } from 'lucide-react';
+import { FileDown, Plus, Trash2, Printer, Search, Building2, Car, CalendarDays, Hash, Info, Loader2, XCircle, Type, Ruler, LayoutTemplate, Settings2, Save, History, Clock, ListFilter, ArrowLeft, PlusCircle, Eye, Filter, Pencil, ChevronRight, FolderOpen, EllipsisVertical, CheckCircle2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { generateChallanPdf, type ChallanItem } from '@/lib/challan-generator';
@@ -204,6 +204,37 @@ export default function ChallansPage() {
         setItems(newItems);
     };
 
+    const handleApplyFormatting = (index: number, text: string) => {
+        const textarea = document.getElementById(`particulars-${index}`) as HTMLTextAreaElement;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const currentVal = items[index].particulars;
+        
+        let newVal = '';
+        let cursorOffset = text.length;
+
+        if (text === '[H]' || text === '[B]') {
+            // Check if selection exists
+            if (start !== end) {
+                newVal = currentVal.substring(0, start) + text + currentVal.substring(start, end) + text.replace('[', '[/') + currentVal.substring(end);
+            } else {
+                newVal = currentVal.substring(0, start) + text + currentVal.substring(end);
+            }
+        } else {
+            newVal = currentVal.substring(0, start) + text + currentVal.substring(end);
+        }
+
+        handleItemChange(index, 'particulars', newVal);
+
+        setTimeout(() => {
+            textarea.focus();
+            const pos = start + cursorOffset;
+            textarea.setSelectionRange(pos, pos);
+        }, 0);
+    };
+
     const openForkliftPicker = (index: number) => {
         setActiveItemIndex(index);
         setForkliftSearch('');
@@ -214,11 +245,11 @@ export default function ChallansPage() {
         if (activeItemIndex === null) return;
         const machineType = forklift.equipmentType || 'FORKLIFT';
         const details = [
-            machineType.toUpperCase(),
-            `   • S.No: ${forklift.serialNumber}`,
-            `   • Capacity: ${forklift.capacity || 'N/A'}`,
-            `   • Make: ${forklift.make} | Model: ${forklift.model}`,
-            `   • Volt: ${forklift.voltage || 'N/A'} | Mfg Year: ${forklift.year}`
+            `[H]${machineType.toUpperCase()}[/H]`,
+            `• S.No: ${forklift.serialNumber}`,
+            `• Capacity: ${forklift.capacity || 'N/A'}`,
+            `• Make: ${forklift.make} | Model: ${forklift.model}`,
+            `• Volt: ${forklift.voltage || 'N/A'} | Mfg Year: ${forklift.year}`
         ].join('\n');
 
         handleItemChange(activeItemIndex, 'particulars', details);
@@ -689,17 +720,38 @@ export default function ChallansPage() {
                                                         variant="outline" 
                                                         size="icon" 
                                                         onClick={() => openForkliftPicker(index)}
-                                                        className="h-10 w-full rounded-none rounded-b-xl border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary"
+                                                        className="h-8 w-full rounded-none border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary"
                                                         title="Load Fleet Specs"
                                                     >
-                                                        <ForkliftIcon className="h-4 w-4" />
+                                                        <ForkliftIcon className="h-3.5 w-3.5" />
                                                     </Button>
+                                                    <DropdownMenu modal={false}>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="outline" size="icon" className="h-8 w-full rounded-none rounded-b-xl bg-muted/10">
+                                                                <Type className="h-3.5 w-3.5" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="start" className="w-48 p-2 rounded-2xl shadow-xl z-[150]">
+                                                            <div className="grid gap-1">
+                                                                <DropdownMenuItem onClick={() => handleApplyFormatting(index, '[H]')} className="text-xs font-black uppercase rounded-lg h-9">Heading Style</DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleApplyFormatting(index, '[B]')} className="text-xs font-bold uppercase rounded-lg h-9">Bold Text</DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleApplyFormatting(index, '[S:8]')} className="text-xs uppercase rounded-lg h-9">Small Size (8pt)</DropdownMenuItem>
+                                                                <DropdownMenuSeparator className="opacity-50" />
+                                                                <div className="grid grid-cols-5 p-1 gap-1">
+                                                                    {['•', '✓', '→', '»', '⦿'].map(s => (
+                                                                        <Button key={s} variant="ghost" size="icon" className="h-7 w-7 text-sm font-bold" onClick={() => handleApplyFormatting(index, s + ' ')}>{s}</Button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </div>
                                                 <Textarea 
+                                                    id={`particulars-${index}`}
                                                     value={item.particulars} 
                                                     onChange={e => handleItemChange(index, 'particulars', e.target.value)} 
                                                     placeholder="Detailed technical description..."
-                                                    className="flex-1 min-h-[44px] h-24 py-3 text-xs font-bold leading-snug rounded-xl resize-none"
+                                                    className="flex-1 min-h-[44px] h-32 py-3 text-xs font-bold leading-snug rounded-xl resize-none"
                                                 />
                                                 <div className="space-y-1">
                                                     <Input 
@@ -858,7 +910,9 @@ export default function ChallansPage() {
                                                     {selectedChallanForView.items.map((item, i) => (
                                                         <TableRow key={i}>
                                                             <TableCell className="text-center font-bold text-xs">{i + 1}</TableCell>
-                                                            <TableCell className="text-xs leading-relaxed whitespace-pre-wrap font-medium">{item.particulars}</TableCell>
+                                                            <TableCell className="text-xs leading-relaxed whitespace-pre-wrap font-medium">
+                                                                {item.particulars.replace(/\[\/?(H|B|S:\d+)\]/g, '')}
+                                                            </TableCell>
                                                             <TableCell className="text-right font-mono font-bold text-xs text-primary">
                                                                 {item.amount ? `₹${item.amount.toLocaleString('en-IN')}` : '-'}
                                                             </TableCell>

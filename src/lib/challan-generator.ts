@@ -1,4 +1,3 @@
-
 'use client';
 
 import jsPDF from 'jspdf';
@@ -49,6 +48,50 @@ const loadImage = (url: string): Promise<HTMLImageElement> => {
     });
 };
 
+/**
+ * Parses line-level markdown-like tags for technical specs.
+ * Supported: [H]Header[/H], [B]Bold[/B], [S:n]Size[/S]
+ */
+const renderRichLine = (doc: jsPDF, text: string, x: number, y: number, maxWidth: number, defaultSize: number): number => {
+    let currentY = y;
+    
+    // Line-level style detection
+    const isHeading = text.includes('[H]');
+    const isBold = text.includes('[B]') || isHeading;
+    
+    let fontSize = defaultSize;
+    if (isHeading) fontSize += 2;
+
+    // Size detection [S:n]
+    const sizeMatch = text.match(/\[S:(\d+)\]/);
+    if (sizeMatch) {
+        fontSize = parseInt(sizeMatch[1]);
+    }
+
+    // Clean text for measuring/drawing
+    let cleanText = text.replace(/\[\/?(H|B|S:\d+)\]/g, '');
+
+    doc.setFontSize(fontSize);
+    doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+
+    // Split text into wrapped lines
+    const lines = doc.splitTextToSize(cleanText, maxWidth);
+    const lineHeight = fontSize * 0.3527 * 1.25; // Pt to mm * line spacing
+
+    lines.forEach((line: string, i: number) => {
+        doc.text(line, x, currentY + (i * lineHeight));
+        
+        // Underline for first line of Heading
+        if (isHeading && i === 0) {
+            const tw = doc.getTextWidth(line);
+            doc.setLineWidth(0.15);
+            doc.line(x, currentY + (i * lineHeight) + 0.8, x + tw, currentY + (i * lineHeight) + 0.8);
+        }
+    });
+
+    return lines.length * lineHeight;
+};
+
 export const generateChallanPdf = async (data: ChallanData) => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -57,7 +100,7 @@ export const generateChallanPdf = async (data: ChallanData) => {
     // Configurable Layout Constants
     const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
-    const standardBorder = 0.3; // Increased for a bolder, professional look
+    const standardBorder = 0.3;
     
     const headerBlockHeight = data.headerHeight || 20;
     const footerHeight = data.footerHeight || 20;
@@ -72,16 +115,15 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.setLineWidth(standardBorder);
     doc.rect(margin, margin, contentWidth, pageHeight - (margin * 2));
 
-    // --- 1. Header: Firm Name (Centered in Block) ---
+    // --- 1. Header: Firm Name ---
     const headerBlockY = margin;
     const enterpriseTitle = data.enterprise === 'RV' ? 'R.V. ENTERPRISES' : 'VITHAL ENTERPRISES';
     
     doc.setFontSize(22);
     doc.setFont('times', 'bold');
-    // Vertical centering logic for firm name
     doc.text(enterpriseTitle.toUpperCase(), pageWidth / 2, headerBlockY + (headerBlockHeight / 2) + 3, { align: 'center' });
 
-    // Header Block Bottom Separator (Full Width)
+    // Header Block Bottom Separator
     doc.setLineWidth(standardBorder);
     doc.line(margin, headerBlockY + headerBlockHeight, pageWidth - margin, headerBlockY + headerBlockHeight);
 
@@ -110,7 +152,6 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.line(margin, currentY, pageWidth - margin, currentY);
 
     // --- 3. Info Row (CHALLAN / VEHICLE / DATE) ---
-    // Manual Rectangles for Info Row
     const colW = contentWidth / 3;
     const infoY = currentY;
     
@@ -118,12 +159,10 @@ export const generateChallanPdf = async (data: ChallanData) => {
         doc.setFontSize(8); 
         doc.setFont('helvetica', 'normal');
         doc.text(title, x + 2, infoY + 5.2);
-        
         const titleWidth = doc.getTextWidth(title);
         doc.setFontSize(10.5); 
         doc.setFont('helvetica', 'bold');
         doc.text(value, x + 2 + titleWidth + 2, infoY + 5.5);
-        
         doc.setLineWidth(standardBorder);
         doc.rect(x, infoY, width, 8);
     };
@@ -166,25 +205,19 @@ export const generateChallanPdf = async (data: ChallanData) => {
 
     currentY = (doc as any).lastAutoTable.finalY;
 
-    // --- 5. Manual Header Row (PERFECT ALIGNMENT) ---
+    // --- 5. Header Row ---
     const headerRowHeight = 8;
     const headerStartY = currentY;
     
-    // Header Background
     doc.setFillColor(245, 245, 245);
     doc.rect(margin, headerStartY, contentWidth, headerRowHeight, 'F');
-    
-    // Header Frame Lines
     doc.setLineWidth(standardBorder);
     doc.setDrawColor(0);
-    doc.line(margin, headerStartY, margin + contentWidth, headerStartY); // Top
-    doc.line(margin, headerStartY + headerRowHeight, margin + contentWidth, headerStartY + headerRowHeight); // Bottom
-    
-    // Column Divider Markers in Header
+    doc.line(margin, headerStartY, margin + contentWidth, headerStartY);
+    doc.line(margin, headerStartY + headerRowHeight, margin + contentWidth, headerStartY + headerRowHeight);
     doc.line(margin + srWidth, headerStartY, margin + srWidth, headerStartY + headerRowHeight);
     doc.line(margin + contentWidth - amountWidth, headerStartY, margin + contentWidth - amountWidth, headerStartY + headerRowHeight);
 
-    // Header Text
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text("SR.", margin + (srWidth / 2), headerStartY + 5.5, { align: 'center' });
@@ -192,50 +225,54 @@ export const generateChallanPdf = async (data: ChallanData) => {
     doc.text("AMOUNT", margin + contentWidth - (amountWidth / 2), headerStartY + 5.5, { align: 'center' });
 
     currentY = headerStartY + headerRowHeight;
-    const bodyStartY = currentY;
     
     // --- 6. Independent Title: "(NOT FOR SALE)" ---
     doc.setFontSize(data.titleFontSize || 10);
     doc.setFont('helvetica', 'bold');
     const titleText = "(NOT FOR SALE)";
     const titleX = margin + srWidth + (particularsWidth / 2);
-    const titleY = bodyStartY + 8;
+    const titleY = currentY + 8;
     doc.text(titleText, titleX, titleY, { align: 'center' });
     
-    // Manual Underline for Title
     const tw = doc.getTextWidth(titleText);
     doc.setLineWidth(0.3);
     doc.line(titleX - (tw / 2), titleY + 1, titleX + (tw / 2), titleY + 1);
 
-    // --- 7. Manual Item Listing (No Horizontal Lines) ---
+    // --- 7. Manual Item Listing with Rich Rendering ---
     let itemY = titleY + 10;
-    doc.setFontSize(data.particularsFontSize || 9);
-    doc.setFont('helvetica', 'normal');
+    const defaultPartSize = data.particularsFontSize || 9;
 
     data.items.filter(i => i.particulars.trim()).forEach((item, index) => {
-        // SR Number
+        // Draw SR Number
+        doc.setFontSize(defaultPartSize);
+        doc.setFont('helvetica', 'bold');
         doc.text((index + 1).toString(), margin + (srWidth / 2), itemY, { align: 'center' });
         
-        // Particulars Multi-line Text
-        const lines = doc.splitTextToSize(item.particulars.toUpperCase(), particularsWidth - 4);
-        doc.text(lines, margin + srWidth + 2, itemY);
+        // Process Particulars line by line
+        const lines = item.particulars.split('\n');
+        let blockHeight = 0;
         
-        // Amount (if present)
+        lines.forEach(lineText => {
+            const addedHeight = renderRichLine(doc, lineText, margin + srWidth + 2, itemY + blockHeight, particularsWidth - 4, defaultPartSize);
+            blockHeight += addedHeight + 1.2; // Extra line spacing
+        });
+        
+        // Draw Amount
         if (item.amount) {
+            doc.setFontSize(defaultPartSize);
+            doc.setFont('helvetica', 'bold');
             doc.text(`${item.amount.toFixed(2)}/-`, margin + contentWidth - 2, itemY, { align: 'right' });
         }
         
-        // Calculate Y increment based on number of lines
-        itemY += (lines.length * 4.5) + 3;
+        itemY += blockHeight + 4; // Spacing between items
     });
 
-    // --- 8. Persistent Vertical Dividers (Stretch to Footer) ---
+    // --- 8. Vertical Dividers ---
     doc.setLineWidth(standardBorder);
-    doc.setDrawColor(0);
     doc.line(margin + srWidth, headerStartY, margin + srWidth, footerStartY);
     doc.line(margin + contentWidth - amountWidth, headerStartY, margin + contentWidth - amountWidth, footerStartY);
 
-    // --- 9. Fixed Signature Footer ---
+    // --- 9. Footer ---
     autoTable(doc, {
         startY: footerStartY,
         body: [[
@@ -245,20 +282,8 @@ export const generateChallanPdf = async (data: ChallanData) => {
         theme: 'grid',
         tableWidth: contentWidth,
         margin: { left: margin, right: margin, bottom: margin },
-        styles: {
-            fontSize: 9.5,
-            fontStyle: 'bold',
-            minCellHeight: footerHeight,
-            valign: 'top',
-            lineColor: 0,
-            lineWidth: standardBorder,
-            textColor: 0,
-            cellPadding: 4
-        },
-        columnStyles: {
-            0: { cellWidth: contentWidth * 0.7, halign: 'left' },
-            1: { cellWidth: contentWidth * 0.3, halign: 'right' }
-        },
+        styles: { fontSize: 9.5, fontStyle: 'bold', minCellHeight: footerHeight, valign: 'top', lineColor: 0, lineWidth: standardBorder, textColor: 0, cellPadding: 4 },
+        columnStyles: { 0: { cellWidth: contentWidth * 0.7, halign: 'left' }, 1: { cellWidth: contentWidth * 0.3, halign: 'right' } },
         didDrawCell: (hook) => {
             if (hook.section === 'body' && hook.column.index === 1) {
                 const cell = hook.cell;
@@ -269,12 +294,10 @@ export const generateChallanPdf = async (data: ChallanData) => {
         }
     });
 
-    // Optional Stamp Placement
     if (data.includeStamp) {
         const stampFile = data.enterprise === 'RV' ? '/rv-stamp.png' : '/vithal-stamp.png';
         try {
             const stampImg = await loadImage(stampFile);
-            // Positioned near the signature line
             doc.addImage(stampImg, 'PNG', pageWidth - margin - 35, footerStartY - 5, 30, 30);
         } catch (e) { }
     }
