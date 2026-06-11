@@ -179,10 +179,15 @@ export default function ChallansPage() {
             groups[monthKey].push(challan);
         });
 
-        return Object.entries(groups).map(([month, items]) => ({
-            month,
-            items: items.sort((a, b) => b.date.localeCompare(a.date))
-        }));
+        // Map and Sort groups by date descending, and items within groups numerically by challanNo
+        return Object.entries(groups)
+            .sort((a, b) => b[0].localeCompare(a[0])) // Simple chronological month group sort
+            .map(([month, items]) => ({
+                month,
+                items: items.sort((a, b) => 
+                    a.challanNo.localeCompare(b.challanNo, undefined, { numeric: true, sensitivity: 'base' })
+                )
+            }));
     }, [savedChallans, historySearch, firmFilter, clientFilter]);
 
     const handleAddItem = () => {
@@ -1021,6 +1026,6 @@ export default function ChallansPage() {
                     main { padding: 0 !important; overflow: visible !important; }
                 }
             `}} />
-        </AppLayout>
+        </div>
     );
 }
