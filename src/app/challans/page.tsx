@@ -557,10 +557,10 @@ export default function ChallansPage() {
                                                                 <p className="font-black text-sm tracking-tight text-foreground truncate">{challan.challanNo}</p>
                                                                 <Badge variant="outline" className="text-[7px] font-black py-0 h-3.5 border-muted-foreground/10 uppercase shrink-0">{challan.enterprise}</Badge>
                                                             </div>
-                                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-bold uppercase tracking-wider truncate">
+                                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
                                                                 <span className="flex items-center gap-1 shrink-0"><Clock className="h-2.5 w-2.5" /> {format(parseISO(challan.date), 'dd MMM')}</span>
                                                                 <span className="opacity-20 shrink-0">|</span>
-                                                                <span className="flex items-center gap-1 text-primary truncate max-w-[150px]"><Building2 className="h-2.5 w-2.5" /> {challan.deliveryToName}</span>
+                                                                <span className="flex items-center gap-1 text-primary whitespace-normal break-words leading-tight"><Building2 className="h-2.5 w-2.5 shrink-0" /> {challan.deliveryToName}</span>
                                                             </div>
                                                         </div>
                                                     </div>
