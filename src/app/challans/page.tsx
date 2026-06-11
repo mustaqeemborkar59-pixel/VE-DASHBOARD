@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ForkliftIcon } from '@/components/icons/forklift-icon';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -38,6 +38,7 @@ export default function ChallansPage() {
     const [selectedChallanForView, setSelectedChallanForView] = useState<Challan | null>(null);
 
     // Form State
+    const [editingChallanId, setEditingChallanId] = useState<string | null>(null);
     const [enterprise, setEnterprise] = useState<'Vithal' | 'RV'>('Vithal');
     const [challanNo, setChallanNo] = useState('');
     const [vehicleNo, setVehicleNo] = useState('');
@@ -263,12 +264,19 @@ export default function ChallansPage() {
                     headerDetailsFontSize,
                     includeStamp
                 },
-                createdAt: new Date().toISOString()
+                createdAt: editingChallanId ? (savedChallans?.find(c => c.id === editingChallanId)?.createdAt || new Date().toISOString()) : new Date().toISOString()
             };
             
-            await addDocumentNonBlocking(collection(firestore!, 'challans'), challanData);
-            toast({ title: 'Record Saved', description: `Challan ${challanNo} added to Dashboard.` });
+            if (editingChallanId) {
+                const docRef = doc(firestore!, 'challans', editingChallanId);
+                await updateDocumentNonBlocking(docRef, challanData);
+                toast({ title: 'Record Updated', description: `Challan ${challanNo} information saved.` });
+            } else {
+                await addDocumentNonBlocking(collection(firestore!, 'challans'), challanData);
+                toast({ title: 'Record Saved', description: `Challan ${challanNo} added to Dashboard.` });
+            }
             setIsFormOpen(false); 
+            setEditingChallanId(null);
         } catch (e) {
             toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not store record.' });
         } finally {
@@ -277,6 +285,7 @@ export default function ChallansPage() {
     };
 
     const loadHistoryRecord = (record: Challan) => {
+        setEditingChallanId(record.id);
         setEnterprise(record.enterprise as 'Vithal' | 'RV');
         setChallanNo(record.challanNo);
         setVehicleNo(record.vehicleNo || '');
@@ -374,6 +383,7 @@ export default function ChallansPage() {
 
     const handleCreateNew = () => {
         // Reset form
+        setEditingChallanId(null);
         setChallanNo('');
         setVehicleNo('');
         setDate(format(new Date(), 'yyyy-MM-dd'));
@@ -400,7 +410,7 @@ export default function ChallansPage() {
                     <div className="space-y-1">
                         <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">
                             <FileDown className="h-7 w-7 text-primary" />
-                            {isFormOpen ? "Create Challan" : "Challan Records"}
+                            {isFormOpen ? (editingChallanId ? "Edit Challan" : "Create Challan") : "Challan Records"}
                         </h1>
                         <p className="text-sm text-muted-foreground uppercase font-bold tracking-widest opacity-70">
                             {isFormOpen ? "Document Editor" : "Delivery tracking & history"}
@@ -409,7 +419,7 @@ export default function ChallansPage() {
                     <div className="flex items-center gap-2">
                         {isFormOpen ? (
                             <>
-                                <Button variant="ghost" onClick={() => setIsFormOpen(false)} className="h-10 rounded-xl font-bold">
+                                <Button variant="ghost" onClick={() => { setIsFormOpen(false); setEditingChallanId(null); }} className="h-10 rounded-xl font-bold">
                                     <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
                                 </Button>
                                 <Button variant="secondary" onClick={handleSaveRecord} disabled={isSaving || !challanNo} className="h-10 rounded-xl font-bold uppercase tracking-widest">
@@ -581,8 +591,8 @@ export default function ChallansPage() {
                             <CardHeader className="bg-muted/30 border-b p-6 sm:p-8">
                                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                                     <div className="space-y-1">
-                                        <CardTitle>Challan Editor</CardTitle>
-                                        <CardDescription>Enter details and item specifications.</CardDescription>
+                                        <CardTitle>{editingChallanId ? "Update Challan" : "Challan Editor"}</CardTitle>
+                                        <CardDescription>{editingChallanId ? `Editing record ${challanNo}` : "Enter details and item specifications."}</CardDescription>
                                     </div>
                                     <Select value={enterprise} onValueChange={(v: any) => setEnterprise(v)}>
                                         <SelectTrigger className="w-full sm:w-40 h-10 font-bold bg-background rounded-xl border-primary/20">
@@ -813,7 +823,7 @@ export default function ChallansPage() {
                                             <CalendarDays className="h-3 w-3" /> {format(parseISO(selectedChallanForView.date), 'dd MMMM yyyy')}
                                         </DialogDescription>
                                     </div>
-                                    <Button variant="outline" size="sm" onClick={() => loadHistoryRecord(selectedChallanForView)} className="rounded-xl font-bold">
+                                    <Button variant="outline" size="sm" onClick={() => { setIsViewOpen(false); loadHistoryRecord(selectedChallanForView); }} className="rounded-xl font-bold">
                                         <Pencil className="h-4 w-4 mr-2" /> Edit Record
                                     </Button>
                                 </div>
